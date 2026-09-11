@@ -6,7 +6,9 @@ ensureAdminUser();
 $err = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
-        if (adminLogin(trim((string)($_POST['login'] ?? '')), (string)($_POST['password'] ?? ''))) {
+        if (!csrf_verify((string)($_POST['csrf_token'] ?? ''))) {
+            $err = 'Ошибка безопасности. Обновите страницу и попробуйте ещё раз.';
+        } elseif (adminLogin(trim((string)($_POST['login'] ?? '')), (string)($_POST['password'] ?? ''))) {
             header('Location: /admin/index.php');
             exit;
         }

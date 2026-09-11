@@ -111,7 +111,7 @@
       upsellItemsEl.innerHTML = '';
       return;
     }
-    upsellItemsEl.innerHTML = candidates.slice(0, 3).map(upsellItemHtml).join('');
+    upsellItemsEl.innerHTML = candidates.slice(0, window.UPSELL_LIMIT || 3).map(upsellItemHtml).join('');
     upsellEl.hidden = false;
   }
 

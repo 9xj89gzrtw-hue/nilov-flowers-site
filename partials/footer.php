@@ -73,6 +73,7 @@ $igDisclaimer = $igOn; /* пометку Meta показываем только 
 </div>
 
 <script src="/js/cart.js"></script>
+<script>window.UPSELL_LIMIT = <?= max(1, min(6, (int) setting('upsell_limit', '3'))) ?>;</script>
 <script src="/js/cart-ui.js"></script>
 <script src="/js/cart-cta.js"></script>
 <script src="/js/order-form.js"></script>
