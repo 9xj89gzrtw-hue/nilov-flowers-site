@@ -116,6 +116,7 @@ label.f{display:block;font-size:.8rem;font-weight:600;margin:12px 0 4px}
 .dash-top-name{flex:1;font-size:.88rem}
 .dash-thumb{width:36px;height:36px}
 </style>
+<script src="/js/pwa-register.js" defer></script>
 </head>
 <body>
 <header class="admin-top">
