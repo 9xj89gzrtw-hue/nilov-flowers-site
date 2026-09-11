@@ -198,6 +198,13 @@ function migrateSchema(PDO $pdo): void
             $pdo->exec("ALTER TABLE admin_users ADD COLUMN {$col} {$def}");
         }
     }
+    /* admin_users: дата добавления (created_at), idempotent-миграция.
+       ALTER TABLE ADD COLUMN не допускает datetime('now') — дефолт константный. */
+    $auCols2 = array_column($pdo->query("PRAGMA table_info(admin_users)")->fetchAll(), 'name');
+    if (!in_array('created_at', $auCols2, true)) {
+        $pdo->exec("ALTER TABLE admin_users ADD COLUMN created_at TEXT NOT NULL DEFAULT ''");
+        $pdo->exec("UPDATE admin_users SET created_at = datetime('now','localtime') WHERE created_at = ''");
+    }
     /* password_resets: одноразовые токены (хеш, TTL) — паттерн codeshack.io 2026 */
     $pdo->exec("CREATE TABLE IF NOT EXISTS password_resets (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
