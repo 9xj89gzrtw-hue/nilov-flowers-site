@@ -1,0 +1,181 @@
+/* ================================================================
+   NILOV FLOWERS — brand hero + animations (W4)
+   Вес: ~14KB исходник, сжат ~5KB. Никаких библиотек.
+   Скоуп: .nv-* префикс. GPU-friendly (transform/opacity only).
+   prefers-reduced-motion: полностью выключает анимации.
+   ================================================================ */
+
+/* ---------- Брендовый wow-hero «Nilov Flowers» ---------- */
+/* hero__hook перестал быть H1: теперь это строка-хук под брендом,
+   поэтому сбиваем старый крупный кегль до hook-масштаба */
+.nv-hero-sub.hero__hook{
+  font-size:clamp(1.1rem,2.6vw,1.5rem);
+  font-weight:500;
+  line-height:1.25;
+  letter-spacing:0;
+  margin:.4em 0 0;
+}
+.nv-hero-brand{
+  display:block;
+  margin:0 0 .35em;
+  font-family:var(--font-display,Georgia,serif);
+  font-weight:600;
+  font-size:clamp(2.6rem,7vw,5.6rem);
+  line-height:.98;
+  letter-spacing:.01em;
+  color:var(--ink,#2B2D2F);
+}
+/* «Flowers» курсивом-акцентом розовым, «Nilov» прямым */
+.nv-hero-brand .nv-brand-accent{
+  font-style:italic;
+  color:var(--rose-deep,#E2799C);
+}
+
+/* Split-буквы: по-буквенный stagger-rise (spec H1 из research) */
+.nv-line{
+  display:block;
+  position:relative;
+  overflow:hidden;        /* маска: буква выезжает из-под строки */
+  padding-bottom:.08em;   /* компенсация descender'ов */
+  margin-bottom:-.08em;
+}
+.nv-ch{
+  display:inline-block;
+  opacity:0;
+  transform:translateY(115%) rotate(4deg);
+  animation:nv-ch-in .7s cubic-bezier(.22,1,.36,1) forwards;
+  animation-delay:calc(.055s * var(--i,0) + .15s);
+}
+@keyframes nv-ch-in{
+  to{opacity:1;transform:none}
+}
+
+/* Подзаголовок: fade-in после заголовка */
+.nv-hero-sub{
+  opacity:0;
+  animation:nv-fade .8s ease .75s forwards;
+}
+@keyframes nv-fade{
+  from{opacity:0;transform:translateY(10px)}
+  to{opacity:1;transform:none}
+}
+
+/* ---------- Лепестки: 3 лепестка SVG-декор + параллакс ---------- */
+.nv-petals{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.nv-petals svg{position:absolute;display:block}
+
+/* Крупный лепесток справа-сверху, покачивается */
+.nv-petal--a{
+  top:6%;right:4%;
+  width:clamp(54px,9vw,110px);
+  color:var(--rose,#F4A9BE);
+  opacity:.9;
+  animation:nv-sway 7s ease-in-out infinite alternate;
+  transform-origin:50% 0%;
+}
+/* Средний голубой слева-снизу от фото */
+.nv-petal--b{
+  bottom:10%;left:2%;
+  width:clamp(40px,6vw,78px);
+  color:var(--blue,#A3C4D9);
+  opacity:.85;
+  animation:nv-sway 9s ease-in-out infinite alternate;
+  animation-delay:-3s;
+  transform-origin:50% 0%;
+}
+/* Маленький мятный — с медленным вращением */
+.nv-petals svg:nth-child(3){
+  top:16%;left:6%;
+  width:clamp(26px,4vw,44px);
+  color:var(--mint,#D9E9DF);
+  opacity:.75;
+  animation:nv-spin 24s linear infinite;
+  transform-origin:center;
+}
+@keyframes nv-sway{
+  from{transform:rotate(-6deg) translateY(0)}
+  to{transform:rotate(7deg) translateY(10px)}
+}
+@keyframes nv-spin{
+  from{transform:rotate(0)}
+  to{transform:rotate(360deg)}
+}
+
+/* ---------- Scroll-reveal v2 (W4): CSS timeline + IO-fallback + safety-net ---------- */
+/* Движок: JS reveal.js добавляет .reveal--visible через IntersectionObserver.
+   CSS animation-timeline: view() — прогрессивное улучшение для Chrome 115+. */
+@supports (animation-timeline: view()){
+  .reveal{
+    animation:nv-scroll-reveal linear both;
+    animation-timeline:view();
+    animation-range:entry 0% cover 22%;
+  }
+  .reveal--visible{animation:none}
+  .reveal--visible > *{animation:none}
+}
+@keyframes nv-scroll-reveal{
+  from{opacity:0;transform:translateY(28px)}
+  to{opacity:1;transform:none}
+}
+
+/* Safety-net: если JS сломался, через 1.2s всё показать */
+html:not(.js-ready) .nv-hero-brand .nv-ch{
+  animation:none;transform:none;opacity:1;
+}
+html:not(.js-ready) .nv-hero-sub{
+  animation:none;opacity:1;
+}
+html:not(.js-ready) .reveal,
+html:not(.js-ready) .reveal *{
+  animation:none;opacity:1;transform:none;
+}
+
+/* ---------- Микро-анимации (V4) ---------- */
+/* Карточки товара: lift+shadow при hover */
+.product-card{
+  transition:transform .35s cubic-bezier(.19,1,.22,1),box-shadow .35s ease;
+}
+.product-card:hover{
+  transform:translateY(-6px);
+  box-shadow:0 24px 44px -18px rgba(43,43,47,.28);
+}
+/* Плавный sheen на кнопках: светлая полоса проезжает */
+.btn--accent,.btn{
+  position:relative;
+  overflow:hidden;
+  isolation:isolate;
+}
+.btn--accent::after,.btn::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(105deg,transparent 42%,rgba(255,255,255,.35) 50%,transparent 58%);
+  transform:translateX(-130%);
+  transition:transform .7s ease;
+  z-index:0;
+}
+.btn--accent:hover::after,.btn:hover::after{
+  transform:translateX(130%);
+}
+
+/* Фильтры каталога: fade между вкладками */
+.catalog-tabs button, .tabs button{
+  transition:color .2s,background .2s,opacity .2s;
+}
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce){
+  .nv-hero-brand .nv-ch,
+  .nv-hero-sub,
+  .nv-petals svg,
+  .reveal,
+  .product-card,
+  .btn::after{
+    animation:none!important;
+    transition:none!important;
+    transform:none!important;
+    opacity:1!important;
+  }
+  .nv-hero-sub{opacity:1}
+  .reduce-hidden{display:none}
+}

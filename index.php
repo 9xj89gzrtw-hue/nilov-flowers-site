@@ -50,13 +50,12 @@ unset($pRow);
 ?><!DOCTYPE html>
 <html lang="ru">
 <head>
-<title><?= e(setting('shop_name', 'Nilov Flowers')) ?> — свежие цветы с доставкой в Санкт-Петербурге</title>
-<meta name="description" content="<?= e(setting('shop_name', 'Nilov Flowers')) ?> — свежие букеты с утренней поставки, доставка по Санкт-Петербургу в день заказа. Полевая Сабировская ул., 47, корп. 1. Фото букета перед отправкой.">
+<title><?= e(setting('shop_name', 'Nilov Flowers')) ?> — доставка цветов по Санкт-Петербургу в день заказа</title>
+<meta name="description" content="<?= e(setting('hero_subtitle')) ?>">
 <meta property="og:title" content="<?= e(setting('shop_name', 'Nilov Flowers')) ?> — свежие цветы с доставкой в СПб">
 <meta property="og:description" content="Букеты с доставкой в день заказа по Санкт-Петербургу. Фото перед отправкой, свежие цветы с утренней поставки.">
 <meta property="og:url" content="https://flowers.interfood-catering.ru/">
 <?= setting('hero_image') !== '' ? '<meta property="og:image" content="https://flowers.interfood-catering.ru/img/uploads/' . e(rawurlencode(setting('hero_image'))) . '">' : '' ?>
-<meta name="description" content="<?= e(setting('hero_subtitle')) ?>">
 <?php require __DIR__ . '/partials/head.php'; ?>
 <?php /* JSON-LD Florist — canonical 2026 (hanafloristpos.com/schema-guide, thestacc.com/local-business-schema) */ ?>
 <script type="application/ld+json">
@@ -82,13 +81,38 @@ unset($pRow);
 <?php require __DIR__ . '/partials/header.php'; ?>
 
 <main>
-  <!-- HERO: фото в арке, текст рядом -->
+  <!-- HERO: Nilov Flowers wow-заголовок + фото в арке -->
   <section class="hero">
+    <div class="nv-petals" aria-hidden="true">
+      <svg class="nv-petal--a" viewBox="0 0 100 100" fill="currentColor"><path d="M50 4C66 22 82 40 82 60c0 20-14 36-32 36S18 80 18 60C18 40 34 22 50 4z" opacity=".55"/><path d="M50 4c-16 18-32 36-32 56 0 20 14 36 32 36" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+      <svg class="nv-petal--b" viewBox="0 0 100 100" fill="currentColor"><path d="M50 4C66 22 82 40 82 60c0 20-14 36-32 36S18 80 18 60C18 40 34 22 50 4z" opacity=".55"/><path d="M50 4c-16 18-32 36-32 56 0 20 14 36 32 36" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+      <svg viewBox="0 0 100 100" fill="currentColor"><path d="M50 4C66 22 82 40 82 60c0 20-14 36-32 36S18 80 18 60C18 40 34 22 50 4z" opacity=".55"/><path d="M50 4c-16 18-32 36-32 56 0 20 14 36 32 36" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+    </div>
     <div class="wrap hero__grid">
       <div>
         <?php if ($heroTextEnabled): ?>
-        <h1 class="hero__hook"><?= e(setting('hero_title', 'Свежие цветы с утренней поставки')) ?></h1>
-        <p class="hero__subtitle"><?= e(setting('hero_subtitle')) ?></p>
+        <?php /* Брендовый wow-H1: «Nilov Flowers» с split-анимацией.
+               hero_title остаётся редактируемым хуком-подзаголовком. */ ?>
+        <h1 class="nv-hero-brand" id="nvBrand" aria-label="Nilov Flowers">
+          <?php
+          /* По-буквенный stagger (spec H1): «Nilov» прямой, «Flow» розовым курсивом + «ers».
+             Буквы — статический PHP-split, JS не нужен; aria-label сохраняет доступность. */
+          $brandLines = [
+              ['text' => 'Nilov', 'accent' => 0],
+              ['text' => 'Flowers', 'accent' => 4], // первые 4 буквы — акцент
+          ];
+          $gi = 0; // глобальный индекс буквы — каскад идёт по буквам, а не по строкам
+          foreach ($brandLines as $line):
+          ?>
+          <span class="nv-line">
+            <?php foreach (mb_str_split($line['text']) as $ci => $ch): ?>
+              <span class="nv-ch" style="--i:<?= $gi++ ?><?= $ci < $line['accent'] ? ';color:var(--rose-deep,#E2799C);font-style:italic' : '' ?>"><?= e($ch) ?></span>
+            <?php endforeach; ?>
+          </span>
+          <?php endforeach; ?>
+        </h1>
+        <p class="hero__hook nv-hero-sub" data-hero-hook><?= e(setting('hero_title', 'Свежие цветы с утренней поставки')) ?></p>
+        <p class="hero__subtitle nv-hero-sub"><?= e(setting('hero_subtitle')) ?></p>
         <?php endif; ?>
         <?php if ($heroBtn || ($heroTextEnabled && $guarantees !== [])): ?>
         <div class="hero__meta">

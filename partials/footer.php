@@ -82,4 +82,5 @@ $igDisclaimer = $igOn; /* пометку Meta показываем только 
 <script src="/js/lightbox.js"></script>
 <script src="/js/lazy-images.js"></script>
 <script src="/js/reveal.js"></script>
+<script src="/js/nilov.js" defer></script>
 <script src="/js/cookie-banner.js"></script>
