@@ -159,6 +159,9 @@ unset($pRow);
                 <?= formatPrice($price) ?>
               <?php endif; ?>
             </p>
+            <?php if ((int)($p['is_urgent'] ?? 0) === 1): ?>
+            <p class="product-card__urgent-note">Соберём и доставим в течение дня — количество ограничено</p>
+            <?php endif; ?>
           </div>
         </article>
         <?php endforeach; ?>

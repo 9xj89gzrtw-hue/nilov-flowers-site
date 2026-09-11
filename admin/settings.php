@@ -145,15 +145,41 @@ flash();
         <p style="font-size:.85rem;color:var(--ink-soft);margin:0 0 10px">Одни и те же контакты можно продублировать — покупатель выберет, чем удобно написать.</p>
         <label class="f" for="m-wa">WhatsApp, номер (только цифры)</label>
         <input class="input" id="m-wa" name="shop_whatsapp" value="<?= sv('shop_whatsapp', $s) ?>" placeholder="79119417205">
+        <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+          <input type="checkbox" name="wa_enabled" style="width:auto" <?= ($s['wa_enabled'] ?? '1') === '1' ? 'checked' : '' ?>>
+          Показывать WhatsApp на сайте
+        </label>
         <label class="f" for="m-tg">Telegram, имя канала (без @)</label>
         <input class="input" id="m-tg" name="shop_telegram" value="<?= sv('shop_telegram', $s) ?>">
+        <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+          <input type="checkbox" name="tg_enabled" style="width:auto" <?= ($s['tg_enabled'] ?? '1') === '1' ? 'checked' : '' ?>>
+          Показывать Telegram на сайте
+        </label>
         <label class="f" for="m-vk">VK, ссылка на сообщество</label>
         <input class="input" id="m-vk" name="shop_vk" value="<?= sv('shop_vk', $s) ?>">
+        <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+          <input type="checkbox" name="vk_enabled" style="width:auto" <?= ($s['vk_enabled'] ?? '1') === '1' ? 'checked' : '' ?>>
+          Показывать VK на сайте
+        </label>
         <label class="f" for="m-max">MAX, готовая ссылка</label>
         <input class="input" id="m-max" name="shop_max_link" value="<?= sv('shop_max_link', $s) ?>">
+        <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+          <input type="checkbox" name="max_enabled" style="width:auto" <?= ($s['max_enabled'] ?? '1') === '1' ? 'checked' : '' ?>>
+          Показывать MAX на сайте
+        </label>
         <label class="f" for="m-ig">Instagram, ссылка на профиль</label>
         <input class="input" id="m-ig" name="shop_instagram" value="<?= sv('shop_instagram', $s) ?>" placeholder="https://www.instagram.com/...">
-        <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 0">На сайте рядом со ссылкой появится обязательная пометка о запрете Instagram в РФ.</p>
+        <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+          <input type="checkbox" name="ig_enabled" style="width:auto" <?= ($s['ig_enabled'] ?? '1') === '1' ? 'checked' : '' ?>>
+          Показывать Instagram на сайте (вместе с пометкой)
+        </label>
+        <label class="f" for="m-email">Email в списке мессенджеров</label>
+        <input class="input" id="m-email" name="shop_email" value="<?= sv('shop_email', $s) ?>">
+        <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+          <input type="checkbox" name="email_enabled" style="width:auto" <?= ($s['email_enabled'] ?? '1') === '1' ? 'checked' : '' ?>>
+          Показывать email на сайте
+        </label>
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 0">Снимите флажок — контакт полностью скроется с сайта, даже если поле заполнено.</p>
       </div>
     </div>
   </div>

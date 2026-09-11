@@ -92,6 +92,9 @@ a{color:inherit;text-decoration:none}
 .product-card:hover .product-card__img{transform:scale(1.05)}
 .product-card__media-link{display:grid;place-items:center;width:100%;height:100%}
 .product-card__badge{position:absolute;top:12px;left:12px;background:rgba(255,255,255,.92);backdrop-filter:blur(6px);border-radius:999px;padding:5px 12px;font-size:.72rem;font-weight:600}
+.product-card__badge--urgent{background:var(--rose-deep,#E2799C);color:#fff;letter-spacing:.04em;text-transform:uppercase;font-size:.66rem}
+.product-page__urgent-badge{position:static;display:inline-block;margin-bottom:10px}
+.product-card__urgent-note{margin:4px 0 0;font-size:.78rem;font-weight:500;color:var(--rose-deep,#E2799C)}
 .product-card__cta{position:absolute;right:12px;bottom:12px;width:42px;height:42px;border-radius:50%;border:none;background:var(--ink);color:#fff;font-size:1.3rem;cursor:pointer;display:grid;place-items:center;opacity:0;transform:translateY(8px);transition:.2s}
 .product-card:hover .product-card__cta,.product-card__cta:focus-visible{opacity:1;transform:none}
 @media(hover:none){.product-card__cta{opacity:1;transform:none}}
@@ -240,6 +243,6 @@ body.no-scroll{overflow:hidden}
 .product-card__cat{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft)}
 .site-footer__name{font-family:var(--font-display);font-weight:700;font-size:1.02rem}
 .site-footer__phone{color:var(--ink);font-weight:600}
-.site-footer__messengers{display:flex;gap:14px;margin-top:4px}
+.site-footer__messengers{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-top:4px}
 .site-footer__messengers a:hover{color:var(--rose-deep)}
 

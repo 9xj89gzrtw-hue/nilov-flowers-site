@@ -101,6 +101,7 @@ if ($trust === []) {
       <div class="product-page__info">
         <?php if (!empty($product['category_name'])): ?><p class="product-page__category"><?= e($product['category_name']) ?></p><?php endif; ?>
         <h1 class="product-page__name"><?= e($product['name']) ?></h1>
+        <?php if ((int)($product['is_urgent'] ?? 0) === 1): ?><span class="product-card__badge product-card__badge--urgent product-page__urgent-badge">Успеть сегодня</span><?php endif; ?>
         <p class="product-page__price">
           <?php if ($isSale): ?>
             <span class="product-page__price--old"><?= formatPrice((int)$product['price']) ?></span>
@@ -109,6 +110,7 @@ if ($trust === []) {
             <span><?= formatPrice($price) ?></span>
           <?php endif; ?>
         </p>
+        <?php if ((int)($product['is_urgent'] ?? 0) === 1): ?><p class="product-card__urgent-note">Соберём и доставим в течение дня — количество ограничено</p><?php endif; ?>
         <?php if ($product['description'] !== ''): ?><p class="product-page__description"><?= nl2br(e($product['description'])) ?></p><?php endif; ?>
         <button type="button" class="btn btn--accent product-page__cta" data-order-cta
           data-product-id="<?= (int)$product['id'] ?>"
