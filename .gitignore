@@ -1,0 +1,5 @@
+db/*.db
+img/uploads/*
+img/products/*
+!img/products/.gitkeep
+.DS_Store

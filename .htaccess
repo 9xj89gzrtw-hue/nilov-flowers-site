@@ -1,0 +1,29 @@
+# Доставка цветов — витрина + админ-панель
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /
+
+# Физические файлы и каталоги отдаём как есть
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# API
+RewriteRule ^api/orders$ api/orders.php [L]
+RewriteRule ^api/payment/create$ api/payment-create.php [L]
+
+# Карточка товара
+RewriteRule ^product/([a-z0-9\-]+)$ product.php?slug=$1 [L,QSA]
+
+# Всё остальное — на главную
+RewriteRule ^ index.php [L]
+</IfModule>
+
+# Конфиг и база не отдаются из веба
+<FilesMatch "\.(db|sqlite3?)$">
+Require all denied
+</FilesMatch>
+<Files "config.php">
+Require all denied
+</Files>
+Options -Indexes
