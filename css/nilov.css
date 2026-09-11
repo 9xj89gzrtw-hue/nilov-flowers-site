@@ -160,7 +160,17 @@ html:not(.js-ready) .reveal *{
   animation:none;opacity:1;transform:none;
 }
 
-/* ---------- Микро-анимации (V4) ---------- */
+/* ---------- Тап-таргеты ≥44px (WCAG 2.5.5 / mobile matrix) ---------- */
+.cart-toggle{
+  width:44px;height:44px;
+}
+.product-card__cta{
+  min-width:44px;min-height:44px;
+}
+.row-actions a,.row-actions button{
+  min-height:34px; /* админ: компенсируем плотность, но строки таблиц остаются компактными */
+}
+
 /* Карточки товара: lift+shadow при hover */
 .product-card{
   transition:transform .35s cubic-bezier(.19,1,.22,1),box-shadow .35s ease;
