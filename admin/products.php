@@ -33,6 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save'
     $salePrice = $salePriceRaw !== '' ? max(0, (int)$salePriceRaw) : null;
     $description = trim((string)($_POST['description'] ?? ''));
     $isActive = isset($_POST['is_active']) ? 1 : 0;
+    $showInUpsell = isset($_POST['show_in_upsell']) ? 1 : 0;
     $sort = (int)($_POST['sort'] ?? 0);
 
     if ($name === '' || $price <= 0) {
@@ -52,9 +53,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save'
                 ->execute([':img' => $image, ':i' => $id]);
         }
         $pdo->prepare('UPDATE products SET category_id = :c, name = :n, slug = :sl, price = :p,
-                sale_price = :sp, description = :d, is_active = :a, sort = :s WHERE id = :i')
+                sale_price = :sp, description = :d, is_active = :a, show_in_upsell = :u, sort = :s WHERE id = :i')
             ->execute([':c' => $categoryId, ':n' => $name, ':sl' => slugify($name), ':p' => $price,
-                ':sp' => $salePrice, ':d' => $description, ':a' => $isActive, ':s' => $sort, ':i' => $id]);
+                ':sp' => $salePrice, ':d' => $description, ':a' => $isActive, ':u' => $showInUpsell, ':s' => $sort, ':i' => $id]);
         flash('Товар обновлён');
     } else {
         $slug = slugify($name);
@@ -63,10 +64,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save'
         while ((int)$pdo->query('SELECT COUNT(*) FROM products WHERE slug = ' . $pdo->quote($slug))->fetchColumn() > 0) {
             $slug = $base . '-' . (++$n);
         }
-        $pdo->prepare('INSERT INTO products (category_id, name, slug, price, sale_price, description, image, is_active, sort)
-                VALUES (:c, :n, :sl, :p, :sp, :d, :img, :a, :s)')
+        $pdo->prepare('INSERT INTO products (category_id, name, slug, price, sale_price, description, image, is_active, show_in_upsell, sort)
+                VALUES (:c, :n, :sl, :p, :sp, :d, :img, :a, :u, :s)')
             ->execute([':c' => $categoryId, ':n' => $name, ':sl' => $slug, ':p' => $price,
-                ':sp' => $salePrice, ':d' => $description, ':img' => $image, ':a' => $isActive, ':s' => $sort]);
+                ':sp' => $salePrice, ':d' => $description, ':img' => $image, ':a' => $isActive, ':u' => $showInUpsell, ':s' => $sort]);
         flash('Товар добавлен');
     }
     header('Location: /admin/products.php');
@@ -77,6 +78,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save'
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'toggle') {
     $id = (int)($_POST['id'] ?? 0);
     $pdo->prepare('UPDATE products SET is_active = 1 - is_active WHERE id = :i')->execute([':i' => $id]);
+    header('Location: /admin/products.php');
+    exit;
+}
+
+// Успеть сегодня / снять срочность
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'urgent') {
+    $id = (int)($_POST['id'] ?? 0);
+    $pdo->prepare('UPDATE products SET is_urgent = 1 - is_urgent WHERE id = :i')->execute([':i' => $id]);
+    header('Location: /admin/products.php');
+    exit;
+}
+
+// Снять всё с продажи (массовое скрытие)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'hide_all') {
+    $pdo->exec('UPDATE products SET is_active = 0');
+    flash('Все товары сняты с продажи');
+    header('Location: /admin/products.php');
+    exit;
+}
+
+// Пересортица: swap sort с ближайшим соседом по (sort, id) в направлении; без соседа — ±5
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'move') {
+    $id = (int)($_POST['id'] ?? 0);
+    $dir = ($_POST['dir'] ?? '') === 'down' ? 'down' : 'up';
+    $stmt = $pdo->prepare('SELECT id, sort FROM products WHERE id = :i');
+    $stmt->execute([':i' => $id]);
+    $cur = $stmt->fetch();
+    if ($cur !== false) {
+        $sort = (int)$cur['sort'];
+        if ($dir === 'up') {
+            $stmt = $pdo->prepare('SELECT id, sort FROM products WHERE (sort < :s) OR (sort = :s AND id < :i)
+                ORDER BY sort DESC, id DESC LIMIT 1');
+        } else {
+            $stmt = $pdo->prepare('SELECT id, sort FROM products WHERE (sort > :s) OR (sort = :s AND id > :i)
+                ORDER BY sort ASC, id ASC LIMIT 1');
+        }
+        $stmt->execute([':s' => $sort, ':i' => (int)$cur['id']]);
+        $neighbour = $stmt->fetch();
+        if ($neighbour !== false) {
+            $pdo->prepare('UPDATE products SET sort = :s WHERE id = :i')
+                ->execute([':s' => (int)$neighbour['sort'], ':i' => (int)$cur['id']]);
+            $pdo->prepare('UPDATE products SET sort = :s WHERE id = :i')
+                ->execute([':s' => $sort, ':i' => (int)$neighbour['id']]);
+        } else {
+            $newSort = $dir === 'up' ? $sort - 5 : $sort + 5;
+            $pdo->prepare('UPDATE products SET sort = :s WHERE id = :i')->execute([':s' => $newSort, ':i' => $id]);
+        }
+    }
     header('Location: /admin/products.php');
     exit;
 }
@@ -134,6 +183,10 @@ flash();
           <input type="checkbox" name="is_active" style="width:auto" <?= !$editing || (int)$editing['is_active'] === 1 ? 'checked' : '' ?>>
           Показывать в каталоге
         </label>
+        <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500;margin-top:8px">
+          <input type="checkbox" name="show_in_upsell" style="width:auto" <?= $editing && (int)($editing['show_in_upsell'] ?? 0) === 1 ? 'checked' : '' ?>>
+          Показывать в апсейле корзины
+        </label>
       </div>
     </div>
     <div style="display:flex;gap:10px;margin-top:18px">
@@ -144,8 +197,15 @@ flash();
 </div>
 
 <div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+    <h2 style="font-family:var(--font-display);font-size:1.2rem">Все товары</h2>
+    <form method="post" onsubmit="return confirm('Снять ВСЕ товары с продажи? Витрина станет пустой.')">
+      <input type="hidden" name="action" value="hide_all">
+      <button type="submit" class="danger" style="font-size:.8rem;padding:7px 14px;border-radius:8px;border:1px solid var(--err,#c0392b);color:#c0392b;background:#fff;cursor:pointer;font-family:inherit">Снять всё с продажи</button>
+    </form>
+  </div>
   <table>
-    <tr><th>Фото</th><th>Название</th><th>Категория</th><th>Цена</th><th>Акция</th><th>Сорт.</th><th>Статус</th><th></th></tr>
+    <tr><th>Фото</th><th>Название</th><th>Категория</th><th>Цена</th><th>Акция</th><th>Сорт.</th><th>Статус</th><th></th><th></th></tr>
     <?php foreach ($products as $p): ?>
     <tr>
       <td><?= $p['image'] !== '' ? '<img class="thumb" src="/img/products/' . e($p['image']) . '" alt="">' : '<div class="thumb"></div>' ?></td>
@@ -154,13 +214,22 @@ flash();
       <td><?= formatPrice((int)$p['price']) ?></td>
       <td><?= $p['sale_price'] !== null ? formatPrice((int)$p['sale_price']) : '—' ?></td>
       <td><?= (int)$p['sort'] ?></td>
-      <td><?= (int)$p['is_active'] === 1 ? 'Показан' : 'Скрыт' ?></td>
+      <td><?= (int)$p['is_active'] === 1 ? 'Показан' : 'Скрыт' ?><?= (int)($p['show_in_upsell'] ?? 0) === 1 ? ' <span style="display:inline-block;background:var(--rose,#F4A9BE);color:#fff;border-radius:999px;padding:2px 8px;font-size:.68rem;font-weight:700;vertical-align:middle">Апсейл</span>' : '' ?></td>
       <td>
         <div class="row-actions">
           <a href="/admin/products.php?edit=<?= (int)$p['id'] ?>">Изменить</a>
           <form method="post" onsubmit="return confirm('Скрыть/показать товар?')">
             <input type="hidden" name="action" value="toggle"><input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
             <button type="submit"><?= (int)$p['is_active'] === 1 ? 'Скрыть' : 'Показать' ?></button>
+          </form>
+          <form method="post">
+            <input type="hidden" name="action" value="urgent"><input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
+            <button type="submit"><?= (int)($p['is_urgent'] ?? 0) === 1 ? 'Снять срочность' : 'Успеть сегодня' ?></button>
+          </form>
+          <form method="post" style="display:inline-flex;gap:4px">
+            <input type="hidden" name="action" value="move"><input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
+            <button type="submit" name="dir" value="up" title="Выше" aria-label="Выше">↑</button>
+            <button type="submit" name="dir" value="down" title="Ниже" aria-label="Ниже">↓</button>
           </form>
           <form method="post" onsubmit="return confirm('Удалить товар безвозвратно?')">
             <input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
