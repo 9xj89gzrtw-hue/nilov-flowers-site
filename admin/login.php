@@ -11,8 +11,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif (adminLogin(trim((string)($_POST['login'] ?? '')), (string)($_POST['password'] ?? ''))) {
             header('Location: /admin/index.php');
             exit;
+        } else {
+            $err = 'Неверный логин или пароль';
         }
-        $err = 'Неверный логин или пароль';
     } catch (RuntimeException $e) {
         $err = $e->getMessage();
     }
