@@ -233,9 +233,11 @@ unset($pRow);
           <?php if (setting('yk_enabled', '0') === '1'): ?>
           <label class="order-form__radio"><input type="radio" name="payment_method" value="online" checked><span>Картой или через СБП — сразу онлайн</span></label>
           <label class="order-form__radio"><input type="radio" name="payment_method" value="cash"><span>При получении</span></label>
+          <p class="order-form__hint">Оплата проходит на защищённой странице ЮKassa. Данные карты магазину не передаются.</p>
           <?php else: ?>
           <label class="order-form__radio"><input type="radio" name="payment_method" value="cash" checked><span>При получении</span></label>
           <input type="hidden" name="payment_method" value="cash">
+          <p class="order-form__hint">Оплата — курьеру при получении заказа.</p>
           <?php endif; ?>
         </fieldset>
         <div class="order-form__field">
