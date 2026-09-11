@@ -28,7 +28,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $values[$k] = trim((string)($_POST[$k] ?? ''));
     }
     /* Чекбоксы: 0 если не пришли */
-    foreach (['yk_enabled', 'upsell_enabled', 'hero_text_enabled'] as $cb) {
+    foreach (['yk_enabled', 'upsell_enabled', 'hero_text_enabled',
+        'wa_enabled', 'tg_enabled', 'vk_enabled', 'max_enabled', 'ig_enabled', 'email_enabled'] as $cb) {
         $values[$cb] = isset($_POST[$cb]) ? '1' : '0';
     }
     $hero = saveUpload($_FILES['hero_image'] ?? [], IMG_UPLOADS_DIR);
@@ -131,6 +132,9 @@ flash();
       <div>
         <label class="f" for="c-phone2">Телефон для сайта</label>
         <input class="input" id="c-phone2" name="shop_phone" value="<?= sv('shop_phone', $s) ?>">
+        <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500;margin-bottom:2px">
+          <input type="checkbox" name="email_enabled" style="width:auto" <?= sv('email_enabled', $s) === '1' ? 'checked' : '' ?>> Показывать email в подвале
+        </label>
         <label class="f" for="c-email">Email магазина</label>
         <input class="input" id="c-email" name="shop_email" value="<?= sv('shop_email', $s) ?>">
         <label class="f" for="c-hours">Часы работы</label>
@@ -143,14 +147,29 @@ flash();
       <div>
         <p class="f" style="margin:0 0 6px;font-weight:600">Мессенджеры</p>
         <p style="font-size:.85rem;color:var(--ink-soft);margin:0 0 10px">Одни и те же контакты можно продублировать — покупатель выберет, чем удобно написать.</p>
+        <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500;margin-bottom:2px">
+          <input type="checkbox" name="wa_enabled" style="width:auto" <?= sv('wa_enabled', $s) === '1' ? 'checked' : '' ?>> Показывать WhatsApp
+        </label>
         <label class="f" for="m-wa">WhatsApp, номер (только цифры)</label>
         <input class="input" id="m-wa" name="shop_whatsapp" value="<?= sv('shop_whatsapp', $s) ?>" placeholder="79119417205">
+        <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500;margin-bottom:2px">
+          <input type="checkbox" name="tg_enabled" style="width:auto" <?= sv('tg_enabled', $s) === '1' ? 'checked' : '' ?>> Показывать Telegram
+        </label>
         <label class="f" for="m-tg">Telegram, имя канала (без @)</label>
         <input class="input" id="m-tg" name="shop_telegram" value="<?= sv('shop_telegram', $s) ?>">
+        <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500;margin-bottom:2px">
+          <input type="checkbox" name="vk_enabled" style="width:auto" <?= sv('vk_enabled', $s) === '1' ? 'checked' : '' ?>> Показывать VK
+        </label>
         <label class="f" for="m-vk">VK, ссылка на сообщество</label>
         <input class="input" id="m-vk" name="shop_vk" value="<?= sv('shop_vk', $s) ?>">
+        <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500;margin-bottom:2px">
+          <input type="checkbox" name="max_enabled" style="width:auto" <?= sv('max_enabled', $s) === '1' ? 'checked' : '' ?>> Показывать MAX
+        </label>
         <label class="f" for="m-max">MAX, готовая ссылка</label>
         <input class="input" id="m-max" name="shop_max_link" value="<?= sv('shop_max_link', $s) ?>">
+        <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500;margin-bottom:2px">
+          <input type="checkbox" name="ig_enabled" style="width:auto" <?= sv('ig_enabled', $s) === '1' ? 'checked' : '' ?>> Показывать Instagram*
+        </label>
         <label class="f" for="m-ig">Instagram, ссылка на профиль</label>
         <input class="input" id="m-ig" name="shop_instagram" value="<?= sv('shop_instagram', $s) ?>" placeholder="https://www.instagram.com/...">
         <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 0">На сайте рядом со ссылкой появится обязательная пометка о запрете Instagram в РФ.</p>

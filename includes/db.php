@@ -178,7 +178,14 @@ function migrateSchema(PDO $pdo): void
         ('yandex_reviews_id', ''),
         ('site_favicon', ''),
         ('yk_enabled', '0'),
-        ('shop_instagram', '')");
+        ('shop_instagram', ''),
+        /* Включатели соцсетей (1 = показывать на сайте) */
+        ('wa_enabled', '1'),
+        ('tg_enabled', '1'),
+        ('vk_enabled', '1'),
+        ('max_enabled', '1'),
+        ('ig_enabled', '1'),
+        ('email_enabled', '1')");
     /* admin_users: email-логин, имя, роль, уведомления, запасной email */
     $pdo->exec("CREATE TABLE IF NOT EXISTS admin_users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

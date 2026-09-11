@@ -17,18 +17,24 @@ $phoneDigits = preg_replace('/\D/', '', $phone) ?: '';
       <p class="site-footer__name"><?= e($siteName) ?></p>
       <?php if ($address !== ''): ?><p><?= e($address) ?></p><?php endif; ?>
       <?php if ($phone !== ''): ?><p><a class="site-footer__phone" href="tel:+<?= e($phoneDigits) ?>"><?= e($phone) ?></a></p><?php endif; ?>
-      <?php if ($whatsapp !== '' || $telegram !== '' || setting('shop_vk', '') !== '' || setting('shop_max_link', '') !== '' || setting('shop_instagram', '') !== ''): ?>
+      <?php
+      $showWa  = setting('wa_enabled', '1') === '1' && $whatsapp !== '';
+      $showTg  = setting('tg_enabled', '1') === '1' && $telegram !== '';
+      $showVk  = setting('vk_enabled', '1') === '1' && setting('shop_vk', '') !== '';
+      $showMax = setting('max_enabled', '1') === '1' && setting('shop_max_link', '') !== '';
+      $showIg  = setting('ig_enabled', '1') === '1' && setting('shop_instagram', '') !== '';
+      $showEm  = setting('email_enabled', '1') === '1' && setting('shop_email', '') !== '';
+      ?>
+      <?php if ($showWa || $showTg || $showVk || $showMax || $showIg || $showEm): ?>
       <p class="site-footer__messengers">
-        <?php if ($whatsapp !== ''): ?><a href="https://wa.me/<?= e(preg_replace('/[^0-9]/', '', $whatsapp)) ?>" target="_blank" rel="noopener">WhatsApp</a><?php endif; ?>
-        <?php if ($telegram !== ''): ?><a href="https://t.me/<?= e($telegram) ?>" target="_blank" rel="noopener">Telegram</a><?php endif; ?>
-        <?php if (setting('shop_vk', '') !== ''): ?><a href="<?= e(setting('shop_vk')) ?>" target="_blank" rel="noopener">VK</a><?php endif; ?>
-        <?php if (setting('shop_max_link', '') !== ''): ?><a href="<?= e(setting('shop_max_link')) ?>" target="_blank" rel="noopener">MAX</a><?php endif; ?>
-        <?php if (setting('shop_instagram', '') !== ''): ?>
-          <a href="<?= e(setting('shop_instagram')) ?>" target="_blank" rel="noopener">Instagram*</a>
-        <?php endif; ?>
-        <?php if (setting('shop_email', '') !== ''): ?><a href="mailto:<?= e(setting('shop_email')) ?>"><?= e(setting('shop_email')) ?></a><?php endif; ?>
+        <?php if ($showWa): ?><a href="https://wa.me/<?= e(preg_replace('/[^0-9]/', '', $whatsapp)) ?>" target="_blank" rel="noopener">WhatsApp</a><?php endif; ?>
+        <?php if ($showTg): ?><a href="https://t.me/<?= e($telegram) ?>" target="_blank" rel="noopener">Telegram</a><?php endif; ?>
+        <?php if ($showVk): ?><a href="<?= e(setting('shop_vk')) ?>" target="_blank" rel="noopener">VK</a><?php endif; ?>
+        <?php if ($showMax): ?><a href="<?= e(setting('shop_max_link')) ?>" target="_blank" rel="noopener">MAX</a><?php endif; ?>
+        <?php if ($showIg): ?><a href="<?= e(setting('shop_instagram')) ?>" target="_blank" rel="noopener">Instagram*</a><?php endif; ?>
+        <?php if ($showEm): ?><a href="mailto:<?= e(setting('shop_email')) ?>"><?= e(setting('shop_email')) ?></a><?php endif; ?>
       </p>
-      <?php if (setting('shop_instagram', '') !== ''): ?>
+      <?php if ($showIg): ?>
       <p style="font-size:.72rem;color:var(--ink-soft);margin-top:4px">* Instagram принадлежит Meta, признанной экстремистской организацией, деятельность которой запрещена на территории РФ.</p>
       <?php endif; ?>
       <?php endif; ?>
