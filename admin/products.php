@@ -198,7 +198,10 @@ flash();
         <label class="f" for="p-sort">Позиция в каталоге (1 — первым)</label>
         <input class="input" id="p-sort" name="sort" type="number" value="<?= $editing ? (int)$editing['sort'] : 0 ?>">
         <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500;margin-top:16px">
-          <input type="checkbox" name="is_active" style="width:auto" <?= !$editing || (int)$editing['is_active'] === 1 ? 'checked' : '' ?>>
+          <input type="checkbox" name="is_active" style="width:auto" <?= $editing ? ((int)$editing['is_active'] === 1 ? 'checked' : '') : '' ?>>
+          <?php /* Новый товар = черновик (не показан): владелец проверит фото/текст и сам нажмёт «Показать».
+                 Критик-владелец: «товар сразу продаётся до проверки — страшно». */ ?>
+          <?php if (!$editing): ?><p style="font-size:.8rem;color:var(--ink-soft);margin-top:4px">Новый товар создастся скрытым — проверьте фото и текст, потом нажмите «Показать» в списке.</p><?php endif; ?>
           Показывать в каталоге
         </label>
         <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500;margin-top:8px">

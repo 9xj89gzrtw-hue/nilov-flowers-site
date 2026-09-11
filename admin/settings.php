@@ -68,10 +68,25 @@ adminHeader('Настройки', 'settings');
 flash();
 ?>
 <h1>Настройки магазина</h1>
+<style>.card[id]{scroll-margin-top:120px}</style>
+
+<?php /* Оглавление настроек (критик-владелец: «9 секций на одной простыне — листать всё»).
+       Якоря-чипы, прыжок в один клик, sticky — всегда под рукой. */ ?>
+<nav class="dash-ranges" style="margin-bottom:16px;position:sticky;top:64px;z-index:30;background:var(--bg,#F6F1E6);padding:8px 0;border-radius:0 0 12px 12px" aria-label="Разделы настроек">
+  <a href="#s-common">Общие</a>
+  <a href="#s-main">Главная</a>
+  <a href="#s-look">Вид</a>
+  <a href="#s-steps">Этапы</a>
+  <a href="#s-contacts">Контакты</a>
+  <a href="#s-cart">Корзина</a>
+  <a href="#s-legal">Реквизиты</a>
+  <a href="#s-pay">Оплата</a>
+  <a href="#s-guarantees">Гарантии</a>
+</nav>
 
 <form method="post" enctype="multipart/form-data">
   <?= csrf_field() ?>
-  <div class="card">
+  <div class="card" id="s-common">
     <h2 style="font-family:var(--font-display);font-size:1.2rem;margin-bottom:8px">Общие</h2>
     <div class="grid2">
       <div>
@@ -92,7 +107,7 @@ flash();
     </div>
   </div>
 
-  <div class="card">
+  <div class="card" id="s-main">
     <h2 style="font-family:var(--font-display);font-size:1.2rem;margin-bottom:8px">Главная страница</h2>
     <div class="grid2">
       <div>
@@ -121,7 +136,7 @@ flash();
     </div>
   </div>
 
-  <div class="card">
+  <div class="card" id="s-look">
     <h2 style="font-family:var(--font-display);font-size:1.2rem;margin-bottom:8px">Внешний вид</h2>
     <div class="grid2">
       <div>
@@ -157,7 +172,7 @@ flash();
     </div>
   </div>
 
-  <div class="card">
+  <div class="card" id="s-steps">
     <h2 style="font-family:var(--font-display);font-size:1.2rem;margin-bottom:8px"><?= sv('steps_title', $s) !== '' ? 'Этапы работы' : 'Этапы работы' ?></h2>
     <label class="f" for="st-t">Заголовок блока</label>
     <input class="input" id="st-t" name="steps_title" value="<?= sv('steps_title', $s) ?>">
@@ -175,7 +190,7 @@ flash();
     </div>
   </div>
 
-  <div class="card">
+  <div class="card" id="s-contacts">
     <h2 style="font-family:var(--font-display);font-size:1.2rem;margin-bottom:8px">Контакты и мессенджеры</h2>
     <div class="grid2">
       <div>
@@ -234,7 +249,7 @@ flash();
     </div>
   </div>
 
-  <div class="card">
+  <div class="card" id="s-cart">
     <h2 style="font-family:var(--font-display);font-size:1.2rem;margin-bottom:8px">Корзина и апсейл</h2>
     <p style="font-size:.85rem;color:var(--ink-soft);margin:0 0 10px">Блок «Возможно, пригодится» в корзине: предлагайте товары, которых нет в заказе. Источники — отмеченные категории и галочка «в апсейле» у товара.</p>
     <div class="grid2">
@@ -255,7 +270,7 @@ flash();
     </div>
   </div>
 
-  <div class="card">
+  <div class="card" id="s-legal">
     <h2 style="font-family:var(--font-display);font-size:1.2rem;margin-bottom:8px">Юридические реквизиты</h2>
     <p style="font-size:.85rem;color:var(--ink-soft);margin:0 0 10px">Показываются на страницах «Политика ПДн» и «Публичная оферта» и в подвале сайта.</p>
     <div class="grid2">
@@ -280,7 +295,7 @@ flash();
     </div>
   </div>
 
-  <div class="card">
+  <div class="card" id="s-pay">
     <h2 style="font-family:var(--font-display);font-size:1.2rem;margin-bottom:8px">Оплата: ЮKassa / при получении</h2>
     <p style="font-size:.85rem;color:var(--ink-soft);margin:0 0 10px">Выключено — сайт принимает только оплату при получении. Включите и заполните ключи из личного кабинета ЮKassa (Интеграция → Ключи API), чтобы принимать карты и СБП онлайн.</p>
     <div class="grid2">
@@ -307,7 +322,7 @@ flash();
     </div>
   </div>
 
-  <div class="card">
+  <div class="card" id="s-guarantees">
     <h2 style="font-family:var(--font-display);font-size:1.2rem;margin-bottom:8px">Гарантии</h2>
     <label class="f" for="g-t">Заголовок блока</label>
     <input class="input" id="g-t" name="guarantees_title" value="<?= sv('guarantees_title', $s) ?>">
