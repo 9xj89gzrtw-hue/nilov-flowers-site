@@ -42,7 +42,7 @@ unset($pRow);
 ?><!DOCTYPE html>
 <html lang="ru">
 <head>
-<title><?= e(setting('shop_name', 'Магазин цветов')) ?> — свежие цветы с доставкой в Санкт-Петербурге</title>
+<title><?= e(setting('shop_name', 'Nilov Flowers')) ?> — свежие цветы с доставкой в Санкт-Петербурге</title>
 <meta name="description" content="<?= e(setting('shop_name', 'Nilov Flowers')) ?> — свежие букеты с утренней поставки, доставка по Санкт-Петербургу в день заказа. Полевая Сабировская ул., 47, корп. 1. Фото букета перед отправкой.">
 <meta property="og:title" content="<?= e(setting('shop_name', 'Nilov Flowers')) ?> — свежие цветы с доставкой в СПб">
 <meta property="og:description" content="Букеты с доставкой в день заказа по Санкт-Петербургу. Фото перед отправкой, свежие цветы с утренней поставки.">
@@ -229,8 +229,13 @@ unset($pRow);
         </fieldset>
         <fieldset class="order-form__payment">
           <legend>Способ оплаты</legend>
+          <?php if (setting('yk_enabled', '0') === '1'): ?>
           <label class="order-form__radio"><input type="radio" name="payment_method" value="online" checked><span>Картой или через СБП — сразу онлайн</span></label>
           <label class="order-form__radio"><input type="radio" name="payment_method" value="cash"><span>При получении</span></label>
+          <?php else: ?>
+          <label class="order-form__radio"><input type="radio" name="payment_method" value="cash" checked><span>При получении</span></label>
+          <input type="hidden" name="payment_method" value="cash">
+          <?php endif; ?>
         </fieldset>
         <div class="order-form__field">
           <label for="orderComment">Комментарий</label>

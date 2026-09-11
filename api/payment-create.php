@@ -47,8 +47,8 @@ $shopId = setting('yk_shop_id', '');
 $secret = setting('yk_secret_key', '');
 $baseUrl = 'https://flowers.interfood-catering.ru';
 
-/* Демо-режим: ключи не заданы — работаем как «оплата при получении» */
-if ($shopId === '' || $secret === '') {
+/* Демо-режим: ключи не заданы ИЛИ ЮKassa выключена в админке — оплата при получении */
+if ($shopId === '' || $secret === '' || setting('yk_enabled', '0') !== '1') {
     respond(200, ['redirectUrl' => '/order-thanks?id=' . $orderId, 'demo' => true]);
 }
 

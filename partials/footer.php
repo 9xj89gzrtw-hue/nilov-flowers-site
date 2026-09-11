@@ -4,7 +4,7 @@ require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/util.php';
 
-$siteName = setting('shop_name', 'Магазин цветов');
+$siteName = setting('shop_name', 'Nilov Flowers');
 $phone = setting('shop_phone', '');
 $address = setting('shop_address', '');
 $whatsapp = setting('shop_whatsapp', '');
@@ -17,14 +17,23 @@ $phoneDigits = preg_replace('/\D/', '', $phone) ?: '';
       <p class="site-footer__name"><?= e($siteName) ?></p>
       <?php if ($address !== ''): ?><p><?= e($address) ?></p><?php endif; ?>
       <?php if ($phone !== ''): ?><p><a class="site-footer__phone" href="tel:+<?= e($phoneDigits) ?>"><?= e($phone) ?></a></p><?php endif; ?>
-      <?php if ($whatsapp !== '' || $telegram !== ''): ?>
+      <?php if ($whatsapp !== '' || $telegram !== '' || setting('shop_vk', '') !== '' || setting('shop_max_link', '') !== '' || setting('shop_instagram', '') !== ''): ?>
       <p class="site-footer__messengers">
-        <?php if ($whatsapp !== ''): ?><a href="https://wa.me/<?= e($whatsapp) ?>" target="_blank" rel="noopener">WhatsApp</a><?php endif; ?>
+        <?php if ($whatsapp !== ''): ?><a href="https://wa.me/<?= e(preg_replace('/[^0-9]/', '', $whatsapp)) ?>" target="_blank" rel="noopener">WhatsApp</a><?php endif; ?>
         <?php if ($telegram !== ''): ?><a href="https://t.me/<?= e($telegram) ?>" target="_blank" rel="noopener">Telegram</a><?php endif; ?>
+        <?php if (setting('shop_vk', '') !== ''): ?><a href="<?= e(setting('shop_vk')) ?>" target="_blank" rel="noopener">VK</a><?php endif; ?>
+        <?php if (setting('shop_max_link', '') !== ''): ?><a href="<?= e(setting('shop_max_link')) ?>" target="_blank" rel="noopener">MAX</a><?php endif; ?>
+        <?php if (setting('shop_instagram', '') !== ''): ?>
+          <a href="<?= e(setting('shop_instagram')) ?>" target="_blank" rel="noopener">Instagram*</a>
+        <?php endif; ?>
+        <?php if (setting('shop_email', '') !== ''): ?><a href="mailto:<?= e(setting('shop_email')) ?>"><?= e(setting('shop_email')) ?></a><?php endif; ?>
       </p>
+      <?php if (setting('shop_instagram', '') !== ''): ?>
+      <p style="font-size:.72rem;color:var(--ink-soft);margin-top:4px">* Instagram принадлежит Meta, признанной экстремистской организацией, деятельность которой запрещена на территории РФ.</p>
+      <?php endif; ?>
       <?php endif; ?>
     </div>
-    <span>© <?= date('Y') ?> <?= e($siteName) ?> · <a href="/policy">Политика ПД</a></span>
+    <span>© <?= date('Y') ?> <?= e($siteName) ?> · <a href="/policy">Политика ПД</a> · <a href="/offer">Оферта</a></span>
   </div>
 </footer>
 

@@ -4,7 +4,7 @@ require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/util.php';
 
-$siteName = setting('shop_name', 'Магазин цветов');
+$siteName = setting('shop_name', 'Nilov Flowers');
 $phone = setting('shop_phone', '');
 $address = setting('shop_address', '');
 /* Режим корзины (settings → cart_mode): drawer | hybrid | page.

@@ -18,7 +18,7 @@ $subjectLabel = $subjectType === 'IP' ? 'ИП' : ($subjectType === 'OOO' ? 'ОО
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<title>Политика обработки персональных данных — <?= e(setting('shop_name', 'Магазин цветов')) ?></title>
+<title>Политика обработки персональных данных — <?= e(setting('shop_name', 'Nilov Flowers')) ?></title>
 <meta name="robots" content="noindex">
 <?php require __DIR__ . '/partials/head.php'; ?>
 </head>

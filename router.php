@@ -25,7 +25,7 @@ if (preg_match('#^/product/([a-z0-9\-]+)$#', $path, $m)) {
 if ($path === '/order-thanks') {
     http_response_code(200);
     header('Content-Type: text/html; charset=utf-8');
-    $shopName = 'Магазин цветов';
+    $shopName = 'Nilov Flowers';
     if (is_file(__DIR__ . '/includes/config.php')) {
         require_once __DIR__ . '/includes/config.php';
         require_once __DIR__ . '/includes/db.php';

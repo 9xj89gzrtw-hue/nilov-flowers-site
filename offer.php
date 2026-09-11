@@ -12,7 +12,7 @@ $legalAddress = setting('legal_address', '');
 
 $requisitesReady = $subjectType !== '' && $subjectName !== '' && $legalNumber !== '';
 $subjectLabel = $subjectType === 'IP' ? 'ИП' : ($subjectType === 'OOO' ? 'ООО' : '');
-$shopName = setting('shop_name', 'Магазин цветов');
+$shopName = setting('shop_name', 'Nilov Flowers');
 ?>
 <!DOCTYPE html>
 <html lang="ru">

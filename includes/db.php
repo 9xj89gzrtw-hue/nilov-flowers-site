@@ -176,7 +176,9 @@ function migrateSchema(PDO $pdo): void
         ('upsell_title', 'Возможно, пригодится'),
         ('upsell_categories', ''),
         ('yandex_reviews_id', ''),
-        ('site_favicon', '')");
+        ('site_favicon', ''),
+        ('yk_enabled', '0'),
+        ('shop_instagram', '')");
     /* admin_users: email-логин, имя, роль, уведомления, запасной email */
     $pdo->exec("CREATE TABLE IF NOT EXISTS admin_users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

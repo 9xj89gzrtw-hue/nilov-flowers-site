@@ -47,14 +47,13 @@ if ($trust === []) {
 ?><!DOCTYPE html>
 <html lang="ru">
 <head>
-<title><?= e($product['name']) ?> — <?= e(setting('shop_name', 'Магазин цветов')) ?></title>
+<title><?= e($product['name']) ?> — <?= e(setting('shop_name', 'Nilov Flowers')) ?></title>
 <meta property="og:title" content="<?= e($product['name']) ?> — <?= e(setting('shop_name', 'Nilov Flowers')) ?>">
 <meta property="og:description" content="<?= e(mb_substr($product['description'] !== '' ? $product['description'] : $product['name'], 0, 200)) ?>">
 <meta property="og:url" content="https://flowers.interfood-catering.ru/product/<?= e($product['slug']) ?>">
 <meta property="og:type" content="product">
 <?= $img !== '' ? '<meta property="og:image" content="https://flowers.interfood-catering.ru' . e($img) . '">' : '' ?>
 <meta name="description" content="<?= e(mb_substr($product['description'] !== '' ? $product['description'] : $product['name'], 0, 160)) ?>">
-<meta name="description" content="<?= e(mb_substr($product['description'], 0, 160)) ?>">
 <?php require __DIR__ . '/partials/head.php'; ?>
 <?php /* JSON-LD Product+Offer — canonical 2026 (ecorn.agency structured-data-ecommerce) */ ?>
 <script type="application/ld+json">
