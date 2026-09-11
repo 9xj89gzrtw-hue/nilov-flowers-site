@@ -36,7 +36,7 @@ if (empty($data['items']) && isset($data['product_id'])) {
 }
 
 $errors = [];
-$name = trim((string)($data['name'] ?? ''));
+$name = mb_substr(trim((string)($data['name'] ?? '')), 0, 120); /* LOW-фикс стресс-теста: 10KB имя не копим */
 $phone = trim((string)($data['phone'] ?? ''));
 $email = trim((string)($data['email'] ?? ''));
 $comment = mb_substr(trim((string)($data['comment'] ?? '')), 0, 2000);

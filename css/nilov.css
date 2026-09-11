@@ -272,13 +272,14 @@ img.product-card__img{
   transition:color .2s,background .2s,opacity .2s;
 }
 
-/* ---------- Минимальная читаемость на мобиле (fix критика: 13 блоков <12px) ---------- */
+/* ---------- Минимальная читаемость на мобиле (fix критика: 13→5→0 блоков <12px) ---------- */
 @media(max-width:820px){
   .order-form__hint,.hero__meta span,.site-footer,.trust-strip__list,
   .product-card__cat,.product-card__urgent-note,.nv-marquee__track span{
     font-size:.82rem!important;
   }
-  .product-card__badge{font-size:.7rem}
+  .product-card__badge{font-size:.75rem!important}
+  .how-it-works__num{font-size:.8rem!important}
   .breadcrumbs{font-size:.85rem}
 }
 

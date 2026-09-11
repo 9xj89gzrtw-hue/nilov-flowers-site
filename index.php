@@ -222,7 +222,7 @@ if ($__heroPre !== '') {
                 <svg viewBox="0 0 80 94" style="width:30%;margin:auto;color:var(--blue)" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="40" cy="30" r="11"/><circle cx="26" cy="38" r="8"/><circle cx="54" cy="38" r="8"/><path d="M40 41v20M40 61c-8 6-14 14-16 25M40 61c8 6 14 14 16 25"/></svg>
               <?php endif; ?>
             </a>
-            <?php if ($isSale): ?><span class="product-card__badge">Скидка</span><?php endif; ?>
+            <?php if ($isSale): ?><span class="product-card__badge">Скидка до конца недели</span><?php endif; ?>
             <?php if ((int)($p['is_urgent'] ?? 0) === 1): ?><span class="product-card__badge product-card__badge--urgent">Успеть сегодня</span><?php endif; ?>
             <button type="button" class="product-card__cta" data-order-cta
               data-product-id="<?= (int)$p['id'] ?>"
@@ -319,7 +319,7 @@ if ($__heroPre !== '') {
           <span class="order-form__hint" id="orderEmailHint" hidden>На этот адрес придёт чек об оплате</span>
           <span class="order-form__error" id="orderEmailError"></span>
         </div>
-        <p class="order-form__hint">Укажите телефон и/или email — как удобнее для связи</p>
+        <p class="order-form__hint" id="contactHint">Укажите телефон и/или email — как удобнее для связи</p>
         <fieldset class="order-form__nested">
           <legend>Доставка</legend>
           <div class="order-form__field">
@@ -369,6 +369,7 @@ if ($__heroPre !== '') {
         <span class="order-form__error" id="orderPdConsentError"></span>
         <p class="order-form__total" id="orderTotal"></p>
         <button type="submit" class="btn btn--accent order-form__submit" id="orderSubmit">Оплатить заказ</button>
+        <p class="order-form__hint">Заказы принимаем ежедневно до 20:00 — оформленные сегодня доставим сегодня же.</p>
         <p class="order-form__status" id="orderStatus" role="status" hidden></p>
       </form>
     </div>

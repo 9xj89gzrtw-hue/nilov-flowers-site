@@ -182,6 +182,11 @@
     if (emailHint) emailHint.hidden = !online;
     const req = document.getElementById('orderEmailReq');
     if (req) req.hidden = !online; /* fix критика: обязательность email видна ДО сабмита */
+    /* fix R2: подсказка контактов не противоречит способу оплаты */
+    const ch = document.getElementById('contactHint');
+    if (ch) ch.textContent = online
+      ? 'Укажите телефон и email — на email придёт чек об онлайн-оплате'
+      : 'Укажите телефон и/или email — как удобнее для связи';
   }
 
   form.querySelectorAll('input[name="payment_method"]').forEach(function (el) {
