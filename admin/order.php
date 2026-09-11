@@ -9,6 +9,13 @@ require_once __DIR__ . '/../includes/db.php';
 ensureAdminUser();
 requireAdmin();
 
+/* CSRF: админ-POST без валидного токена — отказ */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !csrf_check()) {
+    $back = $_SERVER['HTTP_REFERER'] ?? '/admin/index.php';
+    header('Location: ' . $back);
+    exit;
+}
+
 $pdo = db();
 $id = (int)($_GET['id'] ?? 0);
 if ($id <= 0) {
@@ -122,6 +129,7 @@ flash();
 <div class="card">
   <h2 style="font-family:var(--font-display);font-size:1.05rem;margin-bottom:6px">Изменить статус</h2>
   <form method="post" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+    <?= csrf_field() ?>
     <input type="hidden" name="action" value="status">
     <select name="status" style="width:auto">
       <?php foreach (statuses() as $key => $label): if ($key === 'done') continue; ?>
@@ -134,6 +142,7 @@ flash();
   <h2 style="font-family:var(--font-display);font-size:1.05rem;margin-bottom:2px">Выполнен (подтверждение вручения)</h2>
   <p style="font-size:.85rem;color:var(--ink-soft);margin-bottom:8px">Чтобы отметить заказ «Выполненным», приложите фото вручения (букет и ориентир: дом, подъезд) — или укажите причину, если фото нет.</p>
   <form method="post" enctype="multipart/form-data">
+    <?= csrf_field() ?>
     <input type="hidden" name="action" value="handover">
     <label class="f" for="hp">Фото вручения</label>
     <input class="input" id="hp" name="handover_photo" type="file" accept="image/*">

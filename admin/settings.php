@@ -6,6 +6,13 @@ require_once __DIR__ . '/../includes/layout.php';
 ensureAdminUser();
 requireAdmin();
 
+/* CSRF: админ-POST без валидного токена — отказ */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !csrf_check()) {
+    $back = $_SERVER['HTTP_REFERER'] ?? '/admin/index.php';
+    header('Location: ' . $back);
+    exit;
+}
+
 $pdo = db();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -41,6 +48,7 @@ flash();
 <h1>Настройки магазина</h1>
 
 <form method="post" enctype="multipart/form-data">
+  <?= csrf_field() ?>
   <div class="card">
     <h2 style="font-family:var(--font-display);font-size:1.2rem;margin-bottom:8px">Общие</h2>
     <div class="grid2">

@@ -5,11 +5,15 @@ ensureAdminUser();
 
 $err = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (adminLogin(trim((string)($_POST['login'] ?? '')), (string)($_POST['password'] ?? ''))) {
-        header('Location: /admin/index.php');
-        exit;
+    try {
+        if (adminLogin(trim((string)($_POST['login'] ?? '')), (string)($_POST['password'] ?? ''))) {
+            header('Location: /admin/index.php');
+            exit;
+        }
+        $err = 'Неверный логин или пароль';
+    } catch (RuntimeException $e) {
+        $err = $e->getMessage();
     }
-    $err = 'Неверный логин или пароль';
 }
 if (isAdmin()) {
     header('Location: /admin/index.php');
@@ -47,7 +51,9 @@ button:hover{background:#d46a90}
   <label for="password">Пароль</label>
   <input id="password" name="password" type="password" autocomplete="current-password" required>
   <button type="submit">Войти</button>
+  <?= csrf_field() ?>
   <?php if ($err !== ''): ?><p class="err"><?= e($err) ?></p><?php endif; ?>
+  <a href="/admin/forgot.php" style="display:block;margin-top:14px;text-align:center;font-size:.85rem;color:var(--ink-soft)">Забыли пароль?</a>
 </form>
 </body>
 </html>

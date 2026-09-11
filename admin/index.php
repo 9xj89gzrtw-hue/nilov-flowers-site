@@ -6,6 +6,13 @@ require_once __DIR__ . '/../includes/layout.php';
 ensureAdminUser();
 requireAdmin();
 
+/* CSRF: админ-POST без валидного токена — отказ */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !csrf_check()) {
+    $back = $_SERVER['HTTP_REFERER'] ?? '/admin/index.php';
+    header('Location: ' . $back);
+    exit;
+}
+
 $pdo = db();
 $flash_err = false;
 
@@ -119,11 +126,13 @@ flash();
           <a href="/admin/order.php?id=<?= (int)$o['id'] ?>">Открыть</a>
           <?php if ($o['status'] === 'new'): ?>
           <form method="post" onsubmit="return confirm('Подтвердить заказ №<?= (int)$o['id'] ?>?')">
+            <?= csrf_field() ?>
             <input type="hidden" name="action" value="status"><input type="hidden" name="id" value="<?= (int)$o['id'] ?>">
             <input type="hidden" name="status" value="confirmed">
             <button type="submit">Подтвердить</button>
           </form>
           <form method="post" onsubmit="return confirm('Отменить заказ №<?= (int)$o['id'] ?>?')">
+            <?= csrf_field() ?>
             <input type="hidden" name="action" value="status"><input type="hidden" name="id" value="<?= (int)$o['id'] ?>">
             <input type="hidden" name="status" value="canceled">
             <button type="submit" class="danger">Отменить</button>
@@ -132,6 +141,7 @@ flash();
           <a href="/admin/order.php?id=<?= (int)$o['id'] ?>">Выполнен →</a>
           <?php elseif ($o['status'] === 'canceled'): ?>
           <form method="post">
+            <?= csrf_field() ?>
             <input type="hidden" name="action" value="status"><input type="hidden" name="id" value="<?= (int)$o['id'] ?>">
             <input type="hidden" name="status" value="new">
             <button type="submit">Вернуть в «Новые»</button>
