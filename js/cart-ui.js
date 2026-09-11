@@ -106,7 +106,7 @@
         image: cta.dataset.productImage || '',
       });
     });
-    if (candidates.length === 0) {
+    if (candidates.length === 0 || window.UPSELL_ENABLED === 0) {
       upsellEl.hidden = true;
       upsellItemsEl.innerHTML = '';
       return;
