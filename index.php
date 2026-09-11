@@ -257,6 +257,20 @@ if ($__heroPre !== '') {
   <section class="section how-it-works" id="how-it-works">
     <div class="wrap">
       <h2 class="section-title"><?= e(setting('steps_title', 'Как это работает')) ?></h2>
+      <?php /* Цветок-блум: раскрывается по скроллу (CSS animation-timeline: view(), Chrome 115+;
+               без поддержки и при reduced-motion — просто статичный цветок. aria-hidden: декор. */ ?>
+      <svg class="nv-bloom" viewBox="0 0 200 120" fill="none" aria-hidden="true">
+        <g class="nv-bloom-petals">
+          <ellipse cx="100" cy="58" rx="22" ry="44" fill="currentColor" opacity=".32" transform="rotate(-38 100 88)"/>
+          <ellipse cx="100" cy="58" rx="22" ry="44" fill="currentColor" opacity=".32" transform="rotate(-14 100 88)"/>
+          <ellipse cx="100" cy="58" rx="22" ry="44" fill="currentColor" opacity=".32" transform="rotate(14 100 88)"/>
+          <ellipse cx="100" cy="58" rx="22" ry="44" fill="currentColor" opacity=".32" transform="rotate(38 100 88)"/>
+        </g>
+        <g class="nv-bloom-core">
+          <circle cx="100" cy="74" r="15" fill="currentColor" opacity=".55"/>
+          <path d="M100 96c-14-8-30-18-30-32 0-8 5-14 12-16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+        </g>
+      </svg>
       <div class="how-it-works__grid">
         <?php foreach ([1, 2, 3] as $n):
             $step = setting('step_' . $n);

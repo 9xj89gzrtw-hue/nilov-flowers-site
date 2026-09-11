@@ -28,10 +28,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     foreach ($keys as $k) {
         $values[$k] = trim((string)($_POST[$k] ?? ''));
     }
-    /* Чекбоксы: 0 если не пришли */
-    foreach (['yk_enabled', 'upsell_enabled', 'hero_text_enabled', 'yandex_reviews_enabled'] as $cb) {
+    /* Чекбоксы: 0 если не пришли (снятие галочки = пусто в POST) */
+    foreach (['yk_enabled', 'upsell_enabled', 'hero_text_enabled', 'yandex_reviews_enabled',
+              'wa_enabled', 'tg_enabled', 'vk_enabled', 'ig_enabled', 'email_enabled', 'max_enabled',
+              'notify_enabled'] as $cb) {
         $values[$cb] = isset($_POST[$cb]) ? '1' : '0';
     }
+    /* cart_mode — select, не чекбокс: валидируем значение из POST */
+    $values['cart_mode'] = in_array($_POST['cart_mode'] ?? '', ['drawer', 'page'], true) ? $_POST['cart_mode'] : 'drawer';
     $hero = saveUpload($_FILES['hero_image'] ?? [], IMG_UPLOADS_DIR);
     if ($hero !== '') {
         deleteImage(setting('hero_image'), IMG_UPLOADS_DIR);
