@@ -5,6 +5,36 @@
    prefers-reduced-motion: полностью выключает анимации.
    ================================================================ */
 
+/* ---------- Marquee «Доставка по СПб» (CSS-only, spec S6) ---------- */
+.nv-marquee{
+  overflow:hidden;
+  border-block:1px solid var(--line,rgba(43,45,47,.12));
+  background:var(--ink,#2B2D2F);
+  color:var(--cream,#F6F1E6);
+  padding:10px 0;
+}
+.nv-marquee__track{
+  display:flex;
+  gap:2.5rem;
+  width:max-content;
+  animation:nv-marquee 28s linear infinite;
+}
+.nv-marquee__track span{
+  font-size:.78rem;
+  font-weight:500;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  white-space:nowrap;
+}
+.nv-marquee__dot{color:var(--rose,#F4A9BE)}
+@keyframes nv-marquee{
+  from{transform:translateX(0)}
+  to{transform:translateX(-50%)}
+}
+@media (prefers-reduced-motion: reduce){
+  .nv-marquee__track{animation:none}
+}
+
 /* ---------- Брендовый wow-hero «Nilov Flowers» ---------- */
 /* hero__hook перестал быть H1: теперь это строка-хук под брендом,
    поэтому сбиваем старый крупный кегль до hook-масштаба */

@@ -137,6 +137,18 @@ unset($pRow);
     </div>
   </section>
 
+  <!-- MARQUEE: доставка по СПб (CSS-only, дублируемая лента aria-hidden) -->
+  <div class="nv-marquee" aria-hidden="true">
+    <div class="nv-marquee__track">
+      <?php for ($mi = 0; $mi < 2; $mi++): ?>
+      <span>Доставка по Санкт-Петербургу в день заказа</span><span class="nv-marquee__dot">✿</span>
+      <span>Свежие цветы с утренней поставки</span><span class="nv-marquee__dot">✿</span>
+      <span>Фото букета перед отправкой</span><span class="nv-marquee__dot">✿</span>
+      <span>Заменяем увядшие в день доставки</span><span class="nv-marquee__dot">✿</span>
+      <?php endfor; ?>
+    </div>
+  </div>
+
   <!-- TRUST STRIP -->
   <?php if ($guarantees !== []): ?>
   <section class="trust-strip">
