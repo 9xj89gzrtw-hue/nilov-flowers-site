@@ -151,5 +151,79 @@ function migrateSchema(PDO $pdo): void
         ('legal_name', ''),
         ('legal_number', ''),
         ('legal_address', ''),
-        ('legal_contact_email', '')");
+        ('legal_contact_email', ''),
+        ('hero_text_enabled', '1'),
+        ('notify_enabled', '1'),
+        ('notify_email', ''),
+        ('tg_chat_id', ''),
+        ('max_chat_id', ''),
+        ('telegram_bot_token', ''),
+        ('max_api_token', ''),
+        ('quiet_from', ''),
+        ('quiet_to', ''),
+        ('shop_timezone', 'Europe/Moscow'),
+        ('shop_hours', ''),
+        ('shop_email', ''),
+        ('shop_vk', ''),
+        ('shop_max_link', ''),
+        ('header_phone', ''),
+        ('header_address', ''),
+        ('vat_rate', 'none'),
+        ('yk_shop_id', ''),
+        ('yk_secret_key', ''),
+        ('upsell_enabled', '1'),
+        ('upsell_limit', '3'),
+        ('upsell_title', 'Возможно, пригодится'),
+        ('upsell_categories', ''),
+        ('yandex_reviews_id', ''),
+        ('site_favicon', '')");
+    /* admin_users: email-логин, имя, роль, уведомления, запасной email */
+    $pdo->exec("CREATE TABLE IF NOT EXISTS admin_users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        login TEXT NOT NULL UNIQUE,
+        password_hash TEXT NOT NULL
+    )");
+    $auCols = array_column($pdo->query("PRAGMA table_info(admin_users)")->fetchAll(), 'name');
+    foreach ([
+        ['email', "TEXT NOT NULL DEFAULT ''"],
+        ['name', "TEXT NOT NULL DEFAULT ''"],
+        ['role', "TEXT NOT NULL DEFAULT 'owner'"],
+        ['notify_enabled', "INTEGER NOT NULL DEFAULT 1"],
+        ['notify_email', "TEXT NOT NULL DEFAULT ''"],
+        ['backup_email', "TEXT NOT NULL DEFAULT ''"],
+    ] as [$col, $def]) {
+        if (!in_array($col, $auCols, true)) {
+            $pdo->exec("ALTER TABLE admin_users ADD COLUMN {$col} {$def}");
+        }
+    }
+    /* password_resets: одноразовые токены (хеш, TTL) — паттерн codeshack.io 2026 */
+    $pdo->exec("CREATE TABLE IF NOT EXISTS password_resets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL REFERENCES admin_users(id) ON DELETE CASCADE,
+        token_hash TEXT NOT NULL,
+        expires_at TEXT NOT NULL,
+        used INTEGER NOT NULL DEFAULT 0
+    )");
+    /* login_attempts: rate-limit 5/15мин по IP */
+    $pdo->exec("CREATE TABLE IF NOT EXISTS login_attempts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ip TEXT NOT NULL,
+        attempted_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+    )");
+    $pdo->exec("DELETE FROM login_attempts WHERE attempted_at < datetime('now','localtime','-15 minutes')");
+    /* orders: фискальные чеки ЮKassa (предоплата/зачёт) */
+    $ordCols = array_column($pdo->query("PRAGMA table_info(orders)")->fetchAll(), 'name');
+    foreach ([
+        ['receipt_prepay', "TEXT NOT NULL DEFAULT ''"],
+        ['receipt_offset', "TEXT NOT NULL DEFAULT ''"],
+    ] as [$col, $def]) {
+        if (!in_array($col, $ordCols, true)) {
+            $pdo->exec("ALTER TABLE orders ADD COLUMN {$col} {$def}");
+        }
+    }
+    /* products: галочка «показывать в апсейле корзины» */
+    $prodCols2 = array_column($pdo->query("PRAGMA table_info(products)")->fetchAll(), 'name');
+    if (!in_array('show_in_upsell', $prodCols2, true)) {
+        $pdo->exec('ALTER TABLE products ADD COLUMN show_in_upsell INTEGER NOT NULL DEFAULT 0');
+    }
 }
