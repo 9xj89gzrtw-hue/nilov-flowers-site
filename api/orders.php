@@ -9,6 +9,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/util.php';
+require_once __DIR__ . '/../includes/notify.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -145,5 +146,7 @@ try {
     $pdo->rollBack();
     respond(500, ['errors' => ['internal']]);
 }
+
+notifyNewOrder($orderId);
 
 respond(201, ['id' => $orderId, 'paymentToken' => $paymentToken]);

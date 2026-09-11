@@ -16,20 +16,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !csrf_check()) {
 $pdo = db();
 $flash_err = false;
 
-// Смена статуса (кроме «Выполнен» — он через /admin/order.php с подтверждением вручения)
+// Смена статуса (кроме «Выполнен» — он через /admin/order.php с подтверждением вручения).
+// Разрешённые переходы: new→confirmed/canceled, confirmed→canceled/unredeemed,
+// canceled/unredeemed→new. done — финальный, через вручение.
+$allowedTransitions = [
+    'new' => ['confirmed', 'canceled'],
+    'confirmed' => ['canceled', 'unredeemed'],
+    'canceled' => ['new'],
+    'unredeemed' => ['new'],
+];
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'status') {
     $id = (int)($_POST['id'] ?? 0);
     $status = (string)($_POST['status'] ?? '');
-    if ($id > 0 && array_key_exists($status, statuses())) {
-        if ($status === 'done') {
-            flash('Для статуса «Выполнен» заполните подтверждение вручения на странице заказа', true);
-        } else {
-            $pdo->prepare('UPDATE orders SET status = :s WHERE id = :i')
-                ->execute([':s' => $status, ':i' => $id]);
-            flash('Статус заказа обновлён');
-        }
+    $current = '';
+    if ($id > 0) {
+        $st = $pdo->prepare('SELECT status FROM orders WHERE id = :i');
+        $st->execute([':i' => $id]);
+        $current = (string)($st->fetchColumn() ?: '');
     }
-    header('Location: /admin/index.php');
+    if ($status === 'done') {
+        flash('Для статуса «Выполнен» заполните подтверждение вручения на странице заказа', true);
+    } elseif ($current !== '' && in_array($status, $allowedTransitions[$current] ?? [], true)) {
+        $pdo->prepare('UPDATE orders SET status = :s WHERE id = :i')
+            ->execute([':s' => $status, ':i' => $id]);
+        flash('Статус заказа обновлён');
+    } else {
+        flash('Недопустимый переход статуса', true);
+    }
+    header('Location: /admin/index.php' . (isset($_POST['page']) && (int)$_POST['page'] > 1 ? '?page=' . (int)$_POST['page'] : ''));
     exit;
 }
 
@@ -58,7 +72,27 @@ if ($dateTo !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateTo)) {
 $sql .= ' ORDER BY o.id DESC';
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
-$orders = $stmt->fetchAll();
+$allIds = array_column($stmt->fetchAll(), 'id');
+
+// Пагинация: 30 заказов на страницу
+$perPage = 30;
+$totalOrders = count($allIds);
+$pages = max(1, (int)ceil($totalOrders / $perPage));
+$page = (int)($_GET['page'] ?? 1);
+if ($page < 1 || $page > $pages) {
+    $page = 1;
+}
+$orders = [];
+if ($allIds !== []) {
+    $pageIds = array_slice($allIds, ($page - 1) * $perPage, $perPage);
+    $placeholders = implode(',', array_fill(0, count($pageIds), '?'));
+    $orders = $pdo->prepare('SELECT o.*, z.name AS zone_name FROM orders o
+        LEFT JOIN delivery_zones z ON z.id = o.delivery_zone_id WHERE o.id IN (' . $placeholders . ')
+        ORDER BY o.id DESC');
+    $orders->execute($pageIds);
+    $orders = $orders->fetchAll();
+}
+$qs = array_filter($_GET, fn($v, $k) => $v !== '' && $k !== 'page', ARRAY_FILTER_USE_BOTH);
 
 $itemsStmt = $pdo->prepare('SELECT name, price, qty FROM order_items WHERE order_id = :i');
 
@@ -128,24 +162,32 @@ flash();
           <form method="post" onsubmit="return confirm('Подтвердить заказ №<?= (int)$o['id'] ?>?')">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="status"><input type="hidden" name="id" value="<?= (int)$o['id'] ?>">
-            <input type="hidden" name="status" value="confirmed">
+            <input type="hidden" name="status" value="confirmed"><input type="hidden" name="page" value="<?= $page ?>">
             <button type="submit">Подтвердить</button>
           </form>
           <form method="post" onsubmit="return confirm('Отменить заказ №<?= (int)$o['id'] ?>?')">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="status"><input type="hidden" name="id" value="<?= (int)$o['id'] ?>">
-            <input type="hidden" name="status" value="canceled">
+            <input type="hidden" name="status" value="canceled"><input type="hidden" name="page" value="<?= $page ?>">
             <button type="submit" class="danger">Отменить</button>
           </form>
           <?php elseif ($o['status'] === 'confirmed'): ?>
           <a href="/admin/order.php?id=<?= (int)$o['id'] ?>">Выполнен →</a>
-          <?php elseif ($o['status'] === 'canceled'): ?>
+          <form method="post" onsubmit="return confirm('Отметить заказ №<?= (int)$o['id'] ?> как «Не выкуплен»?')">
+            <input type="hidden" name="action" value="status"><input type="hidden" name="id" value="<?= (int)$o['id'] ?>">
+            <input type="hidden" name="status" value="unredeemed"><input type="hidden" name="page" value="<?= $page ?>">
+            <button type="submit" class="danger">Не выкуплен</button>
+          </form>
+          <?php elseif ($o['status'] === 'canceled' || $o['status'] === 'unredeemed'): ?>
           <form method="post">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="status"><input type="hidden" name="id" value="<?= (int)$o['id'] ?>">
-            <input type="hidden" name="status" value="new">
+            <input type="hidden" name="status" value="new"><input type="hidden" name="page" value="<?= $page ?>">
             <button type="submit">Вернуть в «Новые»</button>
           </form>
+          <?php endif; ?>
+          <?php if (($o['receipt_prepay'] ?? '') === 'failed' || ($o['receipt_offset'] ?? '') === 'failed'): ?>
+          <a href="/admin/order.php?id=<?= (int)$o['id'] ?>&retry=1">Пробить чек зачёта</a>
           <?php endif; ?>
         </div>
       </td>
@@ -153,4 +195,17 @@ flash();
   </table>
 </div>
 <?php endforeach; endif; ?>
+
+<?php if ($pages > 1): ?>
+<div class="card" style="text-align:center">
+  <?php for ($p = 1; $p <= $pages; $p++): ?>
+    <?php if ($p === $page): ?>
+      <strong style="margin:0 6px"><?= $p ?></strong>
+    <?php else: ?>
+      <a style="margin:0 6px" href="/admin/index.php?<?= e(http_build_query(array_merge($qs, ['page' => $p]))) ?>"><?= $p ?></a>
+    <?php endif; ?>
+  <?php endfor; ?>
+  <small style="display:block;color:var(--ink-soft)"><?= $totalOrders ?> заказ(ов), страница <?= $page ?> из <?= $pages ?></small>
+</div>
+<?php endif; ?>
 <?php adminFooter(); ?>

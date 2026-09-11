@@ -65,6 +65,7 @@ function statuses(): array
         'confirmed' => 'Подтверждён',
         'done' => 'Выполнен',
         'canceled' => 'Отменён',
+        'unredeemed' => 'Не выкуплен',
     ];
 }
 
