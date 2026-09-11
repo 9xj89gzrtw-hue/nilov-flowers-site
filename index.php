@@ -45,6 +45,25 @@ unset($pRow);
 <title><?= e(setting('shop_name', 'Магазин цветов')) ?> — свежие цветы с доставкой</title>
 <meta name="description" content="<?= e(setting('hero_subtitle')) ?>">
 <?php require __DIR__ . '/partials/head.php'; ?>
+<?php /* JSON-LD Florist — canonical 2026 (hanafloristpos.com/schema-guide, thestacc.com/local-business-schema) */ ?>
+<script type="application/ld+json">
+<?= json_encode([
+    '@context' => 'https://schema.org',
+    '@type' => 'Florist',
+    'name' => setting('shop_name', 'Nilov Flowers'),
+    'url' => 'https://flowers.interfood-catering.ru/',
+    'telephone' => setting('shop_phone', ''),
+    'address' => [
+        '@type' => 'PostalAddress',
+        'streetAddress' => 'Полевая Сабировская ул., 47, корп. 1',
+        'addressLocality' => 'Санкт-Петербург',
+        'addressCountry' => 'RU',
+    ],
+    'addressString' => setting('shop_address', ''),
+    'priceRange' => '₽₽',
+    'image' => setting('hero_image', '') !== '' ? '/img/uploads/' . rawurlencode(setting('hero_image')) : '',
+] + (setting('yandex_reviews_id') !== '' ? ['sameAs' => ['https://yandex.ru/maps/org/' . setting('yandex_reviews_id')]] : []), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>
+</script>
 </head>
 <body>
 <?php require __DIR__ . '/partials/header.php'; ?>

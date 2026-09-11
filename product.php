@@ -50,6 +50,22 @@ if ($trust === []) {
 <title><?= e($product['name']) ?> — <?= e(setting('shop_name', 'Магазин цветов')) ?></title>
 <meta name="description" content="<?= e(mb_substr($product['description'], 0, 160)) ?>">
 <?php require __DIR__ . '/partials/head.php'; ?>
+<?php /* JSON-LD Product+Offer — canonical 2026 (ecorn.agency structured-data-ecommerce) */ ?>
+<script type="application/ld+json">
+<?= json_encode([
+    '@context' => 'https://schema.org',
+    '@type' => 'Product',
+    'name' => $product['name'],
+    'description' => $product['description'] !== '' ? $product['description'] : $product['name'],
+    'image' => $img !== '' ? [$img] : [],
+    'offers' => [
+        '@type' => 'Offer',
+        'price' => $price,
+        'priceCurrency' => 'RUB',
+        'availability' => $product['is_urgent'] == 1 ? 'https://schema.org/InStock' : 'https://schema.org/InStock',
+    ],
+] + ($product['sale_price'] !== null ? ['basePrice' => (int)$product['price']] : []), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>
+</script>
 </head>
 <body>
 <?php require __DIR__ . '/partials/header.php'; ?>
