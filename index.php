@@ -104,30 +104,24 @@ if ($__heroPre !== '') {
 <main>
   <!-- HERO: Nilov Flowers wow-заголовок + фото в арке -->
   <section class="hero">
-    <div class="nv-petals" aria-hidden="true">
-      <svg class="nv-petal--a" viewBox="0 0 100 100" fill="currentColor"><path d="M50 4C66 22 82 40 82 60c0 20-14 36-32 36S18 80 18 60C18 40 34 22 50 4z" opacity=".55"/><path d="M50 4c-16 18-32 36-32 56 0 20 14 36 32 36" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
-      <svg class="nv-petal--b" viewBox="0 0 100 100" fill="currentColor"><path d="M50 4C66 22 82 40 82 60c0 20-14 36-32 36S18 80 18 60C18 40 34 22 50 4z" opacity=".55"/><path d="M50 4c-16 18-32 36-32 56 0 20 14 36 32 36" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
-      <svg viewBox="0 0 100 100" fill="currentColor"><path d="M50 4C66 22 82 40 82 60c0 20-14 36-32 36S18 80 18 60C18 40 34 22 50 4z" opacity=".55"/><path d="M50 4c-16 18-32 36-32 56 0 20 14 36 32 36" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
-    </div>
     <div class="wrap hero__grid">
       <div>
         <?php if ($heroTextEnabled): ?>
-        <?php /* Брендовый wow-H1: «Nilov Flowers» с split-анимацией.
-               hero_title остаётся редактируемым хуком-подзаголовком. */ ?>
+        <p class="nv-hero-eyebrow nv-hero-sub">Санкт-Петербург · доставка в день заказа</p>
         <h1 class="nv-hero-brand" id="nvBrand" aria-label="Nilov Flowers">
           <?php
           /* По-буквенный stagger (spec H1): «Nilov» прямой, «Flow» розовым курсивом + «ers».
              Буквы — статический PHP-split, JS не нужен; aria-label сохраняет доступность. */
           $brandLines = [
               ['text' => 'Nilov', 'accent' => 0],
-              ['text' => 'Flowers', 'accent' => 4], // первые 4 буквы — акцент
+              ['text' => 'Flowers', 'accent' => 7], // всё слово — мягкий розовый акцент, без курсива
           ];
           $gi = 0; // глобальный индекс буквы — каскад идёт по буквам, а не по строкам
           foreach ($brandLines as $line):
           ?>
           <span class="nv-line">
             <?php foreach (mb_str_split($line['text']) as $ci => $ch): ?>
-              <span class="nv-ch" style="--i:<?= $gi++ ?><?= $ci < $line['accent'] ? ';color:var(--rose-deep,#E2799C);font-style:italic' : '' ?>"><?= e($ch) ?></span>
+              <span class="nv-ch" style="--i:<?= $gi++ ?><?= $ci < $line['accent'] ? ';color:var(--rose-deep,#E2799C)' : '' ?>"><?= e($ch) ?></span>
             <?php endforeach; ?>
           </span>
           <?php endforeach; ?>
@@ -147,6 +141,11 @@ if ($__heroPre !== '') {
         <?php endif; ?>
       </div>
       <div class="hero__media">
+        <div class="nv-petals" aria-hidden="true">
+          <svg class="nv-petal--a" viewBox="0 0 100 100" fill="currentColor"><path d="M50 4C66 22 82 40 82 60c0 20-14 36-32 36S18 80 18 60C18 40 34 22 50 4z" opacity=".55"/><path d="M50 4c-16 18-32 36-32 56 0 20 14 36 32 36" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+          <svg class="nv-petal--b" viewBox="0 0 100 100" fill="currentColor"><path d="M50 4C66 22 82 40 82 60c0 20-14 36-32 36S18 80 18 60C18 40 34 22 50 4z" opacity=".55"/><path d="M50 4c-16 18-32 36-32 56 0 20 14 36 32 36" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+          <svg viewBox="0 0 100 100" fill="currentColor"><path d="M50 4C66 22 82 40 82 60c0 20-14 36-32 36S18 80 18 60C18 40 34 22 50 4z" opacity=".55"/><path d="M50 4c-16 18-32 36-32 56 0 20 14 36 32 36" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+        </div>
         <?php if (setting('hero_image') !== ''): ?>
           <?php
           /* Hero в WebP если есть (LCP-критично: 163KB webp vs 509KB jpg), фолбэк jpg */
@@ -179,8 +178,8 @@ if ($__heroPre !== '') {
     </div>
   </div>
 
-  <!-- TRUST STRIP -->
-  <?php if ($guarantees !== []): ?>
+  <!-- TRUST STRIP: скрыт на главной (дублирует marquee выше), живёт на product.php -->
+  <?php if (false && $guarantees !== []): ?>
   <section class="trust-strip">
     <div class="wrap">
       <ul class="trust-strip__list">
