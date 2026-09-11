@@ -15,6 +15,9 @@ RewriteRule ^api/payment/create$ api/payment-create.php [L]
 # Карточка товара
 RewriteRule ^product/([a-z0-9\-]+)$ product.php?slug=$1 [L,QSA]
 
+# Страница благодарности
+RewriteRule ^order-thanks$ order-thanks.php [L,QSA]
+
 # Всё остальное — на главную
 RewriteRule ^ index.php [L]
 </IfModule>

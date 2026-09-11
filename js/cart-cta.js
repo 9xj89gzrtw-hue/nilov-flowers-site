@@ -1,10 +1,10 @@
 /* Кнопка «+» / «Добавить в корзину» — добавляет товар в корзину по
-   data-атрибутам кнопки data-order-cta, затем открывает drawer. */
+   data-атрибутам кнопки data-order-cta.
+   Fix (критик-покупатель, FRICTION): панель НЕ открываем автоматически —
+   её backdrop перекрывал форму заказа. Счётчик на иконке корзины даёт
+   достаточно обратной связи; панель открывается кликом по корзине. */
 (function () {
   if (!window.cart) return;
-
-  const toggle = document.getElementById('cartToggle');
-  const cartMode = (toggle && toggle.dataset.cartMode) || 'drawer';
 
   document.querySelectorAll('[data-order-cta]').forEach(function (btn) {
     btn.addEventListener('click', function () {
@@ -15,7 +15,15 @@
         price: Number(productPriceRaw) || 0,
         image: productImage || '',
       });
-      if (cartMode === 'drawer' && window.cartUI) window.cartUI.open();
+      /* Мягкая обратная связь без перекрытия: короткая анимация самой кнопки */
+      btn.animate(
+        [
+          { transform: 'scale(1)', background: '' },
+          { transform: 'scale(1.18)', offset: 0.4 },
+          { transform: 'scale(1)' },
+        ],
+        { duration: 320, easing: 'cubic-bezier(.22,1,.36,1)' }
+      );
     });
   });
 })();

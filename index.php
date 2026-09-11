@@ -314,7 +314,7 @@ if ($__heroPre !== '') {
           <span class="order-form__error" id="orderPhoneError"></span>
         </div>
         <div class="order-form__field">
-          <label for="orderEmail">Email</label>
+          <label for="orderEmail">Email <span id="orderEmailReq" style="color:var(--rose-deep,#E2799C);font-weight:600" hidden>* обязательно для онлайн-оплаты</span></label>
           <input type="email" id="orderEmail" name="email" autocomplete="email" placeholder="you@example.com">
           <span class="order-form__hint" id="orderEmailHint" hidden>На этот адрес придёт чек об оплате</span>
           <span class="order-form__error" id="orderEmailError"></span>

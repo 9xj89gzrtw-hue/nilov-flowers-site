@@ -180,6 +180,8 @@
     const online = wantsOnlinePayment();
     emailInput.required = online;
     if (emailHint) emailHint.hidden = !online;
+    const req = document.getElementById('orderEmailReq');
+    if (req) req.hidden = !online; /* fix критика: обязательность email видна ДО сабмита */
   }
 
   form.querySelectorAll('input[name="payment_method"]').forEach(function (el) {
@@ -205,6 +207,7 @@
     paymentError = '';
     statusEl.textContent = '';
     statusEl.className = 'order-form__status';
+    statusEl.hidden = false; /* fix: ошибка оставалась невидимой (hidden не снимался) — «молчаливые 400» */
 
     if (!validate()) return;
 
@@ -250,9 +253,17 @@
         syncEmailRequirement();
 
         /* Заказ уже принят и не потеряется — что бы дальше ни случилось
-           с платежом, флорист его увидит и позвонит */
+           с платежом, флорист его увидит и позвонит.
+           Онлайн-оплата: сначала платёж (redirect на ЮKassa), потом вернёмся.
+           Оплата при получении: сразу на страницу «Спасибо, заказ №N» —
+           там номер заказа и обещание звонка (fix критика-покупателя). */
         const redirected = wantsOnline ? await startPayment(created) : false;
         if (redirected) return;
+
+        if (!wantsOnline && created && created.id) {
+          window.location.assign('/order-thanks?id=' + encodeURIComponent(created.id));
+          return;
+        }
 
         statusEl.textContent = wantsOnline
           ? 'Заказ принят, но перейти к оплате не удалось' + (paymentError ? ': ' + paymentError + '.' : '.') + ' Мы свяжемся с вами и поможем оплатить.'
@@ -263,6 +274,24 @@
         if (body && body.item && window.cartUI) {
           window.cartUI.markUnavailable(body.item.product_id);
           statusEl.textContent = 'Один из товаров в заказе больше недоступен — уберите его из корзины (выделен красным) и попробуйте снова.';
+        } else if (body && Array.isArray(body.errors) && body.errors.length) {
+          /* Человеческие тексты ошибок сервера (fix: молчаливые 400) */
+          const map = {
+            email_required_for_online: 'Для онлайн-оплаты укажите email — на него придёт чек.',
+            contact_required: 'Укажите телефон или email, чтобы мы могли связаться с вами.',
+            name: 'Введите имя (минимум 2 символа).',
+            phone: 'Введите корректный телефон в формате +7 (999) 123-45-67.',
+            email: 'Проверьте email — похоже, в нём опечатка.',
+            delivery_address_required: 'Укажите адрес доставки (улица, дом, квартира).',
+            delivery_zone_unavailable: 'Выбранный район доставки недоступен — выберите другой или самовывоз.',
+            pd_consent_required: 'Отметьте согласие на обработку персональных данных.',
+            empty: 'Корзина пуста — выберите букет в каталоге.',
+            items_required: 'Корзина пуста — выберите букет в каталоге.',
+          };
+          const parts = body.errors.map(function (code) { return map[code] || null; }).filter(Boolean);
+          statusEl.textContent = parts.length
+            ? parts.join(' ')
+            : 'Не получилось оформить заказ. Позвоните нам — поможем оформить по телефону.';
         } else {
           statusEl.textContent = 'Ошибка при отправке. Пожалуйста, позвоните нам напрямую.';
         }

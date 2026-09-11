@@ -195,7 +195,7 @@ flash();
         <?php if ($editing && $editing['image'] !== ''): ?>
           <img class="thumb" style="margin-top:8px" src="/img/products/<?= e($editing['image']) ?>" alt="">
         <?php endif; ?>
-        <label class="f" for="p-sort">Сортировка</label>
+        <label class="f" for="p-sort">Позиция в каталоге (1 — первым)</label>
         <input class="input" id="p-sort" name="sort" type="number" value="<?= $editing ? (int)$editing['sort'] : 0 ?>">
         <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500;margin-top:16px">
           <input type="checkbox" name="is_active" style="width:auto" <?= !$editing || (int)$editing['is_active'] === 1 ? 'checked' : '' ?>>
@@ -203,7 +203,7 @@ flash();
         </label>
         <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500;margin-top:8px">
           <input type="checkbox" name="show_in_upsell" style="width:auto" <?= $editing && (int)($editing['show_in_upsell'] ?? 0) === 1 ? 'checked' : '' ?>>
-          Показывать в апсейле корзины
+          Добавлять в блок «Добавьте к букету» в корзине
         </label>
       </div>
     </div>
@@ -217,10 +217,6 @@ flash();
 <div class="card">
   <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
     <h2 style="font-family:var(--font-display);font-size:1.2rem">Все товары</h2>
-    <form method="post" onsubmit="return confirm('Снять ВСЕ товары с продажи? Витрина станет пустой.')">
-      <input type="hidden" name="action" value="hide_all">
-      <button type="submit" class="danger" style="font-size:.8rem;padding:7px 14px;border-radius:8px;border:1px solid var(--err,#c0392b);color:#c0392b;background:#fff;cursor:pointer;font-family:inherit">Снять всё с продажи</button>
-    </form>
   </div>
   <div class="table-scroll"><table>
     <tr><th>Фото</th><th>Название</th><th>Категория</th><th>Цена</th><th>Акция</th><th>Сорт.</th><th>Статус</th><th></th><th></th></tr>
@@ -232,18 +228,18 @@ flash();
       <td><?= formatPrice((int)$p['price']) ?></td>
       <td><?= $p['sale_price'] !== null ? formatPrice((int)$p['sale_price']) : '—' ?></td>
       <td><?= (int)$p['sort'] ?></td>
-      <td><?= (int)$p['is_active'] === 1 ? 'Показан' : 'Скрыт' ?><?= (int)($p['show_in_upsell'] ?? 0) === 1 ? ' <span style="display:inline-block;background:var(--rose,#F4A9BE);color:#fff;border-radius:999px;padding:2px 8px;font-size:.68rem;font-weight:700;vertical-align:middle">Апсейл</span>' : '' ?></td>
+      <td><?= (int)$p['is_active'] === 1 ? 'Показан' : 'Скрыт' ?><?= (int)($p['show_in_upsell'] ?? 0) === 1 ? ' <span style="display:inline-block;background:var(--rose,#F4A9BE);color:#fff;border-radius:999px;padding:2px 8px;font-size:.68rem;font-weight:700;vertical-align:middle">К корзине</span>' : '' ?></td>
       <td>
         <div class="row-actions">
           <a href="/admin/products.php?edit=<?= (int)$p['id'] ?>">Изменить</a>
-          <form method="post" onsubmit="return confirm('Скрыть/показать товар?')">
+          <form method="post">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="toggle"><input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
             <button type="submit"><?= (int)$p['is_active'] === 1 ? 'Скрыть' : 'Показать' ?></button>
           </form>
           <form method="post">
             <input type="hidden" name="action" value="urgent"><input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
-            <button type="submit"><?= (int)($p['is_urgent'] ?? 0) === 1 ? 'Снять срочность' : 'Успеть сегодня' ?></button>
+            <button type="submit"<?= (int)($p['is_urgent'] ?? 0) === 1 ? ' style="background:var(--rose-deep,#E2799C);color:#fff;border-color:var(--rose-deep,#E2799C);font-weight:700"' : '' ?>><?= (int)($p['is_urgent'] ?? 0) === 1 ? '★ Успеть сегодня — включено' : 'Успеть сегодня' ?></button>
           </form>
           <form method="post" style="display:inline-flex;gap:4px">
             <input type="hidden" name="action" value="move"><input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
@@ -272,5 +268,13 @@ flash();
     <small style="display:block;color:var(--ink-soft)"><?= $totalProducts ?> товар(ов), страница <?= $page ?> из <?= $pages ?></small>
   </div>
   <?php endif; ?>
+  <details style="margin-top:14px">
+    <summary style="cursor:pointer;color:var(--ink-soft);font-size:.85rem">Опасная зона: снять ВСЕ товары с продажи</summary>
+    <form method="post" onsubmit="return confirm('Снять ВСЕ товары с продажи? Витрина станет пустой. Товары можно вернуть по одному кнопкой «Показать».')" style="margin-top:8px">
+      <input type="hidden" name="action" value="hide_all">
+      <button type="submit" class="danger" style="font-size:.8rem;padding:7px 14px;border-radius:8px;border:1px solid var(--err,#c0392b);color:#c0392b;background:#fff;cursor:pointer;font-family:inherit">Снять всё с продажи</button>
+      <small style="display:block;margin-top:6px;color:var(--ink-soft)">Витрина станет пустой. Вернуть можно кнопкой «Показать» у каждого товара.</small>
+    </form>
+  </details>
 </div>
 <?php adminFooter(); ?>
