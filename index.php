@@ -42,7 +42,12 @@ unset($pRow);
 ?><!DOCTYPE html>
 <html lang="ru">
 <head>
-<title><?= e(setting('shop_name', 'Магазин цветов')) ?> — свежие цветы с доставкой</title>
+<title><?= e(setting('shop_name', 'Магазин цветов')) ?> — свежие цветы с доставкой в Санкт-Петербурге</title>
+<meta name="description" content="<?= e(setting('shop_name', 'Nilov Flowers')) ?> — свежие букеты с утренней поставки, доставка по Санкт-Петербургу в день заказа. Полевая Сабировская ул., 47, корп. 1. Фото букета перед отправкой.">
+<meta property="og:title" content="<?= e(setting('shop_name', 'Nilov Flowers')) ?> — свежие цветы с доставкой в СПб">
+<meta property="og:description" content="Букеты с доставкой в день заказа по Санкт-Петербургу. Фото перед отправкой, свежие цветы с утренней поставки.">
+<meta property="og:url" content="https://flowers.interfood-catering.ru/">
+<?= setting('hero_image') !== '' ? '<meta property="og:image" content="https://flowers.interfood-catering.ru/img/uploads/' . e(rawurlencode(setting('hero_image'))) . '">' : '' ?>
 <meta name="description" content="<?= e(setting('hero_subtitle')) ?>">
 <?php require __DIR__ . '/partials/head.php'; ?>
 <?php /* JSON-LD Florist — canonical 2026 (hanafloristpos.com/schema-guide, thestacc.com/local-business-schema) */ ?>
