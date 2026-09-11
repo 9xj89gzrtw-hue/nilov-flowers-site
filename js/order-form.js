@@ -41,10 +41,10 @@
     if (deliveryAddressInput) deliveryAddressInput.classList.remove('order-form__input--error');
   }
 
-  /* Зона доставки выбрана (не «Самовывоз») — value select непустой.
+  /* Зона доставки выбрана и это НЕ самовывоз (value="0" = самовывоз, бесплатно).
      Поля зоны/адреса могут отсутствовать, если зон нет. */
   function wantsDelivery() {
-    return Boolean(deliveryZoneInput && deliveryZoneInput.value !== '');
+    return Boolean(deliveryZoneInput && deliveryZoneInput.value !== '' && deliveryZoneInput.value !== '0');
   }
 
   function wantsOnlinePayment() {
