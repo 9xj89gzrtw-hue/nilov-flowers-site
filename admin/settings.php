@@ -22,13 +22,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'shop_email','shop_hours','shop_vk','shop_max_link','shop_instagram','header_phone','header_address',
         'shop_whatsapp','shop_telegram',
         'legal_subject_type','legal_name','legal_number','legal_address','legal_contact_email',
-        'vat_rate','yk_shop_id','yk_secret_key'];
+        'vat_rate','yk_shop_id','yk_secret_key','yandex_reviews_id'];
     $values = [];
     foreach ($keys as $k) {
         $values[$k] = trim((string)($_POST[$k] ?? ''));
     }
     /* Чекбоксы: 0 если не пришли */
-    foreach (['yk_enabled', 'upsell_enabled', 'hero_text_enabled'] as $cb) {
+    foreach (['yk_enabled', 'upsell_enabled', 'hero_text_enabled', 'yandex_reviews_enabled'] as $cb) {
         $values[$cb] = isset($_POST[$cb]) ? '1' : '0';
     }
     $hero = saveUpload($_FILES['hero_image'] ?? [], IMG_UPLOADS_DIR);
@@ -40,6 +40,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($logo !== '') {
         deleteImage(setting('logo_image'), IMG_UPLOADS_DIR);
         $values['logo_image'] = $logo;
+    }
+    /* Favicon: новый файл заменяет старый; чекбокс-удаление — пустое значение */
+    $fav = saveUpload($_FILES['site_favicon'] ?? [], IMG_UPLOADS_DIR);
+    if ($fav !== '') {
+        deleteImage(setting('site_favicon'), IMG_UPLOADS_DIR);
+        $values['site_favicon'] = $fav;
+    } elseif (isset($_POST['site_favicon_remove'])) {
+        deleteImage(setting('site_favicon'), IMG_UPLOADS_DIR);
+        $values['site_favicon'] = '';
     }
     saveSettings($values);
     flash('Настройки сохранены');
@@ -102,6 +111,39 @@ flash();
         <input class="input" id="h-img" name="hero_image" type="file" accept="image/*">
         <?php if (($s['hero_image'] ?? '') !== ''): ?>
           <img class="thumb" style="margin-top:8px;width:120px;height:80px" src="/img/uploads/<?= e($s['hero_image']) ?>" alt="">
+        <?php endif; ?>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 style="font-family:var(--font-display);font-size:1.2rem;margin-bottom:8px">Внешний вид</h2>
+    <div class="grid2">
+      <div>
+        <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+          <input type="checkbox" name="hero_text_enabled" style="width:auto" <?= sv('hero_text_enabled', $s) === '1' ? 'checked' : '' ?>>
+          Показывать текст и кнопку поверх фото на главной
+        </label>
+        <p style="font-size:.82rem;color:var(--ink-soft);margin:4px 0 12px">Выключите, если хотите оставить только фотографию без заголовка и кнопки.</p>
+        <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+          <input type="checkbox" name="yandex_reviews_enabled" style="width:auto" <?= sv('yandex_reviews_enabled', $s) === '1' ? 'checked' : '' ?>>
+          Секция отзывов Яндекс Карт
+        </label>
+        <label class="f" for="yandex-reviews-id" style="margin-top:8px">ID организации на Яндекс Картах</label>
+        <input class="input" id="yandex-reviews-id" name="yandex_reviews_id" value="<?= sv('yandex_reviews_id', $s) ?>" placeholder="133112293950">
+        <p style="font-size:.82rem;color:var(--ink-soft);margin:4px 0 0">Цифры можно взять в Яндекс Бизнесе: ссылка на карточку организации вида yandex.ru/maps/org/133112293950 — нужен только номер.</p>
+      </div>
+      <div>
+        <label class="f" for="s-favicon">Favicon (заменить)</label>
+        <input class="input" id="s-favicon" name="site_favicon" type="file" accept="image/png,image/jpeg,image/webp,image/x-icon,image/svg+xml">
+        <?php if (($s['site_favicon'] ?? '') !== ''): ?>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
+            <img class="thumb" style="width:32px;height:32px" src="/img/uploads/<?= e($s['site_favicon']) ?>" alt="Текущий favicon">
+            <label class="f" style="display:flex;gap:6px;align-items:center;font-weight:400;font-size:.85rem;margin:0">
+              <input type="checkbox" name="site_favicon_remove" value="1" style="width:auto">
+              Удалить favicon
+            </label>
+          </div>
         <?php endif; ?>
       </div>
     </div>
