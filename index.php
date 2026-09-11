@@ -11,6 +11,14 @@ $products = $pdo->query('SELECT p.*, c.name AS category_name FROM products p
     LEFT JOIN categories c ON c.id = p.category_id WHERE p.is_active = 1 ORDER BY p.sort, p.id')->fetchAll();
 $zones = $pdo->query('SELECT id, name, price FROM delivery_zones ORDER BY sort, id')->fetchAll();
 
+/* Внешний вид: hero-текст можно отключить, отзывы Яндекса — показать по ID */
+$heroTextEnabled = setting('hero_text_enabled', '1') === '1';
+$yandexReviewsId = trim(setting('yandex_reviews_id', ''));
+$yandexReviewsEnabled = setting('yandex_reviews_enabled', '0') === '1' && $yandexReviewsId !== '';
+$heroBtnText = trim(setting('hero_button_text', ''));
+$heroBtnLink = trim(setting('hero_button_link', ''));
+$heroBtn = $heroTextEnabled && $heroBtnText !== '' && $heroBtnLink !== '';
+
 /* Trust strip: гарантии — guarantee_1..N, либо настройки guarantees построчно */
 $guarantees = [];
 for ($i = 1; $i <= 6; $i++) {
@@ -78,14 +86,20 @@ unset($pRow);
   <section class="hero">
     <div class="wrap hero__grid">
       <div>
+        <?php if ($heroTextEnabled): ?>
         <h1 class="hero__hook"><?= e(setting('hero_title', 'Свежие цветы с утренней поставки')) ?></h1>
         <p class="hero__subtitle"><?= e(setting('hero_subtitle')) ?></p>
+        <?php endif; ?>
+        <?php if ($heroBtn || ($heroTextEnabled && $guarantees !== [])): ?>
         <div class="hero__meta">
-          <a class="btn btn--accent" href="<?= e(setting('hero_button_link', '#catalog')) ?>"><?= e(setting('hero_button_text', 'Выбрать букет')) ?></a>
-          <?php if ($guarantees !== []): ?>
+          <?php if ($heroBtn): ?>
+          <a class="btn btn--accent" href="<?= e(setting('hero_button_link', '#catalog')) ?>"><?= e($heroBtnText) ?></a>
+          <?php endif; ?>
+          <?php if ($heroTextEnabled && $guarantees !== []): ?>
             <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><?= e($guarantees[0]) ?></span>
           <?php endif; ?>
         </div>
+        <?php endif; ?>
       </div>
       <div class="hero__media">
         <?php if (setting('hero_image') !== ''): ?>
@@ -185,6 +199,17 @@ unset($pRow);
           </div>
         <?php endforeach; ?>
       </div>
+    </div>
+  </section>
+  <?php endif; ?>
+
+  <!-- ОТЗЫВЫ ЯНДЕКС КАРТ -->
+  <?php if ($yandexReviewsEnabled): ?>
+  <section class="section yandex-reviews">
+    <div class="wrap">
+      <h2 class="section-title">Отзывы о нас на Яндекс Картах</h2>
+      <p class="section-sub">Покупатели оценивают нас на Яндекс Картах</p>
+      <a class="btn btn--accent" href="https://yandex.ru/maps/org/<?= e(rawurlencode($yandexReviewsId)) ?>" target="_blank" rel="noopener">Читать отзывы</a>
     </div>
   </section>
   <?php endif; ?>

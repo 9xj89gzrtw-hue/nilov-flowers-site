@@ -176,6 +176,7 @@ function migrateSchema(PDO $pdo): void
         ('upsell_title', 'Возможно, пригодится'),
         ('upsell_categories', ''),
         ('yandex_reviews_id', ''),
+        ('yandex_reviews_enabled', '0'),
         ('site_favicon', ''),
         ('yk_enabled', '0'),
         ('shop_instagram', ''),
