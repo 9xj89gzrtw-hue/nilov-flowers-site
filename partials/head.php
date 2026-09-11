@@ -17,7 +17,8 @@ $iconHref = $favicon !== '' ? '/img/uploads/' . rawurlencode($favicon) : '/img/f
 <meta name="apple-mobile-web-app-title" content="Nilov Flowers">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
 <link rel="stylesheet" href="/css/style.css">
 <link rel="stylesheet" href="/css/nilov.css">
 <script src="/js/pwa-register.js" defer></script>

@@ -36,6 +36,15 @@ function product_img_url(array $p): string
     return $p['image'] !== '' ? '/img/products/' . rawurlencode($p['image']) : '';
 }
 
+/* WebP-вариант того же фото (если сгенерирован рядом: name.jpg → name.webp).
+   Идемпотентно: файла нет — вернём пустую строку и <source> не напечатаем. */
+function product_img_webp(array $p): string
+{
+    if ($p['image'] === '') return '';
+    $webp = '/img/products/' . rawurlencode(preg_replace('/\.(jpe?g|png)$/i', '.webp', $p['image']));
+    return is_file(BASE_PATH . urldecode($webp)) ? $webp : '';
+}
+
 /* Демо-фото: активным товарам без своего фото подставляем файлы из img/products,
    чтобы витрина не выглядела пустой. Свои фото (загруженные в админке) не трогаем. */
 $demoImages = ['roz.jpg', 'p2.jpg', 'p3.jpg'];
@@ -58,6 +67,17 @@ unset($pRow);
 <?= setting('hero_image') !== '' ? '<meta property="og:image" content="https://flowers.interfood-catering.ru/img/uploads/' . e(rawurlencode(setting('hero_image'))) . '">' : '' ?>
 <?php require __DIR__ . '/partials/head.php'; ?>
 <?php /* JSON-LD Florist — canonical 2026 (hanafloristpos.com/schema-guide, thestacc.com/local-business-schema) */ ?>
+<?php
+/* LCP-preload: hero.webp если существует (фолбэк — jpg) */
+$__heroPre = setting('hero_image');
+if ($__heroPre !== '') {
+    $__heroWebp = preg_replace('/\.(jpe?g|png)$/i', '.webp', $__heroPre);
+    $__heroPreHref = ($__heroWebp !== $__heroPre && is_file(IMG_UPLOADS_DIR . '/' . $__heroWebp))
+        ? '/img/uploads/' . rawurlencode($__heroWebp)
+        : '/img/uploads/' . rawurlencode($__heroPre);
+    echo '<link rel="preload" as="image" href="' . e($__heroPreHref) . '" fetchpriority="high">' . "\n";
+}
+?>
 <script type="application/ld+json">
 <?= json_encode([
     '@context' => 'https://schema.org',
@@ -127,7 +147,16 @@ unset($pRow);
       </div>
       <div class="hero__media">
         <?php if (setting('hero_image') !== ''): ?>
-          <img class="hero__img" src="/img/uploads/<?= e(setting('hero_image')) ?>" alt="<?= e(setting('hero_title')) ?>">
+          <?php
+          /* Hero в WebP если есть (LCP-критично: 163KB webp vs 509KB jpg), фолбэк jpg */
+          $heroImg = setting('hero_image');
+          $heroWebp = preg_replace('/\.(jpe?g|png)$/i', '.webp', $heroImg);
+          $heroWebpOk = $heroWebp !== $heroImg && is_file(IMG_UPLOADS_DIR . '/' . $heroWebp);
+          ?>
+          <picture>
+            <?php if ($heroWebpOk): ?><source type="image/webp" srcset="/img/uploads/<?= e(rawurlencode($heroWebp)) ?>"><?php endif; ?>
+            <img class="hero__img" src="/img/uploads/<?= e($heroImg) ?>" alt="<?= e(setting('hero_title')) ?>" fetchpriority="high">
+          </picture>
         <?php else: ?>
           <div class="hero__img" role="img" aria-label="Букет цветов">
             <svg viewBox="0 0 80 94" style="width:34%;margin:auto;color:#fff;opacity:.85" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="40" cy="30" r="11"/><circle cx="26" cy="38" r="8"/><circle cx="54" cy="38" r="8"/><path d="M40 41v20M40 61c-8 6-14 14-16 25M40 61c8 6 14 14 16 25"/></svg>
@@ -176,15 +205,19 @@ unset($pRow);
       <div class="catalog__grid" id="catalogGrid">
         <?php foreach ($products as $p):
             $price = productPrice($p);
-            $isSale = $price !== (int)$p['price'];
+            $isSale = $price !== (int)($p['price'] ?? $p['price']);
             $img = product_img_url($p);
+            $imgWebp = product_img_webp($p);
             $link = '/product/' . rawurlencode($p['slug']);
         ?>
         <article class="product-card reveal" data-category-id="<?= (int)($p['category_id'] ?? 0) ?>">
           <div class="product-card__media">
             <a class="product-card__media-link" href="<?= e($link) ?>" aria-label="<?= e($p['name']) ?>">
               <?php if ($img !== ''): ?>
-                <img class="product-card__img" src="<?= e($img) ?>" alt="<?= e($p['name']) ?>" loading="lazy" decoding="async">
+                <picture>
+                  <?php if ($imgWebp !== ''): ?><source type="image/webp" srcset="<?= e($imgWebp) ?>"><?php endif; ?>
+                  <img class="product-card__img" src="<?= e($img) ?>" alt="<?= e($p['name']) ?>" loading="lazy" decoding="async">
+                </picture>
               <?php else: ?>
                 <svg viewBox="0 0 80 94" style="width:30%;margin:auto;color:var(--blue)" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="40" cy="30" r="11"/><circle cx="26" cy="38" r="8"/><circle cx="54" cy="38" r="8"/><path d="M40 41v20M40 61c-8 6-14 14-16 25M40 61c8 6 14 14 16 25"/></svg>
               <?php endif; ?>

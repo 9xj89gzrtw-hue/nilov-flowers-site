@@ -33,6 +33,10 @@ if ($img === '') {
     $img = '/img/products/' . $demoImages[$product['id'] % count($demoImages)];
 }
 
+/* WebP-пара к фото товара (каталог уже отдаёт webp через <picture>) */
+$imgWebp = preg_replace('/\.(jpe?g|png)$/i', '.webp', urldecode($img));
+$imgWebpOk = $imgWebp !== $img && is_file(BASE_PATH . $imgWebp);
+
 /* Trust list на странице товара — те же гарантии */
 $trust = [];
 for ($i = 1; $i <= 6; $i++) {
@@ -89,7 +93,10 @@ if ($trust === []) {
       <div class="product-gallery">
         <div class="product-page__media" data-lightbox-trigger data-lightbox-src="<?= e($img) ?>" data-lightbox-alt="<?= e($product['name']) ?>">
           <?php if ($img !== ''): ?>
-            <img class="product-gallery__img" src="<?= e($img) ?>" alt="<?= e($product['name']) ?>">
+            <picture>
+              <?php if ($imgWebpOk): ?><source type="image/webp" srcset="<?= e($imgWebp) ?>"><?php endif; ?>
+              <img class="product-gallery__img" src="<?= e($img) ?>" alt="<?= e($product['name']) ?>">
+            </picture>
           <?php else: ?>
             <div class="product-gallery__slide--placeholder">
               <svg viewBox="0 0 80 94" style="width:30%;margin:auto;color:var(--blue)" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="40" cy="30" r="11"/><circle cx="26" cy="38" r="8"/><circle cx="54" cy="38" r="8"/><path d="M40 41v20M40 61c-8 6-14 14-16 25M40 61c8 6 14 14 16 25"/></svg>
