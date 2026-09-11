@@ -96,7 +96,19 @@ function adminLogout(): void
 function isAdmin(): bool
 {
     adminSessionStart();
-    return isset($_SESSION['admin_id']);
+    if (!isset($_SESSION['admin_id'])) {
+        return false;
+    }
+    /* J2: таймаут неактивности 8 часов — сессия гаснет сама (не «вечно живая») */
+    $last = (int)($_SESSION['admin_last_activity'] ?? 0);
+    $now = time();
+    if ($last > 0 && ($now - $last) > 8 * 3600) {
+        $_SESSION = [];
+        session_destroy();
+        return false;
+    }
+    $_SESSION['admin_last_activity'] = $now;
+    return true;
 }
 
 function requireAdmin(): void
