@@ -94,6 +94,17 @@ if ($__heroPre !== '') {
     ],
     'addressString' => setting('shop_address', ''),
     'priceRange' => '₽₽',
+    'geo' => [
+        '@type' => 'GeoCoordinates',
+        'latitude' => 59.9970675,
+        'longitude' => 30.2727226,
+    ],
+    'openingHoursSpecification' => [[
+        '@type' => 'OpeningHoursSpecification',
+        'dayOfWeek' => ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+        'opens' => '09:00',
+        'closes' => '21:00',
+    ]],
     'image' => setting('hero_image', '') !== '' ? '/img/uploads/' . rawurlencode(setting('hero_image')) : '',
 ] + (setting('yandex_reviews_id') !== '' ? ['sameAs' => ['https://yandex.ru/maps/org/' . setting('yandex_reviews_id')]] : []), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>
 </script>
