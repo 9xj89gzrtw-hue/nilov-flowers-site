@@ -94,12 +94,135 @@ if ($allIds !== []) {
 }
 $qs = array_filter($_GET, fn($v, $k) => $v !== '' && $k !== 'page', ARRAY_FILTER_USE_BOTH);
 
+/* ---------- Статистика (дашборд) ---------- */
+$range = (string)($_GET['range'] ?? '30');
+if (!in_array($range, ['7', '30', '90', 'all'], true)) {
+    $range = '30';
+}
+$revenueStatuses = "('confirmed','done','unredeemed')";
+$rangeCond = $range === 'all' ? '' : " AND o.created_at >= datetime('now','localtime','-" . (int)$range . " days')";
+
+$revRow = $pdo->query("SELECT COALESCE(SUM(o.total),0), COUNT(*) FROM orders o
+    WHERE o.status IN $revenueStatuses$rangeCond")->fetch(PDO::FETCH_NUM);
+$revenue = (int)$revRow[0];
+$paidCount = (int)$revRow[1];
+$avgCheck = $paidCount > 0 ? (int)round($revenue / $paidCount) : 0;
+$newCount = (int)$pdo->query("SELECT COUNT(*) FROM orders o WHERE o.status = 'new'$rangeCond")->fetchColumn();
+$allCount = (int)$pdo->query("SELECT COUNT(*) FROM orders o WHERE 1=1$rangeCond")->fetchColumn();
+
+$statusBreak = $pdo->query("SELECT status, COUNT(*) AS c FROM orders o WHERE 1=1$rangeCond GROUP BY status")->fetchAll();
+$statusCounts = [];
+foreach ($statusBreak as $sb) {
+    $statusCounts[$sb['status']] = (int)$sb['c'];
+}
+
+/* Sparkline: выручка по дням за период (для all — последние 90 дней, чтобы график не разрастался) */
+$sparkDays = $range === 'all' ? 90 : max(1, (int)$range);
+$sparkRows = $pdo->query("SELECT date(o.created_at) AS d, SUM(o.total) AS rev FROM orders o
+    WHERE o.status IN $revenueStatuses
+      AND o.created_at >= datetime('now','localtime','-" . $sparkDays . " days')
+    GROUP BY date(o.created_at)")->fetchAll();
+$revByDay = [];
+foreach ($sparkRows as $sr) {
+    $revByDay[$sr['d']] = (int)$sr['rev'];
+}
+$sparkData = [];
+for ($i = $sparkDays - 1; $i >= 0; $i--) {
+    $day = date('Y-m-d', strtotime("-$i days"));
+    $sparkData[] = ['d' => $day, 'rev' => $revByDay[$day] ?? 0];
+}
+$sparkMax = max($sparkData) === [] ? 0 : max(array_column($sparkData, 'rev'));
+
+$topProducts = $pdo->query("SELECT oi.product_id, oi.name, SUM(oi.qty) AS sold,
+        p.image, p.slug
+    FROM order_items oi
+    JOIN orders o ON o.id = oi.order_id
+    LEFT JOIN products p ON p.id = oi.product_id
+    WHERE o.status IN $revenueStatuses$rangeCond
+    GROUP BY oi.product_id, oi.name
+    ORDER BY sold DESC, oi.name LIMIT 5")->fetchAll();
+
 $itemsStmt = $pdo->prepare('SELECT name, price, qty FROM order_items WHERE order_id = :i');
 
 adminHeader('Заказы', 'index');
 flash();
 ?>
 <h1>Заказы</h1>
+
+<?php
+$dashqs = fn(string $r) => '/admin/index.php?' . e(http_build_query(array_merge(array_filter($_GET, fn($v, $k) => $v !== '' && $k !== 'range', ARRAY_FILTER_USE_BOTH), $r === '30' ? [] : ['range' => $r])));
+?>
+<div class="dash-section">
+<div class="card dash-card">
+  <div class="dash-head">
+    <h2 style="font-family:var(--font-display);font-size:1.25rem">Статистика</h2>
+    <nav class="dash-ranges">
+      <?php foreach ([['7', '7 дней'], ['30', '30 дней'], ['90', '90 дней'], ['all', 'Всё время']] as [$rk, $rl]): ?>
+        <a href="<?= $dashqs($rk) ?>" class="<?= $range === $rk ? 'active' : '' ?>"><?= e($rl) ?></a>
+      <?php endforeach; ?>
+    </nav>
+  </div>
+
+  <div class="dash-metrics">
+    <div class="dash-metric dash-metric--rose">
+      <span class="dash-metric__label">Выручка</span>
+      <strong class="dash-metric__value"><?= formatPrice($revenue) ?></strong>
+    </div>
+    <div class="dash-metric dash-metric--blue">
+      <span class="dash-metric__label">Заказов</span>
+      <strong class="dash-metric__value"><?= $allCount ?></strong>
+    </div>
+    <div class="dash-metric dash-metric--mint">
+      <span class="dash-metric__label">Средний чек</span>
+      <strong class="dash-metric__value"><?= formatPrice($avgCheck) ?></strong>
+    </div>
+    <div class="dash-metric dash-metric--rose-deep">
+      <span class="dash-metric__label">Новые</span>
+      <strong class="dash-metric__value"><?= $newCount ?></strong>
+    </div>
+  </div>
+
+  <div class="dash-spark">
+    <span class="dash-metric__label">Выручка по дням (<?= $sparkDays ?> дн.)</span>
+    <svg class="sparkline" viewBox="0 0 <?= max(1, $sparkDays) * 8 ?> 60" preserveAspectRatio="none" role="img" aria-label="Выручка по дням">
+      <?php foreach ($sparkData as $i => $sd):
+        $h = $sparkMax > 0 ? max(2, (int)round($sd['rev'] / $sparkMax * 56)) : 2; ?>
+        <rect x="<?= $i * 8 ?>" y="<?= 60 - $h ?>" width="6" height="<?= $h ?>" rx="1.5"
+          fill="<?= $sd['rev'] > 0 ? 'var(--rose-deep)' : 'var(--bg-alt)' ?>">
+          <title><?= e($sd['d']) ?>: <?= formatPrice($sd['rev']) ?></title>
+        </rect>
+      <?php endforeach; ?>
+    </svg>
+  </div>
+
+  <div class="dash-row">
+    <div class="dash-statuses">
+      <span class="dash-metric__label">По статусам</span>
+      <div class="dash-chips">
+        <?php foreach (statuses() as $key => $label): ?>
+          <span class="status-badge <?= e($key) ?>"><?= e($label) ?>: <?= $statusCounts[$key] ?? 0 ?></span>
+        <?php endforeach; ?>
+      </div>
+    </div>
+    <div class="dash-top">
+      <span class="dash-metric__label">Топ-5 товаров</span>
+      <?php if ($topProducts === []): ?>
+        <small style="color:var(--ink-soft)">Продаж пока нет</small>
+      <?php else: ?>
+      <ol class="dash-top-list">
+        <?php foreach ($topProducts as $tp): ?>
+        <li>
+          <?= $tp['image'] !== '' ? '<img class="thumb dash-thumb" src="/img/products/' . e($tp['image']) . '" alt="">' : '<div class="thumb dash-thumb"></div>' ?>
+          <span class="dash-top-name"><?= e($tp['name']) ?></span>
+          <strong><?= (int)$tp['sold'] ?> шт.</strong>
+        </li>
+        <?php endforeach; ?>
+      </ol>
+      <?php endif; ?>
+    </div>
+  </div>
+</div>
+</div>
 
 <div class="card">
   <form method="get" class="filters-bar">

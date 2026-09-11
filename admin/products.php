@@ -144,8 +144,18 @@ if ($editId > 0) {
     $stmt->execute([':i' => $editId]);
     $editing = $stmt->fetch();
 }
-$products = $pdo->query('SELECT p.*, c.name AS category_name FROM products p
+$allProducts = $pdo->query('SELECT p.*, c.name AS category_name FROM products p
     LEFT JOIN categories c ON c.id = p.category_id ORDER BY p.sort, p.id')->fetchAll();
+
+/* Пагинация: 25 товаров на страницу */
+$perPage = 25;
+$totalProducts = count($allProducts);
+$pages = max(1, (int)ceil($totalProducts / $perPage));
+$page = (int)($_GET['page'] ?? 1);
+if ($page < 1 || $page > $pages) {
+    $page = 1;
+}
+$products = array_slice($allProducts, ($page - 1) * $perPage, $perPage);
 $categories = $pdo->query('SELECT * FROM categories ORDER BY sort, id')->fetchAll();
 
 adminHeader('Товары', 'products');
@@ -250,5 +260,17 @@ flash();
     </tr>
     <?php endforeach; ?>
   </table>
+  <?php if ($pages > 1): ?>
+  <div style="text-align:center;margin-top:14px">
+    <?php for ($p = 1; $p <= $pages; $p++): ?>
+      <?php if ($p === $page): ?>
+        <strong style="margin:0 6px"><?= $p ?></strong>
+      <?php else: ?>
+        <a style="margin:0 6px" href="/admin/products.php<?= $p > 1 ? '?page=' . $p : '' ?>"><?= $p ?></a>
+      <?php endif; ?>
+    <?php endfor; ?>
+    <small style="display:block;color:var(--ink-soft)"><?= $totalProducts ?> товар(ов), страница <?= $page ?> из <?= $pages ?></small>
+  </div>
+  <?php endif; ?>
 </div>
 <?php adminFooter(); ?>
