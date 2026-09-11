@@ -70,7 +70,7 @@
       valid = false;
     } else {
       if (phone && !PHONE_RE.test(phone)) {
-        phoneError.textContent = 'Введите корректный номер телефона';
+        phoneError.textContent = 'Введите корректный телефон — например, +7 (999) 123-45-67';
         phoneInput.classList.add('order-form__input--error');
         valid = false;
       }

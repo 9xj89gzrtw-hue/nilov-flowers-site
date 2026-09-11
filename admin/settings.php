@@ -272,6 +272,9 @@ flash();
 
   <div class="card" id="s-legal">
     <h2 style="font-family:var(--font-display);font-size:1.2rem;margin-bottom:8px">Юридические реквизиты</h2>
+    <?php if (trim((string)($s['legal_name'] ?? '')) === '' || trim((string)($s['legal_number'] ?? '')) === ''): ?>
+    <p style="font-size:.85rem;color:#a05a00;background:#fdf3e3;border:1px solid #ecd9ae;border-radius:10px;padding:8px 12px;margin:0 0 10px">⚠ Реквизиты не заполнены — покупатели не видят, кому платят. Впишите название и ОГРН/ОГРНИП — они появятся в оферте, политике и подвале сайта автоматически.</p>
+    <?php endif; ?>
     <p style="font-size:.85rem;color:var(--ink-soft);margin:0 0 10px">Показываются на страницах «Политика ПДн» и «Публичная оферта» и в подвале сайта.</p>
     <div class="grid2">
       <div>

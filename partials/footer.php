@@ -22,6 +22,16 @@ $igDisclaimer = $igOn; /* пометку Meta показываем только 
   <div class="wrap">
     <div>
       <p class="site-footer__name"><?= e($siteName) ?></p>
+      <?php
+      /* Реквизиты продавца в футере (152-ФЗ + доверие скептика-покупателя).
+         Показываются только если владелец заполнил legal_* в настройках. */
+      $legalType = setting('legal_subject_type', '');
+      $legalName = setting('legal_name', '');
+      $legalNum = setting('legal_number', '');
+      $legalAddr = setting('legal_address', '');
+      if ($legalName !== '' && $legalNum !== ''): ?>
+      <p style="font-size:.78rem;color:var(--ink-soft)"><?= e($legalName) ?> · <?= e($legalType === 'IP' ? 'ОГРНИП' : 'ОГРН') ?> <?= e($legalNum) ?><?= $legalAddr !== '' ? ' · ' . e($legalAddr) : '' ?></p>
+      <?php endif; ?>
       <?php if ($address !== ''): ?><p><?= e($address) ?></p><?php endif; ?>
       <?php if (setting('shop_hours', '') !== ''): ?><p style="color:var(--ink-soft);font-size:.92rem"><?= e(setting('shop_hours')) ?></p><?php endif; ?>
       <?php if ($phone !== ''): ?><p><a class="site-footer__phone" href="tel:+<?= e($phoneDigits) ?>"><?= e($phone) ?></a></p><?php endif; ?>
@@ -49,7 +59,7 @@ $igDisclaimer = $igOn; /* пометку Meta показываем только 
   <a href="/#catalog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-4.6-7-10a4.5 4.5 0 0 1 7-3.7A4.5 4.5 0 0 1 19 11c0 5.4-7 10-7 10z"/></svg>Каталог</a>
   <a href="/#how-it-works"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Как работаем</a>
   <a href="/#contacts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.6 10.8c1.4 2.8 3.8 5.2 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.4c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.4 0 .8-.2 1L6.6 10.8z"/></svg>Контакты</a>
-  <a href="/#order"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Заказать</a>
+  <a href="/#order"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M12 21s-7-4.6-7-10a4.5 4.5 0 0 1 7-3.7A4.5 4.5 0 0 1 19 11c0 5.4-7 10-7 10z"/><circle cx="19.5" cy="7" r="0.8" fill="currentColor"/></svg>Заказать</a>
 </nav>
 
 <div class="cart-panel" id="cartPanel" hidden>

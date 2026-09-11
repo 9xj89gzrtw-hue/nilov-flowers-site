@@ -166,7 +166,7 @@ $dashqs = fn(string $r) => '/admin/index.php?' . e(http_build_query(array_merge(
   <div class="dash-metrics">
     <div class="dash-metric dash-metric--rose">
       <span class="dash-metric__label">Выручка</span>
-      <strong class="dash-metric__value"><?= formatPrice($revenue) ?></strong>
+      <strong class="dash-metric__value"><?= $allCount > 0 ? formatPrice($revenue) : '—' ?></strong>
     </div>
     <div class="dash-metric dash-metric--blue">
       <span class="dash-metric__label">Заказов</span>
@@ -174,13 +174,14 @@ $dashqs = fn(string $r) => '/admin/index.php?' . e(http_build_query(array_merge(
     </div>
     <div class="dash-metric dash-metric--mint">
       <span class="dash-metric__label">Средний чек</span>
-      <strong class="dash-metric__value"><?= formatPrice($avgCheck) ?></strong>
+      <strong class="dash-metric__value"><?= $revenue > 0 ? formatPrice($avgCheck) : '—' ?></strong>
     </div>
     <div class="dash-metric dash-metric--rose-deep">
       <span class="dash-metric__label">Новые</span>
       <strong class="dash-metric__value"><?= $newCount ?></strong>
     </div>
   </div>
+  <p style="font-size:.78rem;color:var(--ink-soft);margin:-8px 0 14px">Выручка и средний чек считаются только по подтверждённым, выполненным и забранным заказам — новые и отменённые не учитываются.</p>
 
   <div class="dash-spark">
     <span class="dash-metric__label">Выручка по дням (<?= $sparkDays ?> дн.)</span>
