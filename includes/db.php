@@ -86,9 +86,9 @@ function seedDatabase(PDO $pdo): void
         (3, 'Полевые цветы', 'polevye-tsvety', 2100, NULL, 'Лёгкий букет из полевых цветов — просто и со вкусом.', 30)");
 
     $pdo->exec("INSERT INTO settings (key, value) VALUES
-        ('shop_name', 'Демо-магазин цветов'),
+        ('shop_name', 'Nilov Flowers'),
         ('shop_phone', '+7 (900) 000-00-00'),
-        ('shop_address', 'г. Москва, Цветочная ул., 1'),
+        ('shop_address', 'г. Санкт-Петербург, Полевая Сабировская ул., 47, корп. 1'),
         ('hero_title', 'Свежие цветы с утренней поставки'),
         ('hero_subtitle', 'Соберём и доставим букет в течение дня — к празднику или просто так'),
         ('hero_button_text', 'Выбрать букет'),
