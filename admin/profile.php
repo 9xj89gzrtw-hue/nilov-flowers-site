@@ -47,8 +47,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($notifyEmail !== '' && !filter_var($notifyEmail, FILTER_VALIDATE_EMAIL)) {
             flash('Некорректный email для уведомлений', true);
         } else {
-            $pdo->prepare('UPDATE admin_users SET tg_chat_id = :t, max_chat_id = :m, notify_email = :n, notify_enabled = :en WHERE id = :i')
-                ->execute([':t' => $tg, ':m' => $mx, ':n' => $notifyEmail, ':en' => $notifyEnabled, ':i' => (int)$admin['id']]);
+            /* tg_chat_id/max_chat_id — глобальные ключи settings (db.php seed), а не колонки admin_users */
+            saveSettings(['tg_chat_id' => $tg, 'max_chat_id' => $mx]);
+            $pdo->prepare('UPDATE admin_users SET notify_email = :n, notify_enabled = :en WHERE id = :i')
+                ->execute([':n' => $notifyEmail, ':en' => $notifyEnabled, ':i' => (int)$admin['id']]);
             flash('Настройки уведомлений сохранены');
         }
         header('Location: /admin/profile.php');
@@ -141,11 +143,11 @@ flash();
     <div class="grid2" style="margin-top:12px">
       <div>
         <label class="f" for="tg">Telegram chat_id</label>
-        <input class="input" id="tg" name="tg_chat_id" value="<?= e((string)($admin['tg_chat_id'] ?? '')) ?>" placeholder="123456789">
+        <input class="input" id="tg" name="tg_chat_id" value="<?= e(setting('tg_chat_id', '')) ?>" placeholder="123456789">
       </div>
       <div>
         <label class="f" for="mx">MAX chat_id</label>
-        <input class="input" id="mx" name="max_chat_id" value="<?= e((string)($admin['max_chat_id'] ?? '')) ?>" placeholder="-100123456">
+        <input class="input" id="mx" name="max_chat_id" value="<?= e(setting('max_chat_id', '')) ?>" placeholder="-100123456">
       </div>
     </div>
     <button class="btn" type="submit" style="margin-top:16px">Сохранить</button>
