@@ -140,6 +140,7 @@ unset($pRow);
               <?php endif; ?>
             </a>
             <?php if ($isSale): ?><span class="product-card__badge">Скидка</span><?php endif; ?>
+            <?php if ((int)($p['is_urgent'] ?? 0) === 1): ?><span class="product-card__badge product-card__badge--urgent">Успеть сегодня</span><?php endif; ?>
             <button type="button" class="product-card__cta" data-order-cta
               data-product-id="<?= (int)$p['id'] ?>"
               data-product-name="<?= e($p['name']) ?>"

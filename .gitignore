@@ -4,3 +4,5 @@ img/products/*
 !img/products/.gitkeep
 .DS_Store
 .worktrees/
+db/*.db-shm
+db/*.db-wal
