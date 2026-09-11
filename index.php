@@ -348,7 +348,14 @@ if ($__heroPre !== '') {
         </fieldset>
         <fieldset class="order-form__payment">
           <legend>Способ оплаты</legend>
-          <?php if (setting('yk_enabled', '0') === '1'): ?>
+          <?php
+          /* Fail-safe: «онлайн» показываем только если ЮKassa реально настроена
+             (галочка + ключи). Иначе покупатель увидит несбыточное обещание. */
+          $ykLive = setting('yk_enabled', '0') === '1'
+              && trim(setting('yk_shop_id', '')) !== ''
+              && trim(setting('yk_secret_key', '')) !== '';
+          ?>
+          <?php if ($ykLive): ?>
           <label class="order-form__radio"><input type="radio" name="payment_method" value="online" checked><span>Картой или через СБП — сразу онлайн</span></label>
           <label class="order-form__radio"><input type="radio" name="payment_method" value="cash"><span>При получении</span></label>
           <p class="order-form__hint">Оплата проходит на защищённой странице ЮKassa. Данные карты магазину не передаются.</p>

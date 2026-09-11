@@ -40,7 +40,13 @@ $name = mb_substr(trim((string)($data['name'] ?? '')), 0, 120); /* LOW-фикс 
 $phone = trim((string)($data['phone'] ?? ''));
 $email = trim((string)($data['email'] ?? ''));
 $comment = mb_substr(trim((string)($data['comment'] ?? '')), 0, 2000);
-$paymentMethod = ($data['payment_method'] ?? 'cash') === 'online' ? 'online' : 'cash';
+/* Fail-safe: «online» принимаем только при реально настроенной ЮKassa
+   (галочка + оба ключа). Прямые POST с online при пустых ключах → cash,
+   заказ не теряется, владелец получит уведомление как обычно. */
+$ykLive = setting('yk_enabled', '0') === '1'
+    && trim(setting('yk_shop_id', '')) !== ''
+    && trim(setting('yk_secret_key', '')) !== '';
+$paymentMethod = ($data['payment_method'] ?? 'cash') === 'online' && $ykLive ? 'online' : 'cash';
 $zoneId = (int)($data['delivery_zone_id'] ?? $data['delivery_zone'] ?? 0);
 $address = trim((string)($data['delivery_address'] ?? ''));
 $items = is_array($data['items'] ?? null) ? $data['items'] : [];
