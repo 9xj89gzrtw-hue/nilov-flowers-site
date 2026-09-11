@@ -47,7 +47,7 @@ a{color:inherit;text-decoration:none}
   .admin-nav{order:3;width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-wrap:nowrap;padding-bottom:2px}
   .admin-nav::-webkit-scrollbar{display:none}
   .admin-nav a{white-space:nowrap;padding:8px 12px;font-size:.88rem}
-  .admin-top{position:sticky;top:0;z-index:40}
+  .admin-top{position:sticky;top:0;z-index:50} /* единственный sticky: выше карточек и таблиц */
   main.wrap{padding:16px 16px 80px}
 }
 .btn{display:inline-flex;align-items:center;gap:8px;border:none;border-radius:999px;padding:9px 18px;font:600 .85rem var(--font-ui);cursor:pointer;background:var(--ink);color:#fff;transition:background .15s ease}
@@ -99,7 +99,9 @@ label.f{display:block;font-size:.8rem;font-weight:600;margin:12px 0 4px}
 .row-actions a,.row-actions button{font-size:.78rem;padding:5px 10px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;font-family:var(--font-ui)}
 .row-actions a.danger,.row-actions button.danger{color:var(--err);border-color:var(--err)}
 /* --- Дашборд «Статистика» --- */
-.dash-section{position:sticky;top:0;z-index:50;margin-bottom:20px}
+/* Статистика — контент, а не тулбар: sticky убран (перекрывал таблицы на мобиле).
+   Шапка .admin-top — единственный sticky на странице. */
+.dash-section{margin-bottom:20px}
 .dash-card{background:linear-gradient(180deg,#fff 0%,var(--mint) 220%);border:1px solid rgba(163,196,217,.35)}
 .dash-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
 .dash-ranges{display:flex;gap:4px;flex-wrap:wrap}
@@ -126,6 +128,15 @@ label.f{display:block;font-size:.8rem;font-weight:600;margin:12px 0 4px}
 .dash-top-list{list-style:none;counter-reset:top;margin-top:6px}
 .dash-top-list li{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);counter-increment:top}
 .dash-top-list li:last-child{border-bottom:none}
+/* Мобильный дашборд: компактные метрики, sparkline ниже, порядок после базовых правил */
+@media(max-width:700px){
+  .dash-metric{padding:10px 12px;border-radius:12px}
+  .dash-metric__value{font-size:1.2rem}
+  .dash-card{padding:14px}
+  .dash-head{margin-bottom:10px}
+  .dash-spark{margin-bottom:10px}
+  .sparkline{height:48px}
+}
 .dash-top-list li::before{content:counter(top);font-family:var(--font-display);font-weight:700;color:var(--rose-deep);min-width:18px}
 .dash-top-name{flex:1;font-size:.88rem}
 .dash-thumb{width:36px;height:36px}
