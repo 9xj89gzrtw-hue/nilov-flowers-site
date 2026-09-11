@@ -60,6 +60,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: /admin/order.php?id=' . $id);
         exit;
     }
+
+    /* Удаление заказа (по желанию владельца): позиции + сам заказ, необратимо.
+       Отдельная страница «заказ удалён» не нужна — возврат в список с плашкой. */
+    if ($action === 'delete') {
+        $pdo->prepare('DELETE FROM order_items WHERE order_id = :i')->execute([':i' => $id]);
+        $pdo->prepare('DELETE FROM orders WHERE id = :i')->execute([':i' => $id]);
+        flash('Заказ №' . $id . ' удалён');
+        header('Location: /admin/index.php');
+        exit;
+    }
 }
 
 $stmt = $pdo->prepare('SELECT o.*, z.name AS zone_name, z.price AS zone_price FROM orders o
@@ -154,4 +164,16 @@ flash();
   </form>
 </div>
 <?php endif; ?>
+
+<div class="card" style="margin-top:20px">
+  <details>
+    <summary style="cursor:pointer;color:var(--err,#d64545);font-size:.9rem;font-weight:600">Удалить заказ №<?= (int)$order['id'] ?></summary>
+    <p style="font-size:.85rem;color:var(--ink-soft);margin:10px 0">Заказ исчезнет из списка вместе с составом. Действие необратимо — если заказ просто не нужен, лучше «Отменить» (данные сохранятся в статистике).</p>
+    <form method="post" onsubmit="return confirm('Удалить заказ №<?= (int)$order['id'] ?> безвозвратно? Восстановить будет нельзя.')">
+      <?= csrf_field() ?>
+      <input type="hidden" name="action" value="delete">
+      <button type="submit" class="danger" style="font-size:.85rem;padding:8px 16px;border-radius:10px;border:1.5px solid var(--err,#d64545);color:var(--err,#d64545);background:#fff;cursor:pointer;font-weight:600">Удалить безвозвратно</button>
+    </form>
+  </details>
+</div>
 <?php adminFooter(); ?>
