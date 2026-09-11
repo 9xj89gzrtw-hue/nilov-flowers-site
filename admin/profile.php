@@ -55,6 +55,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    if ($section === 'quiet_hours') {
+        /* Тихие часы магазина (глобальные настройки, UI в профиле) */
+        $qf = trim((string)($_POST['quiet_from'] ?? ''));
+        $qt = trim((string)($_POST['quiet_to'] ?? ''));
+        $valid = static fn(string $t): bool => $t === '' || preg_match('/^\d{2}:\d{2}$/', $t);
+        if (!$valid($qf) || !$valid($qt)) {
+            flash('Некорректный формат тихих часов', true);
+        } else {
+            saveSettings(['quiet_from' => $qf, 'quiet_to' => $qt]);
+            flash('Тихие часы сохранены');
+        }
+        header('Location: /admin/profile.php');
+        exit;
+    }
+
     if ($section === 'password') {
         /* Смена пароля (логика из password.php) */
         $current = (string)($_POST['current'] ?? '');
@@ -134,6 +149,64 @@ flash();
       </div>
     </div>
     <button class="btn" type="submit" style="margin-top:16px">Сохранить</button>
+  </form>
+</div>
+<div class="card" style="max-width:560px">
+  <h2 style="font-size:1.05rem;margin-bottom:8px">Звук при новом заказе</h2>
+  <p style="font-size:.85rem;color:var(--ink-soft);margin-bottom:8px">Пока открыта панель, раз в 20 секунд проверяются новые заказы — и подаётся короткий сигнал. Настройка действует только на этом устройстве и в этом браузере.</p>
+  <label class="f" for="vol">Громкость</label>
+  <input type="range" id="vol" min="0" max="100" step="10" style="width:100%;accent-color:var(--rose-deep,#E2799C)">
+  <div style="display:flex;gap:10px;margin-top:10px">
+    <button class="btn" type="button" id="volTest">Проверить звук</button>
+    <span id="volHint" style="font-size:.82rem;color:var(--ink-soft);align-self:center"></span>
+  </div>
+</div>
+<script>
+/* Громкость звука уведомлений — per-device (localStorage), общий с admin-notify.js */
+(function () {
+  var range = document.getElementById('vol');
+  var hint = document.getElementById('volHint');
+  if (!range) return;
+  var saved = parseFloat(localStorage.getItem('admin_sound_volume'));
+  range.value = isNaN(saved) ? 50 : Math.round(saved * 100);
+  function show() { hint.textContent = range.value + '%'; }
+  range.addEventListener('input', function () {
+    localStorage.setItem('admin_sound_volume', (range.value / 100).toFixed(2));
+    show();
+  });
+  show();
+  document.getElementById('volTest').addEventListener('click', function () {
+    try {
+      var ctx = new (window.AudioContext || window.webkitAudioContext)();
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.frequency.value = 880;
+      gain.gain.value = parseFloat(localStorage.getItem('admin_sound_volume') || '0.5');
+      osc.connect(gain).connect(ctx.destination);
+      osc.start();
+      setTimeout(function () { osc.stop(); ctx.close(); }, 150);
+    } catch (e) { hint.textContent = 'Звук недоступен в этом браузере'; }
+  });
+})();
+</script>
+
+<div class="card" style="max-width:560px">
+  <h2 style="font-size:1.05rem;margin-bottom:8px">Тихие часы магазина</h2>
+  <p style="font-size:.85rem;color:var(--ink-soft);margin-bottom:8px">В это время письма о новых заказах не отправляются. Оба поля пустые — тихие часы выключены. Часовой пояс магазина: <?= e(setting('shop_timezone', 'Europe/Moscow')) ?>.</p>
+  <form method="post">
+    <?= csrf_field() ?>
+    <input type="hidden" name="section" value="quiet_hours">
+    <div class="grid2">
+      <div>
+        <label class="f" for="qf">С (не отправлять с)</label>
+        <input class="input" id="qf" name="quiet_from" type="time" value="<?= e(setting('quiet_from', '')) ?>">
+      </div>
+      <div>
+        <label class="f" for="qt">До (возобновить в)</label>
+        <input class="input" id="qt" name="quiet_to" type="time" value="<?= e(setting('quiet_to', '')) ?>">
+      </div>
+    </div>
+    <button class="btn" type="submit" style="margin-top:16px">Сохранить тихие часы</button>
   </form>
 </div>
 <?php adminFooter(); ?>

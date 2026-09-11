@@ -21,6 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'guarantees_title','guarantee_1','guarantee_2','guarantee_3',
         'shop_email','shop_hours','shop_vk','shop_max_link','shop_instagram','header_phone','header_address',
         'shop_whatsapp','shop_telegram',
+        'upsell_limit','upsell_title','upsell_categories',
         'legal_subject_type','legal_name','legal_number','legal_address','legal_contact_email',
         'vat_rate','yk_shop_id','yk_secret_key','yandex_reviews_id'];
     $values = [];
@@ -222,6 +223,27 @@ flash();
           Показывать email на сайте
         </label>
         <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 0">Снимите флажок — контакт полностью скроется с сайта, даже если поле заполнено.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 style="font-family:var(--font-display);font-size:1.2rem;margin-bottom:8px">Корзина и апсейл</h2>
+    <p style="font-size:.85rem;color:var(--ink-soft);margin:0 0 10px">Блок «Возможно, пригодится» в корзине: предлагайте товары, которых нет в заказе. Источники — отмеченные категории и галочка «в апсейле» у товара.</p>
+    <div class="grid2">
+      <div>
+        <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+          <input type="checkbox" name="upsell_enabled" style="width:auto" <?= sv('upsell_enabled', $s) === '1' ? 'checked' : '' ?>> Показывать блок «Возможно, пригодится» в корзине
+        </label>
+        <label class="f" for="u-limit">Сколько позиций показывать (1–6)</label>
+        <input class="input" id="u-limit" name="upsell_limit" type="number" min="1" max="6" value="<?= sv('upsell_limit', $s) !== '' ? sv('upsell_limit', $s) : '3' ?>">
+      </div>
+      <div>
+        <label class="f" for="u-title">Заголовок блока</label>
+        <input class="input" id="u-title" name="upsell_title" value="<?= sv('upsell_title', $s) !== '' ? sv('upsell_title', $s) : 'Возможно, пригодится' ?>">
+        <label class="f" for="u-cats">Категории-источники (id через запятую)</label>
+        <input class="input" id="u-cats" name="upsell_categories" value="<?= sv('upsell_categories', $s) ?>" placeholder="1,2">
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Пусто — все активные товары. Плюс всегда добавляются товары с галочкой «в апсейле».</p>
       </div>
     </div>
   </div>
