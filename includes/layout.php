@@ -64,6 +64,8 @@ label.f{display:block;font-size:.8rem;font-weight:600;margin:12px 0 4px}
 .status-badge.confirmed{background:var(--blue)}
 .status-badge.done{background:var(--mint)}
 .status-badge.canceled{background:#eee}
+.status-badge.unredeemed{background:#f3d9a4}
+.toast{position:fixed;top:16px;right:16px;z-index:1000;background:#fff;box-shadow:0 14px 40px -20px rgba(43,45,47,.5);border-radius:var(--radius);padding:14px 18px;font-size:.9rem;max-width:320px}
 .flash{padding:12px 16px;border-radius:12px;background:var(--mint);margin-bottom:16px;font-size:.9rem}
 .flash--err{background:#fbe3e3}
 .thumb{width:48px;height:48px;object-fit:cover;border-radius:8px;background:var(--bg-alt)}
@@ -92,7 +94,7 @@ label.f{display:block;font-size:.8rem;font-weight:600;margin:12px 0 4px}
 
 function adminFooter(): void
 {
-    ?></main></body></html><?php
+    ?></main><script src="/js/admin-notify.js" defer></script></body></html><?php
 }
 
 function flash(?string $msg = null, bool $err = false): ?string
