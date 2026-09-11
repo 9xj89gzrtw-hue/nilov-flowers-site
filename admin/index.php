@@ -120,16 +120,18 @@ flash();
         <?php endforeach; ?>
       </select>
     </div>
-    <button class="btn" type="submit">Показать</button>
-    <?php if ($statusFilter !== '' || $dateFrom !== '' || $dateTo !== ''): ?>
-      <a class="btn btn--ghost" href="/admin/index.php">Сбросить</a>
-    <?php endif; ?>
+    <div style="display:flex;gap:10px;align-items:center;margin-top:19px">
+      <button class="btn" type="submit">Показать</button>
+      <?php if ($statusFilter !== '' || $dateFrom !== '' || $dateTo !== ''): ?>
+        <a class="btn btn--ghost" href="/admin/index.php">Сбросить</a>
+      <?php endif; ?>
+      <a class="btn btn--accent" href="/admin/export.php?<?= e(http_build_query(array_filter($_GET, fn($v) => $v !== ''))) ?>">Экспорт в CSV</a>
+    </div>
   </form>
-  <a class="btn btn--accent" href="/admin/export.php?<?= e(http_build_query(array_filter($_GET, fn($v) => $v !== ''))) ?>">Экспорт в CSV</a>
 </div>
 
 <?php if (!$orders): ?>
-<div class="card">Заказов пока нет.</div>
+<div class="card"><div class="empty-state"><strong>Заказов пока нет</strong>Появятся после первого заказа с сайта.</div></div>
 <?php else: foreach ($orders as $o): ?>
 <div class="card">
   <table>

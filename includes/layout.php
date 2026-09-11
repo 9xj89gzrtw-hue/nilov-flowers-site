@@ -8,6 +8,7 @@ function adminHeader(string $title, string $active = ''): void
         'products' => 'Товары',
         'categories' => 'Категории',
         'zones' => 'Зоны доставки',
+        'users' => 'Сотрудники',
         'settings' => 'Настройки',
         'profile' => 'Профиль',
     ];
@@ -39,10 +40,14 @@ a{color:inherit;text-decoration:none}
 .admin-nav a{padding:8px 14px;border-radius:999px;font-size:.9rem;font-weight:500;color:var(--ink-soft)}
 .admin-nav a.active{background:var(--rose);color:var(--ink)}
 .admin-top .spacer{flex:1}
-.btn{display:inline-flex;align-items:center;gap:8px;border:none;border-radius:999px;padding:9px 18px;font:600 .85rem var(--font-ui);cursor:pointer;background:var(--ink);color:#fff}
+.btn{display:inline-flex;align-items:center;gap:8px;border:none;border-radius:999px;padding:9px 18px;font:600 .85rem var(--font-ui);cursor:pointer;background:var(--ink);color:#fff;transition:background .15s ease}
 .btn:hover{background:#000}
 .btn--accent{background:var(--rose-deep)}
-.btn--ghost{background:transparent;border:1.5px solid var(--line);color:var(--ink)}
+.btn--accent:hover{background:#d4638a}
+.btn--ghost{background:transparent;border:1.5px solid var(--line);color:var(--ink);transition:border-color .15s ease,color .15s ease}
+.btn--ghost:hover{border-color:var(--ink-soft);color:var(--ink)}
+.btn--danger{background:#fff;border:1.5px solid var(--err);color:var(--err);transition:background .15s ease,color .15s ease}
+.btn--danger:hover{background:var(--err);color:#fff;border-color:var(--err)}
 main.wrap{padding:28px 20px 60px}
 h1{font-family:var(--font-display);font-weight:600;font-size:1.8rem;margin-bottom:18px}
 h1 .status-badge{vertical-align:middle;margin-left:10px}
@@ -54,6 +59,9 @@ table{width:100%;border-collapse:collapse;font-size:.9rem}
 th{text-align:left;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);padding:8px 10px;border-bottom:1px solid var(--line)}
 td{padding:10px;border-bottom:1px solid var(--line);vertical-align:middle}
 tr:last-child td{border-bottom:none}
+tbody tr,table tr{transition:background .12s ease}
+table tr:hover td{background:rgba(244,169,190,.08)}
+table tr:hover td:has(.row-actions form),table tr:hover th{background:transparent}
 .input,select,textarea{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:9px 12px;font:400 .9rem var(--font-ui);background:var(--bg)}
 .input:focus,select:focus,textarea:focus{outline:none;border-color:var(--rose-deep)}
 label.f{display:block;font-size:.8rem;font-weight:600;margin:12px 0 4px}
@@ -66,8 +74,12 @@ label.f{display:block;font-size:.8rem;font-weight:600;margin:12px 0 4px}
 .status-badge.canceled{background:#eee}
 .status-badge.unredeemed{background:#f3d9a4}
 .toast{position:fixed;top:16px;right:16px;z-index:1000;background:#fff;box-shadow:0 14px 40px -20px rgba(43,45,47,.5);border-radius:var(--radius);padding:14px 18px;font-size:.9rem;max-width:320px}
-.flash{padding:12px 16px;border-radius:12px;background:var(--mint);margin-bottom:16px;font-size:.9rem}
-.flash--err{background:#fbe3e3}
+.flash{padding:12px 16px;border-radius:12px;background:var(--mint);margin-bottom:16px;font-size:.9rem;border:1px solid rgba(62,142,90,.25);color:#2c5e40}
+.flash--err{background:#fbe3e3;border-color:rgba(214,69,69,.3);color:#8c2f2f}
+.empty-state{text-align:center;padding:36px 20px;color:var(--ink-soft);font-size:.95rem}
+.empty-state strong{display:block;font-family:var(--font-display);font-size:1.15rem;color:var(--ink);margin-bottom:6px;font-weight:600}
+.linklike{background:none;border:none;color:var(--rose-deep);font:600 .85rem var(--font-ui);cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px}
+.linklike:hover{color:#d4638a}
 .thumb{width:48px;height:48px;object-fit:cover;border-radius:8px;background:var(--bg-alt)}
 .row-actions{display:flex;gap:6px;flex-wrap:wrap}
 .row-actions a,.row-actions button{font-size:.78rem;padding:5px 10px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;font-family:var(--font-ui)}
