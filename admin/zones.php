@@ -6,6 +6,13 @@ require_once __DIR__ . '/../includes/layout.php';
 ensureAdminUser();
 requireAdmin();
 
+/* CSRF: админ-POST без валидного токена — отказ */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !csrf_check()) {
+    $back = $_SERVER['HTTP_REFERER'] ?? '/admin/index.php';
+    header('Location: ' . $back);
+    exit;
+}
+
 $pdo = db();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -51,6 +58,7 @@ flash();
 <div class="card">
   <h2 style="font-family:var(--font-display);font-size:1.2rem;margin-bottom:8px"><?= $editing ? 'Редактирование зоны' : 'Новая зона' ?></h2>
   <form method="post" style="display:flex;gap:12px;align-items:end;flex-wrap:wrap">
+    <?= csrf_field() ?>
     <input type="hidden" name="action" value="save">
     <input type="hidden" name="id" value="<?= $editing ? (int)$editing['id'] : 0 ?>">
     <div style="flex:1;min-width:200px">
@@ -82,6 +90,7 @@ flash();
         <div class="row-actions">
           <a href="/admin/zones.php?edit=<?= (int)$z['id'] ?>">Изменить</a>
           <form method="post" onsubmit="return confirm('Удалить зону доставки?')">
+            <?= csrf_field() ?>
             <input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?= (int)$z['id'] ?>">
             <button type="submit" class="danger">Удалить</button>
           </form>

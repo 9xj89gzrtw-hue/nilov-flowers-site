@@ -9,7 +9,7 @@ function adminHeader(string $title, string $active = ''): void
         'categories' => 'Категории',
         'zones' => 'Зоны доставки',
         'settings' => 'Настройки',
-        'password' => 'Пароль',
+        'profile' => 'Профиль',
     ];
     ?><!DOCTYPE html>
 <html lang="ru">

@@ -6,6 +6,13 @@ require_once __DIR__ . '/../includes/layout.php';
 ensureAdminUser();
 requireAdmin();
 
+/* CSRF: админ-POST без валидного токена — отказ */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !csrf_check()) {
+    $back = $_SERVER['HTTP_REFERER'] ?? '/admin/index.php';
+    header('Location: ' . $back);
+    exit;
+}
+
 $pdo = db();
 
 // Удаление
@@ -102,6 +109,7 @@ flash();
     <?= $editing ? 'Редактирование: ' . e($editing['name']) : 'Новый товар' ?>
   </h2>
   <form method="post" enctype="multipart/form-data">
+    <?= csrf_field() ?>
     <input type="hidden" name="action" value="save">
     <input type="hidden" name="id" value="<?= $editing ? (int)$editing['id'] : 0 ?>">
     <div class="grid2">
@@ -159,10 +167,12 @@ flash();
         <div class="row-actions">
           <a href="/admin/products.php?edit=<?= (int)$p['id'] ?>">Изменить</a>
           <form method="post" onsubmit="return confirm('Скрыть/показать товар?')">
+            <?= csrf_field() ?>
             <input type="hidden" name="action" value="toggle"><input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
             <button type="submit"><?= (int)$p['is_active'] === 1 ? 'Скрыть' : 'Показать' ?></button>
           </form>
           <form method="post" onsubmit="return confirm('Удалить товар безвозвратно?')">
+            <?= csrf_field() ?>
             <input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
             <button type="submit" class="danger">Удалить</button>
           </form>
