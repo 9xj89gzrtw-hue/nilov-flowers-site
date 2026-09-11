@@ -31,7 +31,7 @@ $canonicalUrl = 'https://flowers.interfood-catering.ru/offer';
 
     <div class="doc-page__card">
       <?php if ($requisitesReady): ?>
-      <p><strong>Продавец:</strong> <?= e($subjectLabel . ' ' . $subjectName) ?><?= $legalNumber !== '' ? ', ' . e(($subjectType === 'IP' ? 'ОГРНИП ' : 'ОГРН ') . $legalNumber) : '' ?><?= $legalAddress !== '' ? ', адрес: ' . e($legalAddress) : '' ?>.</p>
+      <p><strong>Продавец:</strong> <?= e($subjectLabel . ' ' . $subjectName) ?><?= $legalNumber !== '' ? ', ' . e(($subjectType === 'IP' ? 'ОГРНИП ' : 'ОГРН ') . $legalNumber) : '' ?><?= setting('legal_inn', '') !== '' ? ', ИНН ' . e(setting('legal_inn')) : '' ?><?= $legalAddress !== '' ? ', адрес: ' . e($legalAddress) : '' ?>.</p>
       <?php else: ?>
       <p class="doc-page__note">Реквизиты продавца ещё не внесены в настройках сайта.</p>
       <?php endif; ?>
