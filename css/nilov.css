@@ -206,7 +206,37 @@ html:not(.js-ready) .reveal *{
   animation:none;opacity:1;transform:none;
 }
 
-/* ---------- Тап-таргеты ≥44px (WCAG 2.5.5 / mobile matrix) ---------- */
+/* ---------- Единый treatment фото на витрине (W4: телефонные фото) ----------
+   Любое фото — хоть с телефона в плохом свете — получает единый вид:
+   мягкая saturate+contrast, тёплая кремовая подложка (не мёртво-серая),
+   фикс-геометрия карточки и лёгкий zoom на hover. */
+.product-card__media{
+  background:linear-gradient(160deg,#f3ece2 0%,#ece3d6 100%); /* тёплая подложка = тон фото */
+  border-radius:var(--radius,18px);
+  overflow:hidden;
+}
+.product-card__img,
+.product-card__media img{
+  aspect-ratio:4/5;
+  object-fit:cover;
+  filter:saturate(1.06) contrast(1.04) brightness(1.02);
+  transition:transform .5s cubic-bezier(.22,1,.36,1);
+  mix-blend-mode:normal;
+}
+.product-card:hover .product-card__media img{
+  transform:scale(1.045);
+}
+/* Свет-градиент поверх фото снизу — карточка «дышит» даже с плоским фото */
+.product-card__media::after{
+  content:"";
+  position:absolute;inset:0;
+  background:linear-gradient(180deg,transparent 62%,rgba(246,241,230,.14) 100%);
+  pointer-events:none;
+}
+/* Загрузочное состояние фото: пока едет — кремовый, не серый */
+img.product-card__img{
+  background:#f3ece2;
+}
 .cart-toggle{
   width:44px;height:44px;
 }

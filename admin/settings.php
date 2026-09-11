@@ -130,6 +130,9 @@ flash();
           <input type="checkbox" name="yandex_reviews_enabled" style="width:auto" <?= sv('yandex_reviews_enabled', $s) === '1' ? 'checked' : '' ?>>
           Секция отзывов Яндекс Карт
         </label>
+        <?php if (sv('yandex_reviews_enabled', $s) === '1' && trim(sv('yandex_reviews_id', $s)) === ''): ?>
+        <p style="font-size:.85rem;color:#a05a00;background:#fdf3e3;border:1px solid #ecd9ae;border-radius:10px;padding:8px 12px;margin:8px 0">⚠ Галочка включена, но ID организации пуст — на сайте секция не появится, пока не впишете ID.</p>
+        <?php endif; ?>
         <label class="f" for="yandex-reviews-id" style="margin-top:8px">ID организации на Яндекс Картах</label>
         <input class="input" id="yandex-reviews-id" name="yandex_reviews_id" value="<?= sv('yandex_reviews_id', $s) ?>" placeholder="133112293950">
         <p style="font-size:.82rem;color:var(--ink-soft);margin:4px 0 0">Цифры можно взять в Яндекс Бизнесе: ссылка на карточку организации вида yandex.ru/maps/org/133112293950 — нужен только номер.</p>

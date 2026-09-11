@@ -94,10 +94,64 @@ function saveUpload(array $file, string $dir): string
         @mkdir($dir, 0755, true);
     }
     $name = bin2hex(random_bytes(8)) . '.' . $allowed[$mime];
+
     if (!move_uploaded_file($file['tmp_name'], $dir . '/' . $name)) {
         return '';
     }
+
+    /* W4: нормализация «телефонных» фото уже ПОСЛЕ move (иначе move перезатрёт):
+       resize 1400px, мягкий контраст, нейтрализация жёлтого, webp-копия.
+       GD недоступен/сбой → файл остаётся как загрузили. */
+    normalizeUpload($dir . '/' . $name, $allowed[$mime]);
+
     return $name;
+}
+
+/* Нормализация фото из телефона (W4): только GD, без внешних зависимостей.
+   1) resize до 1400px по длинной стороне (витрина ~700px CSS × 2 retina);
+   2) +brightness 4 / контраст мягкий — телефонные фото часто тёмные и серые;
+   3) +7 синего — гасит жёлтую тональность ламп накаливания;
+   4) webp-копия рядом — карточки каталога подхватывают через <picture>.
+   Идемпотентно: сбой GD → исходный файл не трогаем. */
+function normalizeUpload(string $path, string $ext): void
+{
+    if (!function_exists('imagecreatefromjpeg')) {
+        return;
+    }
+    $src = match ($ext) {
+        'jpg' => @imagecreatefromjpeg($path),
+        'png' => @imagecreatefrompng($path),
+        'webp' => function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($path) : false,
+        default => false,
+    };
+    if ($src === false) {
+        return;
+    }
+    $w = imagesx($src);
+    $h = imagesy($src);
+    $maxSide = 1400;
+    if (max($w, $h) > $maxSide) {
+        $scale = $maxSide / max($w, $h);
+        $nw = (int)round($w * $scale);
+        $nh = (int)round($h * $scale);
+        $dst = imagecreatetruecolor($nw, $nh);
+        imagecopyresampled($dst, $src, 0, 0, 0, 0, $nw, $nh, $w, $h);
+        imagedestroy($src);
+        $src = $dst;
+    }
+    @imagefilter($src, IMG_FILTER_BRIGHTNESS, 4);
+    @imagefilter($src, IMG_FILTER_CONTRAST, -6);
+    @imagefilter($src, IMG_FILTER_COLORIZE, 0, 0, 7);
+    $ok = match ($ext) {
+        'jpg' => @imagejpeg($src, $path, 88),
+        'png' => @imagepng($src, $path, 6),
+        'webp' => function_exists('imagewebp') ? @imagewebp($src, $path, 88) : false,
+        default => false,
+    };
+    if ($ok && function_exists('imagewebp') && $ext !== 'webp') {
+        @imagewebp($src, preg_replace('/\.(jpe?g|png)$/i', '.webp', $path), 80);
+    }
+    /* PHP 8.0+: imagedestroy() не нужен и deprecated с 8.5 — опускаем. */
 }
 
 function deleteImage(string $name, string $dir): void

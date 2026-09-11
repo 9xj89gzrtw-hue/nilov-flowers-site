@@ -23,6 +23,7 @@ $igDisclaimer = $igOn; /* пометку Meta показываем только 
     <div>
       <p class="site-footer__name"><?= e($siteName) ?></p>
       <?php if ($address !== ''): ?><p><?= e($address) ?></p><?php endif; ?>
+      <?php if (setting('shop_hours', '') !== ''): ?><p style="color:var(--ink-soft);font-size:.92rem"><?= e(setting('shop_hours')) ?></p><?php endif; ?>
       <?php if ($phone !== ''): ?><p><a class="site-footer__phone" href="tel:+<?= e($phoneDigits) ?>"><?= e($phone) ?></a></p><?php endif; ?>
       <?php if ($waOn || $tgOn || $vkOn || $maxOn || $igOn || $emailOn): ?>
       <p class="site-footer__messengers">
