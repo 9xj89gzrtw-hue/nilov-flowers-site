@@ -1,8 +1,4 @@
+state/
 db/*.db
-img/uploads/*
-img/products/*
-!img/products/.gitkeep
-.DS_Store
-.worktrees/
-db/*.db-shm
 db/*.db-wal
+db/*.db-shm

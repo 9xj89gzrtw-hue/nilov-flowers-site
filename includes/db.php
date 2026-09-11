@@ -187,6 +187,13 @@ function migrateSchema(PDO $pdo): void
         ('max_enabled', '1'),
         ('ig_enabled', '1'),
         ('email_enabled', '1')");
+    /* push-подписки Web Push (VAPID) */
+    $pdo->exec("CREATE TABLE IF NOT EXISTS push_subscriptions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        endpoint TEXT UNIQUE NOT NULL,
+        sub_json TEXT NOT NULL,
+        created_at TEXT DEFAULT (datetime('now'))
+    )");
     /* admin_users: email-логин, имя, роль, уведомления, запасной email */
     $pdo->exec("CREATE TABLE IF NOT EXISTS admin_users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

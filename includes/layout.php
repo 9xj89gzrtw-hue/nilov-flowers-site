@@ -85,6 +85,7 @@ label.f{display:block;font-size:.8rem;font-weight:600;margin:12px 0 4px}
 .row-actions a,.row-actions button{font-size:.78rem;padding:5px 10px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;font-family:var(--font-ui)}
 .row-actions a.danger,.row-actions button.danger{color:var(--err);border-color:var(--err)}
 </style>
+<script src="/js/pwa-register.js" defer></script>
 </head>
 <body>
 <header class="admin-top">
