@@ -2,3 +2,7 @@ state/
 db/*.db
 db/*.db-wal
 db/*.db-shm
+*.sqlite
+*.sqlite3
+*.db
+db/shop.sqlite

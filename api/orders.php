@@ -64,7 +64,7 @@ if ($paymentMethod === 'online' && $email === '') {
     $errors[] = 'email_required_for_online';
 }
 if (!($data['pd_consent'] ?? false)) {
-    $errors[] = 'pd_consent';
+    respond(422, ['errors' => ['pd_consent_required']]);
 }
 
 $pdo = db();
@@ -125,13 +125,15 @@ $paymentToken = bin2hex(random_bytes(16));
 $pdo->beginTransaction();
 try {
     $stmt = $pdo->prepare('INSERT INTO orders (customer_name, phone, email, delivery_zone_id, delivery_address,
-        comment, payment_method, total, status, payment_token)
-        VALUES (:n, :ph, :em, :z, :a, :c, :pm, :t, :st, :pt)');
+        comment, payment_method, total, status, payment_token, consent_log)
+        VALUES (:n, :ph, :em, :z, :a, :c, :pm, :t, :st, :pt, :cl)');
     $stmt->execute([
         ':n' => $name, ':ph' => $phone, ':em' => $email,
         ':z' => $zone !== null ? (int)$zone['id'] : null,
         ':a' => $address, ':c' => $comment, ':pm' => $paymentMethod,
         ':t' => $total, ':st' => 'new', ':pt' => $paymentToken,
+        ':cl' => sprintf('consent given %s, ip %s', date('Y-m-d H:i:s'),
+            $_SERVER['REMOTE_ADDR'] ?? 'unknown'),
     ]);
     $orderId = (int)$pdo->lastInsertId();
 

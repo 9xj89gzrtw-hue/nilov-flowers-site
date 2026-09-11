@@ -186,7 +186,10 @@ function migrateSchema(PDO $pdo): void
         ('vk_enabled', '1'),
         ('max_enabled', '1'),
         ('ig_enabled', '1'),
-        ('email_enabled', '1')");
+        ('email_enabled', '1'),
+        ('yandex_verification', ''),
+        ('google_site_verification', ''),
+        ('metrika_counter_id', '')");
     /* push-подписки Web Push (VAPID) */
     $pdo->exec("CREATE TABLE IF NOT EXISTS push_subscriptions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -249,5 +252,10 @@ function migrateSchema(PDO $pdo): void
     $prodCols2 = array_column($pdo->query("PRAGMA table_info(products)")->fetchAll(), 'name');
     if (!in_array('show_in_upsell', $prodCols2, true)) {
         $pdo->exec('ALTER TABLE products ADD COLUMN show_in_upsell INTEGER NOT NULL DEFAULT 0');
+    }
+    /* orders: лог согласия на обработку ПД (152-ФЗ) — дата/время/IP/значение */
+    $ordCols2 = array_column($pdo->query("PRAGMA table_info(orders)")->fetchAll(), 'name');
+    if (!in_array('consent_log', $ordCols2, true)) {
+        $pdo->exec("ALTER TABLE orders ADD COLUMN consent_log TEXT NOT NULL DEFAULT ''");
     }
 }
