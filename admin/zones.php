@@ -79,7 +79,7 @@ flash();
 </div>
 
 <div class="card">
-  <table>
+  <div class="table-scroll"><table>
     <tr><th>Район</th><th>Стоимость</th><th>Сортировка</th><th></th></tr>
     <?php foreach ($zones as $z): ?>
     <tr>
@@ -98,6 +98,6 @@ flash();
       </td>
     </tr>
     <?php endforeach; ?>
-  </table>
+  </table></div>
 </div>
 <?php adminFooter(); ?>

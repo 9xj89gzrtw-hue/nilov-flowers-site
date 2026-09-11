@@ -45,23 +45,8 @@
     updateSy();
   }
 
-  /* 2. Title-badge корзины: «(N) Базовый title» */
-  var baseTitle = null;
-  function badge(n) {
-    if (baseTitle === null) baseTitle = document.title;
-    var m = baseTitle.match(/^\((\d+)\)\s*/);
-    var clean = m ? baseTitle.slice(m[0].length) : baseTitle;
-    document.title = n > 0 ? '(' + n + ') ' + clean : clean;
-  }
-  function count(items) {
-    var n = 0;
-    (items || []).forEach(function (i) { n += i.qty || 1; });
-    return n;
-  }
-  function refresh() {
-    try { badge(count(window.cart ? window.cart.getItems() : [])); } catch (e) { /* ignore */ }
-  }
-  window.addEventListener('cart:change', function (ev) { badge(count(ev.detail)); });
+  /* 2. Title-badge корзины — ВЫКЛЮЧЕН на витрине (владельцу не нравится «(1)» во вкладке).
+     Счётчик остаётся только на бейдже иконки корзины + в админке (заказы). */
+  function refresh() {}
   window.addEventListener('pageshow', refresh);
-  refresh();
 })();

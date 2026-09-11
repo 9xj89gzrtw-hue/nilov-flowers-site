@@ -330,18 +330,21 @@ if ($__heroPre !== '') {
                  Адрес самовывоза = адрес магазина из настроек. */
               $pickupAddr = trim(setting('shop_address', ''));
               ?>
-              <option value="0" data-price="0" selected>Самовывоз — бесплатно<?php if ($pickupAddr !== ''): ?> (<?= e($pickupAddr) ?>)<?php endif; ?></option>
+              <option value="0" data-price="0" selected>Самовывоз — бесплатно</option>
               <?php foreach ($zones as $z): ?>
                 <option value="<?= (int)$z['id'] ?>" data-price="<?= (int)$z['price'] ?>">Доставка: <?= e($z['name']) ?> — <?= formatPrice((int)$z['price']) ?></option>
               <?php endforeach; ?>
             </select>
+            <?php if ($pickupAddr !== ''): ?>
+            <p class="order-form__hint" id="orderPickupAddr" style="margin-top:6px">Адрес самовывоза: <?= e($pickupAddr) ?> · букет будет готов в течение дня, предупредим по телефону</p>
+            <?php endif; ?>
           </div>
           <div class="order-form__field" id="orderDeliveryAddressField" hidden>
             <label for="orderDeliveryAddress">Адрес доставки</label>
             <input type="text" id="orderDeliveryAddress" name="delivery_address" placeholder="Улица, дом, квартира">
             <span class="order-form__error" id="orderDeliveryAddressError"></span>
           </div>
-          <p class="order-form__hint" id="orderDeliveryHint">Самовывоз: букет будет готов в течение дня — предупредим по телефону. Доставка тоже в течение дня, время согласуем.</p>
+          <p class="order-form__hint" id="orderDeliveryHint">Доставим в течение дня, время согласуем по телефону</p>
         </fieldset>
         <fieldset class="order-form__payment">
           <legend>Способ оплаты</legend>

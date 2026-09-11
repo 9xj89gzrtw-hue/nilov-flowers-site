@@ -257,7 +257,7 @@ $dashqs = fn(string $r) => '/admin/index.php?' . e(http_build_query(array_merge(
 <div class="card"><div class="empty-state"><strong>Заказов пока нет</strong>Появятся после первого заказа с сайта.</div></div>
 <?php else: foreach ($orders as $o): ?>
 <div class="card">
-  <table>
+  <div class="table-scroll"><table>
     <tr>
       <td style="width:90px"><strong><a class="order-link" href="/admin/order.php?id=<?= (int)$o['id'] ?>">№ <?= (int)$o['id'] ?></a></strong><br><small style="color:var(--ink-soft)"><?= e($o['created_at']) ?></small></td>
       <td>
@@ -317,7 +317,7 @@ $dashqs = fn(string $r) => '/admin/index.php?' . e(http_build_query(array_merge(
         </div>
       </td>
     </tr>
-  </table>
+  </table></div>
 </div>
 <?php endforeach; endif; ?>
 

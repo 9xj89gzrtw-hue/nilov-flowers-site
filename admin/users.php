@@ -122,7 +122,7 @@ flash();
 </div>
 
 <div class="card">
-  <table>
+  <div class="table-scroll"><table>
     <tr><th>Email</th><th>Имя</th><th>Роль</th><th>Уведомления</th><th>Добавлен</th><th></th></tr>
     <?php foreach ($users as $u): ?>
     <tr>
@@ -155,7 +155,7 @@ flash();
       </td>
     </tr>
     <?php endforeach; ?>
-  </table>
+  </table></div>
 </div>
 <?php endif; ?>
 <?php adminFooter(); ?>

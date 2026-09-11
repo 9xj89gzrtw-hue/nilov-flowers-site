@@ -40,6 +40,16 @@ a{color:inherit;text-decoration:none}
 .admin-nav a{padding:8px 14px;border-radius:999px;font-size:.9rem;font-weight:500;color:var(--ink-soft)}
 .admin-nav a.active{background:var(--rose);color:var(--ink)}
 .admin-top .spacer{flex:1}
+/* Мобильная админка (W4): шапка не рвётся, nav скроллится горизонтально внутри себя */
+@media(max-width:700px){
+  .admin-top .wrap{gap:10px;padding:10px 16px;min-height:0}
+  .admin-logo{font-size:1rem}
+  .admin-nav{order:3;width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-wrap:nowrap;padding-bottom:2px}
+  .admin-nav::-webkit-scrollbar{display:none}
+  .admin-nav a{white-space:nowrap;padding:8px 12px;font-size:.88rem}
+  .admin-top{position:sticky;top:0;z-index:40}
+  main.wrap{padding:16px 16px 80px}
+}
 .btn{display:inline-flex;align-items:center;gap:8px;border:none;border-radius:999px;padding:9px 18px;font:600 .85rem var(--font-ui);cursor:pointer;background:var(--ink);color:#fff;transition:background .15s ease}
 .btn:hover{background:#000}
 .btn--accent{background:var(--rose-deep)}
@@ -56,6 +66,10 @@ h1 .status-badge{vertical-align:middle;margin-left:10px}
 .filters-bar .f{margin:0}
 .card{background:#fff;border-radius:var(--radius-lg);padding:22px;box-shadow:0 14px 40px -28px rgba(43,45,47,.35);margin-bottom:20px}
 table{width:100%;border-collapse:collapse;font-size:.9rem}
+/* Мобильные таблицы: горизонтальный скролл внутри карточки, документ не рвётся */
+.table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.table-scroll table{min-width:560px}
+.table-scroll table.products-table{min-width:760px}
 th{text-align:left;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);padding:8px 10px;border-bottom:1px solid var(--line)}
 td{padding:10px;border-bottom:1px solid var(--line);vertical-align:middle}
 tr:last-child td{border-bottom:none}

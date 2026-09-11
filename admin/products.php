@@ -222,7 +222,7 @@ flash();
       <button type="submit" class="danger" style="font-size:.8rem;padding:7px 14px;border-radius:8px;border:1px solid var(--err,#c0392b);color:#c0392b;background:#fff;cursor:pointer;font-family:inherit">Снять всё с продажи</button>
     </form>
   </div>
-  <table>
+  <div class="table-scroll"><table>
     <tr><th>Фото</th><th>Название</th><th>Категория</th><th>Цена</th><th>Акция</th><th>Сорт.</th><th>Статус</th><th></th><th></th></tr>
     <?php foreach ($products as $p): ?>
     <tr>
@@ -259,7 +259,7 @@ flash();
       </td>
     </tr>
     <?php endforeach; ?>
-  </table>
+  </table></div>
   <?php if ($pages > 1): ?>
   <div style="text-align:center;margin-top:14px">
     <?php for ($p = 1; $p <= $pages; $p++): ?>
