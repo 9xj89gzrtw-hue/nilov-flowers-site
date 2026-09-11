@@ -6,6 +6,7 @@ require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/util.php';
 
 $slug = (string)($_GET['slug'] ?? '');
+$canonicalUrl = 'https://flowers.interfood-catering.ru/product/' . rawurlencode($slug);
 $stmt = db()->prepare('SELECT p.*, c.name AS category_name FROM products p
     LEFT JOIN categories c ON c.id = p.category_id WHERE p.slug = :s AND p.is_active = 1');
 $stmt->execute([':s' => $slug]);

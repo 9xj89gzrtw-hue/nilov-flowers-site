@@ -47,6 +47,7 @@ function product_img_webp(array $p): string
 
 /* Демо-фото: активным товарам без своего фото подставляем файлы из img/products,
    чтобы витрина не выглядела пустой. Свои фото (загруженные в админке) не трогаем. */
+$canonicalUrl = 'https://flowers.interfood-catering.ru/';
 $demoImages = ['roz.jpg', 'p2.jpg', 'p3.jpg'];
 $demoIdx = 0;
 foreach ($products as &$pRow) {
@@ -343,7 +344,7 @@ if ($__heroPre !== '') {
         </div>
         <label class="order-form__checkbox">
           <input type="checkbox" id="orderPdConsent" name="pd_consent" required>
-          <span>Я даю согласие на обработку персональных данных *</span>
+          <span>Я даю согласие на обработку персональных данных (ФИО, телефон, адрес) в целях оформления и доставки заказа на условиях <a href="/policy" target="_blank" rel="noopener">Политики конфиденциальности</a> и <a href="/offer" target="_blank" rel="noopener">Публичной оферты</a> *</span>
         </label>
         <span class="order-form__error" id="orderPdConsentError"></span>
         <p class="order-form__total" id="orderTotal"></p>

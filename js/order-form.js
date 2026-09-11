@@ -238,6 +238,12 @@
 
       if (res.ok) {
         const created = await res.json().catch(function () { return null; });
+        /* Цель Яндекс.Метрики: отправка заказа (после согласия в cookie-баннере) */
+        if (window.ym && window.YM_COUNTER_ID) {
+          const orderTotal = window.cart && typeof window.cart.getTotal === 'function'
+            ? (window.cart.getTotal() + (selectedDeliveryPrice())) : 0;
+          try { ym(window.YM_COUNTER_ID, 'reachGoal', 'ORDER_SUBMIT', { order_price: orderTotal, currency: 'RUB' }); } catch (err) { /* метрика не критична */ }
+        }
         if (window.cart) window.cart.clear();
         form.reset();
         syncDeliveryAddressRequirement();

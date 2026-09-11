@@ -1,11 +1,21 @@
 <?php
-/* Общий head всех витринных страниц: кодировка, вьюпорт, стили, шрифты, favicon, OG-база */
+/* Общий head всех витринных страниц: кодировка, вьюпорт, стили, шрифты, favicon, OG-база.
+   Canonical и метатеги верификации: страница передаёт $canonicalUrl до require;
+   если не задан — canonical не печатается. */
 $shopName = setting('shop_name', 'Nilov Flowers');
 $favicon = setting('site_favicon', '');
 $iconHref = $favicon !== '' ? '/img/uploads/' . rawurlencode($favicon) : '/img/favicon.ico';
+$yandexVerification = trim(setting('yandex_verification', ''));
+$googleVerification = trim(setting('google_site_verification', ''));
 ?>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<?php if (!empty($canonicalUrl)): ?><link rel="canonical" href="<?= e($canonicalUrl) ?>">
+<?php endif; ?>
+<?php if ($yandexVerification !== ''): ?><meta name="yandex-verification" content="<?= e($yandexVerification) ?>">
+<?php endif; ?>
+<?php if ($googleVerification !== ''): ?><meta name="google-site-verification" content="<?= e($googleVerification) ?>">
+<?php endif; ?>
 <link rel="icon" href="<?= e($iconHref) ?>" sizes="any">
 <link rel="icon" type="image/svg+xml" href="/img/favicon.svg">
 <link rel="apple-touch-icon" href="/img/favicon-180.png">
@@ -25,3 +35,4 @@ $iconHref = $favicon !== '' ? '/img/uploads/' . rawurlencode($favicon) : '/img/f
 <meta property="og:site_name" content="<?= e($shopName) ?>">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="ru_RU">
+<?php require __DIR__ . '/../includes/metrika.php'; ?>

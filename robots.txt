@@ -3,5 +3,9 @@ Allow: /
 Disallow: /admin/
 Disallow: /api/
 Disallow: /db/
+Disallow: /*?sort=
+Disallow: /*?page=
 
-Sitemap: https://flowers.interfood-catering.ru/sitemap.php
+Clean-param: utm_source&utm_medium&utm_campaign&utm_term&utm_content&yclid&gclid
+
+Sitemap: https://flowers.interfood-catering.ru/sitemap.xml
