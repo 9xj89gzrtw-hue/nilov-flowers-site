@@ -45,7 +45,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'cookie_banner_text','cookie_accept_text','cookie_reject_text',
         /* Тексты чекаута и корзины (критерий 16) */
         'pickup_option_text','delivery_hint_text','submit_button_text','submit_nopay_text',
-        'cart_title','cart_empty_text','cart_checkout_text','cart_continue_text'];
+        'cart_title','cart_empty_text','cart_checkout_text','cart_continue_text',
+        /* Лейблы полей формы заказа (критерий 16, аудит-хардкоды) */
+        'form_name_label','form_phone_label','form_email_label','form_delivery_zone_label',
+        'fieldset_delivery_legend','fieldset_payment_legend','pay_online_label','pay_cash_label'];
     $values = [];
     foreach ($keys as $k) {
         $values[$k] = trim((string)($_POST[$k] ?? ''));
@@ -388,6 +391,31 @@ flash();
         <input class="input" id="ct-c" name="cart_checkout_text" value="<?= sv('cart_checkout_text', $s) !== '' ? sv('cart_checkout_text', $s) : 'Оформить заказ' ?>" maxlength="30">
         <label class="f" for="ct-n" style="margin-top:8px">Кнопка «продолжить покупки»</label>
         <input class="input" id="ct-n" name="cart_continue_text" value="<?= sv('cart_continue_text', $s) !== '' ? sv('cart_continue_text', $s) : 'Продолжить покупки' ?>" maxlength="30">
+      </div>
+    </div>
+    <?php /* Лейблы полей формы заказа (критерий 16, аудит-хардкоды) */ ?>
+    <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
+    <p style="font-size:.85rem;font-weight:600;margin:0 0 8px">Подписи полей в форме заказа</p>
+    <div class="grid2">
+      <div>
+        <label class="f" for="fl-name">Поле имени</label>
+        <input class="input" id="fl-name" name="form_name_label" value="<?= sv('form_name_label', $s) !== '' ? sv('form_name_label', $s) : 'Ваше имя *' ?>" maxlength="30">
+        <label class="f" for="fl-phone" style="margin-top:8px">Поле телефона</label>
+        <input class="input" id="fl-phone" name="form_phone_label" value="<?= sv('form_phone_label', $s) !== '' ? sv('form_phone_label', $s) : 'Телефон' ?>" maxlength="30">
+        <label class="f" for="fl-email" style="margin-top:8px">Поле email</label>
+        <input class="input" id="fl-email" name="form_email_label" value="<?= sv('form_email_label', $s) !== '' ? sv('form_email_label', $s) : 'Email' ?>" maxlength="30">
+        <label class="f" for="fl-zone" style="margin-top:8px">Список получения</label>
+        <input class="input" id="fl-zone" name="form_delivery_zone_label" value="<?= sv('form_delivery_zone_label', $s) !== '' ? sv('form_delivery_zone_label', $s) : 'Как получить букет' ?>" maxlength="40">
+      </div>
+      <div>
+        <label class="f" for="fl-dl">Заголовок блока доставки</label>
+        <input class="input" id="fl-dl" name="fieldset_delivery_legend" value="<?= sv('fieldset_delivery_legend', $s) !== '' ? sv('fieldset_delivery_legend', $s) : 'Доставка' ?>" maxlength="30">
+        <label class="f" for="fl-pl" style="margin-top:8px">Заголовок блока оплаты</label>
+        <input class="input" id="fl-pl" name="fieldset_payment_legend" value="<?= sv('fieldset_payment_legend', $s) !== '' ? sv('fieldset_payment_legend', $s) : 'Способ оплаты' ?>" maxlength="30">
+        <label class="f" for="fl-on" style="margin-top:8px">Вариант «онлайн»</label>
+        <input class="input" id="fl-on" name="pay_online_label" value="<?= sv('pay_online_label', $s) !== '' ? sv('pay_online_label', $s) : 'Картой или через СБП — сразу онлайн' ?>" maxlength="60">
+        <label class="f" for="fl-cash" style="margin-top:8px">Вариант «при получении»</label>
+        <input class="input" id="fl-cash" name="pay_cash_label" value="<?= sv('pay_cash_label', $s) !== '' ? sv('pay_cash_label', $s) : 'При получении' ?>" maxlength="40">
       </div>
     </div>
   </div>

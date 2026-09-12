@@ -377,26 +377,26 @@ if ($__heroPre !== '') {
       <p class="order__selected" id="orderSelected"></p>
       <form class="order-form" id="orderForm" novalidate>
         <div class="order-form__field">
-          <label for="orderName">Ваше имя *</label>
+          <label for="orderName"><?= e(setting('form_name_label', 'Ваше имя *')) ?></label>
           <input type="text" id="orderName" name="name" autocomplete="name" required minlength="2">
           <span class="order-form__error" id="orderNameError"></span>
         </div>
         <div class="order-form__field">
-          <label for="orderPhone">Телефон</label>
+          <label for="orderPhone"><?= e(setting('form_phone_label', 'Телефон')) ?></label>
           <input type="tel" id="orderPhone" name="phone" autocomplete="tel" placeholder="+7 (___) ___-__-__">
           <span class="order-form__error" id="orderPhoneError"></span>
         </div>
         <div class="order-form__field">
-          <label for="orderEmail">Email <span id="orderEmailReq" style="color:var(--rose-deep,#E2799C);font-weight:600" hidden>* обязательно для онлайн-оплаты</span></label>
+          <label for="orderEmail"><?= e(setting('form_email_label', 'Email')) ?> <span id="orderEmailReq" style="color:var(--rose-deep,#E2799C);font-weight:600" hidden>* обязательно для онлайн-оплаты</span></label>
           <input type="email" id="orderEmail" name="email" autocomplete="email" placeholder="you@example.com">
           <span class="order-form__hint" id="orderEmailHint" hidden>На этот адрес придёт чек об оплате</span>
           <span class="order-form__error" id="orderEmailError"></span>
         </div>
         <p class="order-form__hint" id="contactHint">Укажите телефон и/или email — как удобнее для связи</p>
         <fieldset class="order-form__nested">
-          <legend>Доставка</legend>
+          <legend><?= e(setting('fieldset_delivery_legend', 'Доставка')) ?></legend>
           <div class="order-form__field">
-            <label for="orderDeliveryZone">Как получить букет</label>
+            <label for="orderDeliveryZone"><?= e(setting('form_delivery_zone_label', 'Как получить букет')) ?></label>
             <select id="orderDeliveryZone" name="delivery_zone">
               <?php
               /* Самовывоз — приоритетный способ: выбран по умолчанию, бесплатно.
@@ -420,7 +420,7 @@ if ($__heroPre !== '') {
           <p class="order-form__hint" id="orderDeliveryHint"><?= e(setting('delivery_hint_text', 'Доставим в течение дня, время согласуем по телефону')) ?></p>
         </fieldset>
         <fieldset class="order-form__payment">
-          <legend>Способ оплаты</legend>
+          <legend><?= e(setting('fieldset_payment_legend', 'Способ оплаты')) ?></legend>
           <?php
           /* Fail-safe: «онлайн» показываем только если ЮKassa реально настроена
              (галочка + ключи). Иначе покупатель увидит несбыточное обещание. */
@@ -429,11 +429,11 @@ if ($__heroPre !== '') {
               && trim(setting('yk_secret_key', '')) !== '';
           ?>
           <?php if ($ykLive): ?>
-          <label class="order-form__radio"><input type="radio" name="payment_method" value="online" checked><span>Картой или через СБП — сразу онлайн</span></label>
-          <label class="order-form__radio"><input type="radio" name="payment_method" value="cash"><span>При получении</span></label>
+          <label class="order-form__radio"><input type="radio" name="payment_method" value="online" checked><span><?= e(setting('pay_online_label', 'Картой или через СБП — сразу онлайн')) ?></span></label>
+          <label class="order-form__radio"><input type="radio" name="payment_method" value="cash"><span><?= e(setting('pay_cash_label', 'При получении')) ?></span></label>
           <p class="order-form__hint">Оплата проходит на защищённой странице ЮKassa. Данные карты магазину не передаются.</p>
           <?php else: ?>
-          <label class="order-form__radio"><input type="radio" name="payment_method" value="cash" checked><span>При получении</span></label>
+          <label class="order-form__radio"><input type="radio" name="payment_method" value="cash" checked><span><?= e(setting('pay_cash_label', 'При получении')) ?></span></label>
           <input type="hidden" name="payment_method" value="cash">
           <p class="order-form__hint">Оплата — курьеру при получении заказа.</p>
           <?php endif; ?>
