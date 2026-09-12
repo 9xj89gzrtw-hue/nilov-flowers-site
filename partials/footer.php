@@ -51,7 +51,7 @@ $igDisclaimer = $igOn; /* пометку Meta показываем только 
       <?php endif; ?>
       <?php endif; ?>
     </div>
-    <span>© <?= date('Y') ?> <?= e($siteName) ?> · <a href="/policy">Политика ПД</a> · <a href="/offer">Оферта</a></span>
+    <span>© <?= date('Y') ?> <?= e($siteName) ?> · <a href="/track">Где мой заказ?</a> · <a href="/policy">Политика ПД</a> · <a href="/offer">Оферта</a></span>
   </div>
 </footer>
 

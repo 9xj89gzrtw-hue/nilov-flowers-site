@@ -18,6 +18,7 @@ RewriteRule ^product/([a-z0-9\-]+)$ product.php?slug=$1 [L,QSA]
 # Юридические страницы (переименованные: обход opcache без validate_timestamps)
 RewriteRule ^offer$ offer_new.php [L,QSA]
 RewriteRule ^policy$ policy_new.php [L,QSA]
+RewriteRule ^track$ track.php [L,QSA]
 
 # Страница благодарности
 RewriteRule ^order-thanks$ order-thanks.php [L,QSA]
