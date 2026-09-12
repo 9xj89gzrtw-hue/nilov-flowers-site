@@ -285,8 +285,8 @@ if ($__heroPre !== '') {
                 <svg viewBox="0 0 80 94" style="width:30%;margin:auto;color:var(--blue)" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="40" cy="30" r="11"/><circle cx="26" cy="38" r="8"/><circle cx="54" cy="38" r="8"/><path d="M40 41v20M40 61c-8 6-14 14-16 25M40 61c8 6 14 14 16 25"/></svg>
               <?php endif; ?>
             </a>
-            <?php if ($isSale): ?><span class="product-card__badge">Скидка до конца недели</span><?php endif; ?>
-            <?php if ((int)($p['is_urgent'] ?? 0) === 1): ?><span class="product-card__badge product-card__badge--urgent">Успеть сегодня</span><?php endif; ?>
+            <?php if ($isSale): ?><span class="product-card__badge"><?= e(setting('badge_sale_text', 'Скидка до конца недели')) ?></span><?php endif; ?>
+            <?php if ((int)($p['is_urgent'] ?? 0) === 1): ?><span class="product-card__badge product-card__badge--urgent"><?= e(setting('badge_urgent_text', 'Успеть сегодня')) ?></span><?php endif; ?>
             <?php /* Конкурентный бейдж (критерий 13, EXPRESS-паттерн): тариф зоны владельца. Текст редактируется (критерий 16). */ ?>
             <?php if ($featDeliveryBadge): ?><span class="product-card__badge product-card__badge--deliv"><?= e(setting('delivery_badge_text', 'Доставка 0₽ · Приморский')) ?></span><?php endif; ?>
             <button type="button" class="product-card__cta" data-order-cta
@@ -449,7 +449,7 @@ if ($__heroPre !== '') {
         <span class="order-form__error" id="orderPdConsentError"></span>
         <p class="order-form__total" id="orderTotal"></p>
         <button type="submit" class="btn btn--accent order-form__submit" id="orderSubmit">Оплатить заказ</button>
-        <p class="order-form__hint">Заказы принимаем ежедневно до 20:00 — оформленные сегодня доставим сегодня же.</p>
+        <p class="order-form__hint"><?= e(sprintf('Заказы принимаем ежедневно до %s — оформленные сегодня доставим сегодня же.', setting('order_deadline_hour', '20') . ':' . str_pad(setting('order_deadline_minute', '0'), 2, '0', STR_PAD_LEFT))) ?></p>
         <p class="order-form__status" id="orderStatus" role="status" hidden></p>
       </form>
     </div>

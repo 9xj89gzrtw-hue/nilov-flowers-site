@@ -37,7 +37,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         /* Тексты бегущей ленты (критерий 16) */
         'marquee_1','marquee_2','marquee_3','marquee_4',
         /* Заголовки секций (критерий 16) */
-        'catalog_title','catalog_subtitle','order_title'];
+        'catalog_title','catalog_subtitle','order_title',
+        /* Бейджи карточек + cookie-баннер (критерий 16) */
+        'badge_sale_text','badge_urgent_text',
+        'cookie_banner_text','cookie_accept_text','cookie_reject_text'];
     $values = [];
     foreach ($keys as $k) {
         $values[$k] = trim((string)($_POST[$k] ?? ''));
@@ -254,7 +257,13 @@ flash();
           <input type="checkbox" name="feature_favorites" style="width:auto" <?= sv('feature_favorites', $s) === '1' ? 'checked' : '' ?>>
           Сердечки «Избранное» на карточках
         </label>
-        <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 10px 26px">Покупатель отмечает букеты сердечком и может показать только их.</p>
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 0 26px">Покупатель отмечает букеты сердечком и может показать только их.</p>
+        <div style="margin-left:26px;margin-top:6px">
+          <label class="f" for="bd-sale">Бейдж со скидкой</label>
+          <input class="input" id="bd-sale" name="badge_sale_text" value="<?= sv('badge_sale_text', $s) !== '' ? sv('badge_sale_text', $s) : 'Скидка до конца недели' ?>" maxlength="40">
+          <label class="f" for="bd-urg" style="margin-top:8px">Бейдж «успеть сегодня» (ограниченные букеты)</label>
+          <input class="input" id="bd-urg" name="badge_urgent_text" value="<?= sv('badge_urgent_text', $s) !== '' ? sv('badge_urgent_text', $s) : 'Успеть сегодня' ?>" maxlength="40">
+        </div>
         <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
           <input type="checkbox" name="feature_faq" style="width:auto" <?= sv('feature_faq', $s) === '1' ? 'checked' : '' ?>>
           Блок «Частые вопросы» на главной
@@ -334,6 +343,21 @@ flash();
       <div>
         <label class="f" for="ce-h">Подсказка</label>
         <input class="input" id="ce-h" name="catalog_empty_hint" value="<?= sv('catalog_empty_hint', $s) !== '' ? sv('catalog_empty_hint', $s) : 'Попробуйте убрать фильтр цены или выбрать другую категорию' ?>" maxlength="160">
+      </div>
+    </div>
+    <?php /* Cookie-баннер (критерий 16): юр-тексты редактируются */ ?>
+    <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
+    <p style="font-size:.85rem;font-weight:600;margin:0 0 8px">Окно про cookie (появляется при первом визите)</p>
+    <label class="f" for="cb-text">Текст</label>
+    <input class="input" id="cb-text" name="cookie_banner_text" value="<?= sv('cookie_banner_text', $s) !== '' ? sv('cookie_banner_text', $s) : 'Сайт использует cookie и Яндекс.Метрику для работы и анализа трафика. Подробнее — в <a href="/policy" target="_blank" rel="noopener">Политике обработки персональных данных</a>.' ?>" maxlength="260">
+    <div class="grid2" style="margin-top:8px">
+      <div>
+        <label class="f" for="cb-acc">Кнопка «согласиться»</label>
+        <input class="input" id="cb-acc" name="cookie_accept_text" value="<?= sv('cookie_accept_text', $s) !== '' ? sv('cookie_accept_text', $s) : 'Принять' ?>" maxlength="30">
+      </div>
+      <div>
+        <label class="f" for="cb-rej">Кнопка «только необходимые»</label>
+        <input class="input" id="cb-rej" name="cookie_reject_text" value="<?= sv('cookie_reject_text', $s) !== '' ? sv('cookie_reject_text', $s) : 'Только необходимые' ?>" maxlength="30">
       </div>
     </div>
   </div>

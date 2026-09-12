@@ -28,10 +28,14 @@
     banner.className = 'cookie-banner';
     banner.setAttribute('role', 'region');
     banner.setAttribute('aria-label', 'Уведомление об использовании cookie');
+    /* Тексты баннера редактируются (критерий 16): window.COOKIE_BANNER_CONFIG из PHP */
+    var cfg = window.COOKIE_BANNER_CONFIG || {};
+    var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+    var text = cfg.text || 'Сайт использует cookie и Яндекс.Метрику для работы и анализа трафика. Подробнее — в <a href="/policy" target="_blank" rel="noopener">Политике обработки персональных данных</a>.';
     banner.innerHTML =
-      '<p class="cookie-banner__text">Сайт использует cookie и Яндекс.Метрику для работы и анализа трафика. Подробнее — в <a href="/policy" target="_blank" rel="noopener">Политике обработки персональных данных</a>.</p>' +
-      '<button type="button" class="btn cookie-banner__btn">Принять</button>' +
-      '<button type="button" class="btn cookie-banner__btn cookie-banner__btn--secondary">Только необходимые</button>';
+      '<p class="cookie-banner__text">' + text + '</p>' +
+      '<button type="button" class="btn cookie-banner__btn">' + esc(cfg.accept || 'Принять') + '</button>' +
+      '<button type="button" class="btn cookie-banner__btn cookie-banner__btn--secondary">' + esc(cfg.reject || 'Только необходимые') + '</button>';
 
     document.body.appendChild(banner);
 
