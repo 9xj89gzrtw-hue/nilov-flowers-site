@@ -229,15 +229,18 @@ if ($__heroPre !== '') {
           <button type="button" class="catalog-tabs__tab" role="tab" aria-selected="false" data-category-id="<?= (int)$c['id'] ?>"><?= e($c['name']) ?></button>
         <?php endforeach; ?>
       </div>
-      <?php /* Фильтр по цене (критерий 13, EXPRESS-паттерн): JS-фильтрация карточек по data-атрибуту. Отключаем (критерий 16). */ ?>
-      <?php if ($featPriceFilter): ?>
+      <?php /* Фильтр по цене (критерий 13, EXPRESS-паттерн). Пороги редактируются (критерий 16). */ ?>
+      <?php if ($featPriceFilter):
+          $pfLow = (int)setting('price_filter_low', '2500');
+          $pfHigh = (int)setting('price_filter_high', '4000');
+      ?>
       <div class="catalog-price-filter" style="display:flex;align-items:center;gap:10px;margin:0 0 18px;flex-wrap:wrap">
         <label for="priceFilter" style="font-size:.85rem;font-weight:600;color:var(--ink-soft)">Цена:</label>
         <select id="priceFilter" style="padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:.85rem;cursor:pointer">
           <option value="all" selected>Любая</option>
-          <option value="u2500">до 2 500 ₽</option>
-          <option value="2500-4000">2 500–4 000 ₽</option>
-          <option value="o4000">от 4 000 ₽</option>
+          <option value="low" data-max="<?= $pfLow ?>">до <?= number_format($pfLow, 0, '', ' ') ?> ₽</option>
+          <option value="mid" data-min="<?= $pfLow ?>" data-max="<?= $pfHigh ?>"><?= number_format($pfLow, 0, '', ' ') ?>–<?= number_format($pfHigh, 0, '', ' ') ?> ₽</option>
+          <option value="high" data-min="<?= $pfHigh ?>">от <?= number_format($pfHigh, 0, '', ' ') ?> ₽</option>
         </select>
         <span id="priceFilterCount" style="font-size:.85rem;color:var(--ink-soft)" aria-live="polite"></span>
       </div>

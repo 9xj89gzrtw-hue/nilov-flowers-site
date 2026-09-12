@@ -29,7 +29,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'faq_q1','faq_a1','faq_q2','faq_a2','faq_q3','faq_a3','faq_q4','faq_a4',
         /* Дедлайн + тексты таймера и empty-state (критерий 16) */
         'order_deadline_hour','order_deadline_minute','countdown_text','countdown_closed_text',
-        'catalog_empty_title','catalog_empty_hint'];
+        'catalog_empty_title','catalog_empty_hint',
+        /* Пороги фильтра цены (критерий 16) */
+        'price_filter_low','price_filter_high'];
     $values = [];
     foreach ($keys as $k) {
         $values[$k] = trim((string)($_POST[$k] ?? ''));
@@ -271,6 +273,19 @@ flash();
     <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 12px">Вместо <code>{T}</code> подставится время («2 ч 15 мин 30 с»), «20:00» заменится на ваш дедлайн.</p>
     <label class="f" for="cd-c">Текст после дедлайна</label>
     <input class="input" id="cd-c" name="countdown_closed_text" value="<?= sv('countdown_closed_text', $s) !== '' ? sv('countdown_closed_text', $s) : 'Сегодня заказы уже закрыты — доставим завтра с утра' ?>" maxlength="120">
+    <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
+    <p style="font-size:.85rem;font-weight:600;margin:0 0 8px">Пороги фильтра цены в каталоге</p>
+    <div class="grid2">
+      <div>
+        <label class="f" for="pf-low">«До …» — граница, ₽</label>
+        <input class="input" id="pf-low" name="price_filter_low" type="number" min="100" max="100000" step="100" value="<?= sv('price_filter_low', $s) !== '' ? sv('price_filter_low', $s) : '2500' ?>">
+      </div>
+      <div>
+        <label class="f" for="pf-high">«От …» — граница, ₽</label>
+        <input class="input" id="pf-high" name="price_filter_high" type="number" min="200" max="200000" step="100" value="<?= sv('price_filter_high', $s) !== '' ? sv('price_filter_high', $s) : '4000' ?>">
+      </div>
+    </div>
+    <p style="font-size:.78rem;color:var(--ink-soft);margin:6px 0 0">Покупатель увидит три варианта: «до [нижняя]», «[нижняя]–[верхняя]», «от [верхняя]».</p>
     <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
     <p style="font-size:.85rem;font-weight:600;margin:0 0 8px">Сообщения, если фильтры не нашли букетов</p>
     <div class="grid2">

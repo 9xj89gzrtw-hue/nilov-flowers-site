@@ -42,14 +42,15 @@
   if (!sel) return;
   function apply() {
     var v = sel.value;
+    var opt = sel.options[sel.selectedIndex];
+    var min = opt.hasAttribute('data-min') ? parseInt(opt.getAttribute('data-min'), 10) : null;
+    var max = opt.hasAttribute('data-max') ? parseInt(opt.getAttribute('data-max'), 10) : null;
     var cards = document.querySelectorAll('.product-card[data-price]');
     var visible = 0;
     cards.forEach(function (c) {
       var price = parseInt(c.getAttribute('data-price'), 10) || 0;
-      var ok = true;
-      if (v === 'u2500') ok = price < 2500;
-      else if (v === '2500-4000') ok = price >= 2500 && price <= 4000;
-      else if (v === 'o4000') ok = price > 4000;
+      /* Диапазоны из data-атрибутов опции (критерий 16: пороги задаются в админке) */
+      var ok = (min === null || price >= min) && (max === null || price <= max);
       /* Комбинация с категорийным фильтром: карточка видима, если
          НЕ скрыта категорией (is-hidden от catalog-tabs) И проходит по цене. */
       var show = ok && !c.classList.contains('is-hidden');
