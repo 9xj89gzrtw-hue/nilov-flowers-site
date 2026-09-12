@@ -36,7 +36,7 @@
   function itemRowHtml(item) {
     const isUnavailable = item.product_id === unavailableProductId;
     const media = item.image
-      ? '<img class="cart-item__img" src="' + escapeHtml(item.image) + '" alt="">'
+      ? '<img class="cart-item__img" src="' + escapeHtml(item.image) + '" alt="Фото букета ' + escapeHtml(item.name || '') + '" loading="lazy">'
       : '<div class="cart-item__img-placeholder"></div>';
     return (
       '<div class="cart-item' + (isUnavailable ? ' cart-item--unavailable' : '') + '" data-product-id="' + escapeHtml(item.product_id) + '">' +

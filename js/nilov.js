@@ -95,13 +95,14 @@
       var diff = deadline - now;
       var h = Math.floor(diff / 3600000);
       var m = Math.floor((diff % 3600000) / 60000);
-      el.textContent = '⏱ Успейте заказать сегодня — осталось ' + h + ' ч ' + pad(m) + ' мин до 20:00';
+      var s = Math.floor((diff % 60000) / 1000);
+      el.textContent = '⏱ Успейте заказать сегодня — осталось ' + h + ' ч ' + pad(m) + ' мин ' + pad(s) + ' с до 20:00';
     } else {
       el.textContent = '🌙 Сегодня заказы уже закрыты — доставим завтра с утра';
     }
   }
   tick();
-  setInterval(tick, 30000);
+  setInterval(tick, 1000);
 })();
 
 /* 4. Избранное (критерий 13, Русский Букет-паттерн): сердечки + localStorage + фильтр «только избранное». */
@@ -134,6 +135,7 @@
     var t = e.target.closest('#favToggle');
     if (t) {
       t.classList.toggle('is-on');
+      t.setAttribute('aria-pressed', t.classList.contains('is-on') ? 'true' : 'false');
       var on = t.classList.contains('is-on');
       var favs2 = get();
       document.querySelectorAll('.product-card').forEach(function (c) {

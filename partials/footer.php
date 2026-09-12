@@ -30,7 +30,8 @@ $igDisclaimer = $igOn; /* пометку Meta показываем только 
       $legalNum = setting('legal_number', '');
       $legalAddr = setting('legal_address', '');
       if ($legalName !== '' && $legalNum !== ''): ?>
-      <p style="font-size:.78rem;color:var(--ink-soft)"><?= e($legalName) ?> · <?= e($legalType === 'IP' ? 'ОГРНИП' : 'ОГРН') ?> <?= e($legalNum) ?><?= $legalAddr !== '' ? ' · ' . e($legalAddr) : '' ?></p>
+      <?php $legalInn = setting('legal_inn', ''); ?>
+      <p style="font-size:.78rem;color:var(--ink-soft)"><?= e($legalName) ?><?= $legalInn !== '' ? ' · ИНН ' . e($legalInn) : '' ?> · <?= e($legalType === 'IP' ? 'ОГРНИП' : 'ОГРН') ?> <?= e($legalNum) ?><?= $legalAddr !== '' ? ' · ' . e($legalAddr) : '' ?></p>
       <?php endif; ?>
       <?php if ($address !== ''): ?><p><?= e($address) ?></p><?php endif; ?>
       <?php if (setting('shop_hours', '') !== ''): ?><p style="color:var(--ink-soft);font-size:.92rem"><?= e(setting('shop_hours')) ?></p><?php endif; ?>

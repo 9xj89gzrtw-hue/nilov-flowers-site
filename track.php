@@ -33,6 +33,10 @@ if ($tail !== '' && strlen($tail) >= 10) {
 
 $pageTitle = 'Где мой заказ? — Nilov Flowers';
 require __DIR__ . '/partials/head.php';
+?>
+<title><?= e($pageTitle) ?></title>
+<meta name="description" content="Проверьте статус заказа букета по номеру телефона — Nilov Flowers, доставка цветов в Санкт-Петербурге.">
+<?php
 require __DIR__ . '/partials/header.php';
 
 $statusEmoji = [

@@ -267,7 +267,7 @@ if ($__heroPre !== '') {
               data-product-name="<?= e($p['name']) ?>"
               data-product-price-raw="<?= $price ?>"
               data-product-image="<?= e($img) ?>"
-              aria-label="Добавить в корзину: <?= e($p['name']) ?>">+</button>
+              aria-label="Добавить в корзину: <?= e($p['name']) ?>" title="В корзину">+</button>
             <?php /* Избранное (критерий 13, Русский Букет-паттерн): сердечко на карточке, localStorage */ ?>
             <button type="button" class="product-card__fav" data-fav-id="<?= (int)$p['id'] ?>" data-fav-name="<?= e($p['name']) ?>" aria-label="В избранное: <?= e($p['name']) ?>" title="В избранное">♡</button>
           </div>
@@ -288,6 +288,12 @@ if ($__heroPre !== '') {
           </div>
         </article>
         <?php endforeach; ?>
+      </div>
+      <?php /* Empty-state (критик P2): при 0 карточек от фильтров — подсказка + сброс */ ?>
+      <div class="catalog-empty" id="catalogEmpty" hidden style="text-align:center;padding:44px 20px;border:1px dashed var(--line);border-radius:16px;margin-top:14px">
+        <p style="font-size:1.05rem;font-weight:600;margin-bottom:6px">По этим фильтрам букетов не нашлось 🌷</p>
+        <p style="color:var(--ink-soft);font-size:.9rem;margin-bottom:16px">Попробуйте убрать фильтр цены или выбрать другую категорию</p>
+        <button type="button" class="btn btn--outline" id="catalogEmptyReset">Сбросить фильтры</button>
       </div>
     </div>
   </section>

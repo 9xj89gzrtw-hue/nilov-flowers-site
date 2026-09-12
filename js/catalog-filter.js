@@ -71,3 +71,42 @@
   });
   apply();
 })();
+
+/* Empty-state (критик P2): сводный пересчёт видимости после ЛЮБОЙ фильтрации
+   (категория, цена, избранное). 0 карточек → #catalogEmpty. */
+(function () {
+  var emptyBox = document.getElementById('catalogEmpty');
+  if (!emptyBox) return;
+
+  function recount() {
+    var cards = document.querySelectorAll('#catalogGrid .product-card');
+    var visible = 0;
+    cards.forEach(function (c) {
+      if (getComputedStyle(c).display !== 'none' && !c.classList.contains('is-hidden')) visible++;
+    });
+    emptyBox.hidden = visible > 0;
+  }
+
+  /* Хук на все три источника изменений */
+  document.getElementById('catalogTabs')?.addEventListener('click', function (e) {
+    if (e.target.closest('.catalog-tabs__tab')) setTimeout(recount, 0);
+  });
+  var pf = document.getElementById('priceFilter');
+  if (pf) pf.addEventListener('change', function () { setTimeout(recount, 50); });
+  var ft = document.getElementById('favToggle');
+  if (ft) ft.addEventListener('click', function () { setTimeout(recount, 50); });
+
+  /* Кнопка сброса: цена → all, категория → «Все», избранное → выкл */
+  document.getElementById('catalogEmptyReset')?.addEventListener('click', function () {
+    var pf2 = document.getElementById('priceFilter');
+    if (pf2) { pf2.value = 'all'; pf2.dispatchEvent(new Event('change', { bubbles: true })); }
+    var allTab = document.querySelector('.catalog-tabs__tab[data-category-id="all"]');
+    if (allTab && !allTab.classList.contains('is-active')) allTab.click();
+    var ft2 = document.getElementById('favToggle');
+    if (ft2 && ft2.classList.contains('is-on')) ft2.click();
+    setTimeout(recount, 100);
+  });
+
+  /* Стартовый пересчёт после init других фильтров */
+  setTimeout(recount, 250);
+})();

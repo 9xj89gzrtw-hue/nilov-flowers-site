@@ -383,7 +383,7 @@ img.product-card__img{
 /* Избранное (критерий 13): сердечко на карточке */
 .product-card__fav{
   position:absolute;right:12px;top:12px;z-index:3;
-  width:38px;height:38px;border-radius:50%;
+  width:44px;height:44px;border-radius:50%;
   background:rgba(255,255,255,.9);border:1px solid var(--line);
   font-size:1.15rem;line-height:1;color:var(--ink);
   cursor:pointer;display:flex;align-items:center;justify-content:center;
