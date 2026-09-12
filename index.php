@@ -226,6 +226,17 @@ if ($__heroPre !== '') {
         </select>
         <span id="priceFilterCount" style="font-size:.85rem;color:var(--ink-soft)" aria-live="polite"></span>
         <button type="button" id="favToggle" class="fav-toggle" aria-pressed="false">♡ Избранное</button>
+        <?php /* Проверка зоны доставки (критерий 13, Семицветик-паттерн): тариф района до чекаута.
+               Данные зон инлайн (HTML-атрибут) — JS-мэтч по вводу покупателя. */ ?>
+        <span class="zone-check" style="display:inline-flex;align-items:center;gap:6px;margin-left:auto">
+          <input type="search" id="zoneCheckInput" placeholder="Мой район доставки…" aria-label="Проверить зону доставки"
+                 style="padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:.85rem;width:170px"
+                 list="zoneCheckList">
+          <datalist id="zoneCheckList">
+            <?php foreach ($zones as $z): ?><option value="<?= e($z['name']) ?>"></option><?php endforeach; ?>
+          </datalist>
+          <span id="zoneCheckResult" style="font-size:.85rem;font-weight:600" aria-live="polite"></span>
+        </span>
       </div>
       <div class="catalog__grid" id="catalogGrid">
         <?php foreach ($products as $p):

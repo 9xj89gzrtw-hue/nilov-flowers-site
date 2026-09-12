@@ -152,3 +152,40 @@
   });
   sync();
 })();
+
+/* 5. Проверка зоны доставки (критерий 13, Семицветик-паттерн): живой мэтч по вводу.
+    Пишет тариф в каталоге и подставляет найденную зону в селект чекаута. */
+(function () {
+  var inp = document.getElementById('zoneCheckInput');
+  var out = document.getElementById('zoneCheckResult');
+  var sel = document.getElementById('orderDeliveryZone');
+  if (!inp || !out) return;
+  function norm(s) { return (s || '').toLowerCase().replace(/район|ра[йё]он/g, '').replace(/[^a-zа-яё0-9]/gi, '').trim(); }
+  function match(v) {
+    var opts = sel ? sel.querySelectorAll('option[data-price]') : [];
+    var nv = norm(v);
+    if (!nv) return null;
+    var best = null;
+    opts.forEach(function (o) {
+      var t = norm(o.textContent);
+      // совпадение ключевых подстрок (напр. «примор» → Приморский)
+      if (t.indexOf(nv) !== -1 || nv.indexOf(t.slice(0, 6)) !== -1) best = o;
+    });
+    return best;
+  }
+  function apply() {
+    var v = inp.value;
+    if (!v.trim()) { out.textContent = ''; return; }
+    var m = match(v);
+    if (m) {
+      var price = parseInt(m.getAttribute('data-price'), 10) || 0;
+      out.style.color = 'var(--ink)';
+      out.textContent = price === 0 ? '✓ 0 ₽' : price + ' ₽';
+      if (sel) sel.value = m.value; // подстановка в чекаут
+    } else {
+      out.style.color = '#b3261e';
+      out.textContent = 'не нашли — уточним по телефону';
+    }
+  }
+  inp.addEventListener('input', apply);
+})();
