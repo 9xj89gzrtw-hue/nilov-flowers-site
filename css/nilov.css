@@ -54,6 +54,10 @@
 /* ---------- Marquee «Доставка по СПб» (CSS-only, spec S6) ---------- */
 .nv-marquee{
   overflow:hidden;
+  /* iOS-фикс: ширина трека 3354px — Safari резервирует скролл, если
+     контейнер сам без явной ширины. clip + width:100% запирают. */
+  width:100%;
+  clip-path:inset(0);
   border-block:1px solid var(--line,rgba(43,45,47,.12));
   background:var(--ink,#2B2D2F);
   color:var(--cream,#F6F1E6);
@@ -136,9 +140,17 @@
   to{opacity:1;transform:none}
 }
 
-/* ---------- Лепестки: 3 лепестка SVG-декор + параллакс ---------- */
-.nv-petals{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+/* ---------- Лепестки: 3 лепестка SVG-декор + параллакс ----------
+   iOS-фикс (критерий 14): лепестки выходили за hero__media на WebKit
+   (right:380>375, left:-11) → страница «ездила» по экрану на iPhone.
+   Правило: контейнер лепестков всегда обрезает (overflow:hidden + inset:0),
+   сами лепестки на мобиле не выходят за арку. */
+.nv-petals{position:absolute;inset:0;pointer-events:none;overflow:hidden;contain:layout}
 .nv-petals svg{position:absolute;display:block}
+@media(max-width:820px){
+  .nv-petals .nv-petal--a{right:2%!important}
+  .nv-petals .nv-petal--b{left:2%!important}
+}
 
 /* Крупный лепесток справа-сверху — позиционирование (движение через параллакс W4-wow) */
 .nv-petal--a{
