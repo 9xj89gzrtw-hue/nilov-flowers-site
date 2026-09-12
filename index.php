@@ -235,6 +235,8 @@ if ($__heroPre !== '') {
             </a>
             <?php if ($isSale): ?><span class="product-card__badge">Скидка до конца недели</span><?php endif; ?>
             <?php if ((int)($p['is_urgent'] ?? 0) === 1): ?><span class="product-card__badge product-card__badge--urgent">Успеть сегодня</span><?php endif; ?>
+            <?php /* Конкурентный бейдж (критерий 13, EXPRESS-паттерн): тариф зоны владельца на каждой карточке */ ?>
+            <span class="product-card__badge product-card__badge--deliv">Доставка 0₽ · Приморский</span>
             <button type="button" class="product-card__cta" data-order-cta
               data-product-id="<?= (int)$p['id'] ?>"
               data-product-name="<?= e($p['name']) ?>"
@@ -390,6 +392,41 @@ if ($__heroPre !== '') {
         <p class="order-form__hint">Заказы принимаем ежедневно до 20:00 — оформленные сегодня доставим сегодня же.</p>
         <p class="order-form__status" id="orderStatus" role="status" hidden></p>
       </form>
+    </div>
+  </section>
+
+  <?php /* FAQ (критерий 13, SEO FAQPage — паттерн Цветовика): реальные вопросы покупателей */ ?>
+  <section class="section" id="faq" style="padding-top:0">
+    <div class="wrap" style="max-width:720px">
+      <h2 class="section-title">Частые вопросы</h2>
+      <details style="border:1px solid var(--line);border-radius:14px;padding:14px 18px;margin-bottom:10px;background:#fff">
+        <summary style="font-weight:600;cursor:pointer">Сколько стоит доставка?</summary>
+        <p style="margin-top:8px;color:var(--ink-soft);font-size:.92rem">По Приморскому району — бесплатно, это наш район. Центр СПб — 300 ₽, остальные районы 350–600 ₽. Самовывоз с Полевой Сабировской, 47 — всегда бесплатно.</p>
+      </details>
+      <details style="border:1px solid var(--line);border-radius:14px;padding:14px 18px;margin-bottom:10px;background:#fff">
+        <summary style="font-weight:600;cursor:pointer">Успею ли заказать сегодня?</summary>
+        <p style="margin-top:8px;color:var(--ink-soft);font-size:.92rem">Да — заказы до 20:00 доставим в тот же день. После 20:00 доставим на следующее утро.</p>
+      </details>
+      <details style="border:1px solid var(--line);border-radius:14px;padding:14px 18px;margin-bottom:10px;background:#fff">
+        <summary style="font-weight:600;cursor:pointer">Как понять, что пришёл именно мой букет?</summary>
+        <p style="margin-top:8px;color:var(--ink-soft);font-size:.92rem">Перед отправкой курьером пришлём фото собранного букета. Не понравится вживую — заменим в день доставки, без вопросов.</p>
+      </details>
+      <details style="border:1px solid var(--line);border-radius:14px;padding:14px 18px;background:#fff">
+        <summary style="font-weight:600;cursor:pointer">Как оплатить?</summary>
+        <p style="margin-top:8px;color:var(--ink-soft);font-size:.92rem">При получении — курьеру. Онлайн-оплата картой подключается (ЮKassa).</p>
+      </details>
+      <script type="application/ld+json">
+      <?= json_encode([
+          '@context' => 'https://schema.org',
+          '@type' => 'FAQPage',
+          'mainEntity' => [
+              ['@type' => 'Question', 'name' => 'Сколько стоит доставка?', 'acceptedAnswer' => ['@type' => 'Answer', 'text' => 'По Приморскому району — бесплатно. Центр СПб — 300 ₽, остальные районы 350–600 ₽. Самовывоз — всегда бесплатно.']],
+              ['@type' => 'Question', 'name' => 'Успею ли заказать сегодня?', 'acceptedAnswer' => ['@type' => 'Answer', 'text' => 'Заказы до 20:00 доставим в тот же день.']],
+              ['@type' => 'Question', 'name' => 'Как понять, что пришёл именно мой букет?', 'acceptedAnswer' => ['@type' => 'Answer', 'text' => 'Перед отправкой пришлём фото собранного букета. Не понравится — заменим в день доставки.']],
+              ['@type' => 'Question', 'name' => 'Как оплатить?', 'acceptedAnswer' => ['@type' => 'Answer', 'text' => 'При получении курьеру; онлайн-оплата подключается.']],
+          ],
+      ], JSON_UNESCAPED_UNICODE) ?>
+      </script>
     </div>
   </section>
 </main>
