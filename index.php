@@ -225,8 +225,8 @@ if ($__heroPre !== '') {
   <!-- КАТАЛОГ -->
   <section class="section" id="catalog">
     <div class="wrap">
-      <h2 class="section-title">Каталог</h2>
-      <p class="section-sub">Соберём и доставим букет в день заказа</p>
+      <h2 class="section-title"><?= e(setting('catalog_title', 'Каталог')) ?></h2>
+      <p class="section-sub"><?= e(setting('catalog_subtitle', 'Соберём и доставим букет в день заказа')) ?></p>
       <div class="catalog-tabs" id="catalogTabs" role="tablist" aria-label="Категории">
         <button type="button" class="catalog-tabs__tab is-active" role="tab" aria-selected="true" data-category-id="all">Все</button>
         <?php foreach ($categories as $c): ?>
@@ -373,7 +373,7 @@ if ($__heroPre !== '') {
   <!-- ФОРМА ЗАКАЗА -->
   <section class="section order" id="order">
     <div class="wrap">
-      <h2 class="section-title">Оформление заказа</h2>
+      <h2 class="section-title"><?= e(setting('order_title', 'Оформление заказа')) ?></h2>
       <p class="order__selected" id="orderSelected"></p>
       <form class="order-form" id="orderForm" novalidate>
         <div class="order-form__field">

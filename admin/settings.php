@@ -35,7 +35,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         /* Тексты zone-check (критерий 16) */
         'zone_check_placeholder','zone_check_fallback',
         /* Тексты бегущей ленты (критерий 16) */
-        'marquee_1','marquee_2','marquee_3','marquee_4'];
+        'marquee_1','marquee_2','marquee_3','marquee_4',
+        /* Заголовки секций (критерий 16) */
+        'catalog_title','catalog_subtitle','order_title'];
     $values = [];
     foreach ($keys as $k) {
         $values[$k] = trim((string)($_POST[$k] ?? ''));
@@ -161,6 +163,20 @@ flash();
         <input class="input" id="mq-<?= $mq ?>" name="marquee_<?= $mq ?>" value="<?= sv("marquee_{$mq}", $s) !== '' ? sv("marquee_{$mq}", $s) : $mqDefault ?>" maxlength="90">
       </div>
       <?php endfor; ?>
+    </div>
+    <?php /* Заголовки секций главной (критерий 16) */ ?>
+    <p style="font-size:.85rem;font-weight:600;margin:14px 0 8px">Заголовки разделов на главной</p>
+    <div class="grid2">
+      <div>
+        <label class="f" for="cat-t">Заголовок каталога</label>
+        <input class="input" id="cat-t" name="catalog_title" value="<?= sv('catalog_title', $s) !== '' ? sv('catalog_title', $s) : 'Каталог' ?>" maxlength="40">
+        <label class="f" for="cat-s" style="margin-top:8px">Подпись каталога</label>
+        <input class="input" id="cat-s" name="catalog_subtitle" value="<?= sv('catalog_subtitle', $s) !== '' ? sv('catalog_subtitle', $s) : 'Соберём и доставим букет в день заказа' ?>" maxlength="90">
+      </div>
+      <div>
+        <label class="f" for="ord-t">Заголовок формы заказа</label>
+        <input class="input" id="ord-t" name="order_title" value="<?= sv('order_title', $s) !== '' ? sv('order_title', $s) : 'Оформление заказа' ?>" maxlength="40">
+      </div>
     </div>
   </div>
 
