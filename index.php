@@ -19,6 +19,14 @@ $heroBtnText = trim(setting('hero_button_text', ''));
 $heroBtnLink = trim(setting('hero_button_link', ''));
 $heroBtn = $heroTextEnabled && $heroBtnText !== '' && $heroBtnLink !== '';
 
+/* Функции витрины (критерий 16): каждый блок отключаем из админки */
+$featDeliveryBadge = setting('feature_delivery_badge', '1') === '1';
+$featFaq = setting('feature_faq', '1') === '1';
+$featCountdown = setting('feature_countdown', '1') === '1';
+$featPriceFilter = setting('feature_price_filter', '1') === '1';
+$featFavorites = setting('feature_favorites', '1') === '1';
+$featZoneCheck = setting('feature_zone_check', '1') === '1';
+
 /* Trust strip: гарантии — guarantee_1..N, либо настройки guarantees построчно */
 $guarantees = [];
 for ($i = 1; $i <= 6; $i++) {
@@ -140,8 +148,8 @@ if ($__heroPre !== '') {
         <p class="hero__hook nv-hero-sub" data-hero-hook><?= e(setting('hero_title', 'Свежие цветы с утренней поставки')) ?></p>
         <p class="hero__subtitle nv-hero-sub"><?= e(setting('hero_subtitle')) ?></p>
         <?php endif; ?>
-        <?php /* Таймер «до 20:00» — не зависит от hero-текста (юр-независимый элемент) */ ?>
-        <p class="hero__deadline" style="display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:8px 16px;border-radius:999px;background:rgba(255,255,255,.75);backdrop-filter:blur(6px);border:1px solid var(--line);font-size:.9rem;font-weight:600;color:var(--ink)"></p>
+        <?php /* Таймер «до 20:00» — не зависит от hero-текста (юр-независимый элемент). Отключаем (критерий 16). */ ?>
+        <?php if ($featCountdown): ?><p class="hero__deadline" style="display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:8px 16px;border-radius:999px;background:rgba(255,255,255,.75);backdrop-filter:blur(6px);border:1px solid var(--line);font-size:.9rem;font-weight:600;color:var(--ink)"></p><?php endif; ?>
         <?php if ($heroBtn || ($heroTextEnabled && $guarantees !== [])): ?>
         <div class="hero__meta">
           <?php if ($heroBtn): ?>
@@ -215,7 +223,8 @@ if ($__heroPre !== '') {
           <button type="button" class="catalog-tabs__tab" role="tab" aria-selected="false" data-category-id="<?= (int)$c['id'] ?>"><?= e($c['name']) ?></button>
         <?php endforeach; ?>
       </div>
-      <?php /* Фильтр по цене (критерий 13, EXPRESS-паттерн): JS-фильтрация карточек по data-атрибуту */ ?>
+      <?php /* Фильтр по цене (критерий 13, EXPRESS-паттерн): JS-фильтрация карточек по data-атрибуту. Отключаем (критерий 16). */ ?>
+      <?php if ($featPriceFilter): ?>
       <div class="catalog-price-filter" style="display:flex;align-items:center;gap:10px;margin:0 0 18px;flex-wrap:wrap">
         <label for="priceFilter" style="font-size:.85rem;font-weight:600;color:var(--ink-soft)">Цена:</label>
         <select id="priceFilter" style="padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:.85rem;cursor:pointer">
@@ -225,9 +234,12 @@ if ($__heroPre !== '') {
           <option value="o4000">от 4 000 ₽</option>
         </select>
         <span id="priceFilterCount" style="font-size:.85rem;color:var(--ink-soft)" aria-live="polite"></span>
-        <button type="button" id="favToggle" class="fav-toggle" aria-pressed="false">♡ Избранное</button>
+      </div>
+      <?php endif; ?>
+        <?php if ($featFavorites): ?><button type="button" id="favToggle" class="fav-toggle" aria-pressed="false">♡ Избранное</button><?php endif; ?>
         <?php /* Проверка зоны доставки (критерий 13, Семицветик-паттерн): тариф района до чекаута.
-               Данные зон инлайн (HTML-атрибут) — JS-мэтч по вводу покупателя. */ ?>
+               Данные зон инлайн (HTML-атрибут) — JS-мэтч по вводу покупателя. Отключаем (критерий 16). */ ?>
+        <?php if ($featZoneCheck): ?>
         <span class="zone-check" style="display:inline-flex;align-items:center;gap:6px;margin-left:auto">
           <input type="search" id="zoneCheckInput" placeholder="Мой район доставки…" aria-label="Проверить зону доставки"
                  style="padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:.85rem;width:170px"
@@ -237,6 +249,7 @@ if ($__heroPre !== '') {
           </datalist>
           <span id="zoneCheckResult" style="font-size:.85rem;font-weight:600" aria-live="polite"></span>
         </span>
+        <?php endif; ?>
       </div>
       <div class="catalog__grid" id="catalogGrid">
         <?php foreach ($products as $p):
@@ -260,16 +273,16 @@ if ($__heroPre !== '') {
             </a>
             <?php if ($isSale): ?><span class="product-card__badge">Скидка до конца недели</span><?php endif; ?>
             <?php if ((int)($p['is_urgent'] ?? 0) === 1): ?><span class="product-card__badge product-card__badge--urgent">Успеть сегодня</span><?php endif; ?>
-            <?php /* Конкурентный бейдж (критерий 13, EXPRESS-паттерн): тариф зоны владельца на каждой карточке */ ?>
-            <span class="product-card__badge product-card__badge--deliv">Доставка 0₽ · Приморский</span>
+            <?php /* Конкурентный бейдж (критерий 13, EXPRESS-паттерн): тариф зоны владельца на каждой карточке. Отключаем (критерий 16). */ ?>
+            <?php if ($featDeliveryBadge): ?><span class="product-card__badge product-card__badge--deliv">Доставка 0₽ · Приморский</span><?php endif; ?>
             <button type="button" class="product-card__cta" data-order-cta
               data-product-id="<?= (int)$p['id'] ?>"
               data-product-name="<?= e($p['name']) ?>"
               data-product-price-raw="<?= $price ?>"
               data-product-image="<?= e($img) ?>"
               aria-label="Добавить в корзину: <?= e($p['name']) ?>" title="В корзину">+</button>
-            <?php /* Избранное (критерий 13, Русский Букет-паттерн): сердечко на карточке, localStorage */ ?>
-            <button type="button" class="product-card__fav" data-fav-id="<?= (int)$p['id'] ?>" data-fav-name="<?= e($p['name']) ?>" aria-label="В избранное: <?= e($p['name']) ?>" title="В избранное">♡</button>
+            <?php /* Избранное (критерий 13, Русский Букет-паттерн): сердечко на карточке, localStorage. Отключаем (критерий 16). */ ?>
+            <?php if ($featFavorites): ?><button type="button" class="product-card__fav" data-fav-id="<?= (int)$p['id'] ?>" data-fav-name="<?= e($p['name']) ?>" aria-label="В избранное: <?= e($p['name']) ?>" title="В избранное">♡</button><?php endif; ?>
           </div>
           <div class="product-card__body">
             <span class="product-card__cat"><?= e($p['category_name'] ?? '') ?></span>
@@ -428,7 +441,8 @@ if ($__heroPre !== '') {
     </div>
   </section>
 
-  <?php /* FAQ (критерий 13, SEO FAQPage — паттерн Цветовика): реальные вопросы покупателей */ ?>
+  <?php /* FAQ (критерий 13, SEO FAQPage — паттерн Цветовика): реальные вопросы покупателей. Отключаем (критерий 16). */ ?>
+  <?php if ($featFaq): ?>
   <section class="section" id="faq" style="padding-top:0">
     <div class="wrap" style="max-width:720px">
       <h2 class="section-title">Частые вопросы</h2>
@@ -462,6 +476,7 @@ if ($__heroPre !== '') {
       </script>
     </div>
   </section>
+  <?php endif; ?>
 </main>
 
 <?php require __DIR__ . '/partials/footer.php'; ?>

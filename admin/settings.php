@@ -31,7 +31,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     /* Чекбоксы: 0 если не пришли (снятие галочки = пусто в POST) */
     foreach (['yk_enabled', 'upsell_enabled', 'hero_text_enabled', 'yandex_reviews_enabled',
               'wa_enabled', 'tg_enabled', 'vk_enabled', 'ig_enabled', 'email_enabled', 'max_enabled',
-              'notify_enabled'] as $cb) {
+              'notify_enabled',
+              /* Витринные фичи (критерий 16): каждая отключаема из админки */
+              'feature_delivery_badge', 'feature_faq', 'feature_countdown', 'feature_price_filter',
+              'feature_favorites', 'feature_zone_check', 'feature_track_link'] as $cb) {
         $values[$cb] = isset($_POST[$cb]) ? '1' : '0';
     }
     /* cart_mode — select, не чекбокс: валидируем значение из POST */
@@ -76,6 +79,7 @@ flash();
   <a href="#s-common">Общие</a>
   <a href="#s-main">Главная</a>
   <a href="#s-look">Вид</a>
+  <a href="#s-features">Функции</a>
   <a href="#s-steps">Этапы</a>
   <a href="#s-contacts">Контакты</a>
   <a href="#s-cart">Корзина</a>
@@ -168,6 +172,53 @@ flash();
             </label>
           </div>
         <?php endif; ?>
+      </div>
+    </div>
+  </div>
+
+  <?php /* Функции витрины (критерий 16): каждый новый блок сайта — тумблер */ ?>
+  <div class="card" id="s-features">
+    <h2 style="font-family:var(--font-display);font-size:1.2rem;margin-bottom:8px">Функции витрины</h2>
+    <p style="font-size:.85rem;color:var(--ink-soft);margin:0 0 14px">Включайте и выключайте блоки сайта — изменения появятся на сайте сразу после сохранения.</p>
+    <div class="grid2">
+      <div>
+        <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+          <input type="checkbox" name="feature_delivery_badge" style="width:auto" <?= sv('feature_delivery_badge', $s) === '1' ? 'checked' : '' ?>>
+          Бейдж «Доставка 0 ₽» на карточках букетов
+        </label>
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 10px 26px">Зелёная плачка про бесплатную доставку по Приморскому на каждой карточке каталога.</p>
+        <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+          <input type="checkbox" name="feature_countdown" style="width:auto" <?= sv('feature_countdown', $s) === '1' ? 'checked' : '' ?>>
+          Таймер «успейте заказать до 20:00»
+        </label>
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 10px 26px">Живые часы обратного отсчёта в шапке главной страницы.</p>
+        <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+          <input type="checkbox" name="feature_price_filter" style="width:auto" <?= sv('feature_price_filter', $s) === '1' ? 'checked' : '' ?>>
+          Фильтр букетов по цене
+        </label>
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 10px 26px">Выпадающий список «до 2 500 ₽ / 2 500–4 000 / от 4 000 ₽» над каталогом.</p>
+        <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+          <input type="checkbox" name="feature_zone_check" style="width:auto" <?= sv('feature_zone_check', $s) === '1' ? 'checked' : '' ?>>
+          Проверка зоны доставки в каталоге
+        </label>
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 0 26px">Поле «Мой район доставки…» — покупатель сразу видит стоимость для своего района.</p>
+      </div>
+      <div>
+        <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+          <input type="checkbox" name="feature_favorites" style="width:auto" <?= sv('feature_favorites', $s) === '1' ? 'checked' : '' ?>>
+          Сердечки «Избранное» на карточках
+        </label>
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 10px 26px">Покупатель отмечает букеты сердечком и может показать только их.</p>
+        <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+          <input type="checkbox" name="feature_faq" style="width:auto" <?= sv('feature_faq', $s) === '1' ? 'checked' : '' ?>>
+          Блок «Частые вопросы» на главной
+        </label>
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 10px 26px">4 вопроса-ответа про доставку и оплату (помогают и в поиске Яндекса).</p>
+        <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+          <input type="checkbox" name="feature_track_link" style="width:auto" <?= sv('feature_track_link', $s) === '1' ? 'checked' : '' ?>>
+          Ссылка «Где мой заказ?» в подвале
+        </label>
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 0 26px">Покупатель сам проверяет статус по телефону — меньше звонков «где букет?».</p>
       </div>
     </div>
   </div>
