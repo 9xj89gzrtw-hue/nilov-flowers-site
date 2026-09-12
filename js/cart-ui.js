@@ -93,12 +93,19 @@
   function renderUpsell() {
     if (!upsellEl || !upsellItemsEl) return;
     const inCart = new Set(window.cart.getItems().map((i) => i.product_id));
+    /* Категории-источники апсейла (критерий 16): window.UPSELL_CATEGORIES из настроек;
+       пусто = все активные товары. Товар карты несёт data-category-id. */
+    const allowedCats = Array.isArray(window.UPSELL_CATEGORIES) ? window.UPSELL_CATEGORIES.map(String) : [];
     const candidates = [];
     document.querySelectorAll('.product-card').forEach(function (card) {
       const cta = card.querySelector('[data-order-cta]');
       if (!cta) return;
       const id = cta.dataset.productId;
       if (!id || inCart.has(id)) return;
+      if (allowedCats.length > 0) {
+        const catId = card.getAttribute('data-category-id') || '';
+        if (!allowedCats.includes(catId)) return;
+      }
       candidates.push({
         id: id,
         name: cta.dataset.productName || '',

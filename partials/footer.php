@@ -73,7 +73,7 @@ $igDisclaimer = $igOn; /* пометку Meta показываем только 
     <div class="cart-panel__items" id="cartItems"></div>
     <p class="cart-panel__empty" id="cartEmpty"><?= e(setting('cart_empty_text', 'Корзина пуста — выберите букет в каталоге')) ?></p>
     <div class="cart-upsell" id="cartUpsell" hidden>
-      <p class="cart-upsell__title">Добавить к заказу</p>
+      <p class="cart-upsell__title"><?= e(setting('upsell_title', 'Возможно, пригодится')) ?></p>
       <div class="cart-upsell__items" id="cartUpsellItems"></div>
     </div>
     <div class="cart-panel__foot">
@@ -85,7 +85,7 @@ $igDisclaimer = $igOn; /* пометку Meta показываем только 
 </div>
 
 <script src="/js/cart.js"></script>
-<script>window.UPSELL_LIMIT = <?= max(1, min(6, (int) setting('upsell_limit', '3'))) ?>; window.UPSELL_ENABLED = <?= setting('upsell_enabled', '1') === '1' ? 1 : 0 ?>;</script>
+<script>window.UPSELL_LIMIT = <?= max(1, min(6, (int) setting('upsell_limit', '3'))) ?>; window.UPSELL_ENABLED = <?= setting('upsell_enabled', '1') === '1' ? 1 : 0 ?>; window.UPSELL_CATEGORIES = <?= json_encode(array_filter(array_map('trim', explode(',', setting('upsell_categories', ''))))) ?>;</script>
 <script src="/js/cart-ui.js"></script>
 <script src="/js/cart-cta.js"></script>
 <script src="/js/order-form.js"></script>
