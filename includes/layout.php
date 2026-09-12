@@ -60,6 +60,17 @@ a{color:inherit;text-decoration:none}
 .btn--danger:hover{background:var(--err);color:#fff;border-color:var(--err)}
 main.wrap{padding:28px 20px 60px}
 h1{font-family:var(--font-display);font-weight:600;font-size:1.8rem;margin-bottom:18px}
+/* Дружелюбная админка (критерий 15, паттерны 2026): приветствие + подсказка «что делать сейчас» */
+.admin-hello{
+  background:linear-gradient(120deg,#fff 0%,rgba(244,169,190,.14) 100%);
+  border:1px solid rgba(226,121,156,.25);
+  border-radius:var(--radius-lg);
+  padding:16px 20px;margin-bottom:20px;
+  display:flex;gap:14px;align-items:center;flex-wrap:wrap;
+}
+.admin-hello__emoji{font-size:1.7rem;line-height:1}
+.admin-hello b{font-family:var(--font-display);font-size:1.05rem}
+.admin-hello p{font-size:.85rem;color:var(--ink-soft);margin-top:2px}
 h1 .status-badge{vertical-align:middle;margin-left:10px}
 .order-link{font-weight:700;text-decoration:underline}
 .filters-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:14px}
@@ -82,11 +93,17 @@ label.f{display:block;font-size:.8rem;font-weight:600;margin:12px 0 4px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 20px}
 @media(max-width:700px){.grid2{grid-template-columns:1fr}}
 .status-badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.75rem;font-weight:600;background:var(--bg-alt)}
+/* Дружелюбные статусы: эмодзи + цвет (доступность — не только цвет, паттерн UXPin 2026) */
 .status-badge.new{background:var(--rose)}
+.status-badge.new::before{content:"✨ ";font-size:.7rem}
 .status-badge.confirmed{background:var(--blue)}
+.status-badge.confirmed::before{content:"📞 ";font-size:.7rem}
 .status-badge.done{background:var(--mint)}
-.status-badge.canceled{background:#eee}
+.status-badge.done::before{content:"💐 ";font-size:.7rem}
+.status-badge.canceled{background:#eee;opacity:.85}
+.status-badge.canceled::before{content:"✖ ";font-size:.7rem}
 .status-badge.unredeemed{background:#f3d9a4}
+.status-badge.unredeemed::before{content:"🕒 ";font-size:.7rem}
 .toast{position:fixed;top:16px;right:16px;z-index:1000;background:#fff;box-shadow:0 14px 40px -20px rgba(43,45,47,.5);border-radius:var(--radius);padding:14px 18px;font-size:.9rem;max-width:320px}
 .flash{padding:12px 16px;border-radius:12px;background:var(--mint);margin-bottom:16px;font-size:.9rem;border:1px solid rgba(62,142,90,.25);color:#2c5e40}
 .flash--err{background:#fbe3e3;border-color:rgba(214,69,69,.3);color:#8c2f2f}

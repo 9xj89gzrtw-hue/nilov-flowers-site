@@ -149,6 +149,20 @@ flash();
 ?>
 <h1>Заказы</h1>
 
+<?php /* Дружелюбное приветствие (критерий 15): конкретная подсказка, что делать сейчас */
+$hello = $newCount > 0
+    ? ['🌸', 'У вас ' . $newCount . ' нов' . ($newCount === 1 ? 'ый заказ' : ($newCount < 5 ? 'ых заказа' : 'ых заказов')) . '!', 'Откройте первый заказ и позвоните покупателю для подтверждения — это самый важный шаг.']
+    : ['🌷', 'Новых заказов нет', 'Хорошее время добавить свежий букет в каталог или проверить, как выглядит витрина.'];
+?>
+<div class="admin-hello">
+  <span class="admin-hello__emoji" aria-hidden="true"><?= $hello[0] ?></span>
+  <div>
+    <b><?= e($hello[1]) ?></b>
+    <p><?= e($hello[2]) ?></p>
+  </div>
+  <a class="btn btn--accent" style="margin-left:auto" href="/" target="_blank">Посмотреть сайт</a>
+</div>
+
 <?php
 $dashqs = fn(string $r) => '/admin/index.php?' . e(http_build_query(array_merge(array_filter($_GET, fn($v, $k) => $v !== '' && $k !== 'range', ARRAY_FILTER_USE_BOTH), $r === '30' ? [] : ['range' => $r])));
 ?>
