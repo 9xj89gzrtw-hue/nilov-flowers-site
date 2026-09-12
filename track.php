@@ -12,6 +12,11 @@ require_once __DIR__ . '/includes/util.php';
 $phone = trim($_GET['phone'] ?? '');
 $orders = [];
 $normalized = preg_replace('/\D+/', '', $phone);
+/* Российская нормализация: 8XXXXXXXXXX → 7XXXXXXXXXX (замена ведущей 8),
+   затем хвост 10 цифр матчится с любым форматом ввода (+7/8/7, дефисы, скобки). */
+if (strlen($normalized) === 11 && $normalized[0] === '8') {
+    $normalized = '7' . substr($normalized, 1);
+}
 $tail = $normalized !== '' ? substr($normalized, -10) : '';
 
 if ($tail !== '' && strlen($tail) >= 10) {
