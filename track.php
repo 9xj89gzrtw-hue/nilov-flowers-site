@@ -12,12 +12,11 @@ require_once __DIR__ . '/includes/util.php';
 $phone = trim($_GET['phone'] ?? '');
 $orders = [];
 $normalized = preg_replace('/\D+/', '', $phone);
-/* Российская нормализация: 8XXXXXXXXXX → 7XXXXXXXXXX (замена ведущей 8),
-   затем хвост 10 цифр матчится с любым форматом ввода (+7/8/7, дефисы, скобки). */
-if (strlen($normalized) === 11 && $normalized[0] === '8') {
-    $normalized = '7' . substr($normalized, 1);
-}
+/* Российская нормализация: ведущая 8 = 7. Номера в БД бывают 10-значными
+   (укороченные) и 11-значными, поэтому ищем по двум хвостам: как введено
+   и с заменой ведущей 8 → 7. */
 $tail = $normalized !== '' ? substr($normalized, -10) : '';
+$tailAlt = ($tail !== '' && $tail[0] === '8' && strlen($tail) === 10) ? '7' . substr($tail, 1) : $tail;
 
 if ($tail !== '' && strlen($tail) >= 10) {
     $rows = db()->prepare(
@@ -25,9 +24,10 @@ if ($tail !== '' && strlen($tail) >= 10) {
                 z.name AS zone
          FROM orders o LEFT JOIN delivery_zones z ON z.id = o.delivery_zone_id
          WHERE REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(o.phone, ' ', ''), '+', ''), '(', ''), ')', ''), '-', '') LIKE '%' || :tail
+            OR REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(o.phone, ' ', ''), '+', ''), '(', ''), ')', ''), '-', '') LIKE '%' || :tailAlt
          ORDER BY o.id DESC LIMIT 5"
     );
-    $rows->execute([':tail' => $tail]);
+    $rows->execute([':tail' => $tail, ':tailAlt' => $tailAlt]);
     $orders = $rows->fetchAll();
 }
 
