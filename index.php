@@ -68,8 +68,8 @@ unset($pRow);
 ?><!DOCTYPE html>
 <html lang="ru">
 <head>
-<title>Доставка цветов в СПб — <?= e(setting('shop_name', 'Nilov Flowers')) ?> | Свежие букеты с доставкой сегодня</title>
-<meta name="description" content="Доставка букетов по Санкт-Петербургу в день заказа. Свежие цветы с утренней поставки, фото перед отправкой, бесплатная доставка по Приморскому району. Заказы до 20:00 — доставим сегодня.">
+<title><?= e(setting('seo_title', 'Доставка цветов в СПб — ' . setting('shop_name', 'Nilov Flowers') . ' | Свежие букеты с доставкой сегодня')) ?></title>
+<meta name="description" content="<?= e(setting('seo_description', 'Доставка букетов по Санкт-Петербургу в день заказа. Свежие цветы с утренней поставки, фото перед отправкой, бесплатная доставка по Приморскому району. Заказы до 20:00 — доставим сегодня.')) ?>">
 <meta property="og:title" content="<?= e(setting('shop_name', 'Nilov Flowers')) ?> — свежие цветы с доставкой в СПб">
 <meta property="og:description" content="Букеты с доставкой в день заказа по Санкт-Петербургу. Фото перед отправкой, свежие цветы с утренней поставки.">
 <meta property="og:url" content="https://flowers.interfood-catering.ru/">
@@ -403,7 +403,7 @@ if ($__heroPre !== '') {
                  Адрес самовывоза = адрес магазина из настроек. */
               $pickupAddr = trim(setting('shop_address', ''));
               ?>
-              <option value="0" data-price="0" selected>Самовывоз — бесплатно</option>
+              <option value="0" data-price="0" selected><?= e(setting('pickup_option_text', 'Самовывоз — бесплатно')) ?></option>
               <?php foreach ($zones as $z): ?>
                 <option value="<?= (int)$z['id'] ?>" data-price="<?= (int)$z['price'] ?>">Доставка: <?= e($z['name']) ?> — <?= formatPrice((int)$z['price']) ?></option>
               <?php endforeach; ?>
@@ -417,7 +417,7 @@ if ($__heroPre !== '') {
             <input type="text" id="orderDeliveryAddress" name="delivery_address" placeholder="Улица, дом, квартира">
             <span class="order-form__error" id="orderDeliveryAddressError"></span>
           </div>
-          <p class="order-form__hint" id="orderDeliveryHint">Доставим в течение дня, время согласуем по телефону</p>
+          <p class="order-form__hint" id="orderDeliveryHint"><?= e(setting('delivery_hint_text', 'Доставим в течение дня, время согласуем по телефону')) ?></p>
         </fieldset>
         <fieldset class="order-form__payment">
           <legend>Способ оплаты</legend>
@@ -448,7 +448,9 @@ if ($__heroPre !== '') {
         </label>
         <span class="order-form__error" id="orderPdConsentError"></span>
         <p class="order-form__total" id="orderTotal"></p>
-        <button type="submit" class="btn btn--accent order-form__submit" id="orderSubmit">Оплатить заказ</button>
+        <button type="submit" class="btn btn--accent order-form__submit" id="orderSubmit"
+                data-pay-label="<?= e(setting('submit_button_text', 'Оплатить заказ')) ?>"
+                data-nopay-label="<?= e(setting('submit_nopay_text', 'Отправить заказ')) ?>"><?= e(setting('submit_button_text', 'Оплатить заказ')) ?></button>
         <p class="order-form__hint"><?= e(sprintf('Заказы принимаем ежедневно до %s — оформленные сегодня доставим сегодня же.', setting('order_deadline_hour', '20') . ':' . str_pad(setting('order_deadline_minute', '0'), 2, '0', STR_PAD_LEFT))) ?></p>
         <p class="order-form__status" id="orderStatus" role="status" hidden></p>
       </form>

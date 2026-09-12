@@ -168,9 +168,13 @@
     renderTotal();
   }
 
-  /* Надпись на кнопке совпадает с тем, что произойдёт по нажатию */
+  /* Надпись на кнопке совпадает с тем, что произойдёт по нажатию.
+     Базовые тексты приходят с сервера (критерий 16: правятся в админке) —
+     data-pay-label / data-nopay-label; фолбэки — прежние хардкоды. */
   function defaultSubmitLabel() {
-    return wantsOnlinePayment() ? 'Оплатить заказ' : 'Отправить заказ';
+    var payLabel = submitBtn.getAttribute('data-pay-label') || 'Оплатить заказ';
+    var nopayLabel = submitBtn.getAttribute('data-nopay-label') || 'Отправить заказ';
+    return wantsOnlinePayment() ? payLabel : nopayLabel;
   }
 
   /* При онлайн-оплате на почту приходит чек — hint под полем */

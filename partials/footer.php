@@ -67,19 +67,19 @@ $igDisclaimer = $igOn; /* пометку Meta показываем только 
   <div class="cart-panel__backdrop" id="cartBackdrop"></div>
   <aside class="cart-panel__drawer" role="dialog" aria-modal="true" aria-label="Корзина">
     <div class="cart-panel__head">
-      <h2 class="cart-panel__title">Корзина</h2>
+      <h2 class="cart-panel__title"><?= e(setting('cart_title', 'Корзина')) ?></h2>
       <button type="button" class="cart-panel__close" id="cartClose" aria-label="Закрыть корзину">&times;</button>
     </div>
     <div class="cart-panel__items" id="cartItems"></div>
-    <p class="cart-panel__empty" id="cartEmpty">Корзина пуста — выберите букет в каталоге</p>
+    <p class="cart-panel__empty" id="cartEmpty"><?= e(setting('cart_empty_text', 'Корзина пуста — выберите букет в каталоге')) ?></p>
     <div class="cart-upsell" id="cartUpsell" hidden>
       <p class="cart-upsell__title">Добавить к заказу</p>
       <div class="cart-upsell__items" id="cartUpsellItems"></div>
     </div>
     <div class="cart-panel__foot">
       <p class="cart-panel__total">Итого: <span id="cartTotal">0 ₽</span></p>
-      <button type="button" class="btn btn--accent" id="cartCheckout" disabled>Оформить заказ</button>
-      <button type="button" class="btn btn--outline cart-panel__continue" id="cartContinue">Продолжить покупки</button>
+      <button type="button" class="btn btn--accent" id="cartCheckout" disabled><?= e(setting('cart_checkout_text', 'Оформить заказ')) ?></button>
+      <button type="button" class="btn btn--outline cart-panel__continue" id="cartContinue"><?= e(setting('cart_continue_text', 'Продолжить покупки')) ?></button>
     </div>
   </aside>
 </div>

@@ -22,8 +22,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'shop_email','shop_hours','shop_vk','shop_max_link','shop_instagram','header_phone','header_address',
         'shop_whatsapp','shop_telegram',
         'upsell_limit','upsell_title','upsell_categories',
-        'legal_subject_type','legal_name','legal_number','legal_address','legal_contact_email',
+        'legal_subject_type','legal_name','legal_number','legal_inn','legal_address','legal_contact_email',
         'vat_rate','yk_shop_id','yk_secret_key','yandex_reviews_id',
+        /* SEO главной (критерий 16, P1 аудитора) */
+        'seo_title','seo_description','metrika_counter_id',
         /* Витринные тексты (критерий 16): бейдж + FAQ редактируются */
         'delivery_badge_text','faq_title',
         'faq_q1','faq_a1','faq_q2','faq_a2','faq_q3','faq_a3','faq_q4','faq_a4',
@@ -40,7 +42,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'catalog_title','catalog_subtitle','order_title',
         /* Бейджи карточек + cookie-баннер (критерий 16) */
         'badge_sale_text','badge_urgent_text',
-        'cookie_banner_text','cookie_accept_text','cookie_reject_text'];
+        'cookie_banner_text','cookie_accept_text','cookie_reject_text',
+        /* Тексты чекаута и корзины (критерий 16) */
+        'pickup_option_text','delivery_hint_text','submit_button_text','submit_nopay_text',
+        'cart_title','cart_empty_text','cart_checkout_text','cart_continue_text'];
     $values = [];
     foreach ($keys as $k) {
         $values[$k] = trim((string)($_POST[$k] ?? ''));
@@ -360,6 +365,31 @@ flash();
         <input class="input" id="cb-rej" name="cookie_reject_text" value="<?= sv('cookie_reject_text', $s) !== '' ? sv('cookie_reject_text', $s) : 'Только необходимые' ?>" maxlength="30">
       </div>
     </div>
+    <?php /* Чекаут + корзина (критерий 16) */ ?>
+    <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
+    <p style="font-size:.85rem;font-weight:600;margin:0 0 8px">Оформление заказа и корзина</p>
+    <div class="grid2">
+      <div>
+        <label class="f" for="pk-opt">Пункт самовывоза в списке</label>
+        <input class="input" id="pk-opt" name="pickup_option_text" value="<?= sv('pickup_option_text', $s) !== '' ? sv('pickup_option_text', $s) : 'Самовывоз — бесплатно' ?>" maxlength="40">
+        <label class="f" for="dl-hint" style="margin-top:8px">Подсказка под доставкой</label>
+        <input class="input" id="dl-hint" name="delivery_hint_text" value="<?= sv('delivery_hint_text', $s) !== '' ? sv('delivery_hint_text', $s) : 'Доставим в течение дня, время согласуем по телефону' ?>" maxlength="90">
+        <label class="f" for="sb-btn" style="margin-top:8px">Кнопка отправки заказа (при онлайн-оплате)</label>
+        <input class="input" id="sb-btn" name="submit_button_text" value="<?= sv('submit_button_text', $s) !== '' ? sv('submit_button_text', $s) : 'Оплатить заказ' ?>" maxlength="30">
+        <label class="f" for="sb-np" style="margin-top:8px">Кнопка (при оплате при получении)</label>
+        <input class="input" id="sb-np" name="submit_nopay_text" value="<?= sv('submit_nopay_text', $s) !== '' ? sv('submit_nopay_text', $s) : 'Отправить заказ' ?>" maxlength="30">
+      </div>
+      <div>
+        <label class="f" for="ct-t">Заголовок корзины</label>
+        <input class="input" id="ct-t" name="cart_title" value="<?= sv('cart_title', $s) !== '' ? sv('cart_title', $s) : 'Корзина' ?>" maxlength="30">
+        <label class="f" for="ct-e" style="margin-top:8px">«Корзина пуста»</label>
+        <input class="input" id="ct-e" name="cart_empty_text" value="<?= sv('cart_empty_text', $s) !== '' ? sv('cart_empty_text', $s) : 'Корзина пуста — выберите букет в каталоге' ?>" maxlength="90">
+        <label class="f" for="ct-c" style="margin-top:8px">Кнопка «оформить» в корзине</label>
+        <input class="input" id="ct-c" name="cart_checkout_text" value="<?= sv('cart_checkout_text', $s) !== '' ? sv('cart_checkout_text', $s) : 'Оформить заказ' ?>" maxlength="30">
+        <label class="f" for="ct-n" style="margin-top:8px">Кнопка «продолжить покупки»</label>
+        <input class="input" id="ct-n" name="cart_continue_text" value="<?= sv('cart_continue_text', $s) !== '' ? sv('cart_continue_text', $s) : 'Продолжить покупки' ?>" maxlength="30">
+      </div>
+    </div>
   </div>
 
   <div class="card" id="s-steps">
@@ -478,6 +508,8 @@ flash();
         <input class="input" id="l-name" name="legal_name" value="<?= sv('legal_name', $s) ?>">
         <label class="f" for="l-num">ОГРНИП / ОГРН</label>
         <input class="input" id="l-num" name="legal_number" value="<?= sv('legal_number', $s) ?>">
+        <label class="f" for="l-inn">ИНН</label>
+        <input class="input" id="l-inn" name="legal_inn" value="<?= sv('legal_inn', $s) ?>" placeholder="781433059704" inputmode="numeric" maxlength="12">
       </div>
       <div>
         <label class="f" for="l-addr">Юридический/фактический адрес</label>
@@ -486,6 +518,16 @@ flash();
         <input class="input" id="l-mail" name="legal_contact_email" value="<?= sv('legal_contact_email', $s) ?>">
       </div>
     </div>
+    <?php /* SEO главной + Метрика (критерий 16, P1 аудита) */ ?>
+    <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
+    <p style="font-size:.85rem;font-weight:600;margin:0 0 8px">Продвижение: заголовок и описание для поисковиков</p>
+    <label class="f" for="seo-t">Title (виден во вкладке и в Яндексе)</label>
+    <input class="input" id="seo-t" name="seo_title" value="<?= sv('seo_title', $s) !== '' ? sv('seo_title', $s) : 'Доставка цветов в СПб — ' . sv('shop_name', $s) . ' | Свежие букеты с доставкой сегодня' ?>" maxlength="80">
+    <label class="f" for="seo-d" style="margin-top:8px">Description (описание в результатах поиска)</label>
+    <input class="input" id="seo-d" name="seo_description" value="<?= sv('seo_description', $s) !== '' ? sv('seo_description', $s) : 'Доставка букетов по Санкт-Петербургу в день заказа. Свежие цветы с утренней поставки, фото перед отправкой, бесплатная доставка по Приморскому району. Заказы до 20:00 — доставим сегодня.' ?>" maxlength="200">
+    <label class="f" for="mk-id" style="margin-top:8px">Счётчик Яндекс.Метрики (номер)</label>
+    <input class="input" id="mk-id" name="metrika_counter_id" value="<?= sv('metrika_counter_id', $s) ?>" placeholder="12345678" inputmode="numeric" maxlength="12">
+    <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Метрика грузится только после согласия на cookie. Номер — из личного кабинета Метрики. Пусто = счётчик не ставится.</p>
   </div>
 
   <div class="card" id="s-pay">
