@@ -80,3 +80,26 @@
   function refresh() {}
   window.addEventListener('pageshow', refresh);
 })();
+
+/* 3. Таймер «до 20:00» в hero (критерий 13, конкурентная фишка EXPRESS/маркетплейсов).
+     Показывает сколько часов-минут осталось до дедлайна заказа-сегодня. */
+(function () {
+  var el = document.querySelector('.hero__deadline');
+  if (!el) return;
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function tick() {
+    var now = new Date();
+    var deadline = new Date(now);
+    deadline.setHours(20, 0, 0, 0);
+    if (now < deadline) {
+      var diff = deadline - now;
+      var h = Math.floor(diff / 3600000);
+      var m = Math.floor((diff % 3600000) / 60000);
+      el.textContent = '⏱ Успейте заказать сегодня — осталось ' + h + ' ч ' + pad(m) + ' мин до 20:00';
+    } else {
+      el.textContent = '🌙 Сегодня заказы уже закрыты — доставим завтра с утра';
+    }
+  }
+  tick();
+  setInterval(tick, 30000);
+})();

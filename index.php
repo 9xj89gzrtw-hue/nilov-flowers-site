@@ -60,8 +60,8 @@ unset($pRow);
 ?><!DOCTYPE html>
 <html lang="ru">
 <head>
-<title><?= e(setting('shop_name', 'Nilov Flowers')) ?> — доставка цветов по Санкт-Петербургу в день заказа</title>
-<meta name="description" content="<?= e(setting('hero_subtitle')) ?>">
+<title>Доставка цветов в СПб — <?= e(setting('shop_name', 'Nilov Flowers')) ?> | Свежие букеты с доставкой сегодня</title>
+<meta name="description" content="Доставка букетов по Санкт-Петербургу в день заказа. Свежие цветы с утренней поставки, фото перед отправкой, бесплатная доставка по Приморскому району. Заказы до 20:00 — доставим сегодня.">
 <meta property="og:title" content="<?= e(setting('shop_name', 'Nilov Flowers')) ?> — свежие цветы с доставкой в СПб">
 <meta property="og:description" content="Букеты с доставкой в день заказа по Санкт-Петербургу. Фото перед отправкой, свежие цветы с утренней поставки.">
 <meta property="og:url" content="https://flowers.interfood-catering.ru/">
@@ -139,6 +139,7 @@ if ($__heroPre !== '') {
         </h1>
         <p class="hero__hook nv-hero-sub" data-hero-hook><?= e(setting('hero_title', 'Свежие цветы с утренней поставки')) ?></p>
         <p class="hero__subtitle nv-hero-sub"><?= e(setting('hero_subtitle')) ?></p>
+        <p class="hero__deadline" style="display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:8px 16px;border-radius:999px;background:rgba(255,255,255,.75);backdrop-filter:blur(6px);border:1px solid var(--line);font-size:.9rem;font-weight:600;color:var(--ink)"></p>
         <?php endif; ?>
         <?php if ($heroBtn || ($heroTextEnabled && $guarantees !== [])): ?>
         <div class="hero__meta">
@@ -213,6 +214,17 @@ if ($__heroPre !== '') {
           <button type="button" class="catalog-tabs__tab" role="tab" aria-selected="false" data-category-id="<?= (int)$c['id'] ?>"><?= e($c['name']) ?></button>
         <?php endforeach; ?>
       </div>
+      <?php /* Фильтр по цене (критерий 13, EXPRESS-паттерн): JS-фильтрация карточек по data-атрибуту */ ?>
+      <div class="catalog-price-filter" style="display:flex;align-items:center;gap:10px;margin:0 0 18px;flex-wrap:wrap">
+        <label for="priceFilter" style="font-size:.85rem;font-weight:600;color:var(--ink-soft)">Цена:</label>
+        <select id="priceFilter" style="padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:.85rem;cursor:pointer">
+          <option value="all" selected>Любая</option>
+          <option value="u2500">до 2 500 ₽</option>
+          <option value="2500-4000">2 500–4 000 ₽</option>
+          <option value="o4000">от 4 000 ₽</option>
+        </select>
+        <span id="priceFilterCount" style="font-size:.85rem;color:var(--ink-soft)" aria-live="polite"></span>
+      </div>
       <div class="catalog__grid" id="catalogGrid">
         <?php foreach ($products as $p):
             $price = productPrice($p);
@@ -221,7 +233,7 @@ if ($__heroPre !== '') {
             $imgWebp = product_img_webp($p);
             $link = '/product/' . rawurlencode($p['slug']);
         ?>
-        <article class="product-card reveal" data-category-id="<?= (int)($p['category_id'] ?? 0) ?>">
+        <article class="product-card reveal" data-category-id="<?= (int)($p['category_id'] ?? 0) ?>" data-price="<?= (int)$price ?>">
           <div class="product-card__media">
             <a class="product-card__media-link" href="<?= e($link) ?>" aria-label="<?= e($p['name']) ?>">
               <?php if ($img !== ''): ?>
