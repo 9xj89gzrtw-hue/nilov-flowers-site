@@ -33,7 +33,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         /* Пороги фильтра цены (критерий 16) */
         'price_filter_low','price_filter_high',
         /* Тексты zone-check (критерий 16) */
-        'zone_check_placeholder','zone_check_fallback'];
+        'zone_check_placeholder','zone_check_fallback',
+        /* Тексты бегущей ленты (критерий 16) */
+        'marquee_1','marquee_2','marquee_3','marquee_4'];
     $values = [];
     foreach ($keys as $k) {
         $values[$k] = trim((string)($_POST[$k] ?? ''));
@@ -147,6 +149,18 @@ flash();
           <img class="thumb" style="margin-top:8px;width:120px;height:80px" src="/img/uploads/<?= e($s['hero_image']) ?>" alt="">
         <?php endif; ?>
       </div>
+    </div>
+    <?php /* Бегущая лента (критерий 16): тексты редактируются, пустые не показываются */ ?>
+    <p style="font-size:.85rem;font-weight:600;margin:14px 0 8px">Бегущая лента под шапкой (тексты через ✿)</p>
+    <div class="grid2">
+      <?php for ($mq = 1; $mq <= 4; $mq++):
+          $mqDefault = ['Доставка по Санкт-Петербургу в день заказа','Свежие цветы с утренней поставки','Фото букета перед отправкой','Заменяем увядшие в день доставки'][$mq - 1];
+      ?>
+      <div>
+        <label class="f" for="mq-<?= $mq ?>">Фраза <?= $mq ?></label>
+        <input class="input" id="mq-<?= $mq ?>" name="marquee_<?= $mq ?>" value="<?= sv("marquee_{$mq}", $s) !== '' ? sv("marquee_{$mq}", $s) : $mqDefault ?>" maxlength="90">
+      </div>
+      <?php endfor; ?>
     </div>
   </div>
 

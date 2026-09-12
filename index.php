@@ -196,11 +196,15 @@ if ($__heroPre !== '') {
   <!-- MARQUEE: доставка по СПб (CSS-only, дублируемая лента aria-hidden) -->
   <div class="nv-marquee" aria-hidden="true">
     <div class="nv-marquee__track">
+      <?php /* Тексты ленты редактируются (критерий 16): marquee_1..4; пустые пропускаются */ ?>
+      <?php $marqueeItems = array_filter(array_map('trim', [
+          setting('marquee_1', 'Доставка по Санкт-Петербургу в день заказа'),
+          setting('marquee_2', 'Свежие цветы с утренней поставки'),
+          setting('marquee_3', 'Фото букета перед отправкой'),
+          setting('marquee_4', 'Заменяем увядшие в день доставки'),
+      ]), static fn (string $t): bool => $t !== ''); ?>
       <?php for ($mi = 0; $mi < 2; $mi++): ?>
-      <span>Доставка по Санкт-Петербургу в день заказа</span><span class="nv-marquee__dot">✿</span>
-      <span>Свежие цветы с утренней поставки</span><span class="nv-marquee__dot">✿</span>
-      <span>Фото букета перед отправкой</span><span class="nv-marquee__dot">✿</span>
-      <span>Заменяем увядшие в день доставки</span><span class="nv-marquee__dot">✿</span>
+      <?php foreach ($marqueeItems as $mt): ?><span><?= e($mt) ?></span><span class="nv-marquee__dot">✿</span><?php endforeach; ?>
       <?php endfor; ?>
     </div>
   </div>
