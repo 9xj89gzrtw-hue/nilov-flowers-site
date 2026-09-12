@@ -1,1 +1,4 @@
 Lucide "flower" icon, ISC License (https://unpkg.com/lucide-static v1.44.0), adapted for Nilov Flowers favicon: recolored stroke #E2799C on cream #F6F1E6, rounded-square bg. ISC permits use, copy, modify.
+
+hero-ov1.jpg — "Pink Rose Bouquet" via Openverse (Flickr, CC BY 2.0).
+Commercial use allowed; attribution: photo author via openverse.org.
