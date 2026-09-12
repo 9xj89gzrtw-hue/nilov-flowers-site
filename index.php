@@ -139,8 +139,9 @@ if ($__heroPre !== '') {
         </h1>
         <p class="hero__hook nv-hero-sub" data-hero-hook><?= e(setting('hero_title', 'Свежие цветы с утренней поставки')) ?></p>
         <p class="hero__subtitle nv-hero-sub"><?= e(setting('hero_subtitle')) ?></p>
-        <p class="hero__deadline" style="display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:8px 16px;border-radius:999px;background:rgba(255,255,255,.75);backdrop-filter:blur(6px);border:1px solid var(--line);font-size:.9rem;font-weight:600;color:var(--ink)"></p>
         <?php endif; ?>
+        <?php /* Таймер «до 20:00» — не зависит от hero-текста (юр-независимый элемент) */ ?>
+        <p class="hero__deadline" style="display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:8px 16px;border-radius:999px;background:rgba(255,255,255,.75);backdrop-filter:blur(6px);border:1px solid var(--line);font-size:.9rem;font-weight:600;color:var(--ink)"></p>
         <?php if ($heroBtn || ($heroTextEnabled && $guarantees !== [])): ?>
         <div class="hero__meta">
           <?php if ($heroBtn): ?>
