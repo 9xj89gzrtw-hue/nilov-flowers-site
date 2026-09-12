@@ -90,15 +90,21 @@
   function tick() {
     var now = new Date();
     var deadline = new Date(now);
-    deadline.setHours(20, 0, 0, 0);
+    var cfg = window.NILOV_CONFIG || {};
+    deadline.setHours(cfg.deadlineHour ?? 20, cfg.deadlineMinute ?? 0, 0, 0);
+    var hh = (cfg.deadlineHour ?? 20);
+    var mm = (cfg.deadlineMinute ?? 0);
+    var label = (hh < 10 ? '0' + hh : hh) + ':' + (mm < 10 ? '0' + mm : mm);
     if (now < deadline) {
       var diff = deadline - now;
       var h = Math.floor(diff / 3600000);
       var m = Math.floor((diff % 3600000) / 60000);
       var s = Math.floor((diff % 60000) / 1000);
-      el.textContent = '⏱ Успейте заказать сегодня — осталось ' + h + ' ч ' + pad(m) + ' мин ' + pad(s) + ' с до 20:00';
+      var t = h + ' ч ' + pad(m) + ' мин ' + pad(s) + ' с';
+      var tpl = cfg.countdownText || 'Успейте заказать сегодня — осталось {T} до 20:00';
+      el.textContent = '⏱ ' + tpl.replace('{T}', t).replace('20:00', label);
     } else {
-      el.textContent = '🌙 Сегодня заказы уже закрыты — доставим завтра с утра';
+      el.textContent = '🌙 ' + (cfg.closedText || 'Сегодня заказы уже закрыты — доставим завтра с утра');
     }
   }
   tick();

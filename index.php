@@ -149,7 +149,13 @@ if ($__heroPre !== '') {
         <p class="hero__subtitle nv-hero-sub"><?= e(setting('hero_subtitle')) ?></p>
         <?php endif; ?>
         <?php /* Таймер «до 20:00» — не зависит от hero-текста (юр-независимый элемент). Отключаем (критерий 16). */ ?>
-        <?php if ($featCountdown): ?><p class="hero__deadline" style="display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:8px 16px;border-radius:999px;background:rgba(255,255,255,.75);backdrop-filter:blur(6px);border:1px solid var(--line);font-size:.9rem;font-weight:600;color:var(--ink)"></p><?php endif; ?>
+        <?php if ($featCountdown): ?><p class="hero__deadline" style="display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:8px 16px;border-radius:999px;background:rgba(255,255,255,.75);backdrop-filter:blur(6px);border:1px solid var(--line);font-size:.9rem;font-weight:600;color:var(--ink)"></p>
+        <script>window.NILOV_CONFIG = {
+          deadlineHour: <?= (int)(setting('order_deadline_hour', '20')) ?>,
+          deadlineMinute: <?= (int)(setting('order_deadline_minute', '0')) ?>,
+          countdownText: <?= json_encode(setting('countdown_text', 'Успейте заказать сегодня — осталось {T} до 20:00'), JSON_UNESCAPED_UNICODE) ?>,
+          closedText: <?= json_encode(setting('countdown_closed_text', 'Сегодня заказы уже закрыты — доставим завтра с утра'), JSON_UNESCAPED_UNICODE) ?>
+        };</script><?php endif; ?>
         <?php if ($heroBtn || ($heroTextEnabled && $guarantees !== [])): ?>
         <div class="hero__meta">
           <?php if ($heroBtn): ?>
@@ -302,10 +308,10 @@ if ($__heroPre !== '') {
         </article>
         <?php endforeach; ?>
       </div>
-      <?php /* Empty-state (критик P2): при 0 карточек от фильтров — подсказка + сброс */ ?>
+      <?php /* Empty-state (критик P2): при 0 карточек от фильтров — подсказка + сброс. Тексты редактируются (критерий 16). */ ?>
       <div class="catalog-empty" id="catalogEmpty" hidden style="text-align:center;padding:44px 20px;border:1px dashed var(--line);border-radius:16px;margin-top:14px">
-        <p style="font-size:1.05rem;font-weight:600;margin-bottom:6px">По этим фильтрам букетов не нашлось 🌷</p>
-        <p style="color:var(--ink-soft);font-size:.9rem;margin-bottom:16px">Попробуйте убрать фильтр цены или выбрать другую категорию</p>
+        <p style="font-size:1.05rem;font-weight:600;margin-bottom:6px"><?= e(setting('catalog_empty_title', 'По этим фильтрам букетов не нашлось 🌷')) ?></p>
+        <p style="color:var(--ink-soft);font-size:.9rem;margin-bottom:16px"><?= e(setting('catalog_empty_hint', 'Попробуйте убрать фильтр цены или выбрать другую категорию')) ?></p>
         <button type="button" class="btn btn--outline" id="catalogEmptyReset">Сбросить фильтры</button>
       </div>
     </div>

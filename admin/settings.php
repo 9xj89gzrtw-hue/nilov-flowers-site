@@ -26,7 +26,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'vat_rate','yk_shop_id','yk_secret_key','yandex_reviews_id',
         /* Витринные тексты (критерий 16): бейдж + FAQ редактируются */
         'delivery_badge_text','faq_title',
-        'faq_q1','faq_a1','faq_q2','faq_a2','faq_q3','faq_a3','faq_q4','faq_a4'];
+        'faq_q1','faq_a1','faq_q2','faq_a2','faq_q3','faq_a3','faq_q4','faq_a4',
+        /* Дедлайн + тексты таймера и empty-state (критерий 16) */
+        'order_deadline_hour','order_deadline_minute','countdown_text','countdown_closed_text',
+        'catalog_empty_title','catalog_empty_hint'];
     $values = [];
     foreach ($keys as $k) {
         $values[$k] = trim((string)($_POST[$k] ?? ''));
@@ -250,6 +253,36 @@ flash();
       </div>
     </div>
     <?php endfor; ?>
+    <?php /* Дедлайн приёма заказов (критерий 16): время + тексты таймера */ ?>
+    <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
+    <p style="font-size:.85rem;font-weight:600;margin:0 0 8px">До которого часа принимаем заказы на сегодня</p>
+    <div class="grid2">
+      <div>
+        <label class="f" for="dl-h">Час (0–23)</label>
+        <input class="input" id="dl-h" name="order_deadline_hour" type="number" min="0" max="23" value="<?= sv('order_deadline_hour', $s) !== '' ? sv('order_deadline_hour', $s) : '20' ?>">
+      </div>
+      <div>
+        <label class="f" for="dl-m">Минуты (0–59)</label>
+        <input class="input" id="dl-m" name="order_deadline_minute" type="number" min="0" max="59" value="<?= sv('order_deadline_minute', $s) !== '' ? sv('order_deadline_minute', $s) : '0' ?>">
+      </div>
+    </div>
+    <label class="f" for="cd-t" style="margin-top:12px">Текст таймера (до дедлайна)</label>
+    <input class="input" id="cd-t" name="countdown_text" value="<?= sv('countdown_text', $s) !== '' ? sv('countdown_text', $s) : 'Успейте заказать сегодня — осталось {T} до 20:00' ?>" maxlength="120">
+    <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 12px">Вместо <code>{T}</code> подставится время («2 ч 15 мин 30 с»), «20:00» заменится на ваш дедлайн.</p>
+    <label class="f" for="cd-c">Текст после дедлайна</label>
+    <input class="input" id="cd-c" name="countdown_closed_text" value="<?= sv('countdown_closed_text', $s) !== '' ? sv('countdown_closed_text', $s) : 'Сегодня заказы уже закрыты — доставим завтра с утра' ?>" maxlength="120">
+    <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
+    <p style="font-size:.85rem;font-weight:600;margin:0 0 8px">Сообщения, если фильтры не нашли букетов</p>
+    <div class="grid2">
+      <div>
+        <label class="f" for="ce-t">Заголовок</label>
+        <input class="input" id="ce-t" name="catalog_empty_title" value="<?= sv('catalog_empty_title', $s) !== '' ? sv('catalog_empty_title', $s) : 'По этим фильтрам букетов не нашлось 🌷' ?>" maxlength="100">
+      </div>
+      <div>
+        <label class="f" for="ce-h">Подсказка</label>
+        <input class="input" id="ce-h" name="catalog_empty_hint" value="<?= sv('catalog_empty_hint', $s) !== '' ? sv('catalog_empty_hint', $s) : 'Попробуйте убрать фильтр цены или выбрать другую категорию' ?>" maxlength="160">
+      </div>
+    </div>
   </div>
 
   <div class="card" id="s-steps">
