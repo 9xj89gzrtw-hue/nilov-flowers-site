@@ -48,7 +48,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'cart_title','cart_empty_text','cart_checkout_text','cart_continue_text',
         /* Лейблы полей формы заказа (критерий 16, аудит-хардкоды) */
         'form_name_label','form_phone_label','form_email_label','form_delivery_zone_label',
-        'fieldset_delivery_legend','fieldset_payment_legend','pay_online_label','pay_cash_label'];
+        'fieldset_delivery_legend','fieldset_payment_legend','pay_online_label','pay_cash_label',
+        /* Hero-eyebrow (критерий 16, P2 аудита) */
+        'hero_eyebrow'];
     $values = [];
     foreach ($keys as $k) {
         $values[$k] = trim((string)($_POST[$k] ?? ''));
@@ -140,6 +142,8 @@ flash();
     <h2 style="font-family:var(--font-display);font-size:1.2rem;margin-bottom:8px">Главная страница</h2>
     <div class="grid2">
       <div>
+        <label class="f" for="h-eyebrow">Строка над заголовком (город и подача)</label>
+        <input class="input" id="h-eyebrow" name="hero_eyebrow" value="<?= sv('hero_eyebrow', $s) !== '' ? sv('hero_eyebrow', $s) : 'Санкт-Петербург · доставка в день заказа' ?>" maxlength="60">
         <label class="f" for="h-title">Заголовок (hero)</label>
         <input class="input" id="h-title" name="hero_title" value="<?= sv('hero_title', $s) ?>">
         <label class="f" for="h-sub">Подзаголовок</label>

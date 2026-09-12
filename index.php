@@ -126,7 +126,7 @@ if ($__heroPre !== '') {
     <div class="wrap hero__grid">
       <div>
         <?php if ($heroTextEnabled): ?>
-        <p class="nv-hero-eyebrow nv-hero-sub">Санкт-Петербург · доставка в день заказа</p>
+        <p class="nv-hero-eyebrow nv-hero-sub"><?= e(setting('hero_eyebrow', 'Санкт-Петербург · доставка в день заказа')) ?></p>
         <h1 class="nv-hero-brand" id="nvBrand" aria-label="Nilov Flowers">
           <?php
           /* По-буквенный stagger (spec H1): «Nilov» прямой, «Flow» розовым курсивом + «ers».
