@@ -192,7 +192,7 @@
       if (sel) sel.value = m.value; // подстановка в чекаут
     } else {
       out.style.color = '#b3261e';
-      out.textContent = 'не нашли — уточним по телефону';
+      out.textContent = inp.getAttribute('data-fallback') || 'не нашли — уточним по телефону';
     }
   }
   inp.addEventListener('input', apply);

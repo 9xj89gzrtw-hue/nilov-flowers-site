@@ -31,7 +31,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'order_deadline_hour','order_deadline_minute','countdown_text','countdown_closed_text',
         'catalog_empty_title','catalog_empty_hint',
         /* Пороги фильтра цены (критерий 16) */
-        'price_filter_low','price_filter_high'];
+        'price_filter_low','price_filter_high',
+        /* Тексты zone-check (критерий 16) */
+        'zone_check_placeholder','zone_check_fallback'];
     $values = [];
     foreach ($keys as $k) {
         $values[$k] = trim((string)($_POST[$k] ?? ''));
@@ -209,7 +211,13 @@ flash();
           <input type="checkbox" name="feature_zone_check" style="width:auto" <?= sv('feature_zone_check', $s) === '1' ? 'checked' : '' ?>>
           Проверка зоны доставки в каталоге
         </label>
-        <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 0 26px">Поле «Мой район доставки…» — покупатель сразу видит стоимость для своего района.</p>
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 6px 26px">Поле «Мой район доставки…» — покупатель сразу видит стоимость для своего района.</p>
+        <div style="margin-left:26px">
+          <label class="f" for="zc-ph">Подсказка в поле (placeholder)</label>
+          <input class="input" id="zc-ph" name="zone_check_placeholder" value="<?= sv('zone_check_placeholder', $s) !== '' ? sv('zone_check_placeholder', $s) : 'Мой район доставки…' ?>" maxlength="60">
+          <label class="f" for="zc-fb" style="margin-top:8px">Если район не найден</label>
+          <input class="input" id="zc-fb" name="zone_check_fallback" value="<?= sv('zone_check_fallback', $s) !== '' ? sv('zone_check_fallback', $s) : 'не нашли — уточним по телефону' ?>" maxlength="80">
+        </div>
       </div>
       <div>
         <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">

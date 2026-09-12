@@ -250,7 +250,8 @@ if ($__heroPre !== '') {
                Данные зон инлайн (HTML-атрибут) — JS-мэтч по вводу покупателя. Отключаем (критерий 16). */ ?>
         <?php if ($featZoneCheck): ?>
         <span class="zone-check" style="display:inline-flex;align-items:center;gap:6px;margin-left:auto">
-          <input type="search" id="zoneCheckInput" placeholder="Мой район доставки…" aria-label="Проверить зону доставки"
+          <input type="search" id="zoneCheckInput" placeholder="<?= e(setting('zone_check_placeholder', 'Мой район доставки…')) ?>" aria-label="Проверить зону доставки"
+                 data-fallback="<?= e(setting('zone_check_fallback', 'не нашли — уточним по телефону')) ?>"
                  style="padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:.85rem;width:170px"
                  list="zoneCheckList">
           <datalist id="zoneCheckList">
