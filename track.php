@@ -19,7 +19,7 @@ if ($tail !== '' && strlen($tail) >= 10) {
         "SELECT o.id, o.created_at, o.status, o.total, o.delivery_zone_id,
                 z.name AS zone
          FROM orders o LEFT JOIN delivery_zones z ON z.id = o.delivery_zone_id
-         WHERE REPLACE(REPLACE(REPLACE(REPLACE(o.phone, ' ', ''), '+', ''), '(', ''), ')', '') LIKE '%' || :tail
+         WHERE REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(o.phone, ' ', ''), '+', ''), '(', ''), ')', ''), '-', '') LIKE '%' || :tail
          ORDER BY o.id DESC LIMIT 5"
     );
     $rows->execute([':tail' => $tail]);
