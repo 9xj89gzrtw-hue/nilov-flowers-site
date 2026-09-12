@@ -225,6 +225,7 @@ if ($__heroPre !== '') {
           <option value="o4000">от 4 000 ₽</option>
         </select>
         <span id="priceFilterCount" style="font-size:.85rem;color:var(--ink-soft)" aria-live="polite"></span>
+        <button type="button" id="favToggle" class="fav-toggle" aria-pressed="false">♡ Избранное</button>
       </div>
       <div class="catalog__grid" id="catalogGrid">
         <?php foreach ($products as $p):
@@ -256,6 +257,8 @@ if ($__heroPre !== '') {
               data-product-price-raw="<?= $price ?>"
               data-product-image="<?= e($img) ?>"
               aria-label="Добавить в корзину: <?= e($p['name']) ?>">+</button>
+            <?php /* Избранное (критерий 13, Русский Букет-паттерн): сердечко на карточке, localStorage */ ?>
+            <button type="button" class="product-card__fav" data-fav-id="<?= (int)$p['id'] ?>" data-fav-name="<?= e($p['name']) ?>" aria-label="В избранное: <?= e($p['name']) ?>" title="В избранное">♡</button>
           </div>
           <div class="product-card__body">
             <span class="product-card__cat"><?= e($p['category_name'] ?? '') ?></span>

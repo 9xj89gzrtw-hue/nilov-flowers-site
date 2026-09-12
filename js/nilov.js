@@ -103,3 +103,52 @@
   tick();
   setInterval(tick, 30000);
 })();
+
+/* 4. Избранное (критерий 13, Русский Букет-паттерн): сердечки + localStorage + фильтр «только избранное». */
+(function () {
+  var KEY = 'nilov_favs';
+  function get() { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; } }
+  function set(a) { try { localStorage.setItem(KEY, JSON.stringify(a)); } catch (e) {} }
+  function sync() {
+    var favs = get();
+    document.querySelectorAll('.product-card__fav').forEach(function (b) {
+      b.classList.toggle('is-active', favs.indexOf(b.getAttribute('data-fav-id')) !== -1);
+      b.textContent = b.classList.contains('is-active') ? '♥' : '♡';
+    });
+    var t = document.getElementById('favToggle');
+    if (t) {
+      t.classList.toggle('is-active', favs.length > 0);
+      t.textContent = favs.length > 0 ? '♥ ' + favs.length : '♡ Избранное';
+    }
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('.product-card__fav');
+    if (b) {
+      var id = b.getAttribute('data-fav-id');
+      var favs = get();
+      var i = favs.indexOf(id);
+      if (i === -1) favs.push(id); else favs.splice(i, 1);
+      set(favs); sync();
+      e.preventDefault(); e.stopPropagation();
+    }
+    var t = e.target.closest('#favToggle');
+    if (t) {
+      t.classList.toggle('is-on');
+      var on = t.classList.contains('is-on');
+      var favs2 = get();
+      document.querySelectorAll('.product-card').forEach(function (c) {
+        var id = (c.querySelector('.product-card__fav') || {}).getAttribute ? c.querySelector('.product-card__fav').getAttribute('data-fav-id') : null;
+        if (id === null) return;
+        if (on && favs2.indexOf(id) === -1) c.style.display = 'none';
+        else if (on) c.style.display = '';
+      });
+      if (!on) {
+        document.querySelectorAll('.product-card').forEach(function (c) { c.style.display = ''; });
+        var evt = new Event('change', { bubbles: true });
+        var sel = document.getElementById('priceFilter');
+        if (sel) sel.dispatchEvent(evt);
+      }
+    }
+  });
+  sync();
+})();
