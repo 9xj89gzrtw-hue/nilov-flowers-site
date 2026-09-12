@@ -273,8 +273,8 @@ if ($__heroPre !== '') {
             </a>
             <?php if ($isSale): ?><span class="product-card__badge">Скидка до конца недели</span><?php endif; ?>
             <?php if ((int)($p['is_urgent'] ?? 0) === 1): ?><span class="product-card__badge product-card__badge--urgent">Успеть сегодня</span><?php endif; ?>
-            <?php /* Конкурентный бейдж (критерий 13, EXPRESS-паттерн): тариф зоны владельца на каждой карточке. Отключаем (критерий 16). */ ?>
-            <?php if ($featDeliveryBadge): ?><span class="product-card__badge product-card__badge--deliv">Доставка 0₽ · Приморский</span><?php endif; ?>
+            <?php /* Конкурентный бейдж (критерий 13, EXPRESS-паттерн): тариф зоны владельца. Текст редактируется (критерий 16). */ ?>
+            <?php if ($featDeliveryBadge): ?><span class="product-card__badge product-card__badge--deliv"><?= e(setting('delivery_badge_text', 'Доставка 0₽ · Приморский')) ?></span><?php endif; ?>
             <button type="button" class="product-card__cta" data-order-cta
               data-product-id="<?= (int)$p['id'] ?>"
               data-product-name="<?= e($p['name']) ?>"
@@ -445,35 +445,37 @@ if ($__heroPre !== '') {
   <?php if ($featFaq): ?>
   <section class="section" id="faq" style="padding-top:0">
     <div class="wrap" style="max-width:720px">
-      <h2 class="section-title">Частые вопросы</h2>
-      <details style="border:1px solid var(--line);border-radius:14px;padding:14px 18px;margin-bottom:10px;background:#fff">
-        <summary style="font-weight:600;cursor:pointer">Сколько стоит доставка?</summary>
-        <p style="margin-top:8px;color:var(--ink-soft);font-size:.92rem">По Приморскому району — бесплатно, это наш район. Центр СПб — 300 ₽, остальные районы 350–600 ₽. Самовывоз с Полевой Сабировской, 47 — всегда бесплатно.</p>
+      <h2 class="section-title"><?= e(setting('faq_title', 'Частые вопросы')) ?></h2>
+      <?php
+      /* FAQ редактируется из админки (критерий 16): 4 пары вопрос-ответ.
+         Непустые пары рендерятся; JSON-LD строится из тех же полей — синхрон с видимым текстом. */
+      $faqItems = [];
+      for ($i = 1; $i <= 4; $i++) {
+          $q = trim(setting("faq_q{$i}", ''));
+          $a = trim(setting("faq_a{$i}", ''));
+          if ($q !== '' && $a !== '') { $faqItems[] = ['q' => $q, 'a' => $a]; }
+      }
+      foreach ($faqItems as $fi => $f):
+          $last = $fi === count($faqItems) - 1;
+      ?>
+      <details style="border:1px solid var(--line);border-radius:14px;padding:14px 18px;<?= $last ? '' : 'margin-bottom:10px;' ?>background:#fff">
+        <summary style="font-weight:600;cursor:pointer"><?= e($f['q']) ?></summary>
+        <p style="margin-top:8px;color:var(--ink-soft);font-size:.92rem"><?= e($f['a']) ?></p>
       </details>
-      <details style="border:1px solid var(--line);border-radius:14px;padding:14px 18px;margin-bottom:10px;background:#fff">
-        <summary style="font-weight:600;cursor:pointer">Успею ли заказать сегодня?</summary>
-        <p style="margin-top:8px;color:var(--ink-soft);font-size:.92rem">Да — заказы до 20:00 доставим в тот же день. После 20:00 доставим на следующее утро.</p>
-      </details>
-      <details style="border:1px solid var(--line);border-radius:14px;padding:14px 18px;margin-bottom:10px;background:#fff">
-        <summary style="font-weight:600;cursor:pointer">Как понять, что пришёл именно мой букет?</summary>
-        <p style="margin-top:8px;color:var(--ink-soft);font-size:.92rem">Перед отправкой курьером пришлём фото собранного букета. Не понравится вживую — заменим в день доставки, без вопросов.</p>
-      </details>
-      <details style="border:1px solid var(--line);border-radius:14px;padding:14px 18px;background:#fff">
-        <summary style="font-weight:600;cursor:pointer">Как оплатить?</summary>
-        <p style="margin-top:8px;color:var(--ink-soft);font-size:.92rem">При получении — курьеру. Онлайн-оплата картой подключается (ЮKassa).</p>
-      </details>
+      <?php endforeach; ?>
+      <?php if ($faqItems !== []): ?>
       <script type="application/ld+json">
       <?= json_encode([
           '@context' => 'https://schema.org',
           '@type' => 'FAQPage',
-          'mainEntity' => [
-              ['@type' => 'Question', 'name' => 'Сколько стоит доставка?', 'acceptedAnswer' => ['@type' => 'Answer', 'text' => 'По Приморскому району — бесплатно. Центр СПб — 300 ₽, остальные районы 350–600 ₽. Самовывоз — всегда бесплатно.']],
-              ['@type' => 'Question', 'name' => 'Успею ли заказать сегодня?', 'acceptedAnswer' => ['@type' => 'Answer', 'text' => 'Заказы до 20:00 доставим в тот же день.']],
-              ['@type' => 'Question', 'name' => 'Как понять, что пришёл именно мой букет?', 'acceptedAnswer' => ['@type' => 'Answer', 'text' => 'Перед отправкой пришлём фото собранного букета. Не понравится — заменим в день доставки.']],
-              ['@type' => 'Question', 'name' => 'Как оплатить?', 'acceptedAnswer' => ['@type' => 'Answer', 'text' => 'При получении курьеру; онлайн-оплата подключается.']],
-          ],
+          'mainEntity' => array_map(static fn (array $f): array => [
+              '@type' => 'Question',
+              'name' => $f['q'],
+              'acceptedAnswer' => ['@type' => 'Answer', 'text' => $f['a']],
+          ], $faqItems),
       ], JSON_UNESCAPED_UNICODE) ?>
       </script>
+      <?php endif; ?>
     </div>
   </section>
   <?php endif; ?>

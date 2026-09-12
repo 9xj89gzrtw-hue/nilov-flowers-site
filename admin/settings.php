@@ -23,7 +23,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'shop_whatsapp','shop_telegram',
         'upsell_limit','upsell_title','upsell_categories',
         'legal_subject_type','legal_name','legal_number','legal_address','legal_contact_email',
-        'vat_rate','yk_shop_id','yk_secret_key','yandex_reviews_id'];
+        'vat_rate','yk_shop_id','yk_secret_key','yandex_reviews_id',
+        /* Витринные тексты (критерий 16): бейдж + FAQ редактируются */
+        'delivery_badge_text','faq_title',
+        'faq_q1','faq_a1','faq_q2','faq_a2','faq_q3','faq_a3','faq_q4','faq_a4'];
     $values = [];
     foreach ($keys as $k) {
         $values[$k] = trim((string)($_POST[$k] ?? ''));
@@ -218,9 +221,35 @@ flash();
           <input type="checkbox" name="feature_track_link" style="width:auto" <?= sv('feature_track_link', $s) === '1' ? 'checked' : '' ?>>
           Ссылка «Где мой заказ?» в подвале
         </label>
-        <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 0 26px">Покупатель сам проверяет статус по телефону — меньше звонков «где букет?».</p>
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 10px 26px">Покупатель сам проверяет статус по телефону — меньше звонков «где букет?».</p>
       </div>
     </div>
+    <?php /* Тексты редактируемых фич (критерий 16): бейдж + FAQ */ ?>
+    <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
+    <div class="grid2">
+      <div>
+        <label class="f" for="badge-text">Текст бейджа на карточках</label>
+        <input class="input" id="badge-text" name="delivery_badge_text" value="<?= sv('delivery_badge_text', $s) !== '' ? sv('delivery_badge_text', $s) : 'Доставка 0₽ · Приморский' ?>" maxlength="60">
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Зелёная плашка на каждой карточке букета в каталоге. Оставьте как есть или впишите свой тариф.</p>
+      </div>
+      <div>
+        <label class="f" for="faq-t">Заголовок блока вопросов</label>
+        <input class="input" id="faq-t" name="faq_title" value="<?= sv('faq_title', $s) !== '' ? sv('faq_title', $s) : 'Частые вопросы' ?>" maxlength="60">
+      </div>
+    </div>
+    <p style="font-size:.85rem;font-weight:600;margin:16px 0 8px">Вопросы и ответы (пустая пара не показывается на сайте)</p>
+    <?php for ($i = 1; $i <= 4; $i++): ?>
+    <div class="grid2" style="margin-bottom:10px">
+      <div>
+        <label class="f" for="faq-q<?= $i ?>">Вопрос <?= $i ?></label>
+        <input class="input" id="faq-q<?= $i ?>" name="faq_q<?= $i ?>" value="<?= sv("faq_q{$i}", $s) ?>" maxlength="120" placeholder="<?= $i === 1 ? 'Сколько стоит доставка?' : '' ?>">
+      </div>
+      <div>
+        <label class="f" for="faq-a<?= $i ?>">Ответ <?= $i ?></label>
+        <input class="input" id="faq-a<?= $i ?>" name="faq_a<?= $i ?>" value="<?= sv("faq_a{$i}", $s) ?>" maxlength="300" placeholder="<?= $i === 1 ? 'По Приморскому району — бесплатно…' : '' ?>">
+      </div>
+    </div>
+    <?php endfor; ?>
   </div>
 
   <div class="card" id="s-steps">
