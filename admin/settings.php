@@ -64,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               'notify_enabled',
               /* Витринные фичи (критерий 16): каждая отключаема из админки */
               'feature_delivery_badge', 'feature_faq', 'feature_countdown', 'feature_price_filter',
-              'feature_favorites', 'feature_zone_check', 'feature_track_link', 'feature_favicon_badge'] as $cb) {
+              'feature_favorites', 'feature_zone_check', 'feature_track_link', 'feature_favicon_badge', 'feature_webpush'] as $cb) {
         $values[$cb] = isset($_POST[$cb]) ? '1' : '0';
     }
     /* cart_mode — select, не чекбокс: валидируем значение из POST */
@@ -636,4 +636,64 @@ flash();
 
   <button class="btn btn--accent" type="submit" style="padding:14px 32px;font-size:.95rem">Сохранить настройки</button>
 </form>
+
+<?php
+/* --- Web Push (VAPID): отдельная мини-форма, не трогает основную --- */
+require_once __DIR__ . '/../includes/vapid.php';
+$msgPush = '';
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['vapid_action'])) {
+    /* CSRF уже проверён глобальным гейтом в начале файла (строка ~10) */
+    if (($_POST['vapid_action'] ?? '') === 'gen') {
+        $r = vapidGenerate();
+        $msgPush = isset($r['error']) ? 'Не удалось: ' . $r['error'] : 'Ключи созданы ✅';
+    } elseif (($_POST['vapid_action'] ?? '') === 'test') {
+        require_once __DIR__ . '/../includes/notify.php';
+        $r = webpushSendAll('Тест Nilov Flowers', 'Если видите это уведомление — push работает 🌸', '/admin/');
+        $msgPush = isset($r['error']) ? 'Ошибка: ' . $r['error'] : "Отправлено {$r['sent']} из {$r['total']} подписок" . ($r['dead'] ? ", удалено мёртвых: {$r['dead']}" : '');
+    }
+    $s = allSettings();
+}
+$pushCount = db()->query('SELECT COUNT(*) FROM push_subscriptions')->fetchColumn();
+$hasKeys = vapidKeysExist();
+?>
+<div class="card" id="s-push" style="margin-top:16px">
+  <h2 style="font-family:var(--font-display);font-size:1.2rem;margin-bottom:8px">Push-уведомления на телефон (PWA)</h2>
+  <p style="font-size:.85rem;color:var(--ink-soft);margin:0 0 10px">Открываете сайт на телефоне → «В добавить на главный экран» → включаете уведомления здесь. Тогда о новых заказах телефон получит всплывающее сообщение даже с закрытым браузером. iOS: только из добавленного на экран приложения. Android/Chrome и Firefox: прямо с сайта после согласия.</p>
+  <?php if ($msgPush !== ''): ?><p style="background:var(--bg-alt);border-radius:10px;padding:8px 12px;font-size:.85rem"><?= e($msgPush) ?></p><?php endif; ?>
+  <p style="font-size:.85rem;margin:6px 0">Статус: ключи <b><?= $hasKeys ? 'созданы ✅' : 'не созданы ⚠️' ?></b> · подписок на устройствах: <b><?= (int)$pushCount ?></b></p>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    <?php if (!$hasKeys): ?>
+    <form method="post" style="display:inline">
+      <?= csrf_field() ?>
+      <input type="hidden" name="vapid_action" value="gen">
+      <button class="btn btn--accent" type="submit" style="padding:10px 18px;font-size:.85rem">Создать ключи уведомлений</button>
+    </form>
+    <?php else: ?>
+    <form method="post" style="display:inline">
+      <?= csrf_field() ?>
+      <input type="hidden" name="vapid_action" value="test">
+      <button class="btn btn--outline" type="submit" style="padding:10px 18px;font-size:.85rem">Отправить тест всем</button>
+    </form>
+    <button class="btn btn--accent" type="button" id="push-enable" style="padding:10px 18px;font-size:.85rem">🔔 Включить уведомления на этом устройстве</button>
+    <script>
+    (function(){
+      var btn = document.getElementById('push-enable');
+      btn.addEventListener('click', function(){
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) { alert('Браузер не поддерживает push. На iOS: добавьте сайт на главный экран и откройте оттуда.'); return; }
+        navigator.serviceWorker.ready.then(function(reg){
+          return fetch('/api/push-vapid-public.php').then(function(r){return r.json();}).then(function(d){
+            if (!d.publicKey) { alert('Сначала создайте ключи (кнопка выше).'); return null; }
+            return reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey: d.publicKey });
+          }).then(function(sub){
+            if (!sub) return;
+            return fetch('/api/push-subscribe.php', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(sub.toJSON()) })
+              .then(function(r){ return r.json(); });
+          }).then(function(res){ if (res && res.ok) alert('Готово! Устройства зарегистрировано.'); });
+        }).catch(function(e){ alert('Не получилось: ' + (e && e.message ? e.message : e)); });
+      });
+    })();
+    </script>
+    <?php endif; ?>
+  </div>
+</div>
 <?php adminFooter(); ?>

@@ -110,6 +110,16 @@ function notifyNewOrder(int $orderId): void
         }
     }
 
+    // Web Push (фича по умолчанию выкл; ключи/подписки — из админки). Не блокируем заказ: 4с таймаут.
+    if (setting('feature_webpush', '0') === '1') {
+        require_once __DIR__ . '/vapid.php';
+        @webpushSendAll(
+            'Новый заказ №' . $orderId,
+            $order['customer_name'] . ' · ' . formatPrice((int)$order['total']) . ' · ' . date('H:i'),
+            '/admin/'
+        );
+    }
+
     // Адрес получателя: notify_email → email владельца (role='owner', notify_enabled=1)
     $to = trim(setting('notify_email', ''));
     if ($to === '') {
