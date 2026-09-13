@@ -50,10 +50,12 @@ function settingsHistoryList(int $limit = 8): array
 /** Заводские значения витринных текстов/тумблеров (из seedDatabase/migrations).
  *  ВНИМАНИЕ: только человекочитаемые настройки. Технические/секретные ключи
  *  (токены, VAPID, верификации, id counters, реквизиты) сюда НЕ входят —
- *  сброс к дефолтам не должен убить уведомления, платежи или легальную информацию. */
+ *  сброс к дефолтам не должен убить уведомления, платежи или легальную информацию.
+ *  Ключи этого списка = ОДНАЖДЫ ЗАДАЮТ объём сброса; значения берутся из
+ *  пользовательского эталона (критерий 19), а при его отсутствии — из кода. */
 function settingsDefaults(): array
 {
-    return [
+    $factory = [
         'shop_name' => 'Nilov Flowers',
         'hero_title' => 'Свежие цветы с утренней поставки',
         'hero_subtitle' => 'Соберём и доставим букет в течение дня — к празднику или просто так',
@@ -102,9 +104,56 @@ function settingsDefaults(): array
         'tg_enabled' => '1',
         'vk_enabled' => '1',
     ];
+    /* Приоритет — пользовательский эталон (критерий 19): значения из settings_defaults
+       для тех же ключей. Ключи, сохранённые в эталон вручную вне объёма — игнорируются,
+       чтобы сброс никогда не трогал секреты/контакты. */
+    try {
+        $user = db()->query('SELECT key, value FROM settings_defaults')->fetchAll(PDO::FETCH_KEY_PAIR);
+    } catch (Throwable $e) {
+        $user = []; // таблица ещё не создана (первый заход) — чистый заводской набор
+    }
+    foreach ($factory as $k => $v) {
+        if (array_key_exists($k, $user)) { $factory[$k] = (string)$user[$k]; }
+    }
+    return $factory;
 }
 
-/** Сброс витринных текстов/фич к заводским. Секретные и технические ключи НЕ трогаются.
+/** Ключи, входящие в объём сброса (витринные тексты/тумблеры — без секретов). */
+function settingsDefaultKeys(): array
+{
+    return array_keys(settingsDefaults());
+}
+
+/** Обновить эталон «по умолчанию» ТЕКУЩИМ состоянием (критерий 19).
+ *  В эталон попадают только витринные ключи из settingsDefaults() — секреты физически
+ *  не могут туда записаться. Перед изменением — снимок истории. */
+function settingsSaveCurrentAsDefaults(): int
+{
+    settingsSnapshot('defaults');
+    $cur = allSettings();
+    $now = date('Y-m-d H:i:s');
+    $stmt = db()->prepare('INSERT INTO settings_defaults (key, value, updated_at) VALUES (:k, :v, :t)
+        ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at');
+    $n = 0;
+    foreach (settingsDefaultKeys() as $k) {
+        if (!array_key_exists($k, $cur)) { continue; }
+        $stmt->execute([':k' => $k, ':v' => (string)$cur[$k], ':t' => $now]);
+        $n++;
+    }
+    return $n;
+}
+
+/** Дата последнего обновления эталона (для UI), '' если эталон не трогали. */
+function settingsDefaultsUpdatedAt(): string
+{
+    try {
+        $v = db()->query("SELECT max(updated_at) FROM settings_defaults")->fetchColumn();
+        return $v ? (string)$v : '';
+    } catch (Throwable $e) { return ''; }
+}
+
+/** Сброс витринных текстов/фич к эталону (дефолт или пользовательский «сохрани как дефолт»).
+ *  Секретные и технические ключи НЕ трогаются.
  *  Перед записью — снимок, чтобы кнопка «Отменить» работала и после сброса. */
 function settingsResetToDefaults(): bool
 {

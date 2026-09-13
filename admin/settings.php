@@ -105,7 +105,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['hist_action'])) {
         flash($okUndo ? 'Настройки возвращены к предыдущему изменению' : 'Отменять нечего — история пуста', !$okUndo);
     } elseif (($_POST['hist_action'] ?? '') === 'defaults') {
         settingsResetToDefaults();
-        flash('Витринные тексты и тумблеры — как при первом запуске. Контакты, токены и реквизиты НЕ тронуты.');
+        flash('Витринные тексты и тумблеры возвращены к «по умолчанию». Контакты, токены и реквизиты НЕ тронуты.');
+    } elseif (($_POST['hist_action'] ?? '') === 'save-defaults') {
+        $n = settingsSaveCurrentAsDefaults();
+        flash("Текущее состояние сохранено как «по умолчанию» ({$n} пунктов). ↩ Отмена работает и после этого.");
     }
     header('Location: /admin/settings.php');
     exit;
@@ -664,11 +667,17 @@ flash();
   <input type="hidden" name="hist_action" value="undo">
   <button class="btn btn--outline" type="submit" style="padding:12px 22px;font-size:.85rem" <?= settingsCanUndo() ? '' : 'disabled title="Отменять пока нечего"' ?>>↩ Отменить последнее изменение</button>
 </form>
-<form method="post" style="display:inline;margin-top:8px" onsubmit="return confirm('Вернуть витринные тексты и тумблеры к заводским? Контакты, токены и реквизиты останутся как есть.');">
+<form method="post" style="display:inline;margin-top:8px" onsubmit="return confirm('Вернуть витринные тексты и тумблеры к значению по умолчанию? Контакты, токены и реквизиты останутся как есть.');">
   <?= csrf_field() ?>
   <input type="hidden" name="hist_action" value="defaults">
   <button class="btn btn--outline" type="submit" style="padding:12px 22px;font-size:.85rem;color:var(--ink-soft)">⎌ Вернуть все значения по умолчанию</button>
 </form>
+<form method="post" style="display:inline;margin-top:8px" onsubmit="return confirm('Запомнить текущие витринные тексты и тумблеры как новое «по умолчанию»? Теперь кнопка ⎌ будет возвращать к этому состоянию.');">
+  <?= csrf_field() ?>
+  <input type="hidden" name="hist_action" value="save-defaults">
+  <button class="btn btn--outline" type="submit" style="padding:12px 22px;font-size:.85rem;color:var(--ink-soft)">💾 Сохранить текущее как «по умолчанию»</button>
+</form>
+<?php if (($du = settingsDefaultsUpdatedAt()) !== ''): ?><p style="font-size:.75rem;color:var(--ink-soft);margin:6px 0 0">Сейчас «по умолчанию» = ваш сохранённый вариант от <?= e($du) ?></p><?php endif; ?>
 <?php if (count($hist = settingsHistoryList(5)) > 0): ?>
 <details style="margin-top:10px"><summary style="font-size:.82rem;color:var(--ink-soft);cursor:pointer">Последние изменения (<?= count($hist) ?>)</summary>
 <ol style="font-size:.78rem;color:var(--ink-soft);margin:6px 0 0 18px">

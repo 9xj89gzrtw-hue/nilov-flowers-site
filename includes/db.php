@@ -136,6 +136,13 @@ function migrateSchema(PDO $pdo): void
         source TEXT NOT NULL DEFAULT 'save',
         snapshot TEXT NOT NULL
     )");
+    /* Пользовательский эталон «по умолчанию» (критерий 19): «сохрани текущее как дефолт».
+       Пустая таблица → используются заводские значения из кода. */
+    $pdo->exec("CREATE TABLE IF NOT EXISTS settings_defaults (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+    )");
     $orderCols = array_column($pdo->query("PRAGMA table_info(orders)")->fetchAll(), 'name');
     foreach ([
         ['given_to', "TEXT NOT NULL DEFAULT ''"],
