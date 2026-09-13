@@ -86,29 +86,42 @@
 (function () {
   var el = document.querySelector('.hero__deadline');
   if (!el) return;
+  var cfg = window.NILOV_CONFIG || {};
+  var TZ = cfg.tz || 'Europe/Moscow';
   function pad(n) { return (n < 10 ? '0' : '') + n; }
+  /* Стеновые часы магазина в его таймзоне (критерий 26): раньше считали по локальному
+     времени браузера — у клиента из другого города таймер врал (ночью показывал «сегодня»). */
+  function wallNow() { return new Date(new Date().toLocaleString('en-US', { timeZone: TZ })); }
   function tick() {
-    var now = new Date();
-    var deadline = new Date(now);
-    var cfg = window.NILOV_CONFIG || {};
-    deadline.setHours(cfg.deadlineHour ?? 20, cfg.deadlineMinute ?? 0, 0, 0);
+    var now = wallNow();
     var hh = (cfg.deadlineHour ?? 20);
     var mm = (cfg.deadlineMinute ?? 0);
-    var label = (hh < 10 ? '0' + hh : hh) + ':' + (mm < 10 ? '0' + mm : mm);
-    if (now < deadline) {
-      var diff = deadline - now;
-      var h = Math.floor(diff / 3600000);
-      var m = Math.floor((diff % 3600000) / 60000);
-      var s = Math.floor((diff % 60000) / 1000);
-      var t = h + ' ч ' + pad(m) + ' мин ' + pad(s) + ' с';
-      var tpl = cfg.countdownText || 'Успейте заказать сегодня — осталось {T} до 20:00';
-      el.textContent = '⏱ ' + tpl.replace('{T}', t).replace('20:00', label);
-    } else {
-      el.textContent = '🌙 ' + (cfg.closedText || 'Сегодня заказы уже закрыты — доставим завтра с утра');
+    var label = pad(hh) + ':' + pad(mm);
+    var deadline = new Date(now);
+    deadline.setHours(hh, mm, 0, 0);
+    var h = now.getHours();
+    /* Ночное окно (с дедлайна и до 08:00) — «осталось N часов до 20:00» бессмысленно
+       и пугает: человек засыпает, а таймер орёт про «сегодня». (критерий 26) */
+    if (h >= hh || h < 8) {
+      var night = h < 8;
+      el.textContent = '🌙 ' + (night
+        ? (cfg.nightText || 'Сейчас ночь — заказы принимаем, доставим сегодня с 9:00')
+        : (cfg.closedText || 'Сегодня заказы уже закрыты — доставим завтра с утра'));
+      el.dataset.state = 'closed';
+      return;
     }
+    var diff = deadline - now;
+    var H = Math.floor(diff / 3600000);
+    var M = Math.ceil((diff % 3600000) / 60000);
+    if (M === 60) { H += 1; M = 0; }
+    /* Секунды убраны (критерий 27): они мерцают и не несут решения — только ч/м. */
+    var t = H > 0 ? (H + ' ч' + (M ? ' ' + M + ' мин' : '')) : (M + ' мин');
+    var tpl = cfg.countdownText || 'Успейте заказать сегодня — осталось {T} до 20:00';
+    el.textContent = '⏱ ' + tpl.replace('{T}', t).replace('20:00', label);
+    el.dataset.state = 'open';
   }
   tick();
-  setInterval(tick, 1000);
+  setInterval(tick, 30000); /* минута — достаточная точность без секундных перерисовок */
 })();
 
 /* 4. Избранное (критерий 13, Русский Букет-паттерн): сердечки + localStorage + фильтр «только избранное». */

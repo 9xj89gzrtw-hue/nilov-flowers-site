@@ -149,12 +149,14 @@ if ($__heroPre !== '') {
         <p class="hero__subtitle nv-hero-sub"><?= e(setting('hero_subtitle')) ?></p>
         <?php endif; ?>
         <?php /* Таймер «до 20:00» — не зависит от hero-текста (юр-независимый элемент). Отключаем (критерий 16). */ ?>
-        <?php if ($featCountdown): ?><p class="hero__deadline" style="display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:8px 16px;border-radius:999px;background:rgba(255,255,255,.75);backdrop-filter:blur(6px);border:1px solid var(--line);font-size:.9rem;font-weight:600;color:var(--ink)"></p><?php endif; ?>
+        <?php if ($featCountdown): ?><p class="hero__deadline" style="display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:8px 16px;border-radius:999px;background:rgba(255,255,255,.75);backdrop-filter:blur(6px);border:1px solid var(--line);font-size:.9rem;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;max-width:100%"></p><?php endif; ?>
         <?php /* NILOV_CONFIG — общий конфиг JS (вне гейта таймера): порог бесплатной доставки
                должен работать и при выключенном таймере. */ ?>
         <script>window.NILOV_CONFIG = {
           deadlineHour: <?= (int)(setting('order_deadline_hour', '20')) ?>,
           deadlineMinute: <?= (int)(setting('order_deadline_minute', '0')) ?>,
+          tz: <?= json_encode(setting('shop_timezone', 'Europe/Moscow')) ?>,
+          nightText: <?= json_encode(setting('countdown_night_text', 'Сейчас ночь — заказы принимаем, доставим сегодня с 9:00'), JSON_UNESCAPED_UNICODE) ?>,
           countdownText: <?= json_encode(setting('countdown_text', 'Успейте заказать сегодня — осталось {T} до 20:00'), JSON_UNESCAPED_UNICODE) ?>,
           closedText: <?= json_encode(setting('countdown_closed_text', 'Сегодня заказы уже закрыты — доставим завтра с утра'), JSON_UNESCAPED_UNICODE) ?>,
           freeDeliveryThreshold: <?= (int) setting('free_delivery_threshold', '0') ?>
@@ -252,6 +254,9 @@ if ($__heroPre !== '') {
         <span id="priceFilterCount" style="font-size:.85rem;color:var(--ink-soft)" aria-live="polite"></span>
       </div>
       <?php endif; ?>
+        <?php if ($featFavorites || $featZoneCheck): ?>
+        <div class="catalog-toolbar" style="display:flex;align-items:center;gap:10px;margin:0 0 18px;flex-wrap:wrap">
+        <?php endif; ?>
         <?php if ($featFavorites): ?><button type="button" id="favToggle" class="fav-toggle" aria-pressed="false">♡ Избранное</button><?php endif; ?>
         <?php /* Проверка зоны доставки (критерий 13, Семицветик-паттерн): тариф района до чекаута.
                Данные зон инлайн (HTML-атрибут) — JS-мэтч по вводу покупателя. Отключаем (критерий 16). */ ?>
@@ -260,7 +265,7 @@ if ($__heroPre !== '') {
           <label for="zoneCheckInput" style="font-size:.85rem;font-weight:600;color:var(--ink-soft)">Район:</label>
           <input type="search" id="zoneCheckInput" placeholder="<?= e(setting('zone_check_placeholder', 'Мой район доставки…')) ?>" aria-label="Проверить зону доставки"
                  data-fallback="<?= e(setting('zone_check_fallback', 'не нашли — уточним по телефону')) ?>"
-                 style="padding:8px 14px;border-radius:999px;border:1px solid rgba(43,45,47,.35);background:#fff;font-size:.85rem;width:170px"
+                 style="padding:8px 14px;border-radius:999px;border:1px solid rgba(43,45,47,.35);background:#fff;font-size:.85rem;width:170px;max-width:55vw;min-width:0"
                  list="zoneCheckList">
           <datalist id="zoneCheckList">
             <?php foreach ($zones as $z): ?><option value="<?= e($z['name']) ?>"></option><?php endforeach; ?>

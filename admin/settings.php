@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
         'delivery_badge_text','faq_title',
         'faq_q1','faq_a1','faq_q2','faq_a2','faq_q3','faq_a3','faq_q4','faq_a4',
         /* Дедлайн + тексты таймера и empty-state (критерий 16) */
-        'order_deadline_hour','order_deadline_minute','countdown_text','countdown_closed_text',
+        'order_deadline_hour','order_deadline_minute','countdown_text','countdown_closed_text','countdown_night_text',
         'catalog_empty_title','catalog_empty_hint',
         /* Пороги фильтра цены (критерий 16) */
         'price_filter_low','price_filter_high',
@@ -135,7 +135,7 @@ flash();
 
 <?php /* Оглавление настроек (критик-владелец: «9 секций на одной простыне — листать всё»).
        Якоря-чипы, прыжок в один клик, sticky — всегда под рукой. */ ?>
-<nav class="dash-ranges" style="margin-bottom:16px;position:sticky;top:64px;z-index:30;background:var(--bg,#F6F1E6);padding:8px 0;border-radius:0 0 12px 12px" aria-label="Разделы настроек">
+<nav id="top-nav" class="dash-ranges" style="margin-bottom:16px;position:sticky;top:64px;z-index:30;background:var(--bg,#F6F1E6);padding:8px 0;border-radius:0 0 12px 12px" aria-label="Разделы настроек">
   <a href="#s-common">Общие</a>
   <a href="#s-main">Главная</a>
   <a href="#s-look">Вид</a>
@@ -401,9 +401,11 @@ flash();
     </div>
     <label class="f" for="cd-t" style="margin-top:12px">Текст таймера (до дедлайна)</label>
     <input class="input" id="cd-t" name="countdown_text" value="<?= sv('countdown_text', $s) !== '' ? sv('countdown_text', $s) : 'Успейте заказать сегодня — осталось {T} до 20:00' ?>" maxlength="120">
-    <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 12px">Вместо <code>{T}</code> подставится время («2 ч 15 мин 30 с»), «20:00» заменится на ваш дедлайн.</p>
+    <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 12px">Вместо <code>{T}</code> подставится время («2 ч 15 мин»), «20:00» заменится на ваш дедлайн. Ночью (00:00–08:00) и после дедлайна показывается соответствующий текст ниже.</p>
     <label class="f" for="cd-c">Текст после дедлайна</label>
     <input class="input" id="cd-c" name="countdown_closed_text" value="<?= sv('countdown_closed_text', $s) !== '' ? sv('countdown_closed_text', $s) : 'Сегодня заказы уже закрыты — доставим завтра с утра' ?>" maxlength="120">
+    <label class="f" for="cd-n" style="margin-top:10px">Текст ночью (с 00:00 до 8 утра)</label>
+    <input class="input" id="cd-n" name="countdown_night_text" value="<?= sv('countdown_night_text', $s) !== '' ? sv('countdown_night_text', $s) : 'Сейчас ночь — заказы принимаем, доставим сегодня с 9:00' ?>" maxlength="120">
     <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
     <p style="font-size:.85rem;font-weight:600;margin:0 0 8px">Пороги фильтра цены в каталоге</p>
     <div class="grid2">
@@ -704,7 +706,28 @@ flash();
     </div>
   </div>
 
-  <button class="btn btn--accent" type="submit" style="padding:14px 32px;font-size:.95rem">Сохранить настройки</button>
+  <?php /* Критерий 25: кнопка сохранения прижата к низу окна — не надо листать до неё
+          через всю форму; sticky bottom работает внутри form-контейнера. */ ?>
+  <div style="position:sticky;bottom:12px;z-index:40;display:flex;align-items:center;gap:12px;margin:24px 0 0;padding:10px 12px;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 28px -12px rgba(43,45,47,.35)">
+    <span id="dirty-hint" style="display:none;font-size:.82rem;font-weight:600;color:var(--rose-deep)">● Есть несохранённые изменения</span>
+    <button class="btn btn--accent" type="submit" style="padding:14px 32px;font-size:.95rem;margin-left:auto">💾 Сохранить настройки</button>
+    <a class="btn btn--outline" href="#top-nav" style="padding:14px 18px;font-size:.85rem;text-decoration:none">↑ Наверх</a>
+  </div>
+  <script>
+  /* Критерий 25: подсветка «есть несохранённые изменения» + Ctrl/Cmd+S = сохранить. */
+  (function(){
+    var form = document.currentScript.closest('form');
+    if (!form) return;
+    var hint = document.getElementById('dirty-hint');
+    function dirty(){ if (hint) hint.style.display = ''; }
+    form.addEventListener('input', dirty);
+    form.addEventListener('change', dirty);
+    form.addEventListener('submit', function(){ if (hint) hint.style.display = 'none'; });
+    document.addEventListener('keydown', function(e){
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') { e.preventDefault(); form.requestSubmit(); }
+    });
+  })();
+  </script>
 </form>
 
 <form method="post" style="margin-top:12px">
