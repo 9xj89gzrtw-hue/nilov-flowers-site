@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               'notify_enabled',
               /* Витринные фичи (критерий 16): каждая отключаема из админки */
               'feature_delivery_badge', 'feature_faq', 'feature_countdown', 'feature_price_filter',
-              'feature_favorites', 'feature_zone_check', 'feature_track_link'] as $cb) {
+              'feature_favorites', 'feature_zone_check', 'feature_track_link', 'feature_favicon_badge'] as $cb) {
         $values[$cb] = isset($_POST[$cb]) ? '1' : '0';
     }
     /* cart_mode — select, не чекбокс: валидируем значение из POST */
@@ -272,6 +272,11 @@ flash();
           Сердечки «Избранное» на карточках
         </label>
         <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 0 26px">Покупатель отмечает букеты сердечком и может показать только их.</p>
+        <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500;margin-top:8px">
+          <input type="checkbox" name="feature_favicon_badge" style="width:auto" <?= sv('feature_favicon_badge', $s) !== '0' ? 'checked' : '' ?>>
+          Счётчик корзины на иконке сайта (вкладка браузера)
+        </label>
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 0 26px">На иконке во вкладке появляется розовый кружок с числом товаров, когда корзина не пуста.</p>
         <div style="margin-left:26px;margin-top:6px">
           <label class="f" for="bd-sale">Бейдж со скидкой</label>
           <input class="input" id="bd-sale" name="badge_sale_text" value="<?= sv('badge_sale_text', $s) !== '' ? sv('badge_sale_text', $s) : 'Скидка до конца недели' ?>" maxlength="40">

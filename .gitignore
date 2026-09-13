@@ -6,3 +6,7 @@ db/*.db-shm
 *.sqlite3
 *.db
 db/shop.sqlite
+.worktrees/
+img/uploads/*
+!img/uploads/.gitkeep
+.DS_Store

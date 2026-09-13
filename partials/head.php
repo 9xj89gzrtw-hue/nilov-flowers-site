@@ -16,7 +16,7 @@ $googleVerification = trim(setting('google_site_verification', ''));
 <?php endif; ?>
 <?php if ($googleVerification !== ''): ?><meta name="google-site-verification" content="<?= e($googleVerification) ?>">
 <?php endif; ?>
-<link rel="icon" href="<?= e($iconHref) ?>" sizes="any">
+<link id="faviconLink" rel="icon" href="<?= e($iconHref) ?>" sizes="any" data-base-icon="<?= e($iconHref) ?>">
 <link rel="icon" type="image/svg+xml" href="/img/favicon.svg">
 <link rel="apple-touch-icon" href="/img/favicon-180.png">
 <link rel="manifest" href="/manifest.webmanifest">

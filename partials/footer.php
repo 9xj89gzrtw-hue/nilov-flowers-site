@@ -87,6 +87,7 @@ $igDisclaimer = $igOn; /* пометку Meta показываем только 
 <script src="/js/cart.js"></script>
 <script>window.UPSELL_LIMIT = <?= max(1, min(6, (int) setting('upsell_limit', '3'))) ?>; window.UPSELL_ENABLED = <?= setting('upsell_enabled', '1') === '1' ? 1 : 0 ?>; window.UPSELL_CATEGORIES = <?= json_encode(array_filter(array_map('trim', explode(',', setting('upsell_categories', ''))))) ?>;</script>
 <script src="/js/cart-ui.js"></script>
+<?php if (setting('feature_favicon_badge', '1') === '1'): ?><script src="/js/favicon-badge.js"></script><?php endif; ?>
 <script src="/js/cart-cta.js"></script>
 <script src="/js/order-form.js"></script>
 <script src="/js/catalog-filter.js"></script>

@@ -13,6 +13,9 @@ RewriteRule ^favicon\.ico$ img/favicon.ico [L]
 RewriteRule ^favicon\.png$ img/favicon-32.png [L]
 RewriteRule ^apple-touch-icon(\.precomposed)?\.png$ img/favicon-180.png [L]
 
+# Sitemap: robots.txt ссылается на /sitemap.xml, генератор — sitemap.php
+RewriteRule ^sitemap\.xml$ sitemap.php [L]
+
 # API
 RewriteRule ^api/orders$ api/orders.php [L]
 RewriteRule ^api/payment/create$ api/payment-create.php [L]
