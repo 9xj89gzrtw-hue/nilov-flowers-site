@@ -26,6 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'vat_rate','yk_shop_id','yk_secret_key','yandex_reviews_id',
         /* SEO главной (критерий 16, P1 аудитора) */
         'seo_title','seo_description','metrika_counter_id',
+        'yandex_verification','google_site_verification',
         /* Витринные тексты (критерий 16): бейдж + FAQ редактируются */
         'delivery_badge_text','faq_title',
         'faq_q1','faq_a1','faq_q2','faq_a2','faq_q3','faq_a3','faq_q4','faq_a4',
@@ -578,6 +579,14 @@ flash();
     <label class="f" for="mk-id" style="margin-top:8px">Счётчик Яндекс.Метрики (номер)</label>
     <input class="input" id="mk-id" name="metrika_counter_id" value="<?= sv('metrika_counter_id', $s) ?>" placeholder="12345678" inputmode="numeric" maxlength="12">
     <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Метрика грузится только после согласия на cookie. Номер — из личного кабинета Метрики. Пусто = счётчик не ставится.</p>
+    <details style="margin-top:10px" <?= trim(sv('yandex_verification', $s)) !== '' || trim(sv('google_site_verification', $s)) !== '' ? 'open' : '' ?>>
+      <summary style="font-size:.82rem;font-weight:600;cursor:pointer">Подтверждение прав для Яндекса и Google (вебмастер)</summary>
+      <p style="font-size:.78rem;color:var(--ink-soft);margin:6px 0 4px">Когда подключаете сайт в Яндекс.Вебмастере или Search Console — система покажет «метатег». Скопируйте оттуда длинный код в поле ниже и сохраните. Ничего устанавливать на сервер не нужно, сайт сам подтвердит права.</p>
+      <label class="f" for="yav">Код подтверждения Яндекс.Вебмастера</label>
+      <input class="input" id="yav" name="yandex_verification" value="<?= sv('yandex_verification', $s) ?>" placeholder="например: 1234567890abcdef" maxlength="64">
+      <label class="f" for="gav" style="margin-top:8px">Код подтверждения Google Search Console</label>
+      <input class="input" id="gav" name="google_site_verification" value="<?= sv('google_site_verification', $s) ?>" placeholder="например: AbCdEf123..." maxlength="64">
+    </details>
   </div>
 
   <div class="card" id="s-pay">
