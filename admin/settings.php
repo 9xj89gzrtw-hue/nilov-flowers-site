@@ -56,20 +56,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
         /* Порог бесплатной доставки (критерий 13/16): 0 = выключено */
         'free_delivery_threshold'];
     $values = [];
+    /* КЛАСС-ЗАЩИТА (критик-2): ключ из allowlist, которого нет в отправленной форме,
+       НЕ должен затираеться пустотой. Текстовые поля: пишем только если ключ реально пришёл
+       (пустое поле всё равно приходит '' — очистка работает). Чекбоксы: снимок галки =
+       отсутствие в POST, поэтому сверяем со списком отрендеренных (cb_rendered). */
+    $cbRendered = array_map('trim', explode(',', (string)($_POST['cb_rendered'] ?? '')));
+    $cbTrackAll = ($cbRendered === [''] || $cbRendered === []); // JS выключен → старое поведение
     foreach ($keys as $k) {
+        if (!array_key_exists($k, $_POST)) { continue; }
         $values[$k] = trim((string)($_POST[$k] ?? ''));
     }
-    /* Чекбоксы: 0 если не пришли (снятие галочки = пусто в POST) */
+    /* Чекбоксы: 0 если снят (не пришёл), но ТОЛЬКО для реально отрендеренных в форме */
     foreach (['yk_enabled', 'upsell_enabled', 'hero_text_enabled', 'yandex_reviews_enabled',
               'wa_enabled', 'tg_enabled', 'vk_enabled', 'ig_enabled', 'email_enabled', 'max_enabled',
               'notify_enabled',
               /* Витринные фичи (критерий 16): каждая отключаема из админки */
               'feature_delivery_badge', 'feature_faq', 'feature_countdown', 'feature_price_filter',
               'feature_favorites', 'feature_zone_check', 'feature_track_link', 'feature_favicon_badge', 'feature_webpush'] as $cb) {
+        if (!$cbTrackAll && !in_array($cb, $cbRendered, true)) { continue; } // не в форме — не трогаем
         $values[$cb] = isset($_POST[$cb]) ? '1' : '0';
     }
-    /* cart_mode — select, не чекбокс: валидируем значение из POST */
-    $values['cart_mode'] = in_array($_POST['cart_mode'] ?? '', ['drawer', 'page'], true) ? $_POST['cart_mode'] : 'drawer';
+    /* cart_mode — select с валидацией всех трёх режимов витрины (header.php: drawer|hybrid|page) */
+    if (array_key_exists('cart_mode', $_POST)) {
+        $values['cart_mode'] = in_array($_POST['cart_mode'] ?? '', ['drawer', 'hybrid', 'page'], true) ? $_POST['cart_mode'] : 'drawer';
+    }
     /* снимок ДО записи — чтобы «Отменить» вернул точное предыдущее состояние (критерий 16) */
     settingsSnapshot('save');
     $hero = saveUpload($_FILES['hero_image'] ?? [], IMG_UPLOADS_DIR);
@@ -140,8 +150,26 @@ flash();
 
 <form method="post" enctype="multipart/form-data">
   <?= csrf_field() ?>
+  <input type="hidden" name="cb_rendered" id="cb-rendered" value="">
+  <script>
+  /* Класс-защита (критик-2): форма сама сообщает, какие чекбоксы в ней реально есть —
+     сервер обнуляет только их; ключ вне формы (notify-до переезда, будущие) не затирается. */
+  document.addEventListener('DOMContentLoaded', function(){
+    var f = document.querySelector('form[method=post]');
+    if (!f) return;
+    f.addEventListener('submit', function(){
+      var names = Array.prototype.map.call(f.querySelectorAll('input[type=checkbox][name]'), function(i){ return i.name; });
+      document.getElementById('cb-rendered').value = names.join(',');
+    });
+  });
+  </script>
   <div class="card" id="s-common">
     <h2 style="font-family:var(--font-display);font-size:1.2rem;margin-bottom:8px">Общие</h2>
+    <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+      <input type="checkbox" name="notify_enabled" style="width:auto" <?= ($s['notify_enabled'] ?? '1') === '1' ? 'checked' : '' ?>>
+      Уведомления о новых заказах (email + Telegram)
+    </label>
+    <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 10px 26px">Главный выключатель. Токен бота и свой Telegram-чат настраиваются в разделе «Профиль».</p>
     <div class="grid2">
       <div>
         <label class="f" for="s-name">Название магазина *</label>
@@ -547,6 +575,12 @@ flash();
 
   <div class="card" id="s-cart">
     <h2 style="font-family:var(--font-display);font-size:1.2rem;margin-bottom:8px">Корзина и апсейл</h2>
+    <label class="f" for="cm-mode">Как открывается корзина</label>
+    <select id="cm-mode" name="cart_mode">
+      <option value="drawer" <?= sv('cart_mode', $s) === 'drawer' ? 'selected' : '' ?>>Выдвижная панель справа</option>
+      <option value="hybrid" <?= sv('cart_mode', $s) === 'hybrid' ? 'selected' : '' ?>>Панель на телефоне, страница на компьютере</option>
+      <option value="page" <?= sv('cart_mode', $s) === 'page' ? 'selected' : '' ?>>Отдельная страница</option>
+    </select>
     <p style="font-size:.85rem;color:var(--ink-soft);margin:0 0 10px">Блок «Возможно, пригодится» в корзине: предлагайте товары, которых нет в заказе. Источники — отмеченные категории и галочка «в апсейле» у товара.</p>
     <div class="grid2">
       <div>

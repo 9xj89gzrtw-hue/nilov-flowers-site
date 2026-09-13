@@ -32,8 +32,9 @@ $h = strtolower((string)parse_url($endpoint, PHP_URL_HOST));
 $allowedHosts = ['fcm.googleapis.com'];
 $okHost = false;
 foreach ($allowedHosts as $ah) { if ($h === $ah) { $okHost = true; } }
-if (!$okHost && (str_ends_with($h, '.push.services.mozilla.com') || str_ends_with($h, '.notify.windows.com')
-    || str_ends_with($h, '.web.push.apple.com') || $h === 'updates.push.services.mozilla.com')) { $okHost = true; }
+if (!$okHost && (preg_match('/(^|\.)push\.services\.mozilla\.com$/i', $h)
+    || preg_match('/(^|\.)notify\.windows\.com$/i', $h)
+    || preg_match('/(^|\.)web\.push\.apple\.com$/i', $h))) { $okHost = true; }
 if (!$okHost) { respondp(400, ['error' => 'endpoint_host']); }
 if ($p256 === '' || $auth === '') { respondp(400, ['error' => 'keys']); }
 if (strlen($p256) > 256 || strlen($auth) > 128) { respondp(400, ['error' => 'keys_len']); }
