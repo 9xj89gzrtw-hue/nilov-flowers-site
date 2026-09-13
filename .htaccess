@@ -8,6 +8,11 @@ RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
 
+# Корневые пути иконок по умолчанию (браузеры/боты просят /favicon.ico без links-тега)
+RewriteRule ^favicon\.ico$ img/favicon.ico [L]
+RewriteRule ^favicon\.png$ img/favicon-32.png [L]
+RewriteRule ^apple-touch-icon(\.precomposed)?\.png$ img/favicon-180.png [L]
+
 # API
 RewriteRule ^api/orders$ api/orders.php [L]
 RewriteRule ^api/payment/create$ api/payment-create.php [L]
