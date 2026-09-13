@@ -19,16 +19,16 @@ function settingsSnapshot(string $source): void
     }
 }
 
-/** Есть ли что отменять. */
+/** Есть ли что отменять: любое состояние, записанное в историю (save/defaults/undo). */
 function settingsCanUndo(): bool
 {
-    return (bool)db()->query('SELECT 1 FROM settings_history WHERE source = \'save\' LIMIT 1')->fetchColumn();
+    return (bool)db()->query('SELECT 1 FROM settings_history LIMIT 1')->fetchColumn();
 }
 
 /** Откатить последнее изменение настроек → вернуть предыдущий снимок. true = успех. */
 function settingsUndoLast(): bool
 {
-    $row = db()->query("SELECT snapshot FROM settings_history WHERE source = 'save' ORDER BY id DESC LIMIT 1")->fetch();
+    $row = db()->query("SELECT snapshot FROM settings_history ORDER BY id DESC LIMIT 1")->fetch();
     if (!$row) { return false; }
     $snap = json_decode((string)$row['snapshot'], true);
     if (!is_array($snap) || $snap === []) { return false; }
