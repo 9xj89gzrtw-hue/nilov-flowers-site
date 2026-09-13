@@ -149,13 +149,16 @@ if ($__heroPre !== '') {
         <p class="hero__subtitle nv-hero-sub"><?= e(setting('hero_subtitle')) ?></p>
         <?php endif; ?>
         <?php /* Таймер «до 20:00» — не зависит от hero-текста (юр-независимый элемент). Отключаем (критерий 16). */ ?>
-        <?php if ($featCountdown): ?><p class="hero__deadline" style="display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:8px 16px;border-radius:999px;background:rgba(255,255,255,.75);backdrop-filter:blur(6px);border:1px solid var(--line);font-size:.9rem;font-weight:600;color:var(--ink)"></p>
+        <?php if ($featCountdown): ?><p class="hero__deadline" style="display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:8px 16px;border-radius:999px;background:rgba(255,255,255,.75);backdrop-filter:blur(6px);border:1px solid var(--line);font-size:.9rem;font-weight:600;color:var(--ink)"></p><?php endif; ?>
+        <?php /* NILOV_CONFIG — общий конфиг JS (вне гейта таймера): порог бесплатной доставки
+               должен работать и при выключенном таймере. */ ?>
         <script>window.NILOV_CONFIG = {
           deadlineHour: <?= (int)(setting('order_deadline_hour', '20')) ?>,
           deadlineMinute: <?= (int)(setting('order_deadline_minute', '0')) ?>,
           countdownText: <?= json_encode(setting('countdown_text', 'Успейте заказать сегодня — осталось {T} до 20:00'), JSON_UNESCAPED_UNICODE) ?>,
-          closedText: <?= json_encode(setting('countdown_closed_text', 'Сегодня заказы уже закрыты — доставим завтра с утра'), JSON_UNESCAPED_UNICODE) ?>
-        };</script><?php endif; ?>
+          closedText: <?= json_encode(setting('countdown_closed_text', 'Сегодня заказы уже закрыты — доставим завтра с утра'), JSON_UNESCAPED_UNICODE) ?>,
+          freeDeliveryThreshold: <?= (int) setting('free_delivery_threshold', '0') ?>
+        };</script>
         <?php if ($heroBtn || ($heroTextEnabled && $guarantees !== [])): ?>
         <div class="hero__meta">
           <?php if ($heroBtn): ?>

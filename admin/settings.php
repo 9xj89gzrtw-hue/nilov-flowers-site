@@ -50,7 +50,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'form_name_label','form_phone_label','form_email_label','form_delivery_zone_label',
         'fieldset_delivery_legend','fieldset_payment_legend','pay_online_label','pay_cash_label',
         /* Hero-eyebrow (критерий 16, P2 аудита) */
-        'hero_eyebrow'];
+        'hero_eyebrow',
+        /* Порог бесплатной доставки (критерий 13/16): 0 = выключено */
+        'free_delivery_threshold'];
     $values = [];
     foreach ($keys as $k) {
         $values[$k] = trim((string)($_POST[$k] ?? ''));
@@ -345,6 +347,17 @@ flash();
       </div>
     </div>
     <p style="font-size:.78rem;color:var(--ink-soft);margin:6px 0 0">Покупатель увидит три варианта: «до [нижняя]», «[нижняя]–[верхняя]», «от [верхняя]».</p>
+    <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
+    <p style="font-size:.85rem;font-weight:600;margin:0 0 8px">Бесплатная доставка от суммы заказа</p>
+    <div class="grid2">
+      <div>
+        <label class="f" for="fd-th">Порог, ₽ (0 — выключить)</label>
+        <input class="input" id="fd-th" name="free_delivery_threshold" type="number" min="0" max="100000" step="100" value="<?= sv('free_delivery_threshold', $s) !== '' ? sv('free_delivery_threshold', $s) : '0' ?>">
+      </div>
+      <div>
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:14px 0 0">Например, 3000: заказы от 3 000 ₽ получают бесплатную доставку в любой район. Покупатель увидит подсказку «добавьте ещё N ₽ — и доставка бесплатно». Сейчас: <?= (int)(sv('free_delivery_threshold', $s) ?: '0') > 0 ? 'включено' : 'выключено' ?>.</p>
+      </div>
+    </div>
     <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
     <p style="font-size:.85rem;font-weight:600;margin:0 0 8px">Сообщения, если фильтры не нашли букетов</p>
     <div class="grid2">

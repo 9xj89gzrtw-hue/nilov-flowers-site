@@ -147,7 +147,14 @@
   function selectedDeliveryPrice() {
     if (!deliveryZoneInput) return 0;
     const option = deliveryZoneInput.selectedOptions[0];
-    return option ? Number(option.dataset.price) || 0 : 0;
+    let price = option ? Number(option.dataset.price) || 0 : 0;
+    /* Порог бесплатной доставки (критерий 13/16): free_delivery_threshold из настроек
+       (0 = выключено). Корзина ≥ порога → платная зона становится бесплатной. */
+    const cfg = window.NILOV_CONFIG || {};
+    const threshold = Number(cfg.freeDeliveryThreshold) || 0;
+    const items = window.cart ? window.cart.getTotal() : 0;
+    if (threshold > 0 && items >= threshold && price > 0) price = 0;
+    return price;
   }
 
   function renderTotal() {
@@ -158,9 +165,24 @@
       return;
     }
     const delivery = selectedDeliveryPrice();
+    /* Порог бесплатной доставки: подсказка-мотиватор (критерий 13).
+       Оригинальный hint сохраняем один раз — восстанавливаем, когда условие неактивно.
+       🎉 показываем ТОЛЬКО когда платная зона обнулилась порогом (не при самовывозе). */
+    const cfg2 = window.NILOV_CONFIG || {};
+    const th = Number(cfg2.freeDeliveryThreshold) || 0;
+    const hintEl = document.getElementById('orderDeliveryHint');
+    if (hintEl && !hintEl.dataset.origText) hintEl.dataset.origText = hintEl.textContent;
+    const zoneOpt = deliveryZoneInput ? deliveryZoneInput.selectedOptions[0] : null;
+    const zonePrice = zoneOpt ? Number(zoneOpt.dataset.price) || 0 : 0;
+    const byThreshold = th > 0 && zonePrice > 0 && items >= th;
+    if (hintEl) {
+      hintEl.textContent = (th > 0 && items < th && zonePrice > 0)
+        ? 'Добавьте ещё ' + formatRub(th - items) + ' ₽ — и доставка станет бесплатной!'
+        : hintEl.dataset.origText;
+    }
     totalEl.textContent = delivery
       ? 'К оплате: ' + formatRub(items + delivery) + ' ₽ (букеты ' + formatRub(items) + ' ₽ + доставка ' + formatRub(delivery) + ' ₽)'
-      : 'К оплате: ' + formatRub(items) + ' ₽';
+      : 'К оплате: ' + formatRub(items) + ' ₽' + (byThreshold ? ' — доставка бесплатная 🎉' : '');
   }
 
   if (totalEl) {
