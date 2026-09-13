@@ -1,7 +1,8 @@
 /* Favicon-badge: число позиций в корзине прямо на иконке вкладки (V6).
-   Слушает 'cart:change' (cart.js). При qty=0 — базовая иконка; иначе поверх
-   base рисуется розовый бейдж с числом (canvas 64px → data URL).
-   Любая ошибка (canvas, CORS на base-иконку) — тихий no-op, вкладка остаётся базовой. */
+   Слушает 'cart:change' (cart.js) + рисует стартовое состояние при загрузке.
+   При qty=0 — базовая иконка; иначе поверх base рисуется розовый бейдж с числом
+   (canvas 64px → data URL). Любая ошибка (canvas, CORS на base-иконку) — тихий
+   no-op, вкладка остаётся базовой. */
 (function () {
   var link = document.getElementById('faviconLink');
   if (!link) return;
@@ -31,9 +32,21 @@
     img.src = base;
   }
 
-  window.addEventListener('cart:change', function (ev) {
-    var items = (ev && ev.detail) || [];
-    var qty = items.reduce(function (s, i) { return s + (i.qty || 0); }, 0);
+  function qtyNow() {
+    if (!window.cart || typeof window.cart.getItems !== 'function') return 0;
+    try {
+      return window.cart.getItems().reduce(function (s, i) { return s + (i.qty || 0); }, 0);
+    } catch (e) { return 0; }
+  }
+
+  window.addEventListener('cart:change', function () {
+    var qty = qtyNow();
     if (qty === 0) setHref(base); else drawBadge(qty);
+  });
+  /* перезагрузка с непустой корзиной: cart.js шлёт cart:change только при мутациях —
+     рисуем сам shortly после загрузки */
+  window.addEventListener('load', function () {
+    var qty = qtyNow();
+    if (qty > 0) drawBadge(qty);
   });
 })();

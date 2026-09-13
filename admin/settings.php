@@ -3,6 +3,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/util.php';
 require_once __DIR__ . '/../includes/layout.php';
+require_once __DIR__ . '/../includes/settings-history.php';
 ensureAdminUser();
 requireAdmin();
 
@@ -15,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !csrf_check()) {
 
 $pdo = db();
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !isset($_POST['hist_action'])) {
     $keys = ['shop_name','shop_phone','shop_address','hero_title','hero_subtitle',
         'hero_button_text','hero_button_link','steps_title','step_1','step_2','step_3',
         'guarantees_title','guarantee_1','guarantee_2','guarantee_3',
@@ -69,6 +70,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action'])) {
     }
     /* cart_mode — select, не чекбокс: валидируем значение из POST */
     $values['cart_mode'] = in_array($_POST['cart_mode'] ?? '', ['drawer', 'page'], true) ? $_POST['cart_mode'] : 'drawer';
+    /* снимок ДО записи — чтобы «Отменить» вернул точное предыдущее состояние (критерий 16) */
+    settingsSnapshot('save');
     $hero = saveUpload($_FILES['hero_image'] ?? [], IMG_UPLOADS_DIR);
     if ($hero !== '') {
         deleteImage(setting('hero_image'), IMG_UPLOADS_DIR);
@@ -90,6 +93,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action'])) {
     }
     saveSettings($values);
     flash('Настройки сохранены');
+    header('Location: /admin/settings.php');
+    exit;
+}
+
+/* История: «Отменить последнее изменение» / «Вернуть значения по умолчанию» (критерии 16–17).
+   PRG-паттерн: обработали → редирект, чтобы форму не перезаписал back-кнопкой. */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['hist_action'])) {
+    if (($_POST['hist_action'] ?? '') === 'undo') {
+        $okUndo = settingsUndoLast();
+        flash($okUndo ? 'Настройки возвращены к предыдущему изменению' : 'Отменять нечего — история пуста', !$okUndo);
+    } elseif (($_POST['hist_action'] ?? '') === 'defaults') {
+        settingsResetToDefaults();
+        flash('Витринные тексты и тумблеры — как при первом запуске. Контакты, токены и реквизиты НЕ тронуты.');
+    }
     header('Location: /admin/settings.php');
     exit;
 }
@@ -278,6 +295,11 @@ flash();
           Счётчик корзины на иконке сайта (вкладка браузера)
         </label>
         <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 0 26px">На иконке во вкладке появляется розовый кружок с числом товаров, когда корзина не пуста.</p>
+        <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500;margin-top:8px">
+          <input type="checkbox" name="feature_webpush" style="width:auto" <?= sv('feature_webpush', $s) === '1' ? 'checked' : '' ?>>
+          Push-уведомления о новых заказах на телефон
+        </label>
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 0 26px">Включите, чтобы кнопка «Включить уведомления» внизу страницы настроек работала (нужны созданные ключи).</p>
         <div style="margin-left:26px;margin-top:6px">
           <label class="f" for="bd-sale">Бейдж со скидкой</label>
           <input class="input" id="bd-sale" name="badge_sale_text" value="<?= sv('badge_sale_text', $s) !== '' ? sv('badge_sale_text', $s) : 'Скидка до конца недели' ?>" maxlength="40">
@@ -636,6 +658,25 @@ flash();
 
   <button class="btn btn--accent" type="submit" style="padding:14px 32px;font-size:.95rem">Сохранить настройки</button>
 </form>
+
+<form method="post" style="margin-top:12px">
+  <?= csrf_field() ?>
+  <input type="hidden" name="hist_action" value="undo">
+  <button class="btn btn--outline" type="submit" style="padding:12px 22px;font-size:.85rem" <?= settingsCanUndo() ? '' : 'disabled title="Отменять пока нечего"' ?>>↩ Отменить последнее изменение</button>
+</form>
+<form method="post" style="display:inline;margin-top:8px" onsubmit="return confirm('Вернуть витринные тексты и тумблеры к заводским? Контакты, токены и реквизиты останутся как есть.');">
+  <?= csrf_field() ?>
+  <input type="hidden" name="hist_action" value="defaults">
+  <button class="btn btn--outline" type="submit" style="padding:12px 22px;font-size:.85rem;color:var(--ink-soft)">⎌ Вернуть все значения по умолчанию</button>
+</form>
+<?php if (count($hist = settingsHistoryList(5)) > 0): ?>
+<details style="margin-top:10px"><summary style="font-size:.82rem;color:var(--ink-soft);cursor:pointer">Последние изменения (<?= count($hist) ?>)</summary>
+<ol style="font-size:.78rem;color:var(--ink-soft);margin:6px 0 0 18px">
+  <?php foreach ($hist as $hh): ?>
+  <li><?= e($hh['ts']) ?> — <?= e(['save' => 'сохранение', 'undo' => 'отмена', 'defaults' => 'сброс к заводским'][$hh['source']] ?? $hh['source']) ?></li>
+  <?php endforeach; ?>
+</ol></details>
+<?php endif; ?>
 
 <?php
 /* --- Web Push (VAPID): отдельная мини-форма, не трогает основную --- */

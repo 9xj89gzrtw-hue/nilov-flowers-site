@@ -128,6 +128,14 @@ function seedDatabase(PDO $pdo): void
    первом db() в запросе — дёшево (PRAGMA table_info) и идемпотентно. */
 function migrateSchema(PDO $pdo): void
 {
+    /* История настроек: снимок ВСЕХ settings перед каждым изменением из админки
+       (критерий 16: «отменить последнее изменение»). Идемпотентно. */
+    $pdo->exec("CREATE TABLE IF NOT EXISTS settings_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ts TEXT NOT NULL,
+        source TEXT NOT NULL DEFAULT 'save',
+        snapshot TEXT NOT NULL
+    )");
     $orderCols = array_column($pdo->query("PRAGMA table_info(orders)")->fetchAll(), 'name');
     foreach ([
         ['given_to', "TEXT NOT NULL DEFAULT ''"],

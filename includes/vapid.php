@@ -43,8 +43,10 @@ function vapidAuthHeaders(string $endpoint): array {
     // DER: 30 <seqLen> 02 <rLen> <r> 02 <sLen> <s> → raw r(32)||s(32) (RFC7515, big-endian, беззнаковые)
     $raw = derSigToRaw($derSig);
     if ($raw === '') { return []; }
+    // RFC 8292: auth-схема называется "vapid" (не "webpush" из draft-01; node-web-push
+    // сменила в 2018 именно из-за требований FCM)
     return [
-        'Authorization: webpush t=' . $signing . ',k=' . $pub,
+        'Authorization: vapid t=' . $signing . ',k=' . $pub,
         'TTL: 86400',
         'Content-Type: application/octet-stream',
     ];
@@ -73,12 +75,16 @@ function derSigToRaw(string $der): string {
     return hex2bin($r . $s);
 }
 
-/* Отправить уведомление всем подпискам (cap 200, curl 4с). Протухшие (404/410) — удалить. */
+/* Отправить уведомление подпискам. Жёсткий бюджет времени: заказ не должен ждать
+   рассылку — суммарно не более ~5 секунд, дальше пропускаем остальных.
+   Протухшие (404/410) — удаляем. */
 function webpushSendAll(string $title, string $body, string $url): array {
     if (!vapidKeysExist()) { return ['sent' => 0, 'error' => 'no-vapid-keys']; }
     $subs = db()->query('SELECT id, endpoint FROM push_subscriptions ORDER BY id DESC LIMIT 200')->fetchAll(PDO::FETCH_ASSOC);
-    $sent = 0; $dead = [];
+    $sent = 0; $skipped = 0; $dead = [];
+    $deadline = microtime(true) + 5.0;
     foreach ($subs as $s) {
+        if (microtime(true) > $deadline) { $skipped++; continue; }
         $auth = vapidAuthHeaders($s['endpoint']);
         if (!$auth) { continue; } // кривой endpoint у одной подписки не должен глушить остальные
         $ch = curl_init($s['endpoint']);
@@ -86,8 +92,8 @@ function webpushSendAll(string $title, string $body, string $url): array {
             CURLOPT_POST => true,
             CURLOPT_POSTFIELDS => json_encode(['title' => $title, 'body' => $body, 'url' => $url, 'tag' => 'nilov-order'], JSON_UNESCAPED_UNICODE),
             CURLOPT_HTTPHEADER => $auth,
-            CURLOPT_TIMEOUT => 4,
-            CURLOPT_CONNECTTIMEOUT => 3,
+            CURLOPT_TIMEOUT => 2,
+            CURLOPT_CONNECTTIMEOUT => 2,
             CURLOPT_RETURNTRANSFER => true,
         ]);
         curl_exec($ch);
@@ -99,5 +105,5 @@ function webpushSendAll(string $title, string $body, string $url): array {
     if ($dead) {
         db()->exec('DELETE FROM push_subscriptions WHERE id IN (' . implode(',', $dead) . ')');
     }
-    return ['sent' => $sent, 'dead' => count($dead), 'total' => count($subs)];
+    return ['sent' => $sent, 'dead' => count($dead), 'skipped' => $skipped, 'total' => count($subs)];
 }
