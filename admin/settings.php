@@ -180,13 +180,20 @@ flash();
         <input class="input" id="s-addr" name="shop_address" value="<?= sv('shop_address', $s) ?>">
       </div>
       <div>
-        <label class="f" for="s-logo">Логотип (заменить)</label>
+        <label class="f" for="s-logo" style="color:var(--rose-deep);font-size:.95rem">🖼 Логотип в шапке сайта</label>
         <input class="input" id="s-logo" name="logo_image" type="file" accept="image/*">
         <?php if (($s['logo_image'] ?? '') !== ''): ?>
           <img class="thumb" style="margin-top:8px" src="/img/uploads/<?= e($s['logo_image']) ?>?v=<?= substr(md5_file((__DIR__) . '/../img/uploads/' . $s['logo_image']), 0, 8) ?>" alt="">
-          <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:.9rem;cursor:pointer">
+          <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:.9rem;cursor:pointer;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg-alt,#faf6f0)">
             <input type="checkbox" name="logo_enabled" value="1" <?= sv('logo_enabled', $s) !== '0' ? 'checked' : '' ?>>
-            Показывать логотип-картинку в шапке (без неё остаётся название сайта текстом)
+            Показывать картинку-логотип рядом с названием.
+            <strong style="font-weight:600"><?= sv('logo_enabled', $s) !== '0' ? 'Сейчас: картинка + название' : 'Сейчас: только название текстом' ?></strong>
+          </label>
+          <p style="font-size:.8rem;color:var(--ink-soft);margin:6px 0 0">Выключите тумблер — в шапке останется только название сайта текстом. Загрузите новый файл (PNG/SVG, прозрачный фон) — он заменит картинку.</p>
+        <?php else: ?>
+          <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:.9rem;color:var(--ink-soft)">
+            <input type="checkbox" checked disabled>
+            Тумблер станет доступен после загрузки файла. Сейчас: только название текстом.
           </label>
         <?php endif; ?>
       </div>
