@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !csrf_check()) {
 
 $pdo = db();
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action'])) {
     $keys = ['shop_name','shop_phone','shop_address','hero_title','hero_subtitle',
         'hero_button_text','hero_button_link','steps_title','step_1','step_2','step_3',
         'guarantees_title','guarantee_1','guarantee_2','guarantee_3',
