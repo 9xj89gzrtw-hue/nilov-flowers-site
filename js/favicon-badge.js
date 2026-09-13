@@ -9,8 +9,12 @@
   var base = link.getAttribute('data-base-icon') || link.getAttribute('href');
 
   function setHref(href) { if (link.getAttribute('href') !== href) link.setAttribute('href', href); }
+  /* SVG-иконка (head.php) имеет приоритет в Chrome — при активном бейдже глушим её,
+     при возврате к базе — включаем обратно */
+  var svgLink = document.querySelector('link[rel="icon"][type="image/svg+xml"]');
 
   function drawBadge(num) {
+    if (svgLink) svgLink.disabled = true;
     var S = 64, c = document.createElement('canvas');
     c.width = S; c.height = S;
     var g = c.getContext('2d');
@@ -41,7 +45,7 @@
 
   window.addEventListener('cart:change', function () {
     var qty = qtyNow();
-    if (qty === 0) setHref(base); else drawBadge(qty);
+    if (qty === 0) { if (svgLink) svgLink.disabled = false; setHref(base); } else drawBadge(qty);
   });
   /* перезагрузка с непустой корзиной: cart.js шлёт cart:change только при мутациях —
      рисуем сам shortly после загрузки */
