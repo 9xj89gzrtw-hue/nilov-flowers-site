@@ -95,6 +95,7 @@ function seedDatabase(PDO $pdo): void
         ('hero_button_link', '#catalog'),
         ('hero_image', ''),
         ('logo_image', ''),
+        ('logo_enabled', '1'),
         ('steps_title', 'Как это работает'),
         ('step_1', 'Выбираете букет в каталоге и добавляете в корзину'),
         ('step_2', 'Оформляете заказ — мы связываемся с вами для подтверждения'),

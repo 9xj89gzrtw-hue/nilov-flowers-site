@@ -69,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
     /* Чекбоксы: 0 если снят (не пришёл), но ТОЛЬКО для реально отрендеренных в форме */
     foreach (['yk_enabled', 'upsell_enabled', 'hero_text_enabled', 'yandex_reviews_enabled',
               'wa_enabled', 'tg_enabled', 'vk_enabled', 'ig_enabled', 'email_enabled', 'max_enabled',
-              'notify_enabled',
+              'notify_enabled', 'logo_enabled',
               /* Витринные фичи (критерий 16): каждая отключаема из админки */
               'feature_delivery_badge', 'feature_faq', 'feature_countdown', 'feature_price_filter',
               'feature_favorites', 'feature_zone_check', 'feature_track_link', 'feature_favicon_badge', 'feature_webpush'] as $cb) {
@@ -183,7 +183,11 @@ flash();
         <label class="f" for="s-logo">Логотип (заменить)</label>
         <input class="input" id="s-logo" name="logo_image" type="file" accept="image/*">
         <?php if (($s['logo_image'] ?? '') !== ''): ?>
-          <img class="thumb" style="margin-top:8px" src="/img/uploads/<?= e($s['logo_image']) ?>" alt="">
+          <img class="thumb" style="margin-top:8px" src="/img/uploads/<?= e($s['logo_image']) ?>?v=<?= substr(md5_file((__DIR__) . '/../img/uploads/' . $s['logo_image']), 0, 8) ?>" alt="">
+          <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:.9rem;cursor:pointer">
+            <input type="checkbox" name="logo_enabled" value="1" <?= sv('logo_enabled', $s) !== '0' ? 'checked' : '' ?>>
+            Показывать логотип-картинку в шапке (без неё остаётся название сайта текстом)
+          </label>
         <?php endif; ?>
       </div>
     </div>

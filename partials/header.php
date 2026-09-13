@@ -19,7 +19,8 @@ $cartMode = in_array(setting('cart_mode', 'drawer'), ['drawer', 'hybrid', 'page'
 <header class="site-header">
   <div class="wrap">
     <a href="/" class="site-logo">
-      <?php if (setting('logo_image') !== ''): ?><img class="site-logo__img" src="/img/uploads/<?= e(setting('logo_image')) ?>" alt=""><?php endif; ?>
+      <?php /* Логотип-картинка: показывать, только если загружен И включён тумблером (критерий 23). */ ?>
+      <?php if (setting('logo_image') !== '' && setting('logo_enabled', '1') === '1'): ?><img class="site-logo__img" src="/img/uploads/<?= e(setting('logo_image')) ?>" alt=""><?php endif; ?>
       <span><?= e($siteName) ?></span>
     </a>
     <div class="site-header__contact">

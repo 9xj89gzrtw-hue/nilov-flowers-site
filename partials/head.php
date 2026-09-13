@@ -16,9 +16,9 @@ $googleVerification = trim(setting('google_site_verification', ''));
 <?php endif; ?>
 <?php if ($googleVerification !== ''): ?><meta name="google-site-verification" content="<?= e($googleVerification) ?>">
 <?php endif; ?>
-<link id="faviconLink" rel="icon" href="<?= e($iconHref) ?>" sizes="any" data-base-icon="<?= e($iconHref) ?>">
-<link rel="icon" type="image/svg+xml" href="/img/favicon.svg">
-<link rel="apple-touch-icon" href="/img/favicon-180.png">
+<link id="faviconLink" rel="icon" href="<?= e($iconHref) ?>?v=<?= e(substr(md5_file(__DIR__ . '/../' . ltrim($iconHref, '/')), 0, 8)) ?>" sizes="any" data-base-icon="<?= e($iconHref) ?>?v=<?= e(substr(md5_file(__DIR__ . '/../' . ltrim($iconHref, '/')), 0, 8)) ?>">
+<link rel="icon" type="image/svg+xml" href="/img/favicon.svg?v=<?= e(substr(md5_file(__DIR__ . '/../img/favicon.svg'), 0, 8)) ?>">
+<link rel="apple-touch-icon" href="/img/favicon-180.png?v=<?= e(substr(md5_file(__DIR__ . '/../img/favicon-180.png'), 0, 8)) ?>">
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#F6F1E6">
 <meta name="apple-mobile-web-app-capable" content="yes">
