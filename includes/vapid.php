@@ -40,19 +40,37 @@ function vapidAuthHeaders(string $endpoint): array {
     $pkey = openssl_pkey_get_private($privPem);
     if (!$pkey) { return []; }
     openssl_sign($signing, $derSig, $pkey, OPENSSL_ALGO_SHA256);
-    $raw = '';
-    if (preg_match('/^30[0-9a-f]{2}02([0-9a-f]{2})([0-9a-f]+)02([0-9a-f]{2})([0-9a-f]+)$/i', bin2hex($derSig), $m)) {
-        $r = $m[2]; $s = $m[4];
-        if (strlen($r) === 66 && str_starts_with($r, '00')) { $r = substr($r, 2); }
-        if (strlen($s) === 66 && str_starts_with($s, '00')) { $s = substr($s, 2); }
-        $raw = hex2bin(str_pad($r, 64, '0', STR_PAD_LEFT) . str_pad($s, 64, '0', STR_PAD_LEFT));
-    }
-    if ($raw === '' || strlen($raw) !== 64) { return []; }
+    // DER: 30 <seqLen> 02 <rLen> <r> 02 <sLen> <s> → raw r(32)||s(32) (RFC7515, big-endian, беззнаковые)
+    $raw = derSigToRaw($derSig);
+    if ($raw === '') { return []; }
     return [
         'Authorization: webpush t=' . $signing . ',k=' . $pub,
         'TTL: 86400',
         'Content-Type: application/octet-stream',
     ];
+}
+
+/** ECDSA DER-подпись → фиксированные r(32)||s(32). Пустая строка при любом отклонении формата. */
+function derSigToRaw(string $der): string {
+    $hex = bin2hex($der);
+    if (strlen($hex) < 10 || substr($hex, 0, 2) !== '30') { return ''; }
+    $i = 4; // после 30 <seqlen> и первого 02
+    if (substr($hex, 2, 2) === '81') { $i = 6; } // длинная форма seqLen
+    if (substr($hex, $i, 2) !== '02') { return ''; }
+    $rLen = hexdec(substr($hex, $i + 2, 2)) * 2;
+    $r = substr($hex, $i + 4, $rLen);
+    $j = $i + 4 + $rLen;
+    if (substr($hex, $j, 2) !== '02' || strlen($hex) < $j + 4) { return ''; }
+    $sLen = hexdec(substr($hex, $j + 2, 2)) * 2;
+    $s = substr($hex, $j + 4, $sLen);
+    if (strlen($r) !== $rLen || strlen($s) !== $sLen) { return ''; }
+    // нормализация: убрать знаковый 00-префикс, дополнить нулями до 64 hex (32 байта)
+    while (strlen($r) > 64 && substr($r, 0, 2) === '00') { $r = substr($r, 2); }
+    while (strlen($s) > 64 && substr($s, 0, 2) === '00') { $s = substr($s, 2); }
+    $r = str_pad($r, 64, '0', STR_PAD_LEFT);
+    $s = str_pad($s, 64, '0', STR_PAD_LEFT);
+    if (strlen($r) !== 64 || strlen($s) !== 64) { return ''; }
+    return hex2bin($r . $s);
 }
 
 /* Отправить уведомление всем подпискам (cap 200, curl 4с). Протухшие (404/410) — удалить. */
@@ -62,7 +80,7 @@ function webpushSendAll(string $title, string $body, string $url): array {
     $sent = 0; $dead = [];
     foreach ($subs as $s) {
         $auth = vapidAuthHeaders($s['endpoint']);
-        if (!$auth) { break; }
+        if (!$auth) { continue; } // кривой endpoint у одной подписки не должен глушить остальные
         $ch = curl_init($s['endpoint']);
         curl_setopt_array($ch, [
             CURLOPT_POST => true,
