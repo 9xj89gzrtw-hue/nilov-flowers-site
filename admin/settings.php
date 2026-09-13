@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !csrf_check()) {
 $pdo = db();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !isset($_POST['hist_action'])) {
-    $keys = ['shop_name','shop_phone','shop_address','hero_title','hero_subtitle',
+    $keys = ['shop_name','shop_phone','shop_address','pickup_address','hero_title','hero_subtitle',
         'hero_button_text','hero_button_link','steps_title','step_1','step_2','step_3',
         'guarantees_title','guarantee_1','guarantee_2','guarantee_3',
         'shop_email','shop_hours','shop_vk','shop_max_link','shop_instagram','header_phone','header_address',
@@ -464,6 +464,8 @@ flash();
       <div>
         <label class="f" for="pk-opt">Пункт самовывоза в списке</label>
         <input class="input" id="pk-opt" name="pickup_option_text" value="<?= sv('pickup_option_text', $s) !== '' ? sv('pickup_option_text', $s) : 'Самовывоз — бесплатно' ?>" maxlength="40">
+        <label class="f" for="pk-addr" style="margin-top:10px">Точный адрес самовывоза (улица, дом)</label>
+        <input class="input" id="pk-addr" name="pickup_address" value="<?= sv('pickup_address', $s) ?>" placeholder="Например: Полевая Сабировская ул., 47, корп. 1" maxlength="120">
         <label class="f" for="dl-hint" style="margin-top:8px">Подсказка под доставкой</label>
         <input class="input" id="dl-hint" name="delivery_hint_text" value="<?= sv('delivery_hint_text', $s) !== '' ? sv('delivery_hint_text', $s) : 'Доставим в течение дня, время согласуем по телефону' ?>" maxlength="90">
         <label class="f" for="sb-btn" style="margin-top:8px">Кнопка отправки заказа (при онлайн-оплате)</label>

@@ -134,7 +134,7 @@ a{color:inherit;text-decoration:none}
 .order-form__field select{width:100%;min-width:0}
 .order-form__field input:focus,.order-form__field select:focus,.order-form__field textarea:focus{outline:none;border-color:var(--rose-deep)}
 .order-form__field input.order-form__input--error{border-color:var(--err)}
-.order-form__error{color:var(--err);font-size:.78rem;min-height:1em}
+.order-form__error{color:var(--err);font-size:.85rem;min-height:1em}
 .order-form__hint{font-size:.8rem;color:var(--ink-soft)}
 .order-form__payment{border:1.5px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:10px;min-width:0}
 .order-form__payment legend{font-size:.85rem;font-weight:600;padding:0 6px;white-space:normal}
@@ -197,6 +197,9 @@ body.no-scroll{overflow:hidden}
 
 /* ============ COOKIE BANNER ============ */
 .cookie-banner{position:fixed;left:16px;right:16px;bottom:16px;z-index:90;background:var(--ink);color:#fff;border-radius:var(--radius);padding:14px 18px;display:flex;gap:14px;align-items:center;justify-content:space-between;font-size:.85rem;flex-wrap:wrap}
+/* Критик-мобайл (баг 8): баннер перекрывал кнопку «Отправить заказ» — пока он виден,
+   у страницы есть запас снизу, чтобы последняя кнопка прокручивалась выше баннера. */
+body.cookie-visible{padding-bottom:220px}
 .cookie-banner__btn{background:var(--rose-deep);border:none;color:#fff;border-radius:999px;padding:9px 20px;font:600 .85rem var(--font-ui);cursor:pointer}
 /* Мобильный cookie-баннер (критик P4): 24% экрана → компактный */
 @media (max-width:640px){

@@ -38,6 +38,8 @@
       '<button type="button" class="btn cookie-banner__btn cookie-banner__btn--secondary">' + esc(cfg.reject || 'Только необходимые') + '</button>';
 
     document.body.appendChild(banner);
+    /* баг 8 (критик-мобайл): запас снизу, чтобы кнопка «Отправить» не лежала под баннером */
+    document.body.classList.add('cookie-visible');
 
     var buttons = banner.querySelectorAll('.cookie-banner__btn');
     var accept = buttons[0];
@@ -47,6 +49,7 @@
       accept.addEventListener('click', function () {
         saveConsent();
         banner.remove();
+        document.body.classList.remove('cookie-visible');
         /* Метрика грузится только после явного согласия */
         if (typeof window.loadMetrica === 'function') {
           window.loadMetrica();
@@ -57,6 +60,7 @@
       reject.addEventListener('click', function () {
         saveConsent();
         banner.remove();
+        document.body.classList.remove('cookie-visible');
         /* без loadMetrica() — аналитика не загружается */
       });
     }

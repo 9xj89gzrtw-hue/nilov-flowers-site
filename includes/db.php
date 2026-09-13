@@ -161,6 +161,7 @@ function migrateSchema(PDO $pdo): void
     /* settings-ключи, появившиеся после первой версии (INSERT OR IGNORE) */
     $pdo->exec("INSERT OR IGNORE INTO settings (key, value) VALUES
         ('cart_mode', 'drawer'),
+        ('pickup_address', ''),
         ('shop_whatsapp', ''),
         ('shop_telegram', ''),
         ('legal_subject_type', ''),

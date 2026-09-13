@@ -409,8 +409,9 @@ if ($__heroPre !== '') {
             <select id="orderDeliveryZone" name="delivery_zone">
               <?php
               /* Самовывоз — приоритетный способ: выбран по умолчанию, бесплатно.
-                 Адрес самовывоза = адрес магазина из настроек. */
-              $pickupAddr = trim(setting('shop_address', ''));
+                 Критик-мобайл (баг 4): полный адрес самовывоза — своя настройка pickup_address
+                 (с фолбэком на shop_address), иначе город без улицы. */
+              $pickupAddr = trim(setting('pickup_address', '')) ?: trim(setting('shop_address', ''));
               ?>
               <option value="0" data-price="0" selected><?= e(setting('pickup_option_text', 'Самовывоз — бесплатно')) ?></option>
               <?php foreach ($zones as $z): ?>
@@ -423,7 +424,7 @@ if ($__heroPre !== '') {
           </div>
           <div class="order-form__field" id="orderDeliveryAddressField" hidden>
             <label for="orderDeliveryAddress">Адрес доставки</label>
-            <input type="text" id="orderDeliveryAddress" name="delivery_address" placeholder="Улица, дом, квартира">
+            <input type="text" id="orderDeliveryAddress" name="delivery_address" placeholder="Улица, дом, квартира" autocomplete="street-address">
             <span class="order-form__error" id="orderDeliveryAddressError"></span>
           </div>
           <p class="order-form__hint" id="orderDeliveryHint"><?= e(setting('delivery_hint_text', 'Доставим в течение дня, время согласуем по телефону')) ?></p>
@@ -459,7 +460,7 @@ if ($__heroPre !== '') {
         <p class="order-form__total" id="orderTotal"></p>
         <button type="submit" class="btn btn--accent order-form__submit" id="orderSubmit"
                 data-pay-label="<?= e(setting('submit_button_text', 'Оплатить заказ')) ?>"
-                data-nopay-label="<?= e(setting('submit_nopay_text', 'Отправить заказ')) ?>"><?= e(setting('submit_button_text', 'Оплатить заказ')) ?></button>
+                data-nopay-label="<?= e(setting('submit_nopay_text', 'Отправить заказ')) ?>"><?= $ykLive ? e(setting('submit_button_text', 'Оплатить заказ')) : e(setting('submit_nopay_text', 'Отправить заказ')) ?></button>
         <p class="order-form__hint"><?= e(sprintf('Заказы принимаем ежедневно до %s — оформленные сегодня доставим сегодня же.', setting('order_deadline_hour', '20') . ':' . str_pad(setting('order_deadline_minute', '0'), 2, '0', STR_PAD_LEFT))) ?></p>
         <p class="order-form__status" id="orderStatus" role="status" hidden></p>
       </form>

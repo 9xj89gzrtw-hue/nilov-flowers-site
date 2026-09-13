@@ -29,16 +29,44 @@
   const PHONE_RE = /^\+?[\d\s\-().]{7,20}$/;
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+  /* Критик-мобайл (форма заказа, 8/10): поля и их подписи ошибок — списком,
+     чтобы ошибка чистилась при вводе и вешался aria (баги 5,6). */
+  const FIELD_PAIRS = [[nameInput, nameError], [phoneInput, phoneError], [emailInput, emailError],
+    [deliveryAddressInput, deliveryAddressError], [pdConsentInput, pdConsentError]];
+
+  function markInvalid(inputEl, errEl, msg) {
+    errEl.textContent = msg;
+    if (inputEl) {
+      inputEl.classList.add('order-form__input--error');
+      inputEl.setAttribute('aria-invalid', 'true');
+      inputEl.setAttribute('aria-describedby', errEl.id);
+    }
+  }
+  function clearField(inputEl, errEl) {
+    errEl.textContent = '';
+    if (inputEl) {
+      inputEl.classList.remove('order-form__input--error');
+      inputEl.removeAttribute('aria-invalid');
+      inputEl.removeAttribute('aria-describedby');
+    }
+  }
+  FIELD_PAIRS.forEach(function (pair) {
+    var i = pair[0], e2 = pair[1];
+    if (!i || !e2) return;
+    var onFix = function () { if (e2.textContent) clearField(i, e2); };
+    i.addEventListener('input', onFix);
+    i.addEventListener('change', onFix);
+  });
+
   function clearErrors() {
-    nameError.textContent = '';
-    phoneError.textContent = '';
-    emailError.textContent = '';
-    pdConsentError.textContent = '';
-    if (deliveryAddressError) deliveryAddressError.textContent = '';
-    [nameInput, phoneInput, emailInput].forEach(function (el) {
-      el.classList.remove('order-form__input--error');
-    });
-    if (deliveryAddressInput) deliveryAddressInput.classList.remove('order-form__input--error');
+    FIELD_PAIRS.forEach(function (pair) { clearField(pair[0], pair[1]); });
+  }
+
+  /* Единый показ статус-плашки: без текста плашка скрыта (баг 1 — пустая мятная полоса) */
+  function setStatus(text, kind) {
+    statusEl.textContent = text || '';
+    statusEl.className = 'order-form__status' + (text ? ' order-form__status--' + kind : '');
+    statusEl.hidden = !text;
   }
 
   /* Зона доставки выбрана и это НЕ самовывоз (value="0" = самовывоз, бесплатно).
@@ -54,54 +82,64 @@
 
   function validate() {
     let valid = true;
+    const firstInvalid = [];
     const name = nameInput.value.trim();
     const phone = phoneInput.value.trim();
     const email = emailInput.value.trim();
 
     if (name.length < 2) {
-      nameError.textContent = 'Введите имя (минимум 2 символа)';
-      nameInput.classList.add('order-form__input--error');
-      valid = false;
+      markInvalid(nameInput, nameError, 'Введите имя (минимум 2 символа)');
+      firstInvalid.push(nameInput); valid = false;
     }
 
     if (!phone && !email) {
-      phoneError.textContent = 'Укажите телефон или email';
-      phoneInput.classList.add('order-form__input--error');
-      valid = false;
+      markInvalid(phoneInput, phoneError, 'Укажите телефон или email');
+      firstInvalid.push(phoneInput); valid = false;
     } else {
       if (phone && !PHONE_RE.test(phone)) {
-        phoneError.textContent = 'Введите корректный телефон — например, +7 (999) 123-45-67';
-        phoneInput.classList.add('order-form__input--error');
-        valid = false;
+        markInvalid(phoneInput, phoneError, 'Введите корректный телефон — например, +7 (999) 123-45-67');
+        firstInvalid.push(phoneInput); valid = false;
       }
       if (email && !EMAIL_RE.test(email)) {
-        emailError.textContent = 'Введите корректный email';
-        emailInput.classList.add('order-form__input--error');
-        valid = false;
+        markInvalid(emailInput, emailError, 'Введите корректный email');
+        firstInvalid.push(emailInput); valid = false;
       }
     }
 
     /* Адрес обязателен, только когда выбрана реальная зона доставки */
     if (wantsDelivery() && deliveryAddressInput && !deliveryAddressInput.value.trim()) {
-      if (deliveryAddressError) deliveryAddressError.textContent = 'Укажите адрес доставки';
-      deliveryAddressInput.classList.add('order-form__input--error');
-      valid = false;
+      markInvalid(deliveryAddressInput, deliveryAddressError, 'Укажите адрес доставки');
+      firstInvalid.push(deliveryAddressInput); valid = false;
     }
 
     if (!pdConsentInput.checked) {
-      pdConsentError.textContent = 'Необходимо согласие на обработку персональных данных';
-      valid = false;
+      markInvalid(pdConsentInput, pdConsentError, 'Необходимо согласие на обработку персональных данных');
+      firstInvalid.push(pdConsentInput); valid = false;
     }
 
+    /* Критик-мобайл (баг 2): на 390px поля с ошибками ~1200px выше кнопки —
+     показывать статус не нужно (валидация подсвечена на полях), а фокус и скролл
+     должны привести покупателя к первой ошибке. */
+    if (!valid && firstInvalid.length) {
+      setStatus('', 'err');
+      const el = firstInvalid[0];
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(function () { try { el.focus({ preventScroll: true }); } catch (e) { el.focus(); } }, 350);
+    }
     return valid;
   }
 
-  /* Показ/обязательность поля адреса следует за выбором зоны */
+  /* Показ/обязательность поля адреса следует за выбором зоны; подсказка самовывоза —
+     живёт только при самовывозе (критик-мобайл, баг 3: при доставке она противоречила) */
   function syncDeliveryAddressRequirement() {
     if (!deliveryAddressField) return;
     const delivery = wantsDelivery();
     deliveryAddressField.hidden = !delivery;
     if (deliveryAddressInput) deliveryAddressInput.required = delivery;
+    const pickupHint = document.getElementById('orderPickupAddr');
+    if (pickupHint) pickupHint.hidden = delivery;
+    const dHint = document.getElementById('orderDeliveryHint');
+    if (dHint) dHint.hidden = !delivery;
   }
   if (deliveryZoneInput) {
     deliveryZoneInput.addEventListener('change', syncDeliveryAddressRequirement);
@@ -236,16 +274,13 @@
     e.preventDefault();
     clearErrors();
     paymentError = '';
-    statusEl.textContent = '';
-    statusEl.className = 'order-form__status';
-    statusEl.hidden = false; /* fix: ошибка оставалась невидимой (hidden не снимался) — «молчаливые 400» */
+    setStatus('', 'err');
 
     if (!validate()) return;
 
     const items = buildItemsPayload();
     if (items.length === 0) {
-      statusEl.textContent = 'Корзина пуста — добавьте букет из каталога';
-      statusEl.classList.add('order-form__status--err');
+      setStatus('Корзина пуста — добавьте букет из каталога', 'err');
       return;
     }
 
@@ -296,15 +331,14 @@
           return;
         }
 
-        statusEl.textContent = wantsOnline
+        setStatus(wantsOnline
           ? 'Заказ принят, но перейти к оплате не удалось' + (paymentError ? ': ' + paymentError + '.' : '.') + ' Мы свяжемся с вами и поможем оплатить.'
-          : 'Заказ принят! Мы свяжемся с вами в ближайшее время.';
-        statusEl.classList.add(wantsOnline ? 'order-form__status--err' : 'order-form__status--ok');
+          : 'Заказ принят! Мы свяжемся с вами в ближайшее время.', wantsOnline ? 'err' : 'ok');
       } else {
         const body = await res.json().catch(function () { return null; });
         if (body && body.item && window.cartUI) {
           window.cartUI.markUnavailable(body.item.product_id);
-          statusEl.textContent = 'Один из товаров в заказе больше недоступен — уберите его из корзины (выделен красным) и попробуйте снова.';
+          setStatus('Один из товаров в заказе больше недоступен — уберите его из корзины (выделен красным) и попробуйте снова.', 'err');
         } else if (body && Array.isArray(body.errors) && body.errors.length) {
           /* Человеческие тексты ошибок сервера (fix: молчаливые 400) */
           const map = {
@@ -320,17 +354,15 @@
             items_required: 'Корзина пуста — выберите букет в каталоге.',
           };
           const parts = body.errors.map(function (code) { return map[code] || null; }).filter(Boolean);
-          statusEl.textContent = parts.length
+          setStatus(parts.length
             ? parts.join(' ')
-            : 'Не получилось оформить заказ. Позвоните нам — поможем оформить по телефону.';
+            : 'Не получилось оформить заказ. Позвоните нам — поможем оформить по телефону.', 'err');
         } else {
-          statusEl.textContent = 'Ошибка при отправке. Пожалуйста, позвоните нам напрямую.';
+          setStatus('Ошибка при отправке. Пожалуйста, позвоните нам напрямую.', 'err');
         }
-        statusEl.classList.add('order-form__status--err');
       }
     } catch {
-      statusEl.textContent = 'Нет связи с сервером. Пожалуйста, позвоните нам напрямую.';
-      statusEl.classList.add('order-form__status--err');
+      setStatus('Нет связи с сервером. Пожалуйста, позвоните нам напрямую.', 'err');
     } finally {
       submitBtn.disabled = false;
       submitBtn.textContent = defaultSubmitLabel();
