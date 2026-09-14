@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save'
 
     if ($name === '' || $price <= 0) {
         flash('Укажите название и цену товара', true);
-        header('Location: /admin/products.php');
+        header('Location: /admin/products.php?page=' . max(1, (int)($_POST['back_page'] ?? 1)));
         exit;
     }
 
@@ -78,7 +78,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save'
                 ':sp' => $salePrice, ':d' => $description, ':img' => $image, ':a' => $isActive, ':u' => $showInUpsell, ':s' => $sort]);
         flash('Товар добавлен');
     }
-    header('Location: /admin/products.php');
+    /* Операционный критик W38: после сохранения не «терять» товар — возврат на ту же
+       страницу списка и якорь на строку (на 2-й странице товар не исчезает из вида). */
+    $backPage = max(1, (int)($_POST['back_page'] ?? 1));
+    $backId = (int)($_POST['id'] ?? 0);
+    header('Location: /admin/products.php?page=' . $backPage . ($backId ? '#row-' . $backId : ''));
     exit;
 }
 
@@ -312,6 +316,7 @@ flash();
     <?= csrf_field() ?>
     <input type="hidden" name="action" value="save">
     <input type="hidden" name="id" value="<?= $editing ? (int)$editing['id'] : 0 ?>">
+    <input type="hidden" name="back_page" value="<?= $page ?>">
     <div class="grid2">
       <div>
         <label class="f" for="p-name">Название *</label>
@@ -406,7 +411,7 @@ flash();
   <div class="table-scroll"><table>
     <tr><th></th><th>Фото</th><th>Название</th><th>Категория</th><th>Цена</th><th>Акция</th><th>Сорт.</th><th>Статус</th><th>Обновлён</th><th></th><th></th></tr>
     <?php foreach ($products as $p): ?>
-    <tr>
+    <tr id="row-<?= (int)$p['id'] ?>">
       <td><input type="checkbox" name="ids[]" value="<?= (int)$p['id'] ?>" form="bulkPriceForm" style="width:auto"></td>
       <td><?= $p['image'] !== '' ? '<img class="thumb" src="/img/products/' . e($p['image']) . '" alt="">' : '<div class="thumb"></div>' ?></td>
       <td><strong><?= e($p['name']) ?></strong><br><small style="color:var(--ink-soft)"><?= e($p['slug']) ?></small></td>

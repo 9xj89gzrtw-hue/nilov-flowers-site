@@ -96,11 +96,16 @@ $qs = array_filter($_GET, fn($v, $k) => $v !== '' && $k !== 'page', ARRAY_FILTER
 
 /* ---------- Статистика (дашборд) ---------- */
 $range = (string)($_GET['range'] ?? '30');
-if (!in_array($range, ['7', '30', '90', 'all'], true)) {
+if (!in_array($range, ['1', '7', '30', '90', 'all'], true)) {
     $range = '30';
 }
 $revenueStatuses = "('confirmed','done','unredeemed')";
-$rangeCond = $range === 'all' ? '' : " AND o.created_at >= datetime('now','localtime','-" . (int)$range . " days')";
+/* Операционный критик W38: «как сегодня?» — главный вопрос флориста; range=1 = с полуночи. */
+if ($range === '1') {
+    $rangeCond = " AND date(o.created_at) = date('now','localtime')";
+} else {
+    $rangeCond = $range === 'all' ? '' : " AND o.created_at >= datetime('now','localtime','-" . (int)$range . " days')";
+}
 
 $revRow = $pdo->query("SELECT COALESCE(SUM(o.total),0), COUNT(*) FROM orders o
     WHERE o.status IN $revenueStatuses$rangeCond")->fetch(PDO::FETCH_NUM);
@@ -109,6 +114,12 @@ $paidCount = (int)$revRow[1];
 $avgCheck = $paidCount > 0 ? (int)round($revenue / $paidCount) : 0;
 $newCount = (int)$pdo->query("SELECT COUNT(*) FROM orders o WHERE o.status = 'new'$rangeCond")->fetchColumn();
 $allCount = (int)$pdo->query("SELECT COUNT(*) FROM orders o WHERE 1=1$rangeCond")->fetchColumn();
+/* W38: в режиме «Сегодня» — вчерашний результат для сравнения («больше или меньше обычного?») */
+$yRev = 0; $yCount = 0;
+if ($range === '1') {
+    $yr = $pdo->query("SELECT COALESCE(SUM(o.total),0), COUNT(*) FROM orders o WHERE o.status IN $revenueStatuses AND date(o.created_at) = date('now','localtime','-1 day')")->fetch(PDO::FETCH_NUM);
+    $yRev = (int)$yr[0]; $yCount = (int)$yr[1];
+}
 
 $statusBreak = $pdo->query("SELECT status, COUNT(*) AS c FROM orders o WHERE 1=1$rangeCond GROUP BY status")->fetchAll();
 $statusCounts = [];
@@ -171,7 +182,7 @@ $dashqs = fn(string $r) => '/admin/index.php?' . e(http_build_query(array_merge(
   <div class="dash-head">
     <h2 style="font-family:var(--font-display);font-size:1.25rem">Статистика</h2>
     <nav class="dash-ranges">
-      <?php foreach ([['7', '7 дней'], ['30', '30 дней'], ['90', '90 дней'], ['all', 'Всё время']] as [$rk, $rl]): ?>
+      <?php foreach ([['1', 'Сегодня'], ['7', '7 дней'], ['30', '30 дней'], ['90', '90 дней'], ['all', 'Всё время']] as [$rk, $rl]): ?>
         <a href="<?= $dashqs($rk) ?>" class="<?= $range === $rk ? 'active' : '' ?>"><?= e($rl) ?></a>
       <?php endforeach; ?>
     </nav>
@@ -179,11 +190,11 @@ $dashqs = fn(string $r) => '/admin/index.php?' . e(http_build_query(array_merge(
 
   <div class="dash-metrics">
     <div class="dash-metric dash-metric--rose">
-      <span class="dash-metric__label">Выручка</span>
+      <span class="dash-metric__label">Выручка<?= $range === '1' && ($yCount || $yRev) ? ' (вчера ' . formatPrice($yRev) . ')' : '' ?></span>
       <strong class="dash-metric__value"><?= $allCount > 0 ? formatPrice($revenue) : '—' ?></strong>
     </div>
     <div class="dash-metric dash-metric--blue">
-      <span class="dash-metric__label">Заказов</span>
+      <span class="dash-metric__label">Заказов<?= $range === '1' && $yCount ? ' (вчера ' . $yCount . ')' : '' ?></span>
       <strong class="dash-metric__value"><?= $allCount ?></strong>
     </div>
     <div class="dash-metric dash-metric--mint">

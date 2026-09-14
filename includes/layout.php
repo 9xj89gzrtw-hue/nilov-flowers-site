@@ -116,6 +116,8 @@ label.f{display:block;font-size:.8rem;font-weight:600;margin:12px 0 4px}
 .row-actions{display:flex;gap:6px;flex-wrap:wrap}
 .row-actions a,.row-actions button{font-size:.78rem;padding:5px 10px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;font-family:var(--font-ui)}
 .row-actions a.danger,.row-actions button.danger{color:var(--err);border-color:var(--err)}
+/* W38: подсветка строки после сохранения (возврат на #row-ID) */
+table tr:target{background:#fdf2f6;transition:background .3s}
 /* Критик-владелец W36 B3: на телефоне админка «мелкая» — все поля/кнопки/чекбоксы ≥44px на тач */
 @media(hover:none),(max-width:820px){
   .input,select,textarea,input[type=text],input[type=email],input[type=password],input[type=tel],input[type=number]{min-height:44px;font-size:16px}
