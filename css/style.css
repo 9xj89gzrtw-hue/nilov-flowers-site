@@ -254,6 +254,8 @@ body.cookie-visible{padding-bottom:220px}
 /* ============ PRODUCT PAGE ============ */
 .breadcrumbs{padding:18px 0 8px;font-size:.82rem;color:var(--ink-soft)}
 .breadcrumbs ol{list-style:none;display:flex;gap:8px;flex-wrap:wrap}
+/* Покупатель-критик W42: breadcrumbs-ссылки 16px — тап-цель <44 на телефоне */
+@media(max-width:820px){.breadcrumbs a{padding:12px 6px;display:inline-block}}
 .breadcrumbs a:hover{color:var(--rose-cta)}
 .product-page{padding:12px 0 64px}
 .product-page__layout{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(24px,4vw,56px);align-items:start}
@@ -313,5 +315,7 @@ body.cookie-visible{padding-bottom:220px}
 .site-footer__messengers{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-top:4px}
 /* a11y-критик S2: footer-ссылки h=16–20px → добавляем hit-area паддингами (не видимым размером) */
 .site-footer__messengers a,.site-footer__phone,.site-footer span a{display:inline-block;padding:12px 4px;line-height:1.2}
+/* Покупатель-критик W42: футер-ссылки были 40px — доводим таргет до 44 на тач */
+@media(max-width:820px){.site-footer__messengers a,.site-footer__phone,.site-footer span a{padding:14px 8px}}
 .site-footer__messengers a:hover{color:var(--rose-cta)}
 

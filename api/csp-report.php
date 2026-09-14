@@ -2,6 +2,7 @@
 /* CSP report endpoint (критик security): принимает отчёты, всегда 204.
    Логирует в /tmp только при наличии setrl — без БД-мусора. */
 declare(strict_types=1);
+require_once __DIR__ . '/../includes/security.php'; /* security-критик: JSON-эндпоинт с полными заголовками */
 header('Content-Type: application/json; charset=utf-8');
 header_remove("X-Powered-By");
 http_response_code(204);
