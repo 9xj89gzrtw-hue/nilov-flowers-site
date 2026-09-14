@@ -120,7 +120,7 @@ if ($__heroPre !== '') {
 <body>
 <?php require __DIR__ . '/partials/header.php'; ?>
 
-<main id="main">
+<main id="main" tabindex="-1">
   <!-- HERO: Nilov Flowers wow-заголовок + фото в арке -->
   <section class="hero">
     <div class="wrap hero__grid">
@@ -504,7 +504,7 @@ if ($__heroPre !== '') {
         </fieldset>
         <?php endif; ?>
         <?php /* Honeypot (критик security): невидимое поле — боты заполняют, люди нет */ ?>
-        <div class="hp-field" aria-hidden="true"><label for="orderCompanyWebsite">Сайт компании</label><input type="text" id="orderCompanyWebsite" name="company_website" tabindex="-1" autocomplete="off"></div>
+        <div class="hp-field" aria-hidden="true" inert><label for="orderCompanyWebsite">Сайт компании</label><input type="text" id="orderCompanyWebsite" name="company_website" tabindex="-1" autocomplete="off"></div>
         <label class="order-form__checkbox">
           <input type="checkbox" id="orderPdConsent" name="pd_consent" required>
           <span>Я даю согласие на обработку персональных данных (ФИО, телефон, адрес) в целях оформления и доставки заказа на условиях <a href="/policy" target="_blank" rel="noopener">Политики конфиденциальности</a> и <a href="/offer" target="_blank" rel="noopener">Публичной оферты</a> *</span>
