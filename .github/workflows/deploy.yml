@@ -1,0 +1,52 @@
+name: Deploy to SpaceWeb (flowers.interfood-catering.ru)
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+concurrency:
+  group: deploy-nilov-flowers
+  cancel-in-progress: true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+      SSH_PORT: ${{ secrets.SSH_PORT }}
+      REMOTE_DIR: ${{ secrets.REMOTE_DIR }}
+      SSHPASS: ${{ secrets.SSH_PASS }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install sshpass
+        run: sudo apt-get update -y && sudo apt-get install -y sshpass
+      - name: Rsync site (no-delete)
+        run: |
+          sshpass -e rsync -az --checksum \
+            -e "ssh -o StrictHostKeyChecking=accept-new -p ${SSH_PORT:-22}" \
+            --exclude='.git' --exclude='.github' --exclude='.gitignore' \
+            --exclude='db' --exclude='state' --exclude='admin/state' \
+            --exclude='img/uploads' --exclude='img/products' \
+            --exclude='.DS_Store' --exclude='._*' --exclude='.worktrees' \
+            site/ "$SSH_USER@$SSH_HOST:${REMOTE_DIR}"
+      - name: Opcache touch changed php
+        run: |
+          PREV="${{ github.event.before }}"
+          if [ "$PREV" = "0000000000000000000000000000000000000000" ] || [ -z "$PREV" ]; then
+            FILES=$(git ls-tree -r --name-only HEAD -- site | sed 's|^site/||' | grep -E '\.php$')
+          else
+            FILES=$(git diff --name-only "$PREV" "${{ github.sha }}" -- site | sed 's|^site/||' | grep -E '\.php$' || true)
+          fi
+          LIST=$(echo "$FILES" | grep -v '^$' | tr '\n' ' ')
+          [ -z "$LIST" ] && { echo "no changed PHP"; exit 0; }
+          sshpass -e ssh -o StrictHostKeyChecking=accept-new -p "${SSH_PORT:-22}" \
+            "$SSH_USER@$SSH_HOST" "cd ~/flowers.interfood-catering.ru/public_html && touch $LIST && echo TOUCHED"
+      - name: Verify md5 sw.js
+        run: |
+          LOCAL=$(md5sum site/sw.js | cut -d' ' -f1)
+          REMOTE=$(sshpass -e ssh -o StrictHostKeyChecking=accept-new -p "${SSH_PORT:-22}" \
+            "$SSH_USER@$SSH_HOST" "md5sum ~/flowers.interfood-catering.ru/public_html/sw.js | cut -d' ' -f1")
+          echo "local=$LOCAL remote=$REMOTE"
+          [ "$LOCAL" = "$REMOTE" ] || { echo "MD5 MISMATCH"; exit 1; }
+      - name: Done
+        run: echo "Deployed ${{ github.sha }}"
