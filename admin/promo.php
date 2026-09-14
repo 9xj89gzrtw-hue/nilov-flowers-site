@@ -17,6 +17,7 @@ $pdo = db();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = (string)($_POST['action'] ?? '');
+    $anchor = ''; /* владелец-критик W50: якорь #pr-code только при отказе формы save */
     if ($action === 'save') {
         $id = (int)($_POST['id'] ?? 0);
         $code = mb_strtoupper(trim((string)($_POST['code'] ?? '')), 'UTF-8');
@@ -45,12 +46,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             flash('Код можно писать только латинскими буквами и цифрами'
                 . ($suggest !== '' ? ' — например, ' . $suggest : ' — например CVETY10'), true);
             $_SESSION['promo_code_draft'] = $codeRaw;
+            $anchor = '#pr-code';
         } elseif ($code !== '' && ctype_digit($code)) {
             /* Владелец-критик W49 п.3: чисто цифровой код неотличим от скидки/опечатки. */
             flash('Код состоит только из цифр — его неудобно диктовать, «10» путается со скидкой. Добавьте буквы, например CVETY10', true);
             $_SESSION['promo_code_draft'] = $codeRaw;
+            $anchor = '#pr-code';
         } elseif ($code === '' || $value <= 0) {
             flash('Заполните код и скидку (больше нуля)', true);
+            $anchor = '#pr-code';
         } else {
             try {
                 if ($id > 0) {
@@ -65,6 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             } catch (Throwable $e) {
                 flash('Такой код уже есть', true);
+                $anchor = '#pr-code';
             }
         }
     } elseif ($action === 'toggle') {
@@ -75,7 +80,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pdo->prepare('DELETE FROM promo_codes WHERE id = :i')->execute([':i' => $id]);
         flash('Промокод удалён');
     }
-    header('Location: /admin/promo.php');
+    /* Владелец-критик W49-финал/W50: якорь ставится явно в ветках отказа save;
+       toggle/delete/успех — чистый Location (E2E поймал протечку draft-флага). */
+    header('Location: /admin/promo.php' . $anchor);
     exit;
 }
 
