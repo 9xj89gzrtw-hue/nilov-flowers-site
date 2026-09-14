@@ -39,7 +39,7 @@ a{color:inherit;text-decoration:none}
 .admin-logo{font-family:var(--font-display);font-weight:700;font-size:1.05rem}
 .admin-nav{display:flex;gap:4px;flex-wrap:wrap}
 .admin-nav a{padding:8px 14px;border-radius:999px;font-size:.9rem;font-weight:500;color:var(--ink-soft)}
-.admin-nav a.active{background:var(--rose);color:var(--ink)}
+.admin-nav a.active{background:var(--rose);color:var(--ink);box-shadow:inset 0 0 0 1.5px rgba(174,74,113,.55)}
 .admin-top .spacer{flex:1}
 /* Мобильная админка (W4): шапка не рвётся, nav скроллится горизонтально внутри себя */
 @media(max-width:700px){
@@ -53,8 +53,8 @@ a{color:inherit;text-decoration:none}
 }
 .btn{display:inline-flex;align-items:center;gap:8px;border:none;border-radius:999px;padding:9px 18px;font:600 .85rem var(--font-ui);cursor:pointer;background:var(--ink);color:#fff;transition:background .15s ease}
 .btn:hover{background:#000}
-.btn--accent{background:var(--rose-deep)}
-.btn--accent:hover{background:#d4638a}
+.btn--accent{background:var(--rose-cta,#AE4A71);color:#fff}
+.btn--accent:hover{background:var(--rose-cta-hover,#9E4062)}
 .btn--ghost{background:transparent;border:1.5px solid var(--line);color:var(--ink);transition:border-color .15s ease,color .15s ease}
 .btn--ghost:hover{border-color:var(--ink-soft);color:var(--ink)}
 .btn--danger{background:#fff;border:1.5px solid var(--err);color:var(--err);transition:background .15s ease,color .15s ease}
@@ -82,16 +82,22 @@ table{width:100%;border-collapse:collapse;font-size:.9rem}
 .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .table-scroll table{min-width:560px}
 .table-scroll table.products-table{min-width:760px}
-th{text-align:left;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);padding:8px 10px;border-bottom:1px solid var(--line)}
+th{text-align:left;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
 td{padding:10px;border-bottom:1px solid var(--line);vertical-align:middle}
 tr:last-child td{border-bottom:none}
 tbody tr,table tr{transition:background .12s ease}
 table tr:hover td{background:rgba(244,169,190,.08)}
 table tr:hover td:has(.row-actions form),table tr:hover th{background:transparent}
-.input,select,textarea{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:9px 12px;font:400 .9rem var(--font-ui);background:var(--bg)}
+/* Visual W52: бежевый фон+бежевая рамка = границ не видно; микро-текст мелок */
+.input,select,textarea{width:100%;border:1.5px solid rgba(43,45,47,.28);border-radius:10px;padding:9px 12px;font:400 .92rem var(--font-ui);background:#fff;color:var(--ink)}
 .input:focus,select:focus,textarea:focus{outline:none;border-color:var(--rose-deep)}
+/* Visual-критик W52: нативный синий чекбокс кричит на розово-бежевой палитре */
+input[type=checkbox],input[type=radio]{width:20px;height:20px;min-width:20px;accent-color:var(--rose-deep)}
+/* нативный Choose File приобщаем к системе */
+input[type=file]{font:400 .85rem var(--font-ui);color:var(--ink-soft);padding:8px;border:1.5px dashed var(--line);border-radius:10px;background:var(--bg);width:100%}
+input[type=file]::file-selector-button{font:600 .82rem var(--font-ui);border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--ink);padding:7px 14px;margin-right:10px;cursor:pointer}
 label.f{display:block;font-size:.8rem;font-weight:600;margin:12px 0 4px}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 20px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 28px;align-items:start}
 @media(max-width:700px){.grid2{grid-template-columns:1fr}}
 .status-badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.75rem;font-weight:600;background:var(--bg-alt)}
 /* Дружелюбные статусы: эмодзи + цвет (доступность — не только цвет, паттерн UXPin 2026) */

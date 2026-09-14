@@ -104,7 +104,7 @@ flash();
             ? 'Доставка: ' . e((string)$order['zone_name']) . ($order['delivery_address'] !== '' ? ' — ' . e($order['delivery_address']) : '')
             : 'Самовывоз' ?><br>
         Оплата: <?= $order['payment_method'] === 'online' ? 'онлайн (карта/СБП)' : 'при получении' ?><br>
-        Создан: <?= e($order['created_at']) ?>
+        Создан: <?= e(date('d.m.Y H:i', strtotime((string)$order['created_at']))) ?>
       </p>
       <?php if ($order['comment'] !== ''): ?>
         <p style="margin-top:8px"><strong>Комментарий:</strong> <?= e($order['comment']) ?></p>

@@ -285,7 +285,7 @@ $dashqs = fn(string $r) => '/admin/index.php?' . e(http_build_query(array_merge(
 <div class="card">
   <div class="table-scroll"><table>
     <tr>
-      <td style="width:90px"><strong><a class="order-link" href="/admin/order.php?id=<?= (int)$o['id'] ?>">№ <?= (int)$o['id'] ?></a></strong><br><small style="color:var(--ink-soft)"><?= e($o['created_at']) ?></small></td>
+      <td style="width:90px"><strong><a class="order-link" href="/admin/order.php?id=<?= (int)$o['id'] ?>">№ <?= (int)$o['id'] ?></a></strong><br><small style="color:var(--ink-soft)"><?= e(date('d.m.Y H:i', strtotime((string)$o['created_at']))) ?></small></td>
       <td>
         <strong><?= e($o['customer_name']) ?></strong><br>
         <?= $o['phone'] !== '' ? '<a href="tel:' . e(preg_replace('/\D/', '', $o['phone'])) . '">' . e($o['phone']) . '</a>' : '' ?><?= $o['email'] !== '' ? ' · ' . e($o['email']) : '' ?><br>
@@ -308,7 +308,7 @@ $dashqs = fn(string $r) => '/admin/index.php?' . e(http_build_query(array_merge(
       <td style="width:190px">
         <span class="status-badge <?= e($o['status']) ?>"><?= e(statuses()[$o['status']] ?? $o['status']) ?></span>
         <div class="row-actions" style="margin-top:8px">
-          <a href="/admin/order.php?id=<?= (int)$o['id'] ?>">Открыть</a>
+          <a href="/admin/order.php?id=<?= (int)$o['id'] ?>">Открыть заказ</a>
           <?php if ($o['status'] === 'new'): ?>
           <form method="post" onsubmit="return confirm('Подтвердить заказ №<?= (int)$o['id'] ?>?')">
             <?= csrf_field() ?>

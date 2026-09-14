@@ -321,7 +321,7 @@ flash();
   <h2 style="font-family:var(--font-display);font-size:1.2rem;margin-bottom:8px">
     <?= $editing ? 'Редактирование: ' . e($editing['name']) : 'Новый товар' ?>
   </h2>
-  <form method="post" enctype="multipart/form-data">
+  <form method="post" enctype="multipart/form-data" style="padding-bottom:96px">
     <?= csrf_field() ?>
     <input type="hidden" name="action" value="save">
     <input type="hidden" name="id" value="<?= $editing ? (int)$editing['id'] : 0 ?>">
@@ -366,7 +366,7 @@ flash();
         </label>
       </div>
     </div>
-    <div style="display:flex;gap:10px;margin-top:18px;position:sticky;bottom:12px;z-index:30;background:rgba(255,255,255,.94);backdrop-filter:blur(8px);padding:10px 12px;border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px -18px rgba(43,45,47,.5)">
+    <div style="display:flex;gap:10px;margin-top:18px;position:sticky;bottom:12px;z-index:25;background:rgba(255,255,255,.97);backdrop-filter:blur(8px);padding:10px 12px;border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px -18px rgba(43,45,47,.5)">
       <button class="btn btn--accent" type="submit" style="padding:10px 22px;min-height:44px"><?= $editing ? 'Сохранить' : 'Добавить товар' ?></button>
       <?php if ($editing): ?><a class="btn btn--ghost" href="/admin/products.php?edit=0<?= e($ctxQ) ?>">Отмена</a><?php endif; ?>
     </div>
@@ -398,7 +398,7 @@ flash();
         <?php $stMap = ['' => 'Все статусы', 'active' => 'Показаны', 'hidden' => 'Скрыты', 'no_price' => 'Без цены', 'no_image' => 'Без фото', 'stale' => 'Не менялись 7+ дней']; ?>
         <?php foreach ($stMap as $k => $lbl): ?><option value="<?= $k ?>" <?= $fSt === $k ? 'selected' : '' ?>><?= $lbl ?></option><?php endforeach; ?>
       </select>
-      <button type="submit" class="btn btn--ghost" style="font-size:.82rem;padding:7px 14px">Применить</button>
+      <button type="submit" class="btn btn--ghost" style="font-size:.82rem;padding:7px 14px">Найти</button>
       <?php if ($fCat || $fSt || $fQ): ?><a href="/admin/products.php" style="font-size:.82rem">Сбросить</a><?php endif; ?>
     </form>
   </div>
@@ -412,7 +412,7 @@ flash();
     <select name="mode" style="padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:#fff">
       <option value="set">сделать равной</option><option value="add">повысить на</option><option value="sub">понизить на</option><option value="pct">изменить на %</option>
     </select>
-    <input class="input" type="number" name="val" min="-90" max="1000000" placeholder="500 или -10 (минус = снизить)" style="width:130px;padding:6px 10px;border:1px solid var(--line);border-radius:8px" required>
+    <input class="input" type="number" name="val" min="-90" max="1000000" placeholder="500 или -10" title="Минус со знаком − снизит цены" style="width:150px;padding:6px 10px;border:1px solid var(--line);border-radius:8px" required>
     <button type="submit" class="btn btn--accent" style="font-size:.82rem;padding:7px 16px" onclick="return confirm('Применить к выделенным товарам?')">Применить</button>
     <a href="#" id="bulkSelAll" style="font-size:.8rem">выделить все на странице</a>
     <span style="flex-basis:100%;height:0"></span>
