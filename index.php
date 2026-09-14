@@ -452,8 +452,9 @@ if ($__heroPre !== '') {
           <label class="order-form__radio"><input type="radio" name="payment_method" value="cash"><span><?= e(setting('pay_cash_label', 'При получении')) ?></span></label>
           <p class="order-form__hint">Оплата проходит на защищённой странице ЮKassa. Данные карты магазину не передаются.</p>
           <?php else: ?>
+          <?php /* Покупатель-критик W46: radio «При получении» уже даёт payment_method —
+                    hidden-дубль с тем же именем создавал двойное значение в FormData. */ ?>
           <label class="order-form__radio"><input type="radio" name="payment_method" value="cash" checked><span><?= e(setting('pay_cash_label', 'При получении')) ?></span></label>
-          <input type="hidden" name="payment_method" value="cash">
           <p class="order-form__hint">Оплата — курьеру при получении заказа.</p>
           <?php endif; ?>
         </fieldset>

@@ -45,6 +45,15 @@ $errors = [];
 $name = mb_substr(trim((string)($data['name'] ?? '')), 0, 120); /* LOW-фикс стресс-теста: 10KB имя не копим */
 $phone = trim((string)($data['phone'] ?? ''));
 $email = trim((string)($data['email'] ?? ''));
+/* Покупатель-критик W46: сырой «9119417205» проходил валидацию, но в БД попадал криво —
+   /track (точное совпадение с W40) и CRM владельца его бы не нашли. Канонизируем РФ-номера. */
+function canonPhone(string $v): string {
+    $d = preg_replace('/\D+/', '', $v);
+    if (strlen($d) === 10) { return '+7 ' . substr($d, 0, 3) . ' ' . substr($d, 3, 3) . '-' . substr($d, 6, 2) . '-' . substr($d, 8, 2); }
+    if (strlen($d) === 11 && ($d[0] === '8' || $d[0] === '7')) { $d = '7' . substr($d, 1); return '+7 ' . substr($d, 1, 3) . ' ' . substr($d, 4, 3) . '-' . substr($d, 7, 2) . '-' . substr($d, 9, 2); }
+    return $v;
+}
+if ($phone !== '') { $phone = canonPhone($phone); }
 $comment = mb_substr(trim((string)($data['comment'] ?? '')), 0, 2000);
 /* Критик functional (gift-UX): получатель + открытка. Всё необязательное, лимиты серверные. */
 $recipientName = mb_substr(trim((string)($data['recipient_name'] ?? '')), 0, 120);
