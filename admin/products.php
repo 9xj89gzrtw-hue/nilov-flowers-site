@@ -211,6 +211,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'move'
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'bulk_import') {
     $files = $_FILES['bulk_images'] ?? [];
     $added = 0;
+    /* Операционный-критик W38: молчаливый отказ на сбойном файле — худшее, что может быть
+       при загрузке с телефона. Собираем пофайловые причины и показываем человеку. */
+    $rejected = [];
     if (isset($files['name']) && is_array($files['name'])) {
         for ($bi = 0; $bi < count($files['name']); $bi++) {
             $one = [
@@ -219,7 +222,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'bulk_
                 'size' => $files['size'][$bi],
             ];
             $imgName = saveUpload($one, IMG_PRODUCTS_DIR);
-            if ($imgName === '') { continue; }
+            if ($imgName === '') {
+                $err = (int)$one['error'];
+                if ($err === UPLOAD_ERR_INI_SIZE || $err === UPLOAD_ERR_FORM_SIZE) { $why = 'файл слишком большой'; }
+                elseif ($err !== UPLOAD_ERR_OK) { $why = 'ошибка загрузки (код ' . $err . ')'; }
+                elseif ($one['size'] > 12 * 1024 * 1024) { $why = 'больше 12 МБ — сожмите фото'; }
+                else { $why = 'не картинка jpg/png/webp/gif'; }
+                $rejected[] = mb_substr((string)$one['name'], 0, 40) . ' — ' . $why;
+                continue;
+            }
             $base = trim(pathinfo((string)$files['name'][$bi], PATHINFO_FILENAME));
             $name = $base !== '' ? mb_substr($base, 0, 80) : 'Новый букет';
             $slug = slugify($name);
@@ -234,8 +245,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'bulk_
             $added++;
         }
     }
-    flash($added > 0 ? "Добавлено товаров: $added (скрытые, с ценой 0 — заполните карточку каждого)"
-                      : 'Ни одно фото не принято (проверьте формат: jpg/png/webp, до 5 МБ)', $added === 0);
+    flash($added > 0 ? "Добавлено товаров: $added (скрытые, с ценой 0 — заполните карточку каждого)" . ($rejected ? '; отклонено: ' . implode('; ', array_slice($rejected, 0, 4)) . (count($rejected) > 4 ? '…' : '') : '')
+                      : 'Ни одно фото не принято. ' . ($rejected ? 'Причины: ' . implode('; ', array_slice($rejected, 0, 4)) . (count($rejected) > 4 ? ' и др.' : '') : 'Формат: jpg/png/webp/gif, до 12 МБ'), $added === 0);
     header('Location: /admin/products.php');
     exit;
 }

@@ -89,7 +89,7 @@ function saveUpload(array $file, string $dir): string
     if (!isset($file['tmp_name']) || $file['tmp_name'] === '' || ($file['error'] ?? 1) !== UPLOAD_ERR_OK) {
         return '';
     }
-    if ($file['size'] > 5 * 1024 * 1024) {
+    if ($file['size'] > 12 * 1024 * 1024) {
         return '';
     }
     $info = @getimagesize($file['tmp_name']);

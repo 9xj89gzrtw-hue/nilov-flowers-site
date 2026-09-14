@@ -149,6 +149,11 @@ foreach ($items as $item) {
     if (!$p || (int)$p['is_active'] !== 1) {
         respond(409, ['item' => ['product_id' => $pid]]);
     }
+    /* Операционный-критик W38: страховка — заказ товара с ценой 0 невозможен на сервере,
+       даже если битая карточка просочилась (admin-toggle валидация + эта граница = defense-in-depth). */
+    if (productPrice($p) <= 0) {
+        respond(409, ['item' => ['product_id' => $pid, 'error' => 'price_invalid']]);
+    }
     $normalized[] = [
         'product_id' => (int)$p['id'],
         'name' => (string)$p['name'],
