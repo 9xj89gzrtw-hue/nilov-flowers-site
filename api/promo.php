@@ -55,7 +55,7 @@ try {
         'discount' => $discount,
         'label' => $promo['kind'] === 'fixed'
             ? '−' . number_format($discount, 0, '', ' ') . ' ₽ по промокоду ' . $code
-            : '-' . (int)$promo['value'] . '% по промокоду ' . $code,
+            : '−' . (int)$promo['value'] . '% по промокоду ' . $code,
     ]);
 } catch (Throwable $e) {
     error_log('promo: ' . $e->getMessage());

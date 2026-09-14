@@ -106,7 +106,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'bulk_
             ->execute([':a' => $want, ':i' => $pid]) ? 1 : 0;
     }
     flash(($want ? "Показано: $done" : "Скрыто: $done") . ($skipped ? ", пропущено без цены/фото: $skipped" : ''));
-    header('Location: /admin/products.php');
+    $__bq = trim((string)($_POST['back_qs'] ?? ''));
+    header('Location: /admin/products.php' . ($__bq !== '' ? '?' . $__bq : ''));
     exit;
 }
 
@@ -135,7 +136,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'bulk_
         }
         flash("Цены обновлены: $n " . pluralRu($n, ["товар","товара","товаров"]));
     }
-    header('Location: /admin/products.php');
+    /* W45 P2 (владелец): ±% не должен терять поиск/фильтр — как toggle в W44 */
+    header('Location: /admin/products.php' . (trim((string)($_POST['back_qs'] ?? '')) !== '' ? '?' . trim((string)$_POST['back_qs']) : ''));
     exit;
 }
 
@@ -152,14 +154,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'toggl
         $hasImg = trim((string)$pr['image']) !== '';
         if (!$hasPrice || !$hasImg) {
             flash('Нельзя показать: ' . (!$hasPrice ? 'не заполнена цена. ' : '') . (!$hasImg ? 'нет фото.' : ''), true);
-            header('Location: /admin/products.php');
+            header('Location: /admin/products.php' . (trim((string)($_POST['back_qs'] ?? '')) !== '' ? '?' . trim((string)$_POST['back_qs']) : ''));
             exit;
         }
     }
     $pdo->prepare('UPDATE products SET is_active = 1 - is_active WHERE id = :i')->execute([':i' => $id]);
     /* Владелец-критик W44: подтверждение + возврат с сохранением фильтра/поиска/страницы
        («Скрыл проданный — списокreset'нулся, товар потерялся» — страх потери). */
-    flash($pr && (int)$pr['is_active'] === 1 ? 'Товар скрыт из продажи — он по-прежнему здесь, в фильтре «Скрытые»' : 'Товар показан в каталоге');
+    flash($pr && (int)$pr['is_active'] === 1 ? 'Товар скрыт из продажи. Он никуда не делся: найдёте его в фильтре статуса «Скрыты» над списком.' : 'Товар показан в каталоге');
     $bq = trim((string)($_POST['back_qs'] ?? ''));
     header('Location: /admin/products.php' . ($bq !== '' ? '?' . $bq : ''));
     exit;
@@ -362,7 +364,7 @@ flash();
     </div>
     <div style="display:flex;gap:10px;margin-top:18px;position:sticky;bottom:12px;z-index:30;background:rgba(255,255,255,.94);backdrop-filter:blur(8px);padding:10px 12px;border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px -18px rgba(43,45,47,.5)">
       <button class="btn btn--accent" type="submit" style="padding:10px 22px;min-height:44px"><?= $editing ? 'Сохранить' : 'Добавить товар' ?></button>
-      <?php if ($editing): ?><a class="btn btn--ghost" href="/admin/products.php<?= $page > 1 ? '?page=' . $page : '' ?>">Отмена</a><?php endif; ?>
+      <?php if ($editing): ?><a class="btn btn--ghost" href="/admin/products.php<?= ($__qs = http_build_query(array_filter(['page' => ($page > 1 ? $page : null), 'q' => ($fQ ?: null), 'f_cat' => ($fCat ?: null), 'f_status' => ($fSt ?: null)]))) !== '' ? '?' . e($__qs) : '' ?>">Отмена</a><?php endif; ?>
     </div>
   </form>
 </div>
@@ -401,6 +403,7 @@ flash();
   <form method="post" id="bulkPriceForm" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0;padding:10px 12px;background:var(--mint,#D9E9DF);border-radius:10px;font-size:.85rem">
     <?= csrf_field() ?>
     <input type="hidden" name="action" value="bulk_price">
+    <input type="hidden" name="back_qs" value="<?= e($_SERVER['QUERY_STRING'] ?? '') ?>">
     <span style="font-weight:600">Цены выделенным:</span>
     <select name="mode" style="padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:#fff">
       <option value="set">сделать равной</option><option value="add">повысить на</option><option value="sub">понизить на</option><option value="pct">изменить на %</option>
@@ -501,7 +504,7 @@ document.getElementById('bulkSelAll')?.addEventListener('click', function (ev) {
     f.method = 'post';
     f.action = '/admin/products.php';
     function inp(n, v) { var i = document.createElement('input'); i.type = 'hidden'; i.name = n; i.value = v; f.appendChild(i); }
-    inp('action', 'bulk_vis'); inp('set', String(set)); inp('csrf_token', csrf);
+    inp('action', 'bulk_vis'); inp('set', String(set)); inp('csrf_token', csrf); inp('back_qs', new URLSearchParams(window.location.search).toString());
     ids.forEach(function (id) { inp('ids[]', id); });
     document.body.appendChild(f);
     f.submit();

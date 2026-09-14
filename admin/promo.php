@@ -20,6 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'save') {
         $id = (int)($_POST['id'] ?? 0);
         $code = mb_strtoupper(trim((string)($_POST['code'] ?? '')), 'UTF-8');
+        $codeRaw = $code;
         $code = preg_replace('/[^A-Z0-9\-_]/u', '', $code);
         $kind = ($_POST['kind'] ?? 'percent') === 'fixed' ? 'fixed' : 'percent';
         $value = max(0, (int)($_POST['value'] ?? 0));
@@ -27,7 +28,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $minOrder = max(0, (int)($_POST['min_order'] ?? 0));
         $maxUses = max(0, (int)($_POST['max_uses'] ?? 0));
         $active = isset($_POST['active']) ? 1 : 0;
-        if ($code === '' || $value <= 0) {
+        if ($code === '' && $codeRaw !== '') {
+            /* Владелец-критик W45 P1: кириллический код тихо вырезался фильтром, а новичок
+               получал «Заполните код» — будто сам забыл. Говорим причину прямо. */
+            flash('Код можно писать только латинскими буквами и цифрами — например CVETY10', true);
+        } elseif ($code === '' || $value <= 0) {
             flash('Заполните код и скидку (больше нуля)', true);
         } else {
             try {
@@ -80,7 +85,7 @@ flash();
     <div class="grid2">
       <div>
         <label class="f" for="pr-code">Код *</label>
-        <input class="input" id="pr-code" name="code" required maxlength="32" style="text-transform:uppercase" value="<?= $editing ? e($editing['code']) : '' ?>" placeholder="ЦВЕТЫ10">
+        <input class="input" id="pr-code" name="code" required maxlength="32" style="text-transform:uppercase" value="<?= $editing ? e($editing['code']) : '' ?>" placeholder="Латиница и цифры, напр. CVETY10">
         <label class="f" for="pr-kind">Тип скидки</label>
         <select id="pr-kind" name="kind">
           <option value="percent" <?= $editing && $editing['kind'] === 'percent' ? 'selected' : '' ?>>Процент от заказа (%)</option>
