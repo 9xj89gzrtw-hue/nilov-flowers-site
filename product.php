@@ -119,6 +119,31 @@ if ($trust === []) {
     </nav>
     <div class="product-page__layout">
       <div class="product-gallery">
+        <?php /* Design-критик W47: честная multi-view галерея из ОДНОГО реального фото —
+                  слайд 2 = крупный план того же снимка (CSS-zoom), не выдуманный ракурс.
+                  Вторые настоящие фото — данные клиента (feature_gallery выключает всё). */ ?>
+        <?php if ($img !== '' && setting('feature_gallery', '1') === '1'): ?>
+        <div class="product-gallery__viewport" id="productGalleryTrack">
+          <div class="product-gallery__track">
+            <figure class="product-gallery__slide">
+              <picture>
+                <?php if ($imgWebpOk): ?><source type="image/webp" srcset="<?= e($imgWebp) ?>"><?php endif; ?>
+                <img class="product-gallery__img" src="<?= e($img) ?>" alt="<?= e($product['name']) ?>"<?= ($gDim = @getimagesize(IMG_PRODUCTS_DIR . '/' . productImageFile($product))) ? ' width="' . (int)$gDim[0] . '" height="' . (int)$gDim[1] . '"' : '' ?>>
+              </picture>
+              <figcaption class="product-gallery__cap">Общий план букета</figcaption>
+            </figure>
+            <figure class="product-gallery__slide">
+              <div class="product-gallery__zoom" style="background-image:url('<?= e($img) ?>')" role="img" aria-label="<?= e($product['name']) ?> — крупный план"></div>
+              <figcaption class="product-gallery__cap">Крупный план (тот же снимок)</figcaption>
+            </figure>
+          </div>
+          <span class="product-gallery__counter" id="productGalleryCounter" aria-live="polite">1 / 2</span>
+        </div>
+        <div class="product-gallery__thumbs" id="productGalleryThumbs" role="group" aria-label="Виды букета">
+          <button type="button" class="product-gallery__thumb" data-index="0" aria-current="true" aria-label="Общий план"><img src="<?= e($img) ?>" alt=""></button>
+          <button type="button" class="product-gallery__thumb" data-index="1" aria-label="Крупный план"><img class="product-gallery__thumb--zoom" src="<?= e($img) ?>" alt=""></button>
+        </div>
+        <?php else: ?>
         <div class="product-page__media" data-lightbox-trigger data-lightbox-src="<?= e($img) ?>" data-lightbox-alt="<?= e($product['name']) ?>">
           <?php if ($img !== ''): ?>
             <picture>
@@ -132,6 +157,7 @@ if ($trust === []) {
           <?php endif; ?>
           <?php if ($isSale): ?><span class="product-page__badge">Скидка</span><?php endif; ?>
         </div>
+        <?php endif; ?>
       </div>
       <div class="product-page__info">
         <?php if (!empty($product['category_name'])): ?><p class="product-page__category"><?= e($product['category_name']) ?></p><?php endif; ?>

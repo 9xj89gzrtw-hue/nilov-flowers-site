@@ -77,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
               'feature_delivery_badge', 'feature_faq', 'feature_countdown', 'feature_price_filter',
               'feature_favorites', 'feature_zone_check', 'feature_track_link', 'feature_favicon_badge', 'feature_webpush',
               /* Критик functional: gift-UX и слоты доставки — отключаемы (критерий 14) */
-              'feature_gift_fields', 'feature_delivery_slots',
+              'feature_gift_fields', 'feature_delivery_slots', 'feature_gallery',
               /* Промокод в корзине (критик functional top#3) */
               'feature_promo',
               /* Awwwards-design D8: блок «С этим берут» на странице товара */
@@ -402,6 +402,11 @@ flash();
           <input type="checkbox" name="feature_delivery_slots" style="width:auto" <?= sv('feature_delivery_slots', $s) === '1' ? 'checked' : '' ?>>
           Выбор даты и интервала доставки в заказе
         </label>
+          <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500;margin:8px 0 2px">
+            <input type="checkbox" name="feature_gallery" style="width:auto" <?= sv('feature_gallery', $s) !== '0' ? 'checked' : '' ?>>
+            Галерея видов на странице букета (общий план + крупный; отключите — останется одно фото)
+          </label>
+
         <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 10px 26px">Покупатель сам выберет день и время (утро/день/вечер) — меньше согласований по телефону.</p>
         <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
           <input type="checkbox" name="feature_promo" style="width:auto" <?= sv('feature_promo', $s) !== '0' ? 'checked' : '' ?>>

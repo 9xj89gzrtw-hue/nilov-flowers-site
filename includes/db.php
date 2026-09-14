@@ -194,6 +194,7 @@ function migrateSchema(PDO $pdo): void
         ('pickup_address', ''),
         ('feature_gift_fields', '1'),
         ('feature_delivery_slots', '0'),
+        ('feature_gallery', '1'),
         ('feature_related', '1'),
         ('related_title', 'С этим берут'),
         ('delivery_slots', ''),
