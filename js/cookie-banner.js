@@ -18,6 +18,8 @@
     var el = document.querySelector('.cookie-banner');
     if (el) el.remove();
     document.body.classList.remove('cookie-visible');
+    /* nilov.js install-hint: показывать только после решения по cookie (критик layout W35) */
+    document.dispatchEvent(new Event('nf:cookie-done'));
   }
   function startAnalytics() {
     if (typeof window.loadMetrica === 'function') window.loadMetrica();

@@ -29,6 +29,9 @@ $googleVerification = trim(setting('google_site_verification', ''));
    = CLS-лавина при подгрузке). fonts.css со своим :root-стеком подключается ПОСЛЕ style.css. */ ?>
 <link rel="preload" href="/fonts/GolosText-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/PlayfairDisplay-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+<?php /* Layout-критик W35: latin-подмножества грузились на ~944мс → font-swap сдвиги 768-load 0.045–0.083 */ ?>
+<link rel="preload" href="/fonts/GolosText-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/PlayfairDisplay-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/css/style.css">
 <link rel="stylesheet" href="/css/nilov.css">
 <link rel="stylesheet" href="/css/fonts.css">

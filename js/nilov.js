@@ -75,7 +75,15 @@
         b.onclick = function () { e.prompt(); localStorage.setItem('nfInstallHintClosed', '1'); el.remove(); };
       });
     }
-    setTimeout(function () { document.body.appendChild(el); }, 2500);
+    /* Критик layout W35: install-hint перекрывал cookie-баннер и блокировал тап «Принять»
+       → хинт ждёт согласия (cookie-banner снимает .cookie-visible + вешает событие) */
+    var shown = false;
+    document.addEventListener('nf:cookie-done', showInstallHint, { once: true });
+    if (!document.body.classList.contains('cookie-visible')) showInstallHint();
+    function showInstallHint() {
+      if (shown) return; shown = true;
+      setTimeout(function () { document.body.appendChild(el); }, 2500);
+    }
   })();
 
   /* 2. Title-badge корзины — ВЫКЛЮЧЕН на витрине (владельцу не нравится «(1)» во вкладке).

@@ -185,10 +185,13 @@ if ($__heroPre !== '') {
           $heroImg = setting('hero_image');
           $heroWebp = preg_replace('/\.(jpe?g|png)$/i', '.webp', $heroImg);
           $heroWebpOk = $heroWebp !== $heroImg && is_file(IMG_UPLOADS_DIR . '/' . $heroWebp);
+          /* Layout-критик W35: width/height на <img> — браузер резервирует box до загрузки
+             (aspect-ratio из CSS не спасает warm-CLS 0.024 на 1440) */
+          $heroDim = @getimagesize(IMG_UPLOADS_DIR . '/' . $heroImg) ?: null;
           ?>
           <picture>
             <?php if ($heroWebpOk): ?><source type="image/webp" srcset="/img/uploads/<?= e(rawurlencode($heroWebp)) ?>"><?php endif; ?>
-            <img class="hero__img" src="/img/uploads/<?= e($heroImg) ?>" alt="<?= e(setting('hero_title')) ?>" fetchpriority="high">
+            <img class="hero__img" src="/img/uploads/<?= e($heroImg) ?>" alt="<?= e(setting('hero_title')) ?>" fetchpriority="high"<?= $heroDim ? ' width="' . (int)$heroDim[0] . '" height="' . (int)$heroDim[1] . '"' : '' ?>>
           </picture>
         <?php else: ?>
           <div class="hero__img" role="img" aria-label="Букет цветов">
