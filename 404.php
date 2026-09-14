@@ -16,7 +16,7 @@ $canonicalUrl = 'https://flowers.interfood-catering.ru/';
 <meta name="robots" content="noindex,follow">
 <title>Страница не найдена — <?= e(setting('shop_name', 'Nilov Flowers')) ?></title>
 <link rel="icon" href="/img/favicon-32.png" sizes="32x32">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Golos+Text:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/fonts.css">
 <style>
 :root{--bg:#F6F1E6;--ink:#2B2D2F;--ink-soft:#6E6A61;--rose:#AE4A71;--font-display:'Playfair Display',Georgia,serif;--font-ui:'Golos Text',system-ui,sans-serif}
 *{box-sizing:border-box;margin:0;padding:0}

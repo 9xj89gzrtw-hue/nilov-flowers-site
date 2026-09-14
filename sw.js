@@ -1,5 +1,5 @@
 /* Service worker — Nilov Flowers. VERSION менять при каждом деплое. */
-const VERSION = 'w4c8';
+const VERSION = 'w4c9';
 const STATIC_CACHE = `static-${VERSION}`;
 const PAGE_CACHE = `pages-${VERSION}`;
 const OFFLINE_URL = '/offline.html';
@@ -7,6 +7,9 @@ const OFFLINE_URL = '/offline.html';
 const STATIC_ASSETS = [
   OFFLINE_URL,
   '/css/style.css',
+  '/css/fonts.css',
+  '/fonts/GolosText-cyrillic.woff2',
+  '/fonts/PlayfairDisplay-cyrillic.woff2',
   '/img/favicon.svg',
   '/img/icons/icon-192.png',
   '/img/icons/icon-512.png'

@@ -25,12 +25,13 @@ $googleVerification = trim(setting('google_site_verification', ''));
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Nilov Flowers">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-<noscript><link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
+<?php /* layout-критик 768px + RF-remediation: шрифты локализованы (Google Fonts display=swap
+   = CLS-лавина при подгрузке). fonts.css со своим :root-стеком подключается ПОСЛЕ style.css. */ ?>
+<link rel="preload" href="/fonts/GolosText-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/PlayfairDisplay-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/css/style.css">
 <link rel="stylesheet" href="/css/nilov.css">
+<link rel="stylesheet" href="/css/fonts.css">
 <script src="/js/pwa-register.js" defer></script>
 <meta property="og:site_name" content="<?= e($shopName) ?>">
 <meta property="og:type" content="website">
