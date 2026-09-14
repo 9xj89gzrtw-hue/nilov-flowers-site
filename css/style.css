@@ -108,7 +108,9 @@ a{color:inherit;text-decoration:none}
 .catalog-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:28px}
 .catalog-tabs__tab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:0 18px;min-height:44px;display:inline-flex;align-items:center;font:500 .88rem var(--font-ui);cursor:pointer;transition:.15s}
 .catalog-tabs__tab.is-active{background:var(--ink);color:#fff;border-color:var(--ink)}
-.catalog__grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:22px}
+/* Визуал-критик W52: auto-fill давал 4+4+1 сироту — фиксируем 2/3 колонки */
+.catalog__grid{display:grid;grid-template-columns:repeat(2,1fr);gap:22px}
+@media(min-width:820px){.catalog__grid{grid-template-columns:repeat(3,1fr)}}
 .product-card{background:#fff;border-radius:var(--radius-lg);overflow:hidden;box-shadow:0 10px 30px -18px rgba(43,45,47,.25);transition:transform .2s,box-shadow .2s;display:flex;flex-direction:column}
 .product-card:hover{transform:translateY(-5px);box-shadow:0 22px 44px -20px rgba(43,45,47,.35)}
 .product-card.is-hidden{display:none}
@@ -150,7 +152,7 @@ a{color:inherit;text-decoration:none}
 /* ============ ORDER FORM ============ */
 .order{background:var(--bg-alt)}
 .order__selected{margin-bottom:14px;font-weight:600}
-.order-form{background:#fff;border-radius:var(--radius-lg);padding:clamp(22px,4vw,40px);max-width:640px;display:grid;gap:16px;box-shadow:0 14px 40px -24px rgba(43,45,47,.3)}
+.order-form{background:#fff;border-radius:var(--radius-lg);padding:clamp(22px,4vw,40px);max-width:760px;margin-inline:auto;display:grid;gap:16px;box-shadow:0 14px 40px -24px rgba(43,45,47,.3)}
 .order-form__field{display:flex;flex-direction:column;gap:6px}
 .order-form__field label{font-size:.85rem;font-weight:600}
 .order-form__field input,.order-form__field select,.order-form__field textarea{border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;font:400 1rem var(--font-ui);background:var(--bg);transition:border-color .15s;max-width:100%}
@@ -242,7 +244,8 @@ html.no-scroll{overflow:hidden}
 .cookie-banner{position:fixed;left:16px;right:16px;bottom:16px;z-index:90;background:var(--ink);color:#fff;border-radius:var(--radius);padding:14px 18px;display:flex;gap:14px;align-items:center;justify-content:space-between;font-size:.85rem;flex-wrap:wrap}
 /* Критик-мобайл (баг 8): баннер перекрывал кнопку «Отправить заказ» — пока он виден,
    у страницы есть запас снизу, чтобы последняя кнопка прокручивалась выше баннера. */
-body.cookie-visible{padding-bottom:220px}
+body.cookie-visible{padding-bottom:180px}
+@media(min-width:821px){body.cookie-visible{padding-bottom:130px}}
 .cookie-banner__btn{background:var(--rose-cta);border:none;color:#fff;border-radius:999px;padding:11px 22px;font:600 .85rem var(--font-ui);cursor:pointer}
 /* Мобильный cookie-баннер (критик P4): 24% экрана → компактный.
    Критик re-check 7/10 (регрессия): баннер z90 накрывал таббар mnav z60 — приподнимаем
@@ -282,8 +285,12 @@ body.cookie-visible{padding-bottom:220px}
 .product-gallery__slide{flex:0 0 100%;scroll-snap-align:start;min-width:100%}
 .product-gallery__cap{font-size:.75rem;color:var(--ink-soft);text-align:center;padding:7px 12px;background:var(--bg-alt);border-bottom-left-radius:var(--radius-lg);border-bottom-right-radius:var(--radius-lg);letter-spacing:.02em}
 .product-gallery__viewport{position:relative}
-.product-gallery__zoom{width:100%;aspect-ratio:4/4.8;background-size:200%;background-position:50% 38%;background-repeat:no-repeat}
+.product-gallery__zoom{width:100%;aspect-ratio:4/4.8;background-size:165%;background-position:50% 36%;background-repeat:no-repeat;filter:saturate(1.04) contrast(1.03)}
 .product-gallery__thumb--zoom{transform:scale(2)}
+/* Визуал-критик W52: на desktop не было аффорданса перелистывания — стрелки */
+.product-gallery__nav{display:none;position:absolute;top:50%;transform:translateY(-50%);z-index:5;width:40px;height:40px;min-width:40px;border-radius:50%;border:1px solid var(--line);background:rgba(255,255,255,.94);color:var(--ink);font-size:1.1rem;cursor:pointer;place-items:center;box-shadow:0 6px 18px -10px rgba(43,45,47,.4)}
+.product-gallery__nav--l{left:8px}.product-gallery__nav--r{right:8px}
+@media(hover:hover){.product-gallery__nav{display:grid}}
 .product-gallery__slide img{width:100%;height:auto;aspect-ratio:4/4.8;object-fit:cover}
 .product-gallery__slide--placeholder{display:grid;place-items:center;background:var(--bg-alt);aspect-ratio:4/4.8}
 .product-gallery__counter{position:absolute;bottom:14px;right:14px;background:rgba(255,255,255,.9);border-radius:999px;padding:4px 12px;font-size:.75rem;font-weight:600}

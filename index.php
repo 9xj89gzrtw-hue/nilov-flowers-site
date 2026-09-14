@@ -382,7 +382,7 @@ if ($__heroPre !== '') {
   <section class="section yandex-reviews">
     <div class="wrap">
       <h2 class="section-title">Отзывы о нас на Яндекс Картах</h2>
-      <p class="section-sub">Покупатели оценивают нас на Яндекс Картах</p>
+      <p class="section-sub"><?= e(setting('reviews_sub', 'Реальные отзывы покупателей — на карте города')) ?></p>
       <a class="btn btn--accent" href="https://yandex.ru/maps/org/<?= e(rawurlencode($yandexReviewsId)) ?>" target="_blank" rel="noopener">Читать отзывы</a>
     </div>
   </section>

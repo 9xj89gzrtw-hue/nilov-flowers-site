@@ -134,10 +134,12 @@ if ($trust === []) {
             </figure>
             <figure class="product-gallery__slide">
               <div class="product-gallery__zoom" style="background-image:url('<?= e($img) ?>')" role="img" aria-label="<?= e($product['name']) ?> — крупный план"></div>
-              <figcaption class="product-gallery__cap">Крупный план (тот же снимок)</figcaption>
+              <figcaption class="product-gallery__cap">Приближение этого же фото</figcaption>
             </figure>
           </div>
           <span class="product-gallery__counter" id="productGalleryCounter" aria-live="polite">1 / 2</span>
+          <button type="button" class="product-gallery__nav product-gallery__nav--l" data-gnav="-1" aria-label="Предыдущий вид">‹</button>
+          <button type="button" class="product-gallery__nav product-gallery__nav--r" data-gnav="1" aria-label="Следующий вид">›</button>
         </div>
         <div class="product-gallery__thumbs" id="productGalleryThumbs" role="group" aria-label="Виды букета">
           <button type="button" class="product-gallery__thumb" data-index="0" aria-current="true" aria-label="Общий план"><img src="<?= e($img) ?>" alt=""></button>

@@ -42,4 +42,23 @@
   });
 
   setActive(0);
+
+  /* Визуал-критик W52: desktop-аффорданс — стрелки и колесо мыши листают слайды */
+  function go(delta) {
+    var idx = Math.min(slides.length - 1, Math.max(0, currentIndexFromScroll() + delta));
+    track.scrollTo({ left: idx * track.clientWidth, behavior: 'smooth' });
+    setActive(idx);
+  }
+  document.querySelectorAll('[data-gnav]').forEach(function (btn) {
+    btn.addEventListener('click', function () { go(Number(btn.dataset.gnav)); });
+  });
+  var wheelLock = 0;
+  track.addEventListener('wheel', function (e) {
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) return; /* вертикаль страницы не перехватываем */
+    e.preventDefault();
+    var now = Date.now();
+    if (now - wheelLock < 450) return;
+    wheelLock = now;
+    go(e.deltaX > 0 ? 1 : -1);
+  }, { passive: false });
 })();

@@ -32,6 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
         'delivery_badge_text','faq_title',
         /* Критик functional: слоты доставки (тексты построчно) + подписи gift-блока */
         'delivery_slots',
+        'reviews_sub',
         'related_title',
         'faq_q1','faq_a1','faq_q2','faq_a2','faq_q3','faq_a3','faq_q4','faq_a4',
         /* Дедлайн + тексты таймера и empty-state (критерий 16) */
@@ -310,6 +311,8 @@ flash();
         <?php endif; ?>
         <label class="f" for="yandex-reviews-id" style="margin-top:8px">ID организации на Яндекс Картах</label>
         <input class="input" id="yandex-reviews-id" name="yandex_reviews_id" value="<?= sv('yandex_reviews_id', $s) ?>" placeholder="133112293950">
+        <label class="f" for="reviews-sub" style="margin-top:8px">Подзаголовок секции отзывов</label>
+        <input class="input" id="reviews-sub" name="reviews_sub" maxlength="120" value="<?= e(sv('reviews_sub', $s) !== '' ? sv('reviews_sub', $s) : 'Реальные отзывы покупателей — на карте города') ?>">
         <p style="font-size:.82rem;color:var(--ink-soft);margin:4px 0 0">Цифры можно взять в Яндекс Бизнесе: ссылка на карточку организации вида yandex.ru/maps/org/133112293950 — нужен только номер.</p>
       </div>
       <div>
