@@ -381,9 +381,19 @@ if ($__heroPre !== '') {
   <?php if ($yandexReviewsEnabled): ?>
   <section class="section yandex-reviews">
     <div class="wrap">
-      <h2 class="section-title">Отзывы о нас на Яндекс Картах</h2>
+      <h2 class="section-title"><?= e(setting('reviews_title', 'Отзывы о нас на Яндекс Картах')) ?></h2>
       <p class="section-sub"><?= e(setting('reviews_sub', 'Реальные отзывы покупателей — на карте города')) ?></p>
-      <a class="btn btn--accent" href="https://yandex.ru/maps/org/<?= e(rawurlencode($yandexReviewsId)) ?>" target="_blank" rel="noopener">Читать отзывы</a>
+      <?php /* W59 (визит-критик): секция выглядела плейсхолдером (306px, одна кнопка, 0 элементов
+         композиции). Честная карточка-цитата: мы НЕ выдумываем отзывы — объясняем, где они
+         живут, и ведём и читать, и оставить. Тексты редактируются (критерий 14). */ ?>
+      <div class="reviews-card reveal">
+        <span class="reviews-card__mark" aria-hidden="true">&ldquo;</span>
+        <p class="reviews-card__text"><?= e(setting('reviews_card_text', 'Мы не публикуем отзывы на сайте — пусть их пишут за нас. Все оценки и слова покупателей живут в профиле на Яндекс Картах: там же вы сможете оставить своё впечатление после доставки.')) ?></p>
+        <div class="reviews-card__actions">
+          <a class="btn btn--accent" href="https://yandex.ru/maps/org/<?= e(rawurlencode($yandexReviewsId)) ?>" target="_blank" rel="noopener">Читать отзывы</a>
+          <a class="btn btn--outline" href="https://yandex.ru/maps/org/<?= e(rawurlencode($yandexReviewsId)) ?>/reviews" target="_blank" rel="noopener">Оставить отзыв</a>
+        </div>
+      </div>
     </div>
   </section>
   <?php endif; ?>

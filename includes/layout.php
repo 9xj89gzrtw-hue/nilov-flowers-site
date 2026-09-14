@@ -101,7 +101,7 @@ td input[type=checkbox]{margin:12px auto;display:block}
 input[type=file]{margin-top:6px}
 /* нативный Choose File приобщаем к системе */
 input[type=file]{font:400 .85rem var(--font-ui);color:var(--ink);padding:8px;border:1.5px dashed var(--line);border-radius:10px;background:var(--bg);width:100%}
-input[type=file]::file-selector-button{font:600 .82rem var(--font-ui);border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--ink);padding:7px 14px;margin-right:10px;cursor:pointer}
+input[type=file]::file-selector-button{font:600 .82rem var(--font-ui);border:1px solid rgba(174,74,113,.45);border-radius:999px;background:rgba(174,74,113,.08);color:var(--rose-cta,#AE4A71);padding:7px 14px;margin-right:10px;cursor:pointer;transition:background .15s ease}
 label.f{display:block;font-size:.8rem;font-weight:600;margin:12px 0 4px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 28px;align-items:start}
 @media(max-width:700px){.grid2{grid-template-columns:1fr}}
@@ -128,6 +128,11 @@ label.f{display:block;font-size:.8rem;font-weight:600;margin:12px 0 4px}
 .row-actions{display:flex;gap:6px;flex-wrap:wrap}
 .row-actions a,.row-actions button{font-size:.78rem;padding:5px 10px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;font-family:var(--font-ui)}
 .row-actions a.danger,.row-actions button.danger{color:var(--err);border-color:var(--err)}
+/* W59 (визит-критик CODE_OPEN#5): единый паттерн иерархии действий — главное
+   следующее действие (переход статуса) акцентное, прочие нейтральные */
+button.primary-action,a.primary-action{background:var(--rose-cta,#AE4A71);color:#fff;border:1.5px solid var(--rose-cta,#AE4A71);border-radius:10px;padding:7px 13px;font:600 .85rem var(--font-ui);cursor:pointer;text-decoration:none;display:inline-block}
+button.primary-action:hover,a.primary-action:hover{background:var(--rose-cta-hover,#9E4062);border-color:var(--rose-cta-hover,#9E4062);color:#fff}
+.row-actions a.primary-action,.row-actions button.primary-action{font-weight:700}
 /* W38: подсветка строки после сохранения (возврат на #row-ID) */
 table tr:target{background:#fdf2f6}
 /* Владелец-критик W48: :target-подсветка гаснет при перерисовке — делаем её
@@ -150,6 +155,11 @@ table tr.row-flash{animation:rowFlash 2.5s ease-out 1}
 .dash-card{background:linear-gradient(180deg,#fff 0%,var(--mint) 220%);border:1px solid rgba(163,196,217,.35)}
 .dash-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
 .dash-ranges{display:flex;gap:4px;flex-wrap:wrap}
+/* W59 (визит-критик): чипы разделов настроек на узких — горизонтальный скролл-ряд,
+   не «лестница» с рваными отступами */
+#top-nav{overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap;-webkit-overflow-scrolling:touch}
+#top-nav::-webkit-scrollbar{display:none}
+#top-nav a{white-space:nowrap;flex:0 0 auto}
 .dash-ranges a{padding:5px 12px;border-radius:999px;font-size:.8rem;font-weight:600;color:var(--ink-soft);background:var(--bg);transition:background .15s ease,color .15s ease}
 .dash-ranges a:hover{color:var(--ink)}
 .dash-ranges a.active{background:var(--rose);color:var(--ink)}

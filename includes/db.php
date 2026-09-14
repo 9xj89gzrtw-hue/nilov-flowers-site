@@ -210,6 +210,12 @@ function migrateSchema(PDO $pdo): void
         max_uses INTEGER NOT NULL DEFAULT 0,
         used INTEGER NOT NULL DEFAULT 0
     )");
+        /* W59: ремонт пустых сидов review-текстов на УЖЕ созданных БД (seed-run
+       бывает только при первом создании; setting() не отличает '' от отсутствия). */
+    $pdo->exec("UPDATE settings SET value='Мы не публикуем отзывы на сайте — пусть их пишут за нас. Все оценки и слова покупателей живут в профиле на Яндекс Картах: там же вы сможете оставить своё впечатление после доставки.' WHERE key='reviews_card_text' AND value=''");
+    $pdo->exec("UPDATE settings SET value='Отзывы о нас на Яндекс Картах' WHERE key='reviews_title' AND value=''");
+    $pdo->exec("UPDATE settings SET value='Реальные отзывы покупателей — на карте города' WHERE key='reviews_sub' AND value=''");
+
     $orderCols = array_column($pdo->query("PRAGMA table_info(orders)")->fetchAll(), 'name');
     foreach ([
         ['given_to', "TEXT NOT NULL DEFAULT ''"],
@@ -283,6 +289,8 @@ function migrateSchema(PDO $pdo): void
         ('max_enabled', '1'),
         ('ig_enabled', '1'),
         ('email_enabled', '1'),
+        ('reviews_title', 'Отзывы о нас на Яндекс Картах'),
+        ('reviews_card_text', 'Мы не публикуем отзывы на сайте — пусть их пишут за нас. Все оценки и слова покупателей живут в профиле на Яндекс Картах: там же вы сможете оставить своё впечатление после доставки.'),
         ('yandex_verification', ''),
         ('google_site_verification', ''),
         ('metrika_counter_id', '')");

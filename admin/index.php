@@ -209,15 +209,18 @@ $dashqs = fn(string $r) => '/admin/index.php?' . e(http_build_query(array_merge(
   <p style="font-size:.78rem;color:var(--ink-soft);margin:-8px 0 14px">Выручка и средний чек считаются только по подтверждённым, выполненным и забранным заказам — новые и отменённые не учитываются.</p>
 
   <div class="dash-spark">
-    <span class="dash-metric__label">Выручка по дням (<?= $sparkDays ?> дн.)</span>
+    <span class="dash-metric__label">Выручка по дням (<?= $sparkDays ?> дн.)<?php if ($sparkMax > 0): ?> · максимум <?= formatPrice($sparkMax) ?> ₽<?php endif ?></span>
     <?php if ($sparkMax <= 0): /* Visual W54: пустой график выглядел «сломанным» — говорим прямо */ ?>
       <p style="margin:6px 0 0;font-size:.85rem;color:var(--ink-soft)">За <?= $sparkDays ?> дн. подтверждённых заказов с выручкой ещё нет — столбики появятся, когда пойдут оплаты.</p>
     <?php else: ?>
     <svg class="sparkline" viewBox="0 0 <?= max(1, $sparkDays) * 8 ?> 60" preserveAspectRatio="none" role="img" aria-label="Выручка по дням">
       <?php foreach ($sparkData as $i => $sd):
-        $h = $sparkMax > 0 ? max(2, (int)round($sd['rev'] / $sparkMax * 56)) : 2; ?>
+        /* W59 (визит-критик): нулевые дни 2px-заглушками выглядели «грязными артефактами»
+           на sparse-данных — не рисуем их вовсе; ось и масштаб в label остались. */
+        if ($sd['rev'] <= 0) { continue; }
+        $h = max(3, (int)round($sd['rev'] / $sparkMax * 56)); ?>
         <rect x="<?= $i * 8 ?>" y="<?= 60 - $h ?>" width="6" height="<?= $h ?>" rx="1.5"
-          fill="<?= $sd['rev'] > 0 ? 'var(--rose-cta,#AE4A71)' : 'var(--bg-alt)' ?>">
+          fill="var(--rose-cta,#AE4A71)">
           <title><?= e($sd['d']) ?>: <?= formatPrice($sd['rev']) ?></title>
         </rect>
       <?php endforeach; ?>
@@ -318,7 +321,7 @@ $dashqs = fn(string $r) => '/admin/index.php?' . e(http_build_query(array_merge(
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="status"><input type="hidden" name="id" value="<?= (int)$o['id'] ?>">
             <input type="hidden" name="status" value="confirmed"><input type="hidden" name="page" value="<?= $page ?>">
-            <button type="submit">Подтвердить</button>
+            <button type="submit" class="primary-action">Подтвердить</button>
           </form>
           <form method="post" onsubmit="return confirm('Отменить заказ №<?= (int)$o['id'] ?>?')">
             <?= csrf_field() ?>
@@ -327,7 +330,7 @@ $dashqs = fn(string $r) => '/admin/index.php?' . e(http_build_query(array_merge(
             <button type="submit" class="danger">Отменить</button>
           </form>
           <?php elseif ($o['status'] === 'confirmed'): ?>
-          <a href="/admin/order.php?id=<?= (int)$o['id'] ?>">Выполнен →</a>
+          <a class="primary-action" href="/admin/order.php?id=<?= (int)$o['id'] ?>">Выполнен →</a>
           <form method="post" onsubmit="return confirm('Отметить заказ №<?= (int)$o['id'] ?> как «Не выкуплен»?')">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="status"><input type="hidden" name="id" value="<?= (int)$o['id'] ?>">
