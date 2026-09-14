@@ -116,7 +116,8 @@ a{color:inherit;text-decoration:none}
 .product-card__badge{position:absolute;top:12px;left:12px;background:rgba(255,255,255,.92);backdrop-filter:blur(6px);border-radius:999px;padding:5px 12px;font-size:.72rem;font-weight:600}
 .product-card__badge--urgent{background:var(--rose-cta,#AE4A71);color:#fff;letter-spacing:.04em;text-transform:uppercase;font-size:.66rem}
 .product-page__urgent-badge{position:static;display:inline-block;margin-bottom:10px}
-.product-card__urgent-note{margin:4px 0 0;font-size:.78rem;font-weight:500;color:var(--rose-deep,#E2799C)}
+/* Критик покупатель B3: #E2799C на белом = 2.81:1 (fail AA). --rose-cta #AE4A71 = 5.23:1 */
+.product-card__urgent-note{margin:4px 0 0;font-size:.78rem;font-weight:500;color:var(--rose-cta,#AE4A71)}
 .product-card__cta{position:absolute;right:12px;bottom:12px;width:44px;height:44px;border-radius:50%;border:none;background:var(--ink);color:#fff;font-size:1.3rem;cursor:pointer;display:grid;place-items:center;opacity:0;transform:translateY(8px);transition:.2s}
 .product-card:hover .product-card__cta,.product-card__cta:focus-visible{opacity:1;transform:none}
 @media(hover:none){.product-card__cta{opacity:1;transform:none}}
@@ -171,7 +172,9 @@ a{color:inherit;text-decoration:none}
 .cookie-settings__row{display:flex;gap:10px;align-items:center;font-size:.9rem;padding:8px 0}
 .cookie-settings__row input{width:20px;height:20px}
 .cookie-settings__btns{display:flex;gap:10px;margin-top:12px}
-.order-form__status--err{background:#fbe3e3}
+/* Критик покупатель B6: ошибка в статусе должна читаться цветом, а не только фоном.
+   #9E2626 на #fbe3e3 = 6.23:1 (AA). */
+.order-form__status--err{background:#fbe3e3;color:#9E2626}
 .order-form__submit{justify-self:start}
 /* вложенное поле адреса внутри fieldset доставки */
 .order-form__nested{border:1.5px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:10px;min-width:0}

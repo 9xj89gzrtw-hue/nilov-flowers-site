@@ -56,6 +56,9 @@
     if (!isMobile && !isIOS) return;
     var el = document.createElement('div');
     el.style.cssText = 'position:fixed;bottom:64px;left:12px;right:12px;z-index:95;background:#fff;border:1px solid rgba(43,45,47,.14);border-radius:14px;padding:12px 14px;font-size:.85rem;box-shadow:0 14px 40px -18px rgba(43,45,47,.4);display:flex;gap:10px;align-items:center';
+    /* axe region-fix: плавающий баннер вне landmark'ов → делаем его явной region-областью */
+    el.setAttribute('role', 'region');
+    el.setAttribute('aria-label', 'Установка приложения');
     el.innerHTML = '<span style="flex:1">' + (isIOS
       ? 'Добавьте «Nilov Flowers» на главный экран — откройте меню «Поделиться» и выберите «На экран Домой».'
       : 'Установите «Nilov Flowers» как приложение — кнопка «Установить» справа.') + '</span>'

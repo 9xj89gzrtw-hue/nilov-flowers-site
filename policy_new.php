@@ -20,6 +20,7 @@ $canonicalUrl = 'https://flowers.interfood-catering.ru/policy';
 <html lang="ru">
 <head>
 <title>Политика обработки персональных данных — <?= e(setting('shop_name', 'Nilov Flowers')) ?></title>
+<meta name="description" content="Как <?= e(setting('shop_name', 'Nilov Flowers')) ?> обрабатывает персональные данные покупателей: какие данные собираем, зачем, сроки хранения и как отозвать согласие (152-ФЗ).">
 <meta name="robots" content="noindex">
 <?php require __DIR__ . '/partials/head.php'; ?>
 </head>

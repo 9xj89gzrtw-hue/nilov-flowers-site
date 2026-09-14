@@ -136,8 +136,15 @@ function ensureAdminUser(): void
     )');
     $count = (int)$pdo->query('SELECT COUNT(*) FROM admin_users')->fetchColumn();
     if ($count === 0) {
+        /* Security-критик re-wave: предсказуемых кредов admin123 больше нет.
+           Пароль генерируется случайно и кладётся в файл вне web-доступа (db/ закрыт .htaccess=403).
+           При env ADMIN_BOOTSTRAP_LOGIN/ADMIN_BOOTSTRAP_PASSWORD используются они. */
+        $login = getenv('ADMIN_BOOTSTRAP_LOGIN') ?: 'admin@example.com';
+        $pass = getenv('ADMIN_BOOTSTRAP_PASSWORD') ?: bin2hex(random_bytes(8));
         $stmt = $pdo->prepare('INSERT INTO admin_users (login, password_hash, email) VALUES (:l, :h, :e)');
-        $stmt->execute([':l' => 'admin@example.com', ':h' => password_hash('admin123', PASSWORD_DEFAULT), ':e' => 'admin@example.com']);
+        $stmt->execute([':l' => $login, ':h' => password_hash($pass, PASSWORD_DEFAULT), ':e' => $login]);
+        @file_put_contents(BASE_PATH . 'db/admin-bootstrap-' . date('Ymd-His') . '.txt',
+            "login: {$login}\npassword: {$pass}\nСмените пароль в админке и удалите этот файл.\n");
     }
 }
 

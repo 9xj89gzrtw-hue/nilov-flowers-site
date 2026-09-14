@@ -18,6 +18,9 @@
   const deliveryAddressField = document.getElementById('orderDeliveryAddressField');
   const deliveryAddressError = document.getElementById('orderDeliveryAddressError');
   const pdConsentInput = document.getElementById('orderPdConsent');
+  /* Критик покупатель B1: телефон получателя валидируется и на клиенте */
+  const recPhoneInput = document.getElementById('orderRecipientPhone');
+  const recPhoneError = document.getElementById('orderRecipientPhoneError');
 
   const nameError = document.getElementById('orderNameError');
   const phoneError = document.getElementById('orderPhoneError');
@@ -32,7 +35,8 @@
   /* Критик-мобайл (форма заказа, 8/10): поля и их подписи ошибок — списком,
      чтобы ошибка чистилась при вводе и вешался aria (баги 5,6). */
   const FIELD_PAIRS = [[nameInput, nameError], [phoneInput, phoneError], [emailInput, emailError],
-    [deliveryAddressInput, deliveryAddressError], [pdConsentInput, pdConsentError]];
+    [deliveryAddressInput, deliveryAddressError], [pdConsentInput, pdConsentError],
+    [recPhoneInput, recPhoneError]];
 
   function markInvalid(inputEl, errEl, msg) {
     errEl.textContent = msg;
@@ -115,6 +119,13 @@
     if (!pdConsentInput.checked) {
       markInvalid(pdConsentInput, pdConsentError, 'Необходимо согласие на обработку персональных данных');
       firstInvalid.push(pdConsentInput); valid = false;
+    }
+
+    /* Критик покупатель B1: телефон получателя — необязательный, но если введён, формат проверяется
+       ДО отправки (сервер вернёт recipient_phone, но без клиентской валидации поле не подсвечивалось) */
+    if (recPhoneInput && recPhoneInput.value.trim() && !PHONE_RE.test(recPhoneInput.value.trim())) {
+      markInvalid(recPhoneInput, recPhoneError, 'Введите корректный телефон получателя — например, +7 (999) 123-45-67');
+      firstInvalid.push(recPhoneInput); valid = false;
     }
 
     /* Критик-мобайл (баг 2): на 390px поля с ошибками ~1200px выше кнопки —
@@ -363,9 +374,19 @@
             delivery_zone_unavailable: 'Выбранный район доставки недоступен — выберите другой или самовывоз.',
             pd_consent_required: 'Отметьте согласие на обработку персональных данных.',
             empty: 'Корзина пуста — выберите букет в каталоге.',
+            empty_cart: 'Корзина пуста — выберите букет в каталоге.',
             items_required: 'Корзина пуста — выберите букет в каталоге.',
+            /* Критик покупатель B1: ключи gift/слотов/лимитов были без перевода → «позвоните нам» вместо подсказки */
+            recipient_phone: 'Проверьте телефон получателя — например, +7 (999) 123-45-67.',
+            item_qty_invalid: 'Количество товара должно быть от 1 до 99 — поправьте в корзине.',
+            too_many_items: 'В заказе слишком много позиций — уменьшите корзину.',
+            delivery_date_invalid: 'Дата доставки некорректна — выберите сегодня или ближайшие 60 дней.',
           };
           const parts = body.errors.map(function (code) { return map[code] || null; }).filter(Boolean);
+          /* Подсветка поля получателя при серверной ошибке recipient_phone (если клиент её пропустил) */
+          if (body.errors.indexOf('recipient_phone') !== -1 && recPhoneInput && recPhoneError) {
+            markInvalid(recPhoneInput, recPhoneError, map.recipient_phone);
+          }
           setStatus(parts.length
             ? parts.join(' ')
             : 'Не получилось оформить заказ. Позвоните нам — поможем оформить по телефону.', 'err');

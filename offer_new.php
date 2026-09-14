@@ -19,6 +19,7 @@ $canonicalUrl = 'https://flowers.interfood-catering.ru/offer';
 <html lang="ru">
 <head>
 <title>Публичная оферта — <?= e($shopName) ?></title>
+<meta name="description" content="Публичная оферта <?= e($shopName) ?>: цена и оплата букетов, порядок доставки по Санкт-Петербургу, возврат и ответственность сторон.">
 <meta name="robots" content="noindex">
 <?php require __DIR__ . '/partials/head.php'; ?>
 </head>

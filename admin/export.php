@@ -37,6 +37,13 @@ $stmt->execute($params);
 
 $out = fopen('php://temp', 'r+');
 fprintf($out, chr(0xEF) . chr(0xBB) . chr(0xBF)); // UTF-8 BOM — кириллица в Excel
+/* Security-критик re-wave CSV formula injection: поле, начинающееся с = + - @, Excel
+   исполнит как формулу. Данные заказа приходят от посторонних (имя/телефон/комментарий). */
+$csvCell = static function ($v) {
+    $v = (string)$v;
+    return ($v !== '' && strpos($v[0], '=') === 0 || ($v !== '' && in_array($v[0], ['+', '-', '@'], true)))
+        ? "'" . $v : $v;
+};
 fputcsv($out, ['ID', 'Дата', 'Имя', 'Телефон', 'Email', 'Доставка', 'Адрес', 'Оплата',
     'Состав', 'Сумма', 'Статус', 'Комментарий'], ';');
 $itemsStmt = $pdo->prepare('SELECT name, qty FROM order_items WHERE order_id = :i');
@@ -47,10 +54,10 @@ foreach ($stmt->fetchAll() as $o) {
         $itemsStmt->fetchAll()
     ));
     fputcsv($out, [
-        $o['id'], $o['created_at'], $o['customer_name'], $o['phone'], $o['email'],
-        $o['zone_name'] ?? 'Самовывоз', $o['delivery_address'],
+        $o['id'], $o['created_at'], $csvCell($o['customer_name']), $csvCell($o['phone']), $csvCell($o['email']),
+        $csvCell($o['zone_name'] ?? 'Самовывоз'), $csvCell($o['delivery_address']),
         $o['payment_method'] === 'online' ? 'онлайн' : 'при получении',
-        $composition, $o['total'], statuses()[$o['status']] ?? $o['status'], $o['comment'],
+        $csvCell($composition), $o['total'], statuses()[$o['status']] ?? $o['status'], $csvCell($o['comment']),
     ], ';');
 }
 rewind($out);

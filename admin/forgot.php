@@ -13,7 +13,12 @@ if (isAdmin()) {
 
 $sent = false;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!csrf_check()) {
+    /* Security-критик re-wave: без лимита можно завалить ящик письмами-сбросами
+       (6 часовых токенов живут параллельно) — 4 запроса с IP за 10 минут. */
+    if (!rl_check('forgot', 4, 600)) {
+        http_response_code(429);
+        $sent = false; // показываем форму без отправки
+    } elseif (!csrf_check()) {
         header('Location: /admin/forgot.php');
         exit;
     }
