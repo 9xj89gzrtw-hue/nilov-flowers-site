@@ -224,14 +224,14 @@ function completePasswordReset(int $resetId, int $userId, string $newPassword): 
 }
 
 /**
- * Отправка письма: mail() с fallback в .eml (admin/state/mail-out/) при false.
+ * Отправка письма: mail() с fallback в .eml (STATE_OUT_DIR — вне docroot) при false.
  */
 function sendAdminMail(string $to, string $subject, string $body): bool
 {
     $headers = "From: no-reply@nilov-flowers.local\r\nContent-Type: text/plain; charset=UTF-8";
     $ok = @mail($to, $subject, $body, $headers);
     if (!$ok) {
-        $dir = __DIR__ . '/../admin/state/mail-out';
+        $dir = STATE_OUT_DIR . '/mail-out';
         if (!is_dir($dir)) {
             @mkdir($dir, 0755, true);
         }

@@ -6,6 +6,20 @@ require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/util.php';
 
 $slug = (string)($_GET['slug'] ?? '');
+/* Покупатель-критик W40: старые/внешние ссылки product.php?id=N → 301 на канонический slug-URL
+   (было 404). SEO-критик: /product/slug/ со слэшем → 301 без слэша. */
+if ($slug === '' && isset($_GET['id'])) {
+    $legacyId = (int)$_GET['id'];
+    if ($legacyId > 0) {
+        $lst = db()->prepare('SELECT slug FROM products WHERE id = :i AND is_active = 1');
+        $lst->execute([':i' => $legacyId]);
+        $legacySlug = (string)$lst->fetchColumn();
+        if ($legacySlug !== '') {
+            header('Location: /product/' . rawurlencode($legacySlug), true, 301);
+            exit;
+        }
+    }
+}
 $canonicalUrl = 'https://flowers.interfood-catering.ru/product/' . rawurlencode($slug);
 $stmt = db()->prepare('SELECT p.*, c.name AS category_name FROM products p
     LEFT JOIN categories c ON c.id = p.category_id WHERE p.slug = :s AND p.is_active = 1');
@@ -71,6 +85,22 @@ if ($trust === []) {
         'priceCurrency' => 'RUB',
         'availability' => $product['is_urgent'] == 1 ? 'https://schema.org/InStock' : 'https://schema.org/InStock',
     ],
+    /* SEO-критик W40: brand + shippingDetails + return — merchant-listing rich-результаты Google.
+       Ставка доставки — честный минимум из таблицы зон (Приморский = 0 ₽). */
+    'brand' => ['@type' => 'Brand', 'name' => setting('shop_name', 'Nilov Flowers')],
+    'shippingDetails' => [
+        '@type' => 'OfferShippingDetails',
+        'shippingDestination' => ['@type' => 'DefinedRegion', 'addressCountry' => 'RU'],
+        'shippingRate' => ['@type' => 'MonetaryAmount', 'value' => (int)(db()->query('SELECT COALESCE(MIN(price),0) FROM delivery_zones')->fetchColumn() ?: 0), 'currency' => 'RUB'],
+    ],
+    'hasMerchantReturnPolicy' => [
+        '@type' => 'MerchantReturnPolicy',
+        'applicableCountry' => 'RU',
+        'returnPolicyCategory' => 'https://schema.org/MerchantReturnFiniteReturnWindow',
+        'merchantReturnDays' => 7,
+        'returnFees' => 'https://schema.org/FreeReturn',
+    ],
+    'category' => $product['category_name'] ?? 'Букеты',
 ] + ($product['sale_price'] !== null ? ['basePrice' => (int)$product['price']] : []), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>
 </script>
 </head>

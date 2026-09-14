@@ -25,13 +25,13 @@ $igDisclaimer = $igOn; /* пометку Meta показываем только 
       <?php
       /* Реквизиты продавца в футере (152-ФЗ + доверие скептика-покупателя).
          Показываются только если владелец заполнил legal_* в настройках. */
-      $legalType = setting('legal_subject_type', '');
+      $legalType = mb_strtolower(trim(setting('legal_subject_type', '')));
       $legalName = setting('legal_name', '');
       $legalNum = setting('legal_number', '');
       $legalAddr = setting('legal_address', '');
       if ($legalName !== '' && $legalNum !== ''): ?>
       <?php $legalInn = setting('legal_inn', ''); ?>
-      <p style="font-size:.78rem;color:var(--ink-soft)"><?= e($legalName) ?><?= $legalInn !== '' ? ' · ИНН ' . e($legalInn) : '' ?> · <?= e($legalType === 'IP' ? 'ОГРНИП' : 'ОГРН') ?> <?= e($legalNum) ?><?= $legalAddr !== '' ? ' · ' . e($legalAddr) : '' ?></p>
+      <p style="font-size:.78rem;color:var(--ink-soft)"><?= e($legalName) ?><?= $legalInn !== '' ? ' · ИНН ' . e($legalInn) : '' ?> · <?= e($legalType === 'ip' ?  'ОГРНИП' : 'ОГРН') ?> <?= e($legalNum) ?><?= $legalAddr !== '' ? ' · ' . e($legalAddr) : '' ?></p>
       <?php endif; ?>
       <?php if ($address !== ''): ?><p><?= e($address) ?></p><?php endif; ?>
       <?php if (setting('shop_hours', '') !== ''): ?><p style="color:var(--ink-soft);font-size:.92rem"><?= e(setting('shop_hours')) ?></p><?php endif; ?>

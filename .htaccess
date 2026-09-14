@@ -17,6 +17,12 @@ RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
 # Явный абсолютный редирект на https — один хоп, без http-утечки.
 RewriteRule ^admin$ https://flowers.interfood-catering.ru/admin/ [R=301,L]
 
+# SEO-критик W40: /index.php — дубль главной, 301 на канонический /.
+# ВАЖНО: до блока «физические файлы», иначе -f [L] отдаст index.php как есть.
+# ВАЖНО 2: абсолютный https — Apache за nginx видит http и иначе льёт http-Location.
+RewriteCond %{THE_REQUEST} ^[A-Z]+\ /index\.php[?\ ]
+RewriteRule ^index\.php$ https://flowers.interfood-catering.ru/ [R=301,L]
+
 # Физические файлы и каталоги отдаём как есть
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
@@ -39,6 +45,7 @@ RewriteRule ^api/csp-report\.php$ api/csp-report.php [L]
 RewriteRule ^api/ api/404.php [L]
 
 # Карточка товара
+RewriteRule ^product/([a-z0-9\-]+)/$ https://flowers.interfood-catering.ru/product/$1 [R=301,L]
 RewriteRule ^product/([a-z0-9\-]+)$ product.php?slug=$1 [L,QSA]
 
 # Юридические страницы (переименованные: обход opcache без validate_timestamps)
@@ -59,6 +66,12 @@ ErrorDocument 404 /404.php
 <FilesMatch "\.(db|sqlite3?)$">
 Require all denied
 </FilesMatch>
+# Security-критик W40: fallback-письма и логи (ФИО/телефон/IP) не должны отдаваться из веба
+<FilesMatch "\.(eml|log|txt~)$">
+Require all denied
+</FilesMatch>
+RedirectMatch 410 ^/state/
+RedirectMatch 410 ^/admin/state/
 <Files "config.php">
 Require all denied
 </Files>

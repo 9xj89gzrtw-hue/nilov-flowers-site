@@ -264,6 +264,9 @@ body.cookie-visible{padding-bottom:220px}
    «мёртвая заявка»). Инлайн-flex остаётся, здесь — перенос и поведение на узких. */
 @media(max-width:820px){.zone-check{margin-left:0;flex-wrap:wrap;max-width:100%}}
 @media(max-width:820px){#zoneCheckInput,#priceFilter{font-size:16px !important}}
+/* design/usability-критик: select фильтров был 37px (<44 тап-цель) */
+@media(max-width:820px){#priceFilter{min-height:44px}
+.site-logo,.site-header__call{min-height:44px}}
 @media(max-width:820px){input[type=search],select,input[type=text],input[type=tel]{font-size:16px}}
 .product-gallery{position:sticky;top:88px}
 @media(max-width:820px){.product-gallery{position:static}}

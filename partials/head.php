@@ -39,4 +39,7 @@ $googleVerification = trim(setting('google_site_verification', ''));
 <meta property="og:site_name" content="<?= e($shopName) ?>">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="ru_RU">
+<?php /* SEO-критик W40: twitter/X и Telegram превью без twitter:card беднее — добавляем карточку */ ?>
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="<?= e($pageTitle ?? $shopName) ?>">
 <?php require __DIR__ . '/../includes/metrika.php'; ?>

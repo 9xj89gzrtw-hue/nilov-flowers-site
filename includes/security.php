@@ -21,7 +21,10 @@ function security_headers(): void
     header('X-Content-Type-Options: nosniff');
     header('Referrer-Policy: strict-origin-when-cross-origin');
     header('X-Frame-Options: SAMEORIGIN');
-    header("Content-Security-Policy: report-uri /api/csp-report.php; report-to csp-endpoint; upgrade-insecure-requests");
+    /* Security-критик W40 re-check: CSP была декларативной (0 fetch-директив).
+       Реальные ограничения при self-hosted стеке: инлайн-скрипты/стили страницы нужны,
+       зато закрываем base/form/connect/frame — XSS-патч не уйдёт на чужой домен. */
+    header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://mc.yandex.ru; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https://mc.yandex.ru https://yandex.ru; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://mc.yandex.ru https://*.api-metrica.tech; frame-src 'self' https://mc.yandex.ru; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; report-uri /api/csp-report.php; upgrade-insecure-requests");
     header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
     /* HSTS только по https (по http браузер игнорирует, но и не ругается) */
     if (is_https_request()) {

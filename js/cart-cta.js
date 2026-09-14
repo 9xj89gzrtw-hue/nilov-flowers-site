@@ -36,7 +36,9 @@
       }
       const items = window.cart.getItems ? window.cart.getItems() : [];
       let c = 0; items.forEach(function (it) { c += (it.qty || 1); });
-      sr.textContent = (productName || 'Букет') + ' добавлен' + (c ? ', в корзине ' + c + ' товар(ов)' : '');
+      /* Awwwards-usability -0.2: «1 товар(ов)» → русское склонение (совпадает с itemsWord в cart-ui) */
+      var w = c % 10 === 1 && c % 100 !== 11 ? 'товар' : (c % 10 >= 2 && c % 10 <= 4 && (c % 100 < 12 || c % 100 > 14) ? 'товара' : 'товаров');
+      sr.textContent = (productName || 'Букет') + ' добавлен' + (c ? ', в корзине ' + c + ' ' + w : '');
     });
   });
 })();

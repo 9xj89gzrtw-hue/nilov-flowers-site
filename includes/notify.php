@@ -1,5 +1,5 @@
 <?php
-/** Уведомление владельцу о новом заказе: mail() с fallback в state/mail-out/*.eml,
+/** Уведомление владельцу о новом заказе: mail() с fallback в STATE_OUT_DIR/mail-out/*.eml (вне docroot),
  *  тихие часы (quiet_from/quiet_to в зоне shop_timezone) — письмо не отправляется. */
 declare(strict_types=1);
 
@@ -104,7 +104,7 @@ function notifyNewOrder(int $orderId): void
     $tgChat = trim(setting('tg_chat_id', ''));
     if ($tgToken !== '' && $tgChat !== '') {
         if ($quiet) {
-            $dir = __DIR__ . '/../state/mail-out';
+            $dir = STATE_OUT_DIR . '/mail-out';
             if (!is_dir($dir)) {
                 @mkdir($dir, 0755, true);
             }
@@ -115,7 +115,7 @@ function notifyNewOrder(int $orderId): void
                 . "Телефон: " . htmlspecialchars((string)$order['phone'], ENT_QUOTES, 'UTF-8') . "\n"
                 . "Состав:\n" . htmlspecialchars($lines, ENT_QUOTES, 'UTF-8')
                 . "Сумма: " . formatPrice((int)$order['total']);
-            tg_send($tgToken, $tgChat, $tgMsg, __DIR__ . '/../state/tg-out');
+            tg_send($tgToken, $tgChat, $tgMsg, STATE_OUT_DIR . '/tg-out');
         }
     }
 
@@ -151,7 +151,7 @@ function notifyNewOrder(int $orderId): void
         . "Оплата: " . ($order['payment_method'] === 'online' ? 'онлайн' : 'при получении') . "\n";
 
     if (isQuietHours(setting('quiet_from'), setting('quiet_to'), setting('shop_timezone', 'Europe/Moscow'))) {
-        $dir = __DIR__ . '/../state/mail-out';
+        $dir = STATE_OUT_DIR . '/mail-out';
         if (!is_dir($dir)) {
             @mkdir($dir, 0755, true);
         }
@@ -162,7 +162,7 @@ function notifyNewOrder(int $orderId): void
     $headers = 'From: shop@nilovflowers.local' . "\r\n" . 'Content-Type: text/plain; charset=UTF-8';
     $sent = @mail($to, '=?UTF-8?B?' . base64_encode($subject) . '?=', $body, $headers);
     if (!$sent) {
-        $dir = __DIR__ . '/../state/mail-out';
+        $dir = STATE_OUT_DIR . '/mail-out';
         if (!is_dir($dir)) {
             @mkdir($dir, 0755, true);
         }

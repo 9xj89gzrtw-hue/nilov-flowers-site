@@ -11,6 +11,14 @@ if ($orderId <= 0) {
     header('Location: /');
     exit;
 }
+/* Security-критик W40 MEDIUM: без проверки страница рисовала «Заказ №N принят» для ЛЮБОГО N
+   (подтверждение существования/несуществования заказов). Теперь — только реальный заказ. */
+$__exists = db()->prepare('SELECT 1 FROM orders WHERE id = :i LIMIT 1');
+$__exists->execute([':i' => $orderId]);
+if ($__exists->fetchColumn() === false) {
+    header('Location: /');
+    exit;
+}
 
 $siteName = setting('shop_name', 'Nilov Flowers');
 $phone = setting('shop_phone', '');
