@@ -32,7 +32,7 @@ $canonicalUrl = 'https://flowers.interfood-catering.ru/offer';
 
     <div class="doc-page__card">
       <?php if ($requisitesReady): ?>
-      <p><strong>Продавец:</strong> <?= e($subjectLabel . ' ' . $subjectName) ?><?= $legalNumber !== '' ? ', ' . e(($subjectType === 'ip' ?  'ОГРНИП ' : 'ОГРН ') . $legalNumber) : '' ?><?= setting('legal_inn', '') !== '' ? ', ИНН ' . e(setting('legal_inn')) : '' ?><?= $legalAddress !== '' ? ', адрес: ' . e($legalAddress) : '' ?>.</p>
+      <p><strong>Продавец:</strong> <?= e($subjectName !== '' && str_starts_with($subjectName, $subjectLabel) ? $subjectName : ($subjectLabel !== '' ? $subjectLabel . ' ' . $subjectName : $subjectName)) ?><?= $legalNumber !== '' ? ', ' . e(($subjectType === 'ip' ?  'ОГРНИП ' : 'ОГРН ') . $legalNumber) : '' ?><?= setting('legal_inn', '') !== '' ? ', ИНН ' . e(setting('legal_inn')) : '' ?><?= $legalAddress !== '' ? ', адрес: ' . e($legalAddress) : '' ?>.</p>
       <?php else: ?>
       <p class="doc-page__note">Реквизиты продавца ещё не внесены в настройках сайта.</p>
       <?php endif; ?>
@@ -70,6 +70,7 @@ $canonicalUrl = 'https://flowers.interfood-catering.ru/offer';
     </div>
 
     <p class="doc-page__back"><a href="/" class="btn btn--accent">Вернуться в магазин</a></p>
+    <p style="margin-top:14px;font-size:.85rem;color:var(--ink-soft)">Дата последней редакции оферты: <?= filemtime(__FILE__) ? date('d.m.Y', (int)filemtime(__FILE__)) : date('d.m.Y') ?>. Для текущей редакции действует редакция Политики, указанная на странице <a href="/policy">«Политика конфиденциальности»</a>.</p>
   </div>
 </main>
 

@@ -697,6 +697,18 @@ flash();
         <input class="input" id="l-name" name="legal_name" value="<?= sv('legal_name', $s) ?>">
         <label class="f" for="l-num">ОГРНИП / ОГРН</label>
         <input class="input" id="l-num" name="legal_number" value="<?= sv('legal_number', $s) ?>">
+        <?php
+        /* Legal-критик W41: ОГРНИП проходит контрольную сумму по алгоритму ЕГРИП:
+           первые 14 цифр делят на 13, последняя цифра ЧАСТНОГО = 15-я цифра номера.
+           (тот же алгоритм, что ОГРН/11). Не блокируем сохранение — предупреждаем. */
+        $__lnum = preg_replace('/\D/', '', sv('legal_number', $s));
+        if ($__lnum !== '' && sv('legal_subject_type', $s) === 'ip' && strlen($__lnum) === 15) {
+            $__expect = (int)substr((string)(intdiv((int)substr($__lnum, 0, 14), 13)), -1);
+            if ((int)$__lnum[14] !== $__expect) {
+                echo '<p style="margin:4px 0 0;font-size:.8rem;color:#9E2626;background:#fbe3e3;border:1px solid #eab5b5;border-radius:8px;padding:6px 10px">⚠ Проверьте ОГРНИП: контрольная цифра не сходится — по алгоритму ЕГРИП номер должен заканчиваться на ' . $__expect . '. Сверьте с выпиской из ЕГРИП.</p>';
+            }
+        }
+        ?>
         <label class="f" for="l-inn">ИНН</label>
         <input class="input" id="l-inn" name="legal_inn" value="<?= sv('legal_inn', $s) ?>" placeholder="781433059704" inputmode="numeric" maxlength="12">
       </div>

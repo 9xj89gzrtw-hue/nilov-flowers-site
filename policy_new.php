@@ -35,7 +35,7 @@ $canonicalUrl = 'https://flowers.interfood-catering.ru/policy';
       <h2>1. Общие положения</h2>
       <p>Настоящая политика обработки персональных данных составлена в соответствии с Федеральным законом №152-ФЗ «О персональных данных» и определяет порядок обработки персональных данных и меры по обеспечению их безопасности, предпринимаемые оператором.</p>
       <?php if ($requisitesReady): ?>
-      <p>Оператор: <?= e($subjectLabel . ' ' . $subjectName) ?><?= $legalNumber !== '' ? ', ' . e(($subjectType === 'ip' ?  'ОГРНИП ' : 'ОГРН ') . $legalNumber) : '' ?><?= setting('legal_inn', '') !== '' ? ', ИНН ' . e(setting('legal_inn')) : '' ?><?= $legalAddress !== '' ? ', адрес: ' . e($legalAddress) : '' ?>.</p>
+      <p>Оператор: <?= e($subjectName !== '' && str_starts_with($subjectName, $subjectLabel) ? $subjectName : ($subjectLabel !== '' ? $subjectLabel . ' ' . $subjectName : $subjectName)) ?><?= $legalNumber !== '' ? ', ' . e(($subjectType === 'ip' ?  'ОГРНИП ' : 'ОГРН ') . $legalNumber) : '' ?><?= setting('legal_inn', '') !== '' ? ', ИНН ' . e(setting('legal_inn')) : '' ?><?= $legalAddress !== '' ? ', адрес: ' . e($legalAddress) : '' ?>.</p>
       <?php else: ?>
       <p class="doc-page__note">Реквизиты оператора ещё не внесены в настройках сайта.</p>
       <?php endif; ?>
