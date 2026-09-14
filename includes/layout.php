@@ -117,7 +117,11 @@ label.f{display:block;font-size:.8rem;font-weight:600;margin:12px 0 4px}
 .row-actions a,.row-actions button{font-size:.78rem;padding:5px 10px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;font-family:var(--font-ui)}
 .row-actions a.danger,.row-actions button.danger{color:var(--err);border-color:var(--err)}
 /* W38: подсветка строки после сохранения (возврат на #row-ID) */
-table tr:target{background:#fdf2f6;transition:background .3s}
+table tr:target{background:#fdf2f6}
+/* Владелец-критик W48: :target-подсветка гаснет при перерисовке — делаем её
+   самостоятельной JS-анимацией на 2.5с (не зависит от удержания якоря). */
+@keyframes rowFlash{0%{background:#fbdbe7}80%{background:#fbdbe7}100%{background:transparent}}
+table tr.row-flash{animation:rowFlash 2.5s ease-out 1}
 /* Критик-владелец W36 B3: на телефоне админка «мелкая» — все поля/кнопки/чекбоксы ≥44px на тач */
 @media(hover:none),(max-width:820px){
   .input,select,textarea,input[type=text],input[type=email],input[type=password],input[type=tel],input[type=number]{min-height:44px;font-size:16px}
@@ -192,7 +196,16 @@ table tr:target{background:#fdf2f6;transition:background .3s}
 
 function adminFooter(): void
 {
-    ?></main><script src="/js/admin-notify.js" defer></script><script src="/js/admin-guard.js" defer></script></body></html><?php
+    ?></main><script src="/js/admin-notify.js" defer></script><script src="/js/admin-guard.js" defer></script>
+<script>
+/* Владелец-критик W48: подсветка строки после save — анимацией, а не хрупким :target */
+(function () {
+  try {
+    var el = location.hash && document.querySelector('tr' + CSS.escape(location.hash));
+    if (el) { el.classList.add('row-flash'); el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+  } catch (e) {}
+})();
+</script></body></html><?php
 }
 
 function flash(?string $msg = null, bool $err = false): ?string

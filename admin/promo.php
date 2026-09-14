@@ -29,16 +29,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $maxUses = max(0, (int)($_POST['max_uses'] ?? 0));
         $active = isset($_POST['active']) ? 1 : 0;
         if ($codeRaw !== '' && $code !== preg_replace('/\s+/u', '', $codeRaw)) {
-            /* Владелец-критик W45-финал: смешанный ввод («РОЗЫ10ZV») тихо вырезал
-               кириллицу и создавал калечный код «10ZV». Любой потерянный символ = стоп. */
-            flash('В коде можно использовать только латинские буквы и цифры (можно дефис). Уберите другие символы — например, вместо «РОЗЫ10» напишите ROZY10', true);
+            /* Владелец-критик W45-финал: любой потерянный символ = стоп.
+               W48: честная транслитерация фактического ввода + черновик возвращается в поле. */
+            $suggest = preg_replace('/[^A-Z0-9\-_]/', '', mb_strtoupper(trim(slugify($codeRaw)), 'UTF-8'));
+            flash('В коде можно использовать только латинские буквы и цифры (можно дефис).'
+                . ($suggest !== '' ? ' Ваш вариант можно записать так: ' . $suggest : ''), true);
+            $_SESSION['promo_code_draft'] = $codeRaw;
             header('Location: /admin/promo.php');
             exit;
         }
         if ($code === '' && $codeRaw !== '') {
-            /* Владелец-критик W45 P1: кириллический код тихо вырезался фильтром, а новичок
-               получал «Заполните код» — будто сам забыл. Говорим причину прямо. */
-            flash('Код можно писать только латинскими буквами и цифрами — например CVETY10', true);
+            /* Владелец-критик W45 P1: кириллический код не должен вырезаться молча. */
+            $suggest = preg_replace('/[^A-Z0-9\-_]/', '', mb_strtoupper(trim(slugify($codeRaw)), 'UTF-8'));
+            flash('Код можно писать только латинскими буквами и цифрами'
+                . ($suggest !== '' ? ' — например, ' . $suggest : ' — например CVETY10'), true);
+            $_SESSION['promo_code_draft'] = $codeRaw;
         } elseif ($code === '' || $value <= 0) {
             flash('Заполните код и скидку (больше нуля)', true);
         } else {
@@ -92,7 +97,8 @@ flash();
     <div class="grid2">
       <div>
         <label class="f" for="pr-code">Код *</label>
-        <input class="input" id="pr-code" name="code" required maxlength="32" style="text-transform:uppercase" value="<?= $editing ? e($editing['code']) : '' ?>" placeholder="Латиница и цифры, напр. CVETY10">
+        <input class="input" id="pr-code" name="code" required maxlength="32" style="text-transform:uppercase" value="<?= $editing ? e($editing['code']) : e((string)($_SESSION['promo_code_draft'] ?? '')) ?>" placeholder="Латиница и цифры, напр. CVETY10">
+        <?php unset($_SESSION['promo_code_draft']); /* черновик показан один раз (владелец W48) */ ?>
         <label class="f" for="pr-kind">Тип скидки</label>
         <select id="pr-kind" name="kind">
           <option value="percent" <?= $editing && $editing['kind'] === 'percent' ? 'selected' : '' ?>>Процент от заказа (%)</option>
