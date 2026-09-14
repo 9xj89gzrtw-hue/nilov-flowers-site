@@ -368,7 +368,7 @@ flash();
     </div>
     <div style="display:flex;gap:10px;margin-top:18px;position:sticky;bottom:12px;z-index:30;background:rgba(255,255,255,.94);backdrop-filter:blur(8px);padding:10px 12px;border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px -18px rgba(43,45,47,.5)">
       <button class="btn btn--accent" type="submit" style="padding:10px 22px;min-height:44px"><?= $editing ? 'Сохранить' : 'Добавить товар' ?></button>
-      <?php if ($editing): ?><a class="btn btn--ghost" href="/admin/products.php?edit=0<?= e($ctxQ) ?>" data-real="1">Отмена</a><?php endif; ?>
+      <?php if ($editing): ?><a class="btn btn--ghost" href="/admin/products.php?edit=0<?= e($ctxQ) ?>">Отмена</a><?php endif; ?>
     </div>
   </form>
 </div>
