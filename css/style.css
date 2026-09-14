@@ -260,6 +260,9 @@ body.cookie-visible{padding-bottom:220px}
 @media(max-width:820px){.product-page__layout{grid-template-columns:1fr}}
 /* a11y-критик S2: iOS Safari авто-зумит при фокусе полей <16px и не возвращает зум —
    «витрина ездит». Все интерактивные поля мелкого кегля на мобиле → 16px. */
+/* Критик layout W35: честная CSS-реализация переноса zone-check (заявка была без кода —
+   «мёртвая заявка»). Инлайн-flex остаётся, здесь — перенос и поведение на узких. */
+@media(max-width:820px){.zone-check{margin-left:0;flex-wrap:wrap;max-width:100%}}
 @media(max-width:820px){#zoneCheckInput,#priceFilter,input[type=search],select{font-size:16px}}
 .product-gallery{position:sticky;top:88px}
 @media(max-width:820px){.product-gallery{position:static}}
