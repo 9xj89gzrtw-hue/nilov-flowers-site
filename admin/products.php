@@ -137,6 +137,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'move'
     exit;
 }
 
+// Критик operational (ежедневная рутина владельца): пакетное добавление — несколько фото
+// за одну операцию. Товары создаются скрытыми (is_active=0) с ценой 0 — владелец потом
+// откроет каждый и допишет название/цену/описание. Имя файла → имя товара.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'bulk_import') {
+    $files = $_FILES['bulk_images'] ?? [];
+    $added = 0;
+    if (isset($files['name']) && is_array($files['name'])) {
+        for ($bi = 0; $bi < count($files['name']); $bi++) {
+            $one = [
+                'name' => $files['name'][$bi], 'type' => $files['type'][$bi],
+                'tmp_name' => $files['tmp_name'][$bi], 'error' => $files['error'][$bi],
+                'size' => $files['size'][$bi],
+            ];
+            $imgName = saveUpload($one, IMG_PRODUCTS_DIR);
+            if ($imgName === '') { continue; }
+            $base = trim(pathinfo((string)$files['name'][$bi], PATHINFO_FILENAME));
+            $name = $base !== '' ? mb_substr($base, 0, 80) : 'Новый букет';
+            $slug = slugify($name);
+            if ($slug === '') { $slug = 'bukets'; }
+            $try = $slug; $n = 1;
+            while ((int)$pdo->query('SELECT COUNT(*) FROM products WHERE slug = ' . $pdo->quote($try))->fetchColumn() > 0) {
+                $try = $slug . '-' . (++$n);
+            }
+            $pdo->prepare('INSERT INTO products (category_id, name, slug, price, sale_price, description, image, is_active, show_in_upsell, sort)
+                    VALUES (NULL, :n, :sl, 0, NULL, :d, :img, 0, 0, :s)')
+                ->execute([':n' => $name, ':sl' => $try, ':d' => '', ':img' => $imgName, ':s' => 999]);
+            $added++;
+        }
+    }
+    flash($added > 0 ? "Добавлено товаров: $added (скрытые, с ценой 0 — заполните карточку каждого)"
+                      : 'Ни одно фото не принято (проверьте формат: jpg/png/webp, до 5 МБ)', $added === 0);
+    header('Location: /admin/products.php');
+    exit;
+}
+
+
 $editId = (int)($_GET['edit'] ?? 0);
 $editing = null;
 if ($editId > 0) {
@@ -214,6 +250,18 @@ flash();
       <button class="btn btn--accent" type="submit"><?= $editing ? 'Сохранить' : 'Добавить товар' ?></button>
       <?php if ($editing): ?><a class="btn btn--ghost" href="/admin/products.php">Отмена</a><?php endif; ?>
     </div>
+  </form>
+</div>
+
+<div class="card">
+  <h2 style="font-family:var(--font-display);font-size:1.2rem;margin-bottom:8px">Добавить сразу несколько фото</h2>
+  <p style="font-size:.85rem;color:var(--ink-soft);margin-bottom:10px">Выберите несколько фотографий букетов (или перетащите сюда). Каждый файл станет отдельным скрытым товаром с названием по имени файла — потом откроете и заполните цену/описание.</p>
+  <form method="post" enctype="multipart/form-data">
+    <?= csrf_field() ?>
+    <input type="hidden" name="action" value="bulk_import">
+    <label class="f" for="p-bulk">Фото (можно несколько)</label>
+    <input class="input" id="p-bulk" name="bulk_images[]" type="file" accept="image/*" multiple>
+    <div style="margin-top:12px"><button class="btn btn--accent" type="submit">Создать товары из фото</button></div>
   </form>
 </div>
 
