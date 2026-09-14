@@ -30,12 +30,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $active = isset($_POST['active']) ? 1 : 0;
         if ($codeRaw !== '' && $code !== preg_replace('/\s+/u', '', $codeRaw)) {
             /* Владелец-критик W45-финал: любой потерянный символ = стоп.
-               W48: честная транслитерация фактического ввода + черновик возвращается в поле. */
+               W48: честная транслитерация фактического ввода + черновик в поле.
+               W49: редирект с якорем #pr-code — поле не уезжает вверх после отказа. */
             $suggest = preg_replace('/[^A-Z0-9\-_]/', '', mb_strtoupper(trim(slugify($codeRaw)), 'UTF-8'));
             flash('В коде можно использовать только латинские буквы и цифры (можно дефис).'
                 . ($suggest !== '' ? ' Ваш вариант можно записать так: ' . $suggest : ''), true);
             $_SESSION['promo_code_draft'] = $codeRaw;
-            header('Location: /admin/promo.php');
+            header('Location: /admin/promo.php#pr-code');
             exit;
         }
         if ($code === '' && $codeRaw !== '') {
@@ -43,6 +44,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $suggest = preg_replace('/[^A-Z0-9\-_]/', '', mb_strtoupper(trim(slugify($codeRaw)), 'UTF-8'));
             flash('Код можно писать только латинскими буквами и цифрами'
                 . ($suggest !== '' ? ' — например, ' . $suggest : ' — например CVETY10'), true);
+            $_SESSION['promo_code_draft'] = $codeRaw;
+        } elseif ($code !== '' && ctype_digit($code)) {
+            /* Владелец-критик W49 п.3: чисто цифровой код неотличим от скидки/опечатки. */
+            flash('Код состоит только из цифр — его неудобно диктовать, «10» путается со скидкой. Добавьте буквы, например CVETY10', true);
             $_SESSION['promo_code_draft'] = $codeRaw;
         } elseif ($code === '' || $value <= 0) {
             flash('Заполните код и скидку (больше нуля)', true);
@@ -55,6 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     $pdo->prepare('INSERT INTO promo_codes (code, kind, value, min_order, max_uses, active) VALUES (:c, :k, :v, :m, :x, :a)')
                         ->execute([':c' => $code, ':k' => $kind, ':v' => $value, ':m' => $minOrder, ':x' => $maxUses, ':a' => $active]);
+                    unset($_SESSION['promo_code_draft']); /* черновик больше не нужен — код создан */
                     flash('Промокод создан — скажите его покупателю или разместите на витрине');
                 }
             } catch (Throwable $e) {
@@ -98,7 +104,7 @@ flash();
       <div>
         <label class="f" for="pr-code">Код *</label>
         <input class="input" id="pr-code" name="code" required maxlength="32" style="text-transform:uppercase" value="<?= $editing ? e($editing['code']) : e((string)($_SESSION['promo_code_draft'] ?? '')) ?>" placeholder="Латиница и цифры, напр. CVETY10">
-        <?php unset($_SESSION['promo_code_draft']); /* черновик показан один раз (владелец W48) */ ?>
+        <?php /* W49: черновик живёт до успешного создания (не исчезает от F5 — владелец п.1) */ ?>
         <label class="f" for="pr-kind">Тип скидки</label>
         <select id="pr-kind" name="kind">
           <option value="percent" <?= $editing && $editing['kind'] === 'percent' ? 'selected' : '' ?>>Процент от заказа (%)</option>
