@@ -116,6 +116,15 @@ label.f{display:block;font-size:.8rem;font-weight:600;margin:12px 0 4px}
 .row-actions{display:flex;gap:6px;flex-wrap:wrap}
 .row-actions a,.row-actions button{font-size:.78rem;padding:5px 10px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;font-family:var(--font-ui)}
 .row-actions a.danger,.row-actions button.danger{color:var(--err);border-color:var(--err)}
+/* Критик-владелец W36 B3: на телефоне админка «мелкая» — все поля/кнопки/чекбоксы ≥44px на тач */
+@media(hover:none),(max-width:820px){
+  .input,select,textarea,input[type=text],input[type=email],input[type=password],input[type=tel],input[type=number]{min-height:44px;font-size:16px}
+  textarea{font-size:16px}
+  input[type=checkbox],input[type=radio]{width:24px;height:24px;min-height:24px}
+  .btn,.row-actions a,.row-actions button,.dash-ranges a{min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+  .chip,label.f input[type=checkbox]{min-height:40px}
+  .f,.field-hint,p[style*=".78rem"],p[style*=".8rem"]{font-size:.9rem !important}
+}
 /* --- Дашборд «Статистика» --- */
 /* Статистика — контент, а не тулбар: sticky убран (перекрывал таблицы на мобиле).
    Шапка .admin-top — единственный sticky на странице. */
@@ -181,7 +190,7 @@ label.f{display:block;font-size:.8rem;font-weight:600;margin:12px 0 4px}
 
 function adminFooter(): void
 {
-    ?></main><script src="/js/admin-notify.js" defer></script></body></html><?php
+    ?></main><script src="/js/admin-notify.js" defer></script><script src="/js/admin-guard.js" defer></script></body></html><?php
 }
 
 function flash(?string $msg = null, bool $err = false): ?string

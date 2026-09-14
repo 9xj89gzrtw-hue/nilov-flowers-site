@@ -126,7 +126,7 @@ flash();
     <input class="input" id="bk" name="backup_email" type="email" value="<?= e((string)($admin['backup_email'] ?? '')) ?>" placeholder="backup@example.com">
     <label class="f" for="cur2">Текущий пароль *</label>
     <input class="input" id="cur2" name="current" type="password" autocomplete="current-password" required>
-    <button class="btn" type="submit" style="margin-top:16px">Сохранить</button>
+    <button class="btn btn--accent" type="submit" style="margin-top:16px">💾 Сохранить запасной email</button>
   </form>
 </div>
 
@@ -142,15 +142,15 @@ flash();
     </label>
     <div class="grid2" style="margin-top:12px">
       <div>
-        <label class="f" for="tg">Telegram chat_id</label>
+        <label class="f" for="tg">ID чата в Telegram (цифры, один раз настроит программист)</label>
         <input class="input" id="tg" name="tg_chat_id" value="<?= e(setting('tg_chat_id', '')) ?>" placeholder="123456789">
       </div>
       <div>
-        <label class="f" for="mx">MAX chat_id</label>
+        <label class="f" for="mx">ID чата в MAX</label>
         <input class="input" id="mx" name="max_chat_id" value="<?= e(setting('max_chat_id', '')) ?>" placeholder="-100123456">
       </div>
     </div>
-    <button class="btn" type="submit" style="margin-top:16px">Сохранить</button>
+    <button class="btn btn--accent" type="submit" style="margin-top:16px">💾 Сохранить настройки уведомлений</button>
   </form>
 </div>
 <div class="card" style="max-width:560px">

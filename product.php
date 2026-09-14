@@ -125,7 +125,8 @@ if ($trust === []) {
           aria-label="Добавить в корзину: <?= e($product['name']) ?>">
           Добавить в корзину · <?= formatPrice($price) ?>
         </button>
-        <p class="cart-note">Оплата — картой, СБП или при получении. На защищённой странице платёжного провайдера.</p>
+        <?php $ykOn = setting('yk_enabled', '0') === '1' && trim(setting('yk_shop_id', '')) !== '' && trim(setting('yk_secret_key', '')) !== ''; ?>
+        <p class="cart-note"><?php if ($ykOn): ?>Оплата — картой, СБП или при получении. На защищённой странице платёжного провайдера.<?php else: ?>Оплата — курьеру при получении заказа.<?php endif; ?></p>
         <?php if ($trust !== []): ?>
         <ul class="product-page__trust">
           <?php foreach ($trust as $t): ?><li><?= e($t) ?></li><?php endforeach; ?>

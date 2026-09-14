@@ -188,6 +188,9 @@ a{color:inherit;text-decoration:none}
 
 /* ============ CART DRAWER ============ */
 .cart-panel{position:fixed;inset:0;z-index:100;display:grid;pointer-events:none}
+/* Покупатель-критик B5: display у .order-form__field перебивал атрибут hidden —
+   поле адреса было видно при «Самовывоз». Глобальная честная семантика hidden. */
+[hidden]:not([hidden="until-found"]){display:none !important}
 .cart-panel[hidden]{display:none}
 .cart-panel__backdrop{background:rgba(43,45,47,.45);backdrop-filter:blur(3px);pointer-events:none}
 .cart-panel:not([hidden]){pointer-events:auto}

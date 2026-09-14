@@ -156,8 +156,34 @@ flash();
   <a href="#s-pay">Оплата</a>
   <a href="#s-guarantees">Гарантии</a>
 </nav>
+<script>
+/* Критик-владелец W36 B5: scrollspy — подсвечиваем чип активной секции,
+   новичок видит, где он в простыне настроек. */
+(function () {
+  var links = Array.prototype.slice.call(document.querySelectorAll('#top-nav a'));
+  if (!links.length || !('IntersectionObserver' in window)) return;
+  function setActive(id) {
+    links.forEach(function (a) {
+      var on = a.getAttribute('href') === '#' + id;
+      a.style.background = on ? 'var(--rose-cta,#AE4A71)' : '';
+      a.style.color = on ? '#fff' : '';
+      if (on) { a.setAttribute('aria-current', 'true'); } else { a.removeAttribute('aria-current'); }
+    });
+  }
+  var seen = {};
+  var io = new IntersectionObserver(function (ents) {
+    ents.forEach(function (en) { seen[en.target.id] = en.isIntersecting; });
+    /* верхняя видимая секция = активная */
+    for (var i = 0; i < sections.length; i++) {
+      if (seen[sections[i]]) { setActive(sections[i]); return; }
+    }
+  }, { rootMargin: '-72px 0px -70% 0px' });
+  var sections = links.map(function (a) { return a.getAttribute('href').slice(1); });
+  sections.forEach(function (id) { var el = document.getElementById(id); if (el) io.observe(el); });
+})();
+</script>
 
-<form method="post" enctype="multipart/form-data">
+<form method="post" enctype="multipart/form-data" style="padding-bottom:84px">
   <?= csrf_field() ?>
   <input type="hidden" name="cb_rendered" id="cb-rendered" value="">
   <script>
@@ -215,7 +241,7 @@ flash();
       <div>
         <label class="f" for="h-eyebrow">Строка над заголовком (город и подача)</label>
         <input class="input" id="h-eyebrow" name="hero_eyebrow" value="<?= sv('hero_eyebrow', $s) !== '' ? sv('hero_eyebrow', $s) : 'Санкт-Петербург · доставка в день заказа' ?>" maxlength="60">
-        <label class="f" for="h-title">Заголовок (hero)</label>
+        <label class="f" for="h-title">Заголовок на главной странице (крупный текст сверху)</label>
         <input class="input" id="h-title" name="hero_title" value="<?= sv('hero_title', $s) ?>">
         <label class="f" for="h-sub">Подзаголовок</label>
         <textarea class="input" id="h-sub" name="hero_subtitle" rows="2"><?= sv('hero_subtitle', $s) ?></textarea>
@@ -287,7 +313,7 @@ flash();
         <p style="font-size:.82rem;color:var(--ink-soft);margin:4px 0 0">Цифры можно взять в Яндекс Бизнесе: ссылка на карточку организации вида yandex.ru/maps/org/133112293950 — нужен только номер.</p>
       </div>
       <div>
-        <label class="f" for="s-favicon">Favicon (заменить)</label>
+        <label class="f" for="s-favicon">Картинка-значок сайта (иконка во вкладке браузера)</label>
         <input class="input" id="s-favicon" name="site_favicon" type="file" accept="image/png,image/jpeg,image/webp,image/x-icon,image/svg+xml">
         <?php if (($s['site_favicon'] ?? '') !== ''): ?>
           <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
@@ -329,7 +355,7 @@ flash();
         </label>
         <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 6px 26px">Поле «Например: Приморский» — покупатель сразу видит стоимость для своего района.</p>
         <div style="margin-left:26px">
-          <label class="f" for="zc-ph">Подсказка в поле (placeholder)</label>
+          <label class="f" for="zc-ph">Серый текст-пример внутри поля «Район»</label>
           <input class="input" id="zc-ph" name="zone_check_placeholder" value="<?= sv('zone_check_placeholder', $s) !== '' ? sv('zone_check_placeholder', $s) : 'Например: Приморский' ?>" maxlength="60">
           <label class="f" for="zc-fb" style="margin-top:8px">Если район не найден</label>
           <input class="input" id="zc-fb" name="zone_check_fallback" value="<?= sv('zone_check_fallback', $s) !== '' ? sv('zone_check_fallback', $s) : 'не нашли — уточним по телефону' ?>" maxlength="80">
@@ -646,7 +672,7 @@ flash();
       <div>
         <label class="f" for="u-title">Заголовок блока</label>
         <input class="input" id="u-title" name="upsell_title" value="<?= sv('upsell_title', $s) !== '' ? sv('upsell_title', $s) : 'Возможно, пригодится' ?>">
-        <label class="f" for="u-cats">Категории-источники (id через запятую)</label>
+        <label class="f" for="u-cats">Из каких категорий показывать («1,2» — id категорий из списка ниже)</label>
         <input class="input" id="u-cats" name="upsell_categories" value="<?= sv('upsell_categories', $s) ?>" placeholder="1,2">
         <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Пусто — все активные товары. Плюс всегда добавляются товары с галочкой «в апсейле».</p>
       </div>
@@ -710,7 +736,7 @@ flash();
           <input type="checkbox" name="yk_enabled" style="width:auto" <?= sv('yk_enabled', $s) === '1' ? 'checked' : '' ?>>
           Принимать онлайн-оплату через ЮKassa
         </label>
-        <label class="f" for="yk-id">shopId</label>
+        <label class="f" for="yk-id">Идентификатор магазина ЮKassa (shopId, из письма от ЮKassa)</label>
         <input class="input" id="yk-id" name="yk_shop_id" value="<?= sv('yk_shop_id', $s) ?>">
         <label class="f" for="yk-key">Секретный ключ</label>
         <input class="input" id="yk-key" name="yk_secret_key" type="password" value="<?= sv('yk_secret_key', $s) ?>">

@@ -273,7 +273,7 @@ if ($__heroPre !== '') {
           <datalist id="zoneCheckList">
             <?php foreach ($zones as $z): ?><option value="<?= e($z['name']) ?>"></option><?php endforeach; ?>
           </datalist>
-          <span id="zoneCheckResult" style="font-size:.85rem;font-weight:600" aria-live="polite"></span>
+          <span id="zoneCheckResult" style="font-size:.85rem;font-weight:600;min-width:96px;white-space:nowrap;display:inline-block" aria-live="polite"></span>
         </span>
         <?php endif; ?>
       </div>
