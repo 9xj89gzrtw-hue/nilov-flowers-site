@@ -308,6 +308,8 @@
             ? (function(){ var v=(document.getElementById('orderDeliveryDate')||{value:''}).value; var d=v.split('-'); return d.length===3? d[2]+'.'+d[1]+'.'+d[0] : v; })() : '',
           delivery_slot: (document.getElementById('orderDeliverySlot') || {value:''}).value,
           company_website: (document.getElementById('orderCompanyWebsite') || {value:''}).value,
+          /* Промокод: отправляем только код — скидку сервер пересчитает сам */
+          promo_code: (window.PROMO_STATE && window.PROMO_STATE.code) || '',
           pd_consent: pdConsentInput.checked,
           items: items,
         }),
@@ -322,6 +324,8 @@
           try { ym(window.YM_COUNTER_ID, 'reachGoal', 'ORDER_SUBMIT', { order_price: orderTotal, currency: 'RUB' }); } catch (err) { /* метрика не критична */ }
         }
         if (window.cart) window.cart.clear();
+        /* Промокод одноразовый — после успешного заказа сбрасываем (server инкрементнул used) */
+        if (window.PROMO_STATE) { window.PROMO_STATE.code = ''; window.PROMO_STATE.discount = 0; }
         form.reset();
         syncDeliveryAddressRequirement();
         syncEmailRequirement();

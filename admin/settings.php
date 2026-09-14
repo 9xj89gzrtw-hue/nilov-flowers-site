@@ -76,7 +76,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
               'feature_delivery_badge', 'feature_faq', 'feature_countdown', 'feature_price_filter',
               'feature_favorites', 'feature_zone_check', 'feature_track_link', 'feature_favicon_badge', 'feature_webpush',
               /* Критик functional: gift-UX и слоты доставки — отключаемы (критерий 14) */
-              'feature_gift_fields', 'feature_delivery_slots'] as $cb) {
+              'feature_gift_fields', 'feature_delivery_slots',
+              /* Промокод в корзине (критик functional top#3) */
+              'feature_promo'] as $cb) {
         if (!$cbTrackAll && !in_array($cb, $cbRendered, true)) { continue; } // не в форме — не трогаем
         $values[$cb] = isset($_POST[$cb]) ? '1' : '0';
     }
@@ -372,6 +374,11 @@ flash();
           Выбор даты и интервала доставки в заказе
         </label>
         <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 10px 26px">Покупатель сам выберет день и время (утро/день/вечер) — меньше согласований по телефону.</p>
+        <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+          <input type="checkbox" name="feature_promo" style="width:auto" <?= sv('feature_promo', $s) !== '0' ? 'checked' : '' ?>>
+          Поле «Промокод» в корзине
+        </label>
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 10px 26px">Коды создаются в разделе «Промокоды». Скидка считается на сервере — обмануть нельзя.</p>
         <div style="margin:6px 0 10px 26px">
           <label class="f" for="slots-ta">Интервалы доставки (по одному в строке)</label>
           <textarea class="input" id="slots-ta" name="delivery_slots" rows="3" style="width:100%;font:inherit"><?= e(sv('delivery_slots', $s) !== '' ? sv('delivery_slots', $s) : "Утро 9:00–14:00\nДень 14:00–18:00\nВечер 18:00–22:00") ?></textarea>

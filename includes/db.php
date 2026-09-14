@@ -45,6 +45,16 @@ function seedDatabase(PDO $pdo): void
             key TEXT PRIMARY KEY,
             value TEXT NOT NULL DEFAULT ''
         );
+        CREATE TABLE IF NOT EXISTS promo_codes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            code TEXT NOT NULL UNIQUE,
+            kind TEXT NOT NULL DEFAULT 'percent',
+            value INTEGER NOT NULL DEFAULT 0,
+            min_order INTEGER NOT NULL DEFAULT 0,
+            active INTEGER NOT NULL DEFAULT 1,
+            max_uses INTEGER NOT NULL DEFAULT 0,
+            used INTEGER NOT NULL DEFAULT 0
+        );
         CREATE TABLE IF NOT EXISTS delivery_zones (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
@@ -144,6 +154,19 @@ function migrateSchema(PDO $pdo): void
         value TEXT NOT NULL,
         updated_at TEXT NOT NULL
     )");
+    /* Промокоды (критик functional top#3). В migrateSchema, а НЕ только в сид:
+       сид выполняется лишь при первом создании БД, а прод уже создан — таблица
+       бы не появилась (проверено: /api/promo падал в no_such_table). */
+    $pdo->exec("CREATE TABLE IF NOT EXISTS promo_codes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        code TEXT NOT NULL UNIQUE,
+        kind TEXT NOT NULL DEFAULT 'percent',
+        value INTEGER NOT NULL DEFAULT 0,
+        min_order INTEGER NOT NULL DEFAULT 0,
+        active INTEGER NOT NULL DEFAULT 1,
+        max_uses INTEGER NOT NULL DEFAULT 0,
+        used INTEGER NOT NULL DEFAULT 0
+    )");
     $orderCols = array_column($pdo->query("PRAGMA table_info(orders)")->fetchAll(), 'name');
     foreach ([
         ['given_to', "TEXT NOT NULL DEFAULT ''"],
@@ -155,6 +178,7 @@ function migrateSchema(PDO $pdo): void
         ['card_text', "TEXT NOT NULL DEFAULT ''"],
         ['delivery_date', "TEXT NOT NULL DEFAULT ''"],
         ['delivery_slot', "TEXT NOT NULL DEFAULT ''"],
+        ['promo_code', "TEXT NOT NULL DEFAULT ''"],
     ] as [$col, $def]) {
         if (!in_array($col, $orderCols, true)) {
             $pdo->exec("ALTER TABLE orders ADD COLUMN {$col} {$def}");

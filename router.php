@@ -18,6 +18,23 @@ if ($path === '/api/orders') {
     require __DIR__ . '/api/orders.php';
     return true;
 }
+if ($path === '/api/promo') {
+    require __DIR__ . '/api/promo.php';
+    return true;
+}
+/* Паритет с прод-ревайтами .htaccess (verify-скрипт ходил по этим путям локально) */
+if ($path === '/offer') {
+    require __DIR__ . '/offer_new.php';
+    return true;
+}
+if ($path === '/policy') {
+    require __DIR__ . '/policy_new.php';
+    return true;
+}
+if ($path === '/track') {
+    require __DIR__ . '/track.php';
+    return true;
+}
 if ($path === '/api/payment/create') {
     require __DIR__ . '/api/payment-create.php';
     return true;

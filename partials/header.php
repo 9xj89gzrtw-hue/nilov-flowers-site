@@ -16,6 +16,9 @@ $headerAddress = setting('header_address', '') !== '' ? setting('header_address'
 $cartMode = in_array(setting('cart_mode', 'drawer'), ['drawer', 'hybrid', 'page'], true)
     ? setting('cart_mode', 'drawer') : 'drawer';
 ?>
+<?php /* a11y-критик re-check: skip-link в общем header.php — есть на каждой витрина-странице
+   (home, product, offer, policy, track), а не только на главной */ ?>
+<a class="skip-link" href="#main">Перейти к содержимому</a>
 <header class="site-header">
   <div class="wrap">
     <a href="/" class="site-logo">

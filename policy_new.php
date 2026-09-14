@@ -26,7 +26,7 @@ $canonicalUrl = 'https://flowers.interfood-catering.ru/policy';
 <body>
 <?php require __DIR__ . '/partials/header.php'; ?>
 
-<main class="doc-page">
+<main id="main" class="doc-page">
   <div class="wrap doc-page__inner">
     <h1 class="section-title">Политика обработки персональных данных</h1>
 

@@ -32,6 +32,7 @@ RewriteRule ^sitemap\.xml$ sitemap.php [L]
 
 # API
 RewriteRule ^api/orders$ api/orders.php [L]
+RewriteRule ^api/promo$ api/promo.php [L]
 RewriteRule ^api/payment/create$ api/payment-create.php [L]
 RewriteRule ^api/csp-report\.php$ api/csp-report.php [L]
 # Неизвестный /api/* — честный JSON 404, а не HTML главной (критик security)

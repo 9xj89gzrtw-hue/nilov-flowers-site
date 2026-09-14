@@ -75,7 +75,7 @@ $shopPhone = setting('shop_phone', '');
 .track-empty{padding:36px 20px;text-align:center;color:var(--ink-soft);border:1px dashed var(--line);border-radius:16px}
 @media (max-width:640px){.track{padding:32px 16px 64px}.track h1{font-size:1.6rem}}
 </style>
-<main class="track">
+<main id="main" class="track">
   <h1>Где мой заказ?</h1>
   <p class="track__lead">Введите телефон, который указали при оформлении — покажем статус ваших последних заказов.</p>
 

@@ -168,15 +168,36 @@ $subtotal = 0;
 foreach ($normalized as $n) {
     $subtotal += $n['price'] * $n['qty'];
 }
-$total = $subtotal + ($zone !== null ? $zonePrice : 0);
+
+/* Промокод (критик functional top#3): валидация и скидка — СТРОГО на сервере.
+   Клиент присылает только код; сумму скидки пересчитываем по своим правилам. */
+$promoCode = mb_strtoupper(trim((string)($data['promo_code'] ?? '')), 'UTF-8');
+if (mb_strlen($promoCode) > 32) { $promoCode = ''; }
+$promoDiscount = 0;
+if ($promoCode !== '') {
+    $pStmt = $pdo->prepare('SELECT * FROM promo_codes WHERE code = :c AND active = 1');
+    $pStmt->execute([':c' => $promoCode]);
+    $promoRow = $pStmt->fetch();
+    if (!$promoRow
+        || ((int)$promoRow['max_uses'] > 0 && (int)$promoRow['used'] >= (int)$promoRow['max_uses'])
+        || $subtotal < (int)$promoRow['min_order']) {
+        respond(400, ['errors' => ['promo_invalid']]);
+    }
+    $promoDiscount = $promoRow['kind'] === 'fixed'
+        ? min((int)$promoRow['value'], $subtotal)
+        : (int)floor($subtotal * max(0, min(90, (int)$promoRow['value'])) / 100);
+}
+
+$total = $subtotal + ($zone !== null ? $zonePrice : 0) - $promoDiscount;
+$total = max(0, $total);
 $paymentToken = bin2hex(random_bytes(16));
 
 $pdo->beginTransaction();
 try {
     $stmt = $pdo->prepare('INSERT INTO orders (customer_name, phone, email, delivery_zone_id, delivery_address,
         comment, payment_method, total, status, payment_token, consent_log,
-        recipient_name, recipient_phone, card_text, delivery_date, delivery_slot)
-        VALUES (:n, :ph, :em, :z, :a, :c, :pm, :t, :st, :pt, :cl, :rn, :rp, :ct, :dd, :ds)');
+        recipient_name, recipient_phone, card_text, delivery_date, delivery_slot, promo_code)
+        VALUES (:n, :ph, :em, :z, :a, :c, :pm, :t, :st, :pt, :cl, :rn, :rp, :ct, :dd, :ds, :pc)');
     $stmt->execute([
         ':n' => $name, ':ph' => $phone, ':em' => $email,
         ':z' => $zone !== null ? (int)$zone['id'] : null,
@@ -185,9 +206,14 @@ try {
         ':cl' => sprintf('consent given %s, ip %s', date('Y-m-d H:i:s'),
             $_SERVER['REMOTE_ADDR'] ?? 'unknown'),
         ':rn' => $recipientName, ':rp' => $recipientPhone, ':ct' => $cardText,
-        ':dd' => $deliveryDate, ':ds' => $deliverySlot,
+        ':dd' => $deliveryDate, ':ds' => $deliverySlot, ':pc' => $promoCode,
     ]);
     $orderId = (int)$pdo->lastInsertId();
+
+    if ($promoCode !== '') {
+        /* учёт расходования: one-time/max_uses промо вычитаются из лимита (атомарно в транзакции) */
+        $pdo->prepare('UPDATE promo_codes SET used = used + 1 WHERE code = :c')->execute([':c' => $promoCode]);
+    }
 
     $itemStmt = $pdo->prepare('INSERT INTO order_items (order_id, product_id, name, price, qty)
         VALUES (:o, :p, :n, :pr, :q)');

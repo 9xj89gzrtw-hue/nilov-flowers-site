@@ -122,6 +122,9 @@ flash();
       <?php if (($order['delivery_date'] ?? '') !== '' || ($order['delivery_slot'] ?? '') !== ''): ?>
         <p style="margin-top:6px"><strong>Хочет доставку:</strong> <?= e(trim((string)(($order['delivery_date'] ?? '') . ' ' . ($order['delivery_slot'] ?? '')))) ?></p>
       <?php endif; ?>
+      <?php if (($order['promo_code'] ?? '') !== ''): ?>
+        <p style="margin-top:6px"><strong>Промокод:</strong> <?= e((string)$order['promo_code']) ?></p>
+      <?php endif; ?>
     </div>
     <div>
       <h2 style="font-family:var(--font-display);font-size:1.05rem;margin-bottom:6px">Состав</h2>

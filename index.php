@@ -118,8 +118,6 @@ if ($__heroPre !== '') {
 </script>
 </head>
 <body>
-<?php /* a11y-критик: skip-link — первый таб ведёт сразу в контент */ ?>
-<a class="skip-link" href="#main">Перейти к содержимому</a>
 <?php require __DIR__ . '/partials/header.php'; ?>
 
 <main id="main">
@@ -403,7 +401,7 @@ if ($__heroPre !== '') {
           <span class="order-form__error" id="orderPhoneError"></span>
         </div>
         <div class="order-form__field">
-          <label for="orderEmail"><?= e(setting('form_email_label', 'Email')) ?> <span id="orderEmailReq" style="color:var(--rose-deep,#E2799C);font-weight:600" hidden>* обязательно для онлайн-оплаты</span></label>
+          <label for="orderEmail"><?= e(setting('form_email_label', 'Email')) ?> <span id="orderEmailReq" style="color:var(--rose-cta,#AE4A71);font-weight:600" hidden>* обязательно для онлайн-оплаты</span></label>
           <input type="email" id="orderEmail" name="email" autocomplete="email" placeholder="example@mail.ru">
           <span class="order-form__hint" id="orderEmailHint" hidden>На этот адрес придёт чек об оплате</span>
           <span class="order-form__error" id="orderEmailError"></span>

@@ -18,7 +18,7 @@ if (!$product) {
     require __DIR__ . '/partials/head.php';
     echo '<title>' . e($pageTitle) . '</title></head><body>';
     require __DIR__ . '/partials/header.php';
-    echo '<main><section class="section"><div class="wrap"><h1 class="section-title">Товар не найден</h1>'
+    echo '<main id="main"><section class="section"><div class="wrap"><h1 class="section-title">Товар не найден</h1>'
         . '<p class="section-sub"><a href="/">Вернуться в каталог</a></p></div></section></main>';
     require __DIR__ . '/partials/footer.php';
     echo '</body></html>';
@@ -75,7 +75,7 @@ if ($trust === []) {
 <body>
 <?php require __DIR__ . '/partials/header.php'; ?>
 
-<main class="product-page">
+<main id="main" class="product-page">
   <div class="wrap">
     <nav class="breadcrumbs" aria-label="Хлебные крошки">
       <ol>

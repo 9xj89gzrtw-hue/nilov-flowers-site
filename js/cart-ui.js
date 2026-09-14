@@ -64,6 +64,59 @@
     return 'позиций';
   }
 
+  /* ============ ПРОМОКОД (критик functional top#3) ============
+     Клиент хранит только код; скидку считает и проверяет сервер (/api/promo,
+     повторный пересчёт в /api/orders). promoState читает order-form.js при сабмите. */
+  const promoMsgEl = document.getElementById('cartPromoMsg');
+  const promoInput = document.getElementById('cartPromoInput');
+  const promoApplyBtn = document.getElementById('cartPromoApply');
+  const promoState = { code: '', discount: 0, minOrder: 0, lastCode: '' };
+  window.PROMO_STATE = promoState;
+
+  function promoFeedback(text, isErr) {
+    if (!promoMsgEl) return;
+    promoMsgEl.textContent = text;
+    promoMsgEl.style.color = isErr ? 'var(--err,#d64545)' : 'var(--ink-soft)';
+  }
+
+  function promoClear(silent) {
+    promoState.code = ''; promoState.discount = 0; promoState.minOrder = 0;
+    if (!silent) promoFeedback('', false);
+  }
+
+  if (promoApplyBtn && promoInput) {
+    promoApplyBtn.addEventListener('click', function () {
+      const code = promoInput.value.trim();
+      if (!code) { promoFeedback('Введите промокод', true); return; }
+      promoApplyBtn.disabled = true;
+      promoFeedback('Проверяем…', false);
+      fetch('/api/promo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: code, subtotal: window.cart.getTotal() })
+      }).then(function (r) { return r.json(); }).then(function (res) {
+        promoApplyBtn.disabled = false;
+        if (res && res.ok) {
+          promoState.code = res.code; promoState.discount = res.discount;
+          promoState.lastCode = res.code; promoState.minOrder = 0;
+          promoFeedback(res.label || 'Промокод применён', false);
+        } else {
+          promoClear(true);
+          const msg = res && res.error === 'min_order' && res.min
+            ? 'Промокод действует от ' + formatPrice(res.min) + ' ₽'
+            : 'Такого промокода нет или он истёк';
+          if (res && res.error === 'min_order') promoState.minOrder = 0;
+          promoFeedback(msg, true);
+          promoState.code = ''; promoState.discount = 0;
+        }
+        render();
+      }).catch(function () {
+        promoApplyBtn.disabled = false;
+        promoFeedback('Не удалось проверить промокод — попробуйте позже', true);
+      });
+    });
+  }
+
   function render() {
     const items = window.cart.getItems();
     const totalQty = items.reduce((sum, i) => sum + i.qty, 0);
@@ -76,6 +129,18 @@
     itemsEl.hidden = items.length === 0;
 
     totalEl.textContent = formatPrice(window.cart.getTotal()) + ' ₽';
+    /* Промокод (критик functional top#3): показываем серверную скидку; код и скидка
+       уходят в POST /api/orders, где пересчитываются заново (клиенту не доверяем). */
+    if (promoMsgEl) {
+      if (promoState.code && window.cart.getTotal() < promoState.minOrder) {
+        promoState.code = ''; promoState.discount = 0;
+        promoMsgEl.textContent = 'Промокод ' + promoState.lastCode + ' действует от ' + formatPrice(promoState.minOrder) + ' ₽ — добавьте ещё цветов';
+        promoMsgEl.style.color = 'var(--err,#d64545)';
+      }
+    }
+    if (promoState.code && promoState.discount > 0) {
+      totalEl.innerHTML = '<s style="opacity:.55;margin-right:6px">' + formatPrice(window.cart.getTotal()) + ' ₽</s>' + formatPrice(Math.max(0, window.cart.getTotal() - promoState.discount)) + ' ₽';
+    }
     checkoutBtn.disabled = items.length === 0;
 
     if (orderSelected) {
