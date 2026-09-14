@@ -40,7 +40,7 @@ $igDisclaimer = $igOn; /* пометку Meta показываем только 
       <p class="site-footer__messengers">
         <?php if ($waOn): ?><a href="https://wa.me/<?= e(preg_replace('/[^0-9]/', '', $whatsapp)) ?>" target="_blank" rel="noopener">WhatsApp</a><?php endif; ?>
         <?php if ($tgOn): ?><a href="https://t.me/<?= e($telegram) ?>" target="_blank" rel="noopener">Telegram</a><?php endif; ?>
-        <?php if ($vkOn): ?><a href="<?= e(setting('shop_vk')) ?>" target="_blank" rel="noopener">VK</a><?php endif; ?>
+        <?php if ($vkOn): ?><a href="<?= e(preg_match('#^https?://#i', setting('shop_vk')) ? setting('shop_vk') : 'https://vk.com/' . ltrim(setting('shop_vk'), '/')) ?>" target="_blank" rel="noopener me">VK</a><?php endif; ?>
         <?php if ($maxOn): ?><a href="<?= e(setting('shop_max_link')) ?>" target="_blank" rel="noopener">MAX</a><?php endif; ?>
         <?php if ($igOn): ?>
           <a href="<?= e(setting('shop_instagram')) ?>" target="_blank" rel="noopener">Instagram*</a>

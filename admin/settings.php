@@ -32,6 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
         'delivery_badge_text','faq_title',
         /* Критик functional: слоты доставки (тексты построчно) + подписи gift-блока */
         'delivery_slots',
+        'related_title',
         'faq_q1','faq_a1','faq_q2','faq_a2','faq_q3','faq_a3','faq_q4','faq_a4',
         /* Дедлайн + тексты таймера и empty-state (критерий 16) */
         'order_deadline_hour','order_deadline_minute','countdown_text','countdown_closed_text','countdown_night_text',
@@ -78,7 +79,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
               /* Критик functional: gift-UX и слоты доставки — отключаемы (критерий 14) */
               'feature_gift_fields', 'feature_delivery_slots',
               /* Промокод в корзине (критик functional top#3) */
-              'feature_promo'] as $cb) {
+              'feature_promo',
+              /* Awwwards-design D8: блок «С этим берут» на странице товара */
+              'feature_related'] as $cb) {
         if (!$cbTrackAll && !in_array($cb, $cbRendered, true)) { continue; } // не в форме — не трогаем
         $values[$cb] = isset($_POST[$cb]) ? '1' : '0';
     }
@@ -379,6 +382,13 @@ flash();
           Поле «Промокод» в корзине
         </label>
         <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 10px 26px">Коды создаются в разделе «Промокоды». Скидка считается на сервере — обмануть нельзя.</p>
+        <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+          <input type="checkbox" name="feature_related" style="width:auto" <?= sv('feature_related', $s) !== '0' ? 'checked' : '' ?>>
+          Блок «С этим берут» на странице товара
+        </label>
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 10px 26px">Показывает 3 других букета этой же категории (или случайные) — покупателю есть куда идти дальше, средний чек выше.</p>
+        <label class="f" for="m-related-title">Заголовок блока рекомендаций</label>
+        <input class="input" id="m-related-title" name="related_title" value="<?= sv('related_title', $s) !== '' ? sv('related_title', $s) : 'С этим берут' ?>" maxlength="60">
         <div style="margin:6px 0 10px 26px">
           <label class="f" for="slots-ta">Интервалы доставки (по одному в строке)</label>
           <textarea class="input" id="slots-ta" name="delivery_slots" rows="3" style="width:100%;font:inherit"><?= e(sv('delivery_slots', $s) !== '' ? sv('delivery_slots', $s) : "Утро 9:00–14:00\nДень 14:00–18:00\nВечер 18:00–22:00") ?></textarea>

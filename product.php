@@ -134,6 +134,49 @@ if ($trust === []) {
       </div>
     </div>
   </div>
+
+  <?php /* Awwwards-design D8: «С этим берут» — плотность e-com витрины; тумблер в настройках */ ?>
+  <?php if (setting('feature_related', '1') === '1'):
+      $rel = db()->prepare('SELECT * FROM products WHERE is_active = 1 AND id != :id
+            ORDER BY (category_id = :cat) DESC, RANDOM() LIMIT 3');
+      $rel->execute([':id' => (int)$product['id'], ':cat' => (int)($product['category_id'] ?? 0)]);
+      $related = $rel->fetchAll();
+      if ($related): ?>
+  <section class="section" style="padding-top:8px" aria-label="Рекомендованные товары">
+    <div class="wrap">
+      <h2 class="section-title" style="font-size:clamp(1.4rem,3vw,2rem)"><?= e(setting('related_title', '') ?: 'С этим берут') ?></h2>
+      <div class="catalog__grid" style="margin-top:18px">
+        <?php foreach ($related as $rp):
+            $rPrice = productPrice($rp);
+            $rFile = productImageFile($rp);
+            $rImg = $rFile !== '' ? '/img/products/' . rawurlencode($rFile) : '';
+            $rWebp = $rImg !== '' && is_file(BASE_PATH . preg_replace('/\.(jpe?g|png)$/i', '.webp', urldecode($rImg)))
+                   ? preg_replace('/\.(jpe?g|png)$/i', '.webp', urldecode($rImg)) : '';
+        ?>
+        <article class="product-card">
+          <div class="product-card__media">
+            <a class="product-card__media-link" href="/product/<?= e(rawurlencode($rp['slug'])) ?>" aria-label="<?= e($rp['name']) ?>">
+              <?php if ($rImg !== ''): ?>
+                <picture>
+                  <?php if ($rWebp !== ''): ?><source type="image/webp" srcset="<?= e($rWebp) ?>"><?php endif; ?>
+                  <img class="product-card__img" src="<?= e($rImg) ?>" alt="<?= e($rp['name']) ?>" loading="lazy" decoding="async">
+                </picture>
+              <?php else: ?>
+                <svg viewBox="0 0 80 94" style="width:30%;margin:auto;color:var(--blue)" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="40" cy="30" r="11"/><circle cx="26" cy="38" r="8"/><circle cx="54" cy="38" r="8"/><path d="M40 41v20M40 61c-8 6-14 14-16 25M40 61c8 6 14 14 16 25"/></svg>
+              <?php endif; ?>
+            </a>
+          </div>
+          <div class="product-card__body">
+            <a class="product-card__name" href="/product/<?= e(rawurlencode($rp['slug'])) ?>"><?= e($rp['name']) ?></a>
+            <div class="product-card__price"><?= formatPrice($rPrice) ?></div>
+          </div>
+        </article>
+        <?php endforeach; ?>
+      </div>
+    </div>
+  </section>
+      <?php endif; ?>
+  <?php endif; ?>
 </main>
 
 <?php require __DIR__ . '/partials/footer.php'; ?>

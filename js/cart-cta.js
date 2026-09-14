@@ -24,6 +24,19 @@
         ],
         { duration: 320, easing: 'cubic-bezier(.22,1,.36,1)' }
       );
+      /* Awwwards-usability: SR-анонс добавления (drawer закрыт — qty-aria-live не виден) */
+      let sr = document.getElementById('cartSrAnnounce');
+      if (!sr) {
+        sr = document.createElement('div');
+        sr.id = 'cartSrAnnounce';
+        sr.setAttribute('aria-live', 'polite');
+        sr.setAttribute('role', 'status');
+        sr.style.cssText = 'position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap';
+        document.body.appendChild(sr);
+      }
+      const items = window.cart.getItems ? window.cart.getItems() : [];
+      let c = 0; items.forEach(function (it) { c += (it.qty || 1); });
+      sr.textContent = (productName || 'Букет') + ' добавлен' + (c ? ', в корзине ' + c + ' товар(ов)' : '');
     });
   });
 })();
