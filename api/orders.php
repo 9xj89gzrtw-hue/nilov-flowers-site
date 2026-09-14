@@ -24,6 +24,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     respond(405, ['errors' => ['method_not_allowed']]);
 }
 
+/* Критик security (4/10): rate-limit на создание заказов — не больше 6/час на IP. */
+if (!rl_check('orders', 6, 3600)) {
+    header('Retry-After: ' . rl_retry_after('orders', 3600));
+    respond(429, ['errors' => ['rate_limited']]);
+}
+
 $raw = file_get_contents('php://input');
 $data = json_decode($raw ?: '', true);
 if (!is_array($data)) {

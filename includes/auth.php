@@ -6,6 +6,9 @@ require_once __DIR__ . '/util.php';
 function adminSessionStart(): void
 {
     if (session_status() !== PHP_SESSION_ACTIVE) {
+        /* Критик security: кука сессии — HttpOnly+Secure+SameSite=Lax */
+        session_set_cookie_params(['lifetime' => 0, 'path' => '/', 'secure' => true,
+            'httponly' => true, 'samesite' => 'Lax']);
         session_name('floweradmin');
         session_start();
     }

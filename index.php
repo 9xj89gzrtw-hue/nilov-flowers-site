@@ -53,15 +53,12 @@ function product_img_webp(array $p): string
     return is_file(BASE_PATH . urldecode($webp)) ? $webp : '';
 }
 
-/* Демо-фото: активным товарам без своего фото подставляем файлы из img/products,
-   чтобы витрина не выглядела пустой. Свои фото (загруженные в админке) не трогаем. */
+/* Критик-покупатель B1: единый фолбэк-фото (productImageFile) — карточка и страница
+   товара всегда показывают одно и то же. */
 $canonicalUrl = 'https://flowers.interfood-catering.ru/';
-$demoImages = ['roz.jpg', 'p2.jpg', 'p3.jpg'];
-$demoIdx = 0;
 foreach ($products as &$pRow) {
-    if ($pRow['is_active'] == 1 && $pRow['image'] === '') {
-        $pRow['image'] = $demoImages[$demoIdx % count($demoImages)];
-        $demoIdx++;
+    if ($pRow['is_active'] == 1) {
+        $pRow['image'] = productImageFile($pRow);
     }
 }
 unset($pRow);
@@ -70,7 +67,7 @@ unset($pRow);
 <head>
 <title><?= e(setting('seo_title', 'Доставка цветов в СПб — ' . setting('shop_name', 'Nilov Flowers') . ' | Свежие букеты с доставкой сегодня')) ?></title>
 <meta name="description" content="<?= e(setting('seo_description', 'Доставка букетов по Санкт-Петербургу в день заказа. Свежие цветы с утренней поставки, фото перед отправкой, бесплатная доставка по Приморскому району. Заказы до 20:00 — доставим сегодня.')) ?>">
-<meta property="og:title" content="<?= e(setting('shop_name', 'Nilov Flowers')) ?> — свежие цветы с доставкой в СПб">
+<meta property="og:title" content="<?= e(setting('seo_title', 'Доставка цветов в СПб — ' . setting('shop_name', 'Nilov Flowers') . ' | Свежие букеты с доставкой сегодня')) ?>">
 <meta property="og:description" content="Букеты с доставкой в день заказа по Санкт-Петербургу. Фото перед отправкой, свежие цветы с утренней поставки.">
 <meta property="og:url" content="https://flowers.interfood-catering.ru/">
 <?= setting('hero_image') !== '' ? '<meta property="og:image" content="https://flowers.interfood-catering.ru/img/uploads/' . e(rawurlencode(setting('hero_image'))) . '">' : '' ?>
@@ -118,9 +115,11 @@ if ($__heroPre !== '') {
 </script>
 </head>
 <body>
+<?php /* a11y-критик: skip-link — первый таб ведёт сразу в контент */ ?>
+<a class="skip-link" href="#main">Перейти к содержимому</a>
 <?php require __DIR__ . '/partials/header.php'; ?>
 
-<main>
+<main id="main">
   <!-- HERO: Nilov Flowers wow-заголовок + фото в арке -->
   <section class="hero">
     <div class="wrap hero__grid">
@@ -149,7 +148,7 @@ if ($__heroPre !== '') {
         <p class="hero__subtitle nv-hero-sub"><?= e(setting('hero_subtitle')) ?></p>
         <?php endif; ?>
         <?php /* Таймер «до 20:00» — не зависит от hero-текста (юр-независимый элемент). Отключаем (критерий 16). */ ?>
-        <?php if ($featCountdown): ?><p class="hero__deadline" style="display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:8px 16px;border-radius:999px;background:rgba(255,255,255,.75);backdrop-filter:blur(6px);border:1px solid var(--line);font-size:.9rem;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;max-width:100%"></p><?php endif; ?>
+        <?php if ($featCountdown): ?><p class="hero__deadline" style="display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:8px 16px;border-radius:999px;background:rgba(255,255,255,.75);backdrop-filter:blur(6px);border:1px solid var(--line);font-size:.9rem;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;max-width:100%;min-height:38px"><?= e(str_replace('{T}', '…', setting('countdown_text', 'Успейте заказать сегодня — осталось … до ' . setting('order_deadline_hour', '20') . ':00'))) ?></p><?php endif; ?>
         <?php /* NILOV_CONFIG — общий конфиг JS (вне гейта таймера): порог бесплатной доставки
                должен работать и при выключенном таймере. */ ?>
         <script>window.NILOV_CONFIG = {
@@ -201,10 +200,12 @@ if ($__heroPre !== '') {
   <!-- MARQUEE: доставка по СПб (CSS-only, дублируемая лента aria-hidden) -->
   <div class="nv-marquee" aria-hidden="true">
     <div class="nv-marquee__track">
-      <?php /* Тексты ленты редактируются (критерий 16): marquee_1..4; пустые пропускаются */ ?>
+      <?php /* Тексты ленты редактируются (критерий 16): marquee_1..4; пустые пропускаются.
+          Копирайт-критик: marquee не должен дублировать hero-подзаголовок — первый слот
+          переформулирован (факт о логистике, а не эхо «свежие цветы»). */ ?>
       <?php $marqueeItems = array_filter(array_map('trim', [
-          setting('marquee_1', 'Доставка по Санкт-Петербургу в день заказа'),
-          setting('marquee_2', 'Свежие цветы с утренней поставки'),
+          setting('marquee_1', 'Собираем заказ в течение часа после подтверждения'),
+          setting('marquee_2', 'Доставка по Санкт-Петербургу в день заказа'),
           setting('marquee_3', 'Фото букета перед отправкой'),
           setting('marquee_4', 'Заменяем увядшие в день доставки'),
       ]), static fn (string $t): bool => $t !== ''); ?>
@@ -232,10 +233,10 @@ if ($__heroPre !== '') {
     <div class="wrap">
       <h2 class="section-title"><?= e(setting('catalog_title', 'Каталог')) ?></h2>
       <p class="section-sub"><?= e(setting('catalog_subtitle', 'Соберём и доставим букет в день заказа')) ?></p>
-      <div class="catalog-tabs" id="catalogTabs" role="tablist" aria-label="Категории">
-        <button type="button" class="catalog-tabs__tab is-active" role="tab" aria-selected="true" data-category-id="all">Все</button>
+      <div class="catalog-tabs" id="catalogTabs" role="group" aria-label="Фильтр каталога по категориям">
+        <button type="button" class="catalog-tabs__tab is-active" aria-pressed="true" data-category-id="all">Все</button>
         <?php foreach ($categories as $c): ?>
-          <button type="button" class="catalog-tabs__tab" role="tab" aria-selected="false" data-category-id="<?= (int)$c['id'] ?>"><?= e($c['name']) ?></button>
+          <button type="button" class="catalog-tabs__tab" aria-pressed="false" data-category-id="<?= (int)$c['id'] ?>"><?= e($c['name']) ?></button>
         <?php endforeach; ?>
       </div>
       <?php /* Фильтр по цене (критерий 13, EXPRESS-паттерн). Пороги редактируются (критерий 16). */ ?>
@@ -265,7 +266,7 @@ if ($__heroPre !== '') {
           <label for="zoneCheckInput" style="font-size:.85rem;font-weight:600;color:var(--ink-soft)">Район:</label>
           <input type="search" id="zoneCheckInput" placeholder="<?= e(setting('zone_check_placeholder', 'Мой район доставки…')) ?>" aria-label="Проверить зону доставки"
                  data-fallback="<?= e(setting('zone_check_fallback', 'не нашли — уточним по телефону')) ?>"
-                 style="padding:8px 14px;border-radius:999px;border:1px solid rgba(43,45,47,.35);background:#fff;font-size:.85rem;width:170px;max-width:55vw;min-width:0"
+                 style="padding:8px 14px;border-radius:999px;border:1px solid rgba(43,45,47,.35);background:#fff;font-size:.85rem;width:170px;max-width:55vw;min-width:0;min-height:44px"
                  list="zoneCheckList">
           <datalist id="zoneCheckList">
             <?php foreach ($zones as $z): ?><option value="<?= e($z['name']) ?>"></option><?php endforeach; ?>
@@ -353,7 +354,10 @@ if ($__heroPre !== '') {
           <path d="M100 96c-14-8-30-18-30-32 0-8 5-14 12-16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
         </g>
       </svg>
-      <div class="how-it-works__grid">
+      <?php /* Жюри design D6: auto-fit при 3 шагах на 1440px даёт мёртвый 4-й трек 0px.
+          Честное число колонок = число непустых шагов. */ ?>
+      <?php $stepsShown = count(array_filter([setting('step_1'), setting('step_2'), setting('step_3')], static fn($x) => trim((string)$x) !== '')); ?>
+      <div class="how-it-works__grid" style="grid-template-columns:repeat(<?= (int)max(1, $stepsShown) ?>,1fr)">
         <?php foreach ([1, 2, 3] as $n):
             $step = setting('step_' . $n);
             if ($step === '') continue; ?>
@@ -397,7 +401,7 @@ if ($__heroPre !== '') {
         </div>
         <div class="order-form__field">
           <label for="orderEmail"><?= e(setting('form_email_label', 'Email')) ?> <span id="orderEmailReq" style="color:var(--rose-deep,#E2799C);font-weight:600" hidden>* обязательно для онлайн-оплаты</span></label>
-          <input type="email" id="orderEmail" name="email" autocomplete="email" placeholder="you@example.com">
+          <input type="email" id="orderEmail" name="email" autocomplete="email" placeholder="example@mail.ru">
           <span class="order-form__hint" id="orderEmailHint" hidden>На этот адрес придёт чек об оплате</span>
           <span class="order-form__error" id="orderEmailError"></span>
         </div>
@@ -469,7 +473,7 @@ if ($__heroPre !== '') {
 
   <?php /* FAQ (критерий 13, SEO FAQPage — паттерн Цветовика): реальные вопросы покупателей. Отключаем (критерий 16). */ ?>
   <?php if ($featFaq): ?>
-  <section class="section" id="faq" style="padding-top:0">
+  <section class="section" id="faq" style="padding-top:40px">
     <div class="wrap" style="max-width:720px">
       <h2 class="section-title"><?= e(setting('faq_title', 'Частые вопросы')) ?></h2>
       <?php

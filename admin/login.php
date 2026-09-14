@@ -6,7 +6,10 @@ ensureAdminUser();
 $err = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
-        if (!csrf_verify((string)($_POST['csrf_token'] ?? ''))) {
+        /* Критик security: брутфорс-лок — не больше 10 попыток/15 мин на IP */
+        if (!rl_check('adminlogin', 10, 900)) {
+            $err = 'Слишком много попыток входа. Подождите 15 минут и попробуйте снова.';
+        } elseif (!csrf_verify((string)($_POST['csrf_token'] ?? ''))) {
             $err = 'Ошибка безопасности. Обновите страницу и попробуйте ещё раз.';
         } elseif (adminLogin(trim((string)($_POST['login'] ?? '')), (string)($_POST['password'] ?? ''))) {
             header('Location: /admin/index.php');

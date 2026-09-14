@@ -395,7 +395,7 @@ img.product-card__img{
 /* Счётчик избранного в шапке каталога */
 .fav-toggle{
   display:inline-flex;align-items:center;gap:6px;
-  padding:8px 14px;border-radius:999px;border:1px solid var(--line);
+  padding:0 14px;min-height:44px;border-radius:999px;border:1px solid var(--line);
   background:#fff;font-size:.85rem;font-weight:600;color:var(--ink);cursor:pointer;
   transition:border-color .18s ease;
 }

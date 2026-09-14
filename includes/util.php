@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__ . '/security.php';
 
 function e(mixed $v): string
 {
@@ -45,6 +46,16 @@ function productPrice(array $p): int
 {
     return ($p['sale_price'] !== null && $p['sale_price'] !== '' && (int)$p['sale_price'] > 0)
         ? (int)$p['sale_price'] : (int)$p['price'];
+}
+
+/* Критик-покупатель B1 (critical): карточка и страница товара подставляли РАЗНЫЕ
+   демо-фото товару без своего image (позиция в списке против id%3). Единый
+   детерминированный фолбэк: одно и то же фото всегда у одного и того же id. */
+function productImageFile(array $p): string
+{
+    if (($p['image'] ?? '') !== '') return $p['image'];
+    $demo = ['roz.jpg', 'p2.jpg', 'p3.jpg'];
+    return $demo[((int)($p['id'] ?? 0)) % count($demo)];
 }
 
 function slugify(string $s): string

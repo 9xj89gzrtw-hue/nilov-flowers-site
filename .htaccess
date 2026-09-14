@@ -3,6 +3,12 @@
 RewriteEngine On
 RewriteBase /
 
+# Критик security (4/10): http→https 301 (кроме ACME-валидации)
+RewriteCond %{HTTPS} !=on
+RewriteCond %{HTTP:X-Forwarded-Proto} !https
+RewriteCond %{REQUEST_URI} !^/\.well-known
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
 # Физические файлы и каталоги отдаём как есть
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
@@ -19,6 +25,9 @@ RewriteRule ^sitemap\.xml$ sitemap.php [L]
 # API
 RewriteRule ^api/orders$ api/orders.php [L]
 RewriteRule ^api/payment/create$ api/payment-create.php [L]
+RewriteRule ^api/csp-report\.php$ api/csp-report.php [L]
+# Неизвестный /api/* — честный JSON 404, а не HTML главной (критик security)
+RewriteRule ^api/ api/404.php [L]
 
 # Карточка товара
 RewriteRule ^product/([a-z0-9\-]+)$ product.php?slug=$1 [L,QSA]

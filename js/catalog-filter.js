@@ -12,10 +12,10 @@
 
     tabs.querySelectorAll('.catalog-tabs__tab').forEach(function (t) {
       t.classList.remove('is-active');
-      t.setAttribute('aria-selected', 'false');
+      t.setAttribute('aria-pressed', 'false');
     });
     tab.classList.add('is-active');
-    tab.setAttribute('aria-selected', 'true');
+    tab.setAttribute('aria-pressed', 'true');
 
     const categoryId = tab.dataset.categoryId;
     cards.forEach(function (card) {

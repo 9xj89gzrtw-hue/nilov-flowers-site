@@ -43,8 +43,13 @@
         '<div class="cart-item__media">' + media + '</div>' +
         '<div class="cart-item__info">' +
           '<p class="cart-item__name">' + escapeHtml(item.name || '') + '</p>' +
-          '<p class="cart-item__price">' + formatPrice(item.price) + ' ₽ / шт</p>' +
+          '<p class="cart-item__price">' + formatPrice(item.price) + ' ₽ / шт' + (item.qty > 1 ? ' · ' + item.qty + ' шт' : '') + '</p>' +
           (isUnavailable ? '<p class="cart-item__error">Этот товар больше недоступен</p>' : '') +
+          '<div class="cart-item__qty">' +
+            '<button type="button" class="cart-item__qtybtn" data-action="dec" aria-label="Уменьшить количество">−</button>' +
+            '<span class="cart-item__qtynum" aria-live="polite">' + (item.qty || 1) + '</span>' +
+            '<button type="button" class="cart-item__qtybtn" data-action="inc" aria-label="Увеличить количество">+</button>' +
+          '</div>' +
         '</div>' +
         '<button type="button" class="cart-panel__close cart-item__remove" data-action="remove" aria-label="Удалить из корзины">&times;</button>' +
       '</div>'

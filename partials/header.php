@@ -31,6 +31,12 @@ $cartMode = in_array(setting('cart_mode', 'drawer'), ['drawer', 'hybrid', 'page'
       <a href="/#catalog">Каталог</a>
       <a href="/#how-it-works">Как работаем</a>
       <a href="/#order">Заказать</a>
+      <?php /* Критик-покупатель B7: на мобильном телефон должен быть в шапке, не только в футере */ ?>
+      <?php if ($headerPhone !== ''): ?>
+      <a href="tel:+<?= e(preg_replace('/\D/', '', $headerPhone)) ?>" class="site-header__call" aria-label="Позвонить нам: <?= e($headerPhone) ?>">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.6 10.8c1.4 2.8 3.8 5.2 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.4c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.4 0 .8-.2 1L6.6 10.8z"/></svg>
+      </a>
+      <?php endif; ?>
       <button type="button" class="cart-toggle" id="cartToggle" data-cart-mode="<?= e($cartMode) ?>" aria-label="Корзина" aria-haspopup="dialog" aria-expanded="false">
         <svg class="cart-toggle__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/><path d="M2.5 3h2l2.6 12.4a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 2-1.6L21 7H6"/></svg>
         <span class="cart-toggle__count" id="cartCount" hidden>0</span>

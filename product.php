@@ -27,12 +27,7 @@ if (!$product) {
 
 $price = productPrice($product);
 $isSale = $price !== (int)$product['price'];
-$img = $product['image'] !== '' ? '/img/products/' . rawurlencode($product['image']) : '';
-if ($img === '') {
-    /* Демо-фото для товара без загруженного изображения */
-    $demoImages = ['roz.jpg', 'p2.jpg', 'p3.jpg'];
-    $img = '/img/products/' . $demoImages[$product['id'] % count($demoImages)];
-}
+$img = '/img/products/' . rawurlencode(productImageFile($product));
 
 /* WebP-пара к фото товара (каталог уже отдаёт webp через <picture>) */
 $imgWebp = preg_replace('/\.(jpe?g|png)$/i', '.webp', urldecode($img));
