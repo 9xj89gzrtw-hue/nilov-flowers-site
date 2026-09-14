@@ -52,7 +52,8 @@ $igDisclaimer = $igOn; /* пометку Meta показываем только 
       <?php endif; ?>
       <?php endif; ?>
     </div>
-    <span>© <?= date('Y') ?> <?= e($siteName) ?><?= setting('feature_track_link', '1') === '1' ? ' · <a href="/track">Где мой заказ?</a>' : '' ?> · <a href="/policy">Конфиденциальность</a> · <a href="/offer">Оферта</a> · <a href="#" onclick="if(window.cookieSettings){window.cookieSettings();}return false">Настройки cookie</a></span>
+    <?php try { $__occLinks = db()->query('SELECT title, slug FROM occasions WHERE active = 1 ORDER BY sort, id LIMIT 3')->fetchAll(PDO::FETCH_ASSOC); } catch (Throwable $e) { $__occLinks = []; } ?>
+    <span>© <?= date('Y') ?> <?= e($siteName) ?><?php $ocStr=''; foreach ($__occLinks as $__o) { $ocStr .= ' · <a href="/occasion/' . rawurlencode($__o['slug']) . '">' . e($__o['title']) . '</a>'; } echo setting('feature_track_link','1')==='1' ? ' · <a href="/track">Где мой заказ?</a>' : ''; echo $ocStr; ?> · <a href="/policy">Конфиденциальность</a> · <a href="/offer">Оферта</a> · <a href="#" onclick="if(window.cookieSettings){window.cookieSettings();}return false">Настройки cookie</a></span>
   </div>
 </footer>
 

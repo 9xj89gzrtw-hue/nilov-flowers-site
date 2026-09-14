@@ -8,6 +8,7 @@ function adminHeader(string $title, string $active = ''): void
         'products' => 'Товары',
         'categories' => 'Категории',
         'promo' => 'Промокоды',
+        'occasions' => 'Случаи',
         'zones' => 'Зоны доставки',
         'users' => 'Сотрудники',
         'settings' => 'Настройки',

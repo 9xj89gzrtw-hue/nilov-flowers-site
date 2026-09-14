@@ -18,6 +18,10 @@ if ($path === '/api/orders') {
     require __DIR__ . '/api/orders.php';
     return true;
 }
+if ($path === '/sitemap.xml') {
+    require __DIR__ . '/sitemap.php';
+    return true;
+}
 if ($path === '/api/promo') {
     require __DIR__ . '/api/promo.php';
     return true;
@@ -37,6 +41,11 @@ if ($path === '/track') {
 }
 if ($path === '/api/payment/create') {
     require __DIR__ . '/api/payment-create.php';
+    return true;
+}
+if (preg_match('#^/occasion/([a-z0-9\-]+)$#', $path, $m)) {
+    $_GET['slug'] = $m[1];
+    require __DIR__ . '/occasion.php';
     return true;
 }
 if (preg_match('#^/product/([a-z0-9\-]+)$#', $path, $m)) {

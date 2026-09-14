@@ -50,6 +50,9 @@ RewriteRule ^api/csp-report\.php$ api/csp-report.php [L]
 # Неизвестный /api/* — честный JSON 404, а не HTML главной (критик security)
 RewriteRule ^api/ api/404.php [L]
 
+# Occasion-лендинги (SEO-критик: intent-трафик свадьбы/др/траур)
+RewriteRule ^occasion/([a-z0-9\-]+)$ occasion.php?slug=$1 [L,QSA]
+
 # Карточка товара
 RewriteRule ^product/([a-z0-9\-]+)/$ https://flowers.interfood-catering.ru/product/$1 [R=301,L]
 RewriteRule ^product/([a-z0-9\-]+)$ product.php?slug=$1 [L,QSA]

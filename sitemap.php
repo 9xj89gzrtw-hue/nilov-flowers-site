@@ -35,6 +35,12 @@ foreach ($products as $p) {
     ];
 }
 
+try {
+    foreach (db()->query('SELECT slug FROM occasions WHERE active = 1 ORDER BY sort, id')->fetchAll() as $o) {
+        $urls[] = ['loc' => $base . '/occasion/' . rawurlencode($o['slug']), 'priority' => '0.7', 'changefreq' => 'weekly', 'lastmod' => $today];
+    }
+} catch (Throwable $e) { /* старая БД без таблицы — не роняем sitemap */ }
+
 echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
 echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
 foreach ($urls as $u) {
