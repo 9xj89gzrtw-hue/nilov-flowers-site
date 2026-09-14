@@ -300,6 +300,14 @@
           delivery_address: deliveryAddressInput ? deliveryAddressInput.value.trim() : '',
           payment_method: wantsOnline ? 'online' : 'cash',
           comment: commentInput ? commentInput.value.trim() : '',
+          /* Критик functional: gift-UX + слоты (пустые не шлём, сервер и так обрежет) */
+          recipient_name: (document.getElementById('orderRecipientName') || {value:''}).value.trim(),
+          recipient_phone: (document.getElementById('orderRecipientPhone') || {value:''}).value.trim(),
+          card_text: (document.getElementById('orderCardText') || {value:''}).value.trim(),
+          delivery_date: (document.getElementById('orderDeliveryDate') || {value:''}).value
+            ? (function(){ var v=(document.getElementById('orderDeliveryDate')||{value:''}).value; var d=v.split('-'); return d.length===3? d[2]+'.'+d[1]+'.'+d[0] : v; })() : '',
+          delivery_slot: (document.getElementById('orderDeliverySlot') || {value:''}).value,
+          company_website: (document.getElementById('orderCompanyWebsite') || {value:''}).value,
           pd_consent: pdConsentInput.checked,
           items: items,
         }),

@@ -149,6 +149,12 @@ function migrateSchema(PDO $pdo): void
         ['given_to', "TEXT NOT NULL DEFAULT ''"],
         ['no_photo_reason', "TEXT NOT NULL DEFAULT ''"],
         ['handover_photo', "TEXT NOT NULL DEFAULT ''"],
+        /* Критик functional (gift-UX + слоты): получатель, открытка, дата/слот доставки */
+        ['recipient_name', "TEXT NOT NULL DEFAULT ''"],
+        ['recipient_phone', "TEXT NOT NULL DEFAULT ''"],
+        ['card_text', "TEXT NOT NULL DEFAULT ''"],
+        ['delivery_date', "TEXT NOT NULL DEFAULT ''"],
+        ['delivery_slot', "TEXT NOT NULL DEFAULT ''"],
     ] as [$col, $def]) {
         if (!in_array($col, $orderCols, true)) {
             $pdo->exec("ALTER TABLE orders ADD COLUMN {$col} {$def}");
@@ -162,6 +168,9 @@ function migrateSchema(PDO $pdo): void
     $pdo->exec("INSERT OR IGNORE INTO settings (key, value) VALUES
         ('cart_mode', 'drawer'),
         ('pickup_address', ''),
+        ('feature_gift_fields', '1'),
+        ('feature_delivery_slots', '0'),
+        ('delivery_slots', ''),
         ('shop_whatsapp', ''),
         ('shop_telegram', ''),
         ('legal_subject_type', ''),

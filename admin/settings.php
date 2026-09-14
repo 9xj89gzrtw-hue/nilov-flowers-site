@@ -30,6 +30,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
         'yandex_verification','google_site_verification',
         /* Витринные тексты (критерий 16): бейдж + FAQ редактируются */
         'delivery_badge_text','faq_title',
+        /* Критик functional: слоты доставки (тексты построчно) + подписи gift-блока */
+        'delivery_slots',
         'faq_q1','faq_a1','faq_q2','faq_a2','faq_q3','faq_a3','faq_q4','faq_a4',
         /* Дедлайн + тексты таймера и empty-state (критерий 16) */
         'order_deadline_hour','order_deadline_minute','countdown_text','countdown_closed_text','countdown_night_text',
@@ -72,7 +74,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
               'notify_enabled', 'logo_enabled',
               /* Витринные фичи (критерий 16): каждая отключаема из админки */
               'feature_delivery_badge', 'feature_faq', 'feature_countdown', 'feature_price_filter',
-              'feature_favorites', 'feature_zone_check', 'feature_track_link', 'feature_favicon_badge', 'feature_webpush'] as $cb) {
+              'feature_favorites', 'feature_zone_check', 'feature_track_link', 'feature_favicon_badge', 'feature_webpush',
+              /* Критик functional: gift-UX и слоты доставки — отключаемы (критерий 14) */
+              'feature_gift_fields', 'feature_delivery_slots'] as $cb) {
         if (!$cbTrackAll && !in_array($cb, $cbRendered, true)) { continue; } // не в форме — не трогаем
         $values[$cb] = isset($_POST[$cb]) ? '1' : '0';
     }
@@ -358,6 +362,20 @@ flash();
           Ссылка «Где мой заказ?» в подвале
         </label>
         <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 10px 26px">Покупатель сам проверяет статус по телефону — меньше звонков «где букет?».</p>
+        <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+          <input type="checkbox" name="feature_gift_fields" style="width:auto" <?= sv('feature_gift_fields', $s) !== '0' ? 'checked' : '' ?>>
+          Блок «Кому дарим» в заказе (получатель + открытка)
+        </label>
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 10px 26px">Покупатель укажет имя получателя, его телефон и текст открытки — вы не будете выспрашивать по звонку.</p>
+        <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+          <input type="checkbox" name="feature_delivery_slots" style="width:auto" <?= sv('feature_delivery_slots', $s) === '1' ? 'checked' : '' ?>>
+          Выбор даты и интервала доставки в заказе
+        </label>
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 10px 26px">Покупатель сам выберет день и время (утро/день/вечер) — меньше согласований по телефону.</p>
+        <div style="margin:6px 0 10px 26px">
+          <label class="f" for="slots-ta">Интервалы доставки (по одному в строке)</label>
+          <textarea class="input" id="slots-ta" name="delivery_slots" rows="3" style="width:100%;font:inherit"><?= e(sv('delivery_slots', $s) !== '' ? sv('delivery_slots', $s) : "Утро 9:00–14:00\nДень 14:00–18:00\nВечер 18:00–22:00") ?></textarea>
+        </div>
       </div>
     </div>
     <?php /* Тексты редактируемых фич (критерий 16): бейдж + FAQ */ ?>

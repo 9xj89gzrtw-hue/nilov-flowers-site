@@ -46,6 +46,17 @@ $name = mb_substr(trim((string)($data['name'] ?? '')), 0, 120); /* LOW-фикс 
 $phone = trim((string)($data['phone'] ?? ''));
 $email = trim((string)($data['email'] ?? ''));
 $comment = mb_substr(trim((string)($data['comment'] ?? '')), 0, 2000);
+/* Критик functional (gift-UX): получатель + открытка. Всё необязательное, лимиты серверные. */
+$recipientName = mb_substr(trim((string)($data['recipient_name'] ?? '')), 0, 120);
+$recipientPhone = trim((string)($data['recipient_phone'] ?? ''));
+$cardText = mb_substr(trim((string)($data['card_text'] ?? '')), 0, 500);
+/* Критик functional (слоты доставки): дата ДД.ММ.ГГГГ и интервал из настроек. */
+$deliveryDate = trim((string)($data['delivery_date'] ?? ''));
+$deliverySlot = mb_substr(trim((string)($data['delivery_slot'] ?? '')), 0, 60);
+/* Honeypot (критик security: спам-боты на POST без реферера): заполненное скрытое поле — тихий отказ. */
+if (trim((string)($data['company_website'] ?? '')) !== '') {
+    respond(201, ['id' => 0, 'paymentToken' => '', 'honeypot' => true]);
+}
 /* Fail-safe: «online» принимаем только при реально настроенной ЮKassa
    (галочка + оба ключа). Прямые POST с online при пустых ключах → cash,
    заказ не теряется, владелец получит уведомление как обычно. */
@@ -65,6 +76,18 @@ if (mb_strlen($name) < 2) {
 }
 if ($phone !== '' && !preg_match($phoneRe, $phone)) {
     $errors[] = 'phone';
+}
+/* Критик functional: те же правила для телефона получателя */
+if ($recipientPhone !== '' && !preg_match($phoneRe, $recipientPhone)) {
+    $errors[] = 'recipient_phone';
+}
+/* Дата: только ДД.ММ.ГГГГ и не в прошлом (серверная проверка, клиентская — подсказка) */
+if ($deliveryDate !== '') {
+    $d = DateTime::createFromFormat('d.m.Y', $deliveryDate);
+    $today = new DateTime('today', new DateTimeZone(setting('shop_timezone', 'Europe/Moscow')));
+    if (!$d || $d->setTime(0, 0) < $today || (int)$d->format('Ymd') > (int)$today->modify('+60 days')->format('Ymd')) {
+        $errors[] = 'delivery_date_invalid';
+    }
 }
 if ($email !== '' && !preg_match($emailRe, $email)) {
     $errors[] = 'email';
@@ -98,11 +121,25 @@ if ($zoneId > 0) {
     }
 }
 
-// Позиции заказа: цены берём строго с сервера, клиентские не доверяем
+// Позиции заказа: цены берём строго с сервера, клиентские не доверяем.
+// Критик security: серверные лимиты — qty строго int 1..99 (не молчаливая клампа),
+// позиций не больше 20 (JS-контракт, раньше не исполнялся).
+if (count($items) > 20) {
+    $errors[] = 'too_many_items';
+}
 $normalized = [];
 foreach ($items as $item) {
     $pid = (int)($item['product_id'] ?? 0);
-    $qty = max(1, min(99, (int)($item['qty'] ?? 1)));
+    $qtyRaw = $item['qty'] ?? 1;
+    if (!is_int($qtyRaw) && !(is_string($qtyRaw) && ctype_digit($qtyRaw))) {
+        $errors[] = 'item_qty_invalid';
+        continue;
+    }
+    $qty = (int)$qtyRaw;
+    if ($qty < 1 || $qty > 99) {
+        $errors[] = 'item_qty_invalid';
+        continue;
+    }
     if ($pid <= 0) {
         continue;
     }
@@ -137,8 +174,9 @@ $paymentToken = bin2hex(random_bytes(16));
 $pdo->beginTransaction();
 try {
     $stmt = $pdo->prepare('INSERT INTO orders (customer_name, phone, email, delivery_zone_id, delivery_address,
-        comment, payment_method, total, status, payment_token, consent_log)
-        VALUES (:n, :ph, :em, :z, :a, :c, :pm, :t, :st, :pt, :cl)');
+        comment, payment_method, total, status, payment_token, consent_log,
+        recipient_name, recipient_phone, card_text, delivery_date, delivery_slot)
+        VALUES (:n, :ph, :em, :z, :a, :c, :pm, :t, :st, :pt, :cl, :rn, :rp, :ct, :dd, :ds)');
     $stmt->execute([
         ':n' => $name, ':ph' => $phone, ':em' => $email,
         ':z' => $zone !== null ? (int)$zone['id'] : null,
@@ -146,6 +184,8 @@ try {
         ':t' => $total, ':st' => 'new', ':pt' => $paymentToken,
         ':cl' => sprintf('consent given %s, ip %s', date('Y-m-d H:i:s'),
             $_SERVER['REMOTE_ADDR'] ?? 'unknown'),
+        ':rn' => $recipientName, ':rp' => $recipientPhone, ':ct' => $cardText,
+        ':dd' => $deliveryDate, ':ds' => $deliverySlot,
     ]);
     $orderId = (int)$pdo->lastInsertId();
 

@@ -109,6 +109,19 @@ flash();
       <?php if ($order['comment'] !== ''): ?>
         <p style="margin-top:8px"><strong>Комментарий:</strong> <?= e($order['comment']) ?></p>
       <?php endif; ?>
+      <?php /* Критик functional (gift-UX/слоты): новые поля заказа */ ?>
+      <?php if (($order['recipient_name'] ?? '') !== '' || ($order['recipient_phone'] ?? '') !== ''): ?>
+        <p style="margin-top:8px;padding:10px 12px;background:var(--mint);border-radius:12px">
+          <strong>Получатель:</strong> <?= e((string)($order['recipient_name'] ?? '')) ?>
+          <?= ($order['recipient_phone'] ?? '') !== '' ? ' · <a href="tel:' . e(preg_replace('/\D/', '', (string)$order['recipient_phone'])) . '">' . e((string)$order['recipient_phone']) . '</a>' : '' ?>
+        </p>
+      <?php endif; ?>
+      <?php if (($order['card_text'] ?? '') !== ''): ?>
+        <p style="margin-top:6px"><strong>Открытка:</strong> «<?= e((string)$order['card_text']) ?>»</p>
+      <?php endif; ?>
+      <?php if (($order['delivery_date'] ?? '') !== '' || ($order['delivery_slot'] ?? '') !== ''): ?>
+        <p style="margin-top:6px"><strong>Хочет доставку:</strong> <?= e(trim((string)(($order['delivery_date'] ?? '') . ' ' . ($order['delivery_slot'] ?? '')))) ?></p>
+      <?php endif; ?>
     </div>
     <div>
       <h2 style="font-family:var(--font-display);font-size:1.05rem;margin-bottom:6px">Состав</h2>

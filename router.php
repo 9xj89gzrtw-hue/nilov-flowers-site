@@ -5,6 +5,11 @@ declare(strict_types=1);
 
 $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 
+if ($path === '/' || $path === '/index.php') {
+    require __DIR__ . '/index.php';
+    return true;
+}
+
 if (is_file(__DIR__ . $path)) {
     return false; // физический файл — отдать как есть
 }
@@ -43,4 +48,6 @@ if ($path === '/order-thanks') {
     return true;
 }
 
-require __DIR__ . '/index.php';
+/* Критик security: неизвестные пути — честный 404 (как в .htaccess на проде),
+   раньше любой мусор (/img/nope.png, /.env) отдавал главную с 200. */
+require __DIR__ . '/404.php';

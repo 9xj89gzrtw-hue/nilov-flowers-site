@@ -86,6 +86,15 @@ function notifyNewOrder(int $orderId): void
     if ((int)$order['delivery_zone_id'] > 0) {
         $lines .= '- Доставка — ' . formatPrice(max(0, (int)$order['total'] - $sum)) . "\n";
     }
+    /* Критик functional: подарок и желаемое время — сразу в уведомлении менеджеру */
+    $gift = [];
+    if (($order['recipient_name'] ?? '') !== '') { $gift[] = 'получатель: ' . $order['recipient_name']; }
+    if (($order['recipient_phone'] ?? '') !== '') { $gift[] = 'тел. получателя: ' . $order['recipient_phone']; }
+    if (($order['card_text'] ?? '') !== '') { $gift[] = 'открытка: «' . $order['card_text'] . '»'; }
+    if ($gift !== []) { $lines .= '- 🎁 ' . implode(' · ', $gift) . "\n"; }
+    if (($order['delivery_date'] ?? '') !== '' || ($order['delivery_slot'] ?? '') !== '') {
+        $lines .= '- Хочет: ' . trim(($order['delivery_date'] ?? '') . ' ' . ($order['delivery_slot'] ?? '')) . "\n";
+    }
 
     // Тихие часы — единый шлюз для email и Telegram
     $quiet = isQuietHours(setting('quiet_from'), setting('quiet_to'), setting('shop_timezone', 'Europe/Moscow'));

@@ -9,6 +9,10 @@ RewriteCond %{HTTP:X-Forwarded-Proto} !https
 RewriteCond %{REQUEST_URI} !^/\.well-known
 RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
 
+# /admin без слэша: mod_dir за nginx делает 301 с http Location (утечка scheme).
+# Явный абсолютный редирект на https — один хоп, без http-утечки.
+RewriteRule ^admin$ https://flowers.interfood-catering.ru/admin/ [R=301,L]
+
 # Физические файлы и каталоги отдаём как есть
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
@@ -40,8 +44,10 @@ RewriteRule ^track$ track.php [L,QSA]
 # Страница благодарности
 RewriteRule ^order-thanks$ order-thanks.php [L,QSA]
 
-# Всё остальное — на главную
-RewriteRule ^ index.php [L]
+# Всё остальное — честный 404 (критик security: раньше soft-200 главной на любой мусор)
+RewriteCond %{REQUEST_URI} !^/404\.php$
+RewriteRule ^ 404.php [L]
+ErrorDocument 404 /404.php
 </IfModule>
 
 # Конфиг и база не отдаются из веба

@@ -26,6 +26,9 @@ $featCountdown = setting('feature_countdown', '1') === '1';
 $featPriceFilter = setting('feature_price_filter', '1') === '1';
 $featFavorites = setting('feature_favorites', '1') === '1';
 $featZoneCheck = setting('feature_zone_check', '1') === '1';
+/* Критик functional 6/10: gift-UX (получатель+открытка) и слоты даты — отключаемые (критерий 14) */
+$featGiftFields = setting('feature_gift_fields', '1') === '1';
+$featDeliverySlots = setting('feature_delivery_slots', '0') === '1';
 
 /* Trust strip: гарантии — guarantee_1..N, либо настройки guarantees построчно */
 $guarantees = [];
@@ -454,8 +457,52 @@ if ($__heroPre !== '') {
         </fieldset>
         <div class="order-form__field">
           <label for="orderComment">Комментарий</label>
-          <textarea id="orderComment" name="comment" rows="3" placeholder="Открытка с текстом, цветовые пожелания, время доставки"></textarea>
+          <textarea id="orderComment" name="comment" rows="3" placeholder="Цветовые пожелания, подъезд, домофон"></textarea>
         </div>
+        <?php if ($featGiftFields): ?>
+        <?php /* Критик functional (gift-UX): цветы дарят — кому и что написать на открытке.
+                 Все поля необязательные; пустые просто не попадают в заказ. */ ?>
+        <fieldset class="order-form__payment" style="margin-top:4px">
+          <legend>Кому дарим (необязательно)</legend>
+          <div class="order-form__field">
+            <label for="orderRecipientName">Имя получателя</label>
+            <input type="text" id="orderRecipientName" name="recipient_name" maxlength="120" autocomplete="off" placeholder="Например: Анна">
+          </div>
+          <div class="order-form__field">
+            <label for="orderRecipientPhone">Телефон получателя</label>
+            <input type="tel" id="orderRecipientPhone" name="recipient_phone" autocomplete="off" placeholder="+7 (___) ___-__-__">
+            <span class="order-form__error" id="orderRecipientPhoneError"></span>
+            <p class="order-form__hint">Курьер позвонит ему, а не вам</p>
+          </div>
+          <div class="order-form__field">
+            <label for="orderCardText">Текст открытки</label>
+            <textarea id="orderCardText" name="card_text" rows="2" maxlength="500" placeholder="С днём рождения! ❤️ — от Евгения"></textarea>
+            <p class="order-form__hint">Напишем от руки и вложим в букет · бесплатно</p>
+          </div>
+        </fieldset>
+        <?php endif; ?>
+        <?php if ($featDeliverySlots): ?>
+        <?php /* Критик functional top#1: слоты даты/времени вместо «договоримся по телефону» */ ?>
+        <fieldset class="order-form__payment" style="margin-top:4px">
+          <legend>Когда доставить (необязательно)</legend>
+          <div class="order-form__field">
+            <label for="orderDeliveryDate">Дата</label>
+            <input type="date" id="orderDeliveryDate" name="delivery_date">
+            <span class="order-form__error" id="orderDeliveryDateError"></span>
+          </div>
+          <div class="order-form__field">
+            <label for="orderDeliverySlot">Интервал</label>
+            <select id="orderDeliverySlot" name="delivery_slot">
+              <option value="">Любое время дня</option>
+              <?php foreach (array_filter(array_map('trim', explode("\n", setting('delivery_slots', "Утро 9:00–14:00\nДень 14:00–18:00\nВечер 18:00–22:00")))) as $slotOption): ?>
+                <option value="<?= e($slotOption) ?>"><?= e($slotOption) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+        </fieldset>
+        <?php endif; ?>
+        <?php /* Honeypot (критик security): невидимое поле — боты заполняют, люди нет */ ?>
+        <div class="hp-field" aria-hidden="true"><label for="orderCompanyWebsite">Сайт компании</label><input type="text" id="orderCompanyWebsite" name="company_website" tabindex="-1" autocomplete="off"></div>
         <label class="order-form__checkbox">
           <input type="checkbox" id="orderPdConsent" name="pd_consent" required>
           <span>Я даю согласие на обработку персональных данных (ФИО, телефон, адрес) в целях оформления и доставки заказа на условиях <a href="/policy" target="_blank" rel="noopener">Политики конфиденциальности</a> и <a href="/offer" target="_blank" rel="noopener">Публичной оферты</a> *</span>
