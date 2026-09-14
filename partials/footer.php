@@ -52,7 +52,7 @@ $igDisclaimer = $igOn; /* пометку Meta показываем только 
       <?php endif; ?>
       <?php endif; ?>
     </div>
-    <span>© <?= date('Y') ?> <?= e($siteName) ?><?= setting('feature_track_link', '1') === '1' ? ' · <a href="/track">Где мой заказ?</a>' : '' ?> · <a href="/policy">Политика ПД</a> · <a href="/offer">Оферта</a> · <a href="#" onclick="if(window.cookieSettings){window.cookieSettings();}return false">Настройки cookie</a></span>
+    <span>© <?= date('Y') ?> <?= e($siteName) ?><?= setting('feature_track_link', '1') === '1' ? ' · <a href="/track">Где мой заказ?</a>' : '' ?> · <a href="/policy">Конфиденциальность</a> · <a href="/offer">Оферта</a> · <a href="#" onclick="if(window.cookieSettings){window.cookieSettings();}return false">Настройки cookie</a></span>
   </div>
 </footer>
 
@@ -86,6 +86,21 @@ $igDisclaimer = $igOn; /* пометку Meta показываем только 
       <p id="cartPromoMsg" class="cart-promo__msg" style="margin:4px 0 0;font-size:.8rem;color:var(--ink-soft)" aria-live="polite"></p>
       <?php endif; ?>
       <p class="cart-panel__total">Итого: <span id="cartTotal">0 ₽</span></p>
+      <?php /* Логика-критик W34: «Итого» в корзине ≠ «К оплате» в форме (drawer не знает район).
+         Честная сноска вместо расхождения; текст правится в админке, пустая строка = скрыть. */ ?>
+      <?php
+        $znMin = null; $znMax = null;
+        try {
+          $zr = db()->query('SELECT MIN(price) mn, MAX(price) mx FROM delivery_zones')->fetch();
+          $znMin = (int)($zr['mn'] ?? 0); $znMax = (int)($zr['mx'] ?? 0);
+        } catch (Throwable $e) { $znMin = 0; $znMax = 0; }
+        $totalNoteDefault = ($znMax > 0)
+          ? sprintf('Доставка по вашему району — от %s до %s ₽, точную стоимость покажем в заказе.', $znMin === 0 ? '0' : number_format($znMin, 0, ',', ' '), number_format($znMax, 0, ',', ' '))
+          : '';
+        $totalNote = setting('cart_total_note', '__DEFAULT__');
+        if ($totalNote === '__DEFAULT__') $totalNote = $totalNoteDefault;
+      ?>
+      <?php if ($totalNote !== ''): ?><p class="cart-panel__note" style="font-size:.76rem;color:var(--ink-soft);margin:2px 0 0"><?= e($totalNote) ?></p><?php endif; ?>
       <button type="button" class="btn btn--accent" id="cartCheckout" disabled><?= e(setting('cart_checkout_text', 'Оформить заказ')) ?></button>
       <button type="button" class="btn btn--outline cart-panel__continue" id="cartContinue"><?= e(setting('cart_continue_text', 'Продолжить покупки')) ?></button>
     </div>

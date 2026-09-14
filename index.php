@@ -155,10 +155,11 @@ if ($__heroPre !== '') {
         <script>window.NILOV_CONFIG = {
           deadlineHour: <?= (int)(setting('order_deadline_hour', '20')) ?>,
           deadlineMinute: <?= (int)(setting('order_deadline_minute', '0')) ?>,
+          openHour: <?= (int)(preg_match('/(\d{1,2})\s*:/', (string)setting('shop_hours', ''), $m) ? max(0, min(23, (int)$m[1])) : 9) ?>,
           tz: <?= json_encode(setting('shop_timezone', 'Europe/Moscow')) ?>,
-          nightText: <?= json_encode(setting('countdown_night_text', 'Сейчас ночь — заказы принимаем, доставим сегодня с 9:00'), JSON_UNESCAPED_UNICODE) ?>,
-          countdownText: <?= json_encode(setting('countdown_text', 'Успейте заказать сегодня — осталось {T} до 20:00'), JSON_UNESCAPED_UNICODE) ?>,
-          closedText: <?= json_encode(setting('countdown_closed_text', 'Сегодня заказы уже закрыты — доставим завтра с утра'), JSON_UNESCAPED_UNICODE) ?>,
+          nightText: <?= json_encode(setting('countdown_night_text', 'Ночь. Заказ примем сейчас — доставим сегодня после 9:00'), JSON_UNESCAPED_UNICODE) ?>,
+          countdownText: <?= json_encode(setting('countdown_text', 'Успейте заказать сегодня — осталось {T} до {D}'), JSON_UNESCAPED_UNICODE) ?>,
+          closedText: <?= json_encode(setting('countdown_closed_text', 'Приём заказов на сегодня закрыт — доставим завтра с 9:00'), JSON_UNESCAPED_UNICODE) ?>,
           freeDeliveryThreshold: <?= (int) setting('free_delivery_threshold', '0') ?>
         };</script>
         <?php if ($heroBtn || ($heroTextEnabled && $guarantees !== [])): ?>
@@ -265,7 +266,7 @@ if ($__heroPre !== '') {
         <?php if ($featZoneCheck): ?>
         <span class="zone-check" style="display:inline-flex;align-items:center;gap:6px;margin-left:auto">
           <label for="zoneCheckInput" style="font-size:.85rem;font-weight:600;color:var(--ink-soft)">Район:</label>
-          <input type="search" id="zoneCheckInput" placeholder="<?= e(setting('zone_check_placeholder', 'Мой район доставки…')) ?>" aria-label="Проверить зону доставки"
+          <input type="search" id="zoneCheckInput" placeholder="<?= e(setting('zone_check_placeholder', 'Например: Приморский')) ?>" aria-label="Узнать стоимость доставки в ваш район"
                  data-fallback="<?= e(setting('zone_check_fallback', 'не нашли — уточним по телефону')) ?>"
                  style="padding:8px 14px;border-radius:999px;border:1px solid rgba(43,45,47,.35);background:#fff;font-size:.85rem;width:170px;max-width:55vw;min-width:0;min-height:44px"
                  list="zoneCheckList">
@@ -510,7 +511,7 @@ if ($__heroPre !== '') {
         <button type="submit" class="btn btn--accent order-form__submit" id="orderSubmit"
                 data-pay-label="<?= e(setting('submit_button_text', 'Оплатить заказ')) ?>"
                 data-nopay-label="<?= e(setting('submit_nopay_text', 'Отправить заказ')) ?>"><?= $ykLive ? e(setting('submit_button_text', 'Оплатить заказ')) : e(setting('submit_nopay_text', 'Отправить заказ')) ?></button>
-        <p class="order-form__hint"><?= e(sprintf('Заказы принимаем ежедневно до %s — оформленные сегодня доставим сегодня же.', setting('order_deadline_hour', '20') . ':' . str_pad(setting('order_deadline_minute', '0'), 2, '0', STR_PAD_LEFT))) ?></p>
+        <p class="order-form__hint"><?= e(sprintf('Заказы до %s — доставим сегодня; после %s — привезём завтра с утра.', setting('order_deadline_hour', '20') . ':' . str_pad(setting('order_deadline_minute', '0'), 2, '0', STR_PAD_LEFT), setting('order_deadline_hour', '20') . ':' . str_pad(setting('order_deadline_minute', '0'), 2, '0', STR_PAD_LEFT))) ?></p>
         <p class="order-form__status" id="orderStatus" role="status" hidden></p>
       </form>
     </div>

@@ -103,13 +103,15 @@
     var deadline = new Date(now);
     deadline.setHours(hh, mm, 0, 0);
     var h = now.getHours();
-    /* Ночное окно (с дедлайна и до 08:00) — «осталось N часов до 20:00» бессмысленно
-       и пугает: человек засыпает, а таймер орёт про «сегодня». (критерий 26) */
-    if (h >= hh || h < 8) {
-      var night = h < 8;
+    /* Логика-критик W34: в 08:00–09:00 магазин ещё закрыт (shop_hours с 9:00), но таймер
+       уже орал «осталось 12 ч до 20:00», когда позвонить и согласовать нельзя.
+       Ночное окно теперь [дедлайн .. открытие], а не [дедлайн .. 08:00]. */
+    var oh = (cfg.openHour != null ? parseInt(cfg.openHour, 10) : 9);
+    if (h >= hh || h < oh) {
+      var night = h < oh;
       el.textContent = '🌙 ' + (night
-        ? (cfg.nightText || 'Сейчас ночь — заказы принимаем, доставим сегодня с 9:00')
-        : (cfg.closedText || 'Сегодня заказы уже закрыты — доставим завтра с утра'));
+        ? (cfg.nightText || 'Ночь. Заказ примем сейчас — доставим сегодня после 9:00')
+        : (cfg.closedText || 'Приём заказов на сегодня закрыт — доставим завтра с 9:00'));
       el.dataset.state = 'closed';
       return;
     }
@@ -119,8 +121,10 @@
     if (M === 60) { H += 1; M = 0; }
     /* Секунды убраны (критерий 27): они мерцают и не несут решения — только ч/м. */
     var t = H > 0 ? (H + ' ч' + (M ? ' ' + M + ' мин' : '')) : (M + ' мин');
-    var tpl = cfg.countdownText || 'Успейте заказать сегодня — осталось {T} до 20:00';
-    el.textContent = '⏱ ' + tpl.replace('{T}', t).replace('20:00', label);
+    var tpl = cfg.countdownText || 'Успейте заказать сегодня — осталось {T} до {D}';
+    /* Логика-критик W34: подстрока '20:00' в кастомном тексте молча съедалась при смене
+       дедлайна, а без литерала дедлайн исчезал вовсе. Канон — токен {D}; старый литерал — фолбэк. */
+    el.textContent = '⏱ ' + tpl.replace('{T}', t).replace('{D}', label).replace('20:00', label);
     el.dataset.state = 'open';
   }
   tick();
@@ -135,8 +139,11 @@
   function sync() {
     var favs = get();
     document.querySelectorAll('.product-card__fav').forEach(function (b) {
-      b.classList.toggle('is-active', favs.indexOf(b.getAttribute('data-fav-id')) !== -1);
-      b.textContent = b.classList.contains('is-active') ? '♥' : '♡';
+      var on = favs.indexOf(b.getAttribute('data-fav-id')) !== -1;
+      b.classList.toggle('is-active', on);
+      b.textContent = on ? '♥' : '♡';
+      /* a11y-критик S3: сердечко — тумблер, состояние должно озвучиваться */
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
     var t = document.getElementById('favToggle');
     if (t) {
@@ -189,11 +196,21 @@
     var opts = sel ? sel.querySelectorAll('option[data-price]') : [];
     var nv = norm(v);
     if (!nv) return null;
-    var best = null;
+    /* Логика-критик: чистые цифры («3», «500») матчились с текстами опций → ложные попадания;
+       «петродворец» ⊄ «петродворцовый» → fallback при существующей зоне.
+       Теперь: только буквы, ищем максимум по длине совпавшего префикса (раньше побеждал последний). */
+    if (!/[а-яa-z]{3,}/i.test(nv)) return null;
+    var best = null, bestLen = 0;
     opts.forEach(function (o) {
       var t = norm(o.textContent);
-      // совпадение ключевых подстрок (напр. «примор» → Приморский)
-      if (t.indexOf(nv) !== -1 || nv.indexOf(t.slice(0, 6)) !== -1) best = o;
+      var m = t.match(/[а-яa-z]{3,}/i);
+      if (!m) return;
+      var word = m[0]; // «центральный», «петродворцовый»…
+      var L = 0;
+      for (var i = Math.min(nv.length, word.length); i >= 3; i--) {
+        if (nv.slice(0, i) === word.slice(0, i)) { L = i; break; }
+      }
+      if (L > bestLen) { best = o; bestLen = L; }
     });
     return best;
   }

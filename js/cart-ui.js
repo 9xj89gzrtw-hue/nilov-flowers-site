@@ -226,6 +226,13 @@
   function open() {
     panel.hidden = false;
     document.body.classList.add('no-scroll');
+    /* a11y-критик S2: body.overflow не блокирует window-scroll на iOS/Safari — вешаем на html */
+    document.documentElement.classList.add('no-scroll');
+    /* a11y-критик S1: Tab убегал за drawer (2/6 циклов). Фон — inert, пока корзина открыта.
+       Панель корзины — fixed sibling вне этих контейнеров, фокус не теряется. */
+    const inertEls = document.querySelectorAll('header.site-header, footer.site-footer, main, nav.mnav, .cookie-banner');
+    inertEls.forEach(function (el) { el.inert = true; });
+    panel._inertEls = inertEls;
     toggle.setAttribute('aria-expanded', 'true');
     renderUpsell();
     if (closeBtn) closeBtn.focus();
@@ -234,6 +241,9 @@
   function close() {
     panel.hidden = true;
     document.body.classList.remove('no-scroll');
+    document.documentElement.classList.remove('no-scroll');
+    (panel._inertEls || []).forEach(function (el) { el.inert = false; });
+    panel._inertEls = null;
     toggle.setAttribute('aria-expanded', 'false');
     toggle.focus();
   }

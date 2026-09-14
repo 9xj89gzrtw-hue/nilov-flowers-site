@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
         'cookie_banner_text','cookie_accept_text','cookie_reject_text',
         /* Тексты чекаута и корзины (критерий 16) */
         'pickup_option_text','delivery_hint_text','submit_button_text','submit_nopay_text',
-        'cart_title','cart_empty_text','cart_checkout_text','cart_continue_text',
+        'cart_title','cart_empty_text','cart_checkout_text','cart_continue_text','cart_total_note',
         /* Лейблы полей формы заказа (критерий 16, аудит-хардкоды) */
         'form_name_label','form_phone_label','form_email_label','form_delivery_zone_label',
         'fieldset_delivery_legend','fieldset_payment_legend','pay_online_label','pay_cash_label',
@@ -327,10 +327,10 @@ flash();
           <input type="checkbox" name="feature_zone_check" style="width:auto" <?= sv('feature_zone_check', $s) === '1' ? 'checked' : '' ?>>
           Проверка зоны доставки в каталоге
         </label>
-        <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 6px 26px">Поле «Мой район доставки…» — покупатель сразу видит стоимость для своего района.</p>
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 6px 26px">Поле «Например: Приморский» — покупатель сразу видит стоимость для своего района.</p>
         <div style="margin-left:26px">
           <label class="f" for="zc-ph">Подсказка в поле (placeholder)</label>
-          <input class="input" id="zc-ph" name="zone_check_placeholder" value="<?= sv('zone_check_placeholder', $s) !== '' ? sv('zone_check_placeholder', $s) : 'Мой район доставки…' ?>" maxlength="60">
+          <input class="input" id="zc-ph" name="zone_check_placeholder" value="<?= sv('zone_check_placeholder', $s) !== '' ? sv('zone_check_placeholder', $s) : 'Например: Приморский' ?>" maxlength="60">
           <label class="f" for="zc-fb" style="margin-top:8px">Если район не найден</label>
           <input class="input" id="zc-fb" name="zone_check_fallback" value="<?= sv('zone_check_fallback', $s) !== '' ? sv('zone_check_fallback', $s) : 'не нашли — уточним по телефону' ?>" maxlength="80">
         </div>
@@ -435,12 +435,12 @@ flash();
       </div>
     </div>
     <label class="f" for="cd-t" style="margin-top:12px">Текст таймера (до дедлайна)</label>
-    <input class="input" id="cd-t" name="countdown_text" value="<?= sv('countdown_text', $s) !== '' ? sv('countdown_text', $s) : 'Успейте заказать сегодня — осталось {T} до 20:00' ?>" maxlength="120">
-    <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 12px">Вместо <code>{T}</code> подставится время («2 ч 15 мин»), «20:00» заменится на ваш дедлайн. Ночью (00:00–08:00) и после дедлайна показывается соответствующий текст ниже.</p>
+    <input class="input" id="cd-t" name="countdown_text" value="<?= sv('countdown_text', $s) !== '' ? sv('countdown_text', $s) : 'Успейте заказать сегодня — осталось {T} до {D}' ?>" maxlength="120">
+    <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 12px">Вместо <code>{T}</code> подставится время («2 ч 15 мин»), вместо <code>{D}</code> — ваш дедлайн. Ночью (до открытия) и после дедлайна показывается соответствующий текст ниже.</p>
     <label class="f" for="cd-c">Текст после дедлайна</label>
-    <input class="input" id="cd-c" name="countdown_closed_text" value="<?= sv('countdown_closed_text', $s) !== '' ? sv('countdown_closed_text', $s) : 'Сегодня заказы уже закрыты — доставим завтра с утра' ?>" maxlength="120">
-    <label class="f" for="cd-n" style="margin-top:10px">Текст ночью (с 00:00 до 8 утра)</label>
-    <input class="input" id="cd-n" name="countdown_night_text" value="<?= sv('countdown_night_text', $s) !== '' ? sv('countdown_night_text', $s) : 'Сейчас ночь — заказы принимаем, доставим сегодня с 9:00' ?>" maxlength="120">
+    <input class="input" id="cd-c" name="countdown_closed_text" value="<?= sv('countdown_closed_text', $s) !== '' ? sv('countdown_closed_text', $s) : 'Приём заказов на сегодня закрыт — доставим завтра с 9:00' ?>" maxlength="120">
+    <label class="f" for="cd-n" style="margin-top:10px">Текст ночью (с дедлайна до открытия)</label>
+    <input class="input" id="cd-n" name="countdown_night_text" value="<?= sv('countdown_night_text', $s) !== '' ? sv('countdown_night_text', $s) : 'Ночь. Заказ примем сейчас — доставим сегодня после 9:00' ?>" maxlength="120">
     <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
     <p style="font-size:.85rem;font-weight:600;margin:0 0 8px">Пороги фильтра цены в каталоге</p>
     <div class="grid2">
@@ -517,6 +517,9 @@ flash();
         <input class="input" id="ct-c" name="cart_checkout_text" value="<?= sv('cart_checkout_text', $s) !== '' ? sv('cart_checkout_text', $s) : 'Оформить заказ' ?>" maxlength="30">
         <label class="f" for="ct-n" style="margin-top:8px">Кнопка «продолжить покупки»</label>
         <input class="input" id="ct-n" name="cart_continue_text" value="<?= sv('cart_continue_text', $s) !== '' ? sv('cart_continue_text', $s) : 'Продолжить покупки' ?>" maxlength="30">
+        <label class="f" for="ct-note" style="margin-top:8px">Сноска под итогом корзины (про доставку)</label>
+        <input class="input" id="ct-note" name="cart_total_note" value="<?= sv('cart_total_note', $s) ?>" maxlength="140" placeholder="Пусто = скрыть сноску">
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Поясняет, что «Итого» в корзине — это только букеты: доставка добавится в форме. Оставьте пустым, чтобы скрыть.</p>
       </div>
     </div>
     <?php /* Лейблы полей формы заказа (критерий 16, аудит-хардкоды) */ ?>
