@@ -113,7 +113,7 @@ if ($__heroPre !== '') {
         'opens' => '09:00',
         'closes' => '21:00',
     ]],
-    'image' => setting('hero_image', '') !== '' ? '/img/uploads/' . rawurlencode(setting('hero_image')) : '',
+    'image' => setting('hero_image', '') !== '' ? 'https://flowers.interfood-catering.ru/img/uploads/' . rawurlencode(setting('hero_image')) : '',
 ] + (setting('yandex_reviews_id') !== '' ? ['sameAs' => ['https://yandex.ru/maps/org/' . setting('yandex_reviews_id')]] : []), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>
 </script>
 </head>

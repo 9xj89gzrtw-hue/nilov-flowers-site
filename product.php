@@ -62,7 +62,9 @@ if ($trust === []) {
     '@type' => 'Product',
     'name' => $product['name'],
     'description' => $product['description'] !== '' ? $product['description'] : $product['name'],
-    'image' => $img !== '' ? [$img] : [],
+    /* SEO-критик: image в JSON-LD обязан быть АБСОЛЮТНЫМ URL — относительный ломает
+       rich-result (Google не резолвит без base). og:image выше уже абсолютный. */
+    'image' => $img !== '' ? ['https://flowers.interfood-catering.ru' . $img] : [],
     'offers' => [
         '@type' => 'Offer',
         'price' => $price,
