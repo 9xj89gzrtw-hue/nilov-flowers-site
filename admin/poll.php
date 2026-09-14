@@ -7,6 +7,14 @@ adminSessionStart();
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 
+/* Критик security re-check LOW: soft-info (число новых заказов) поллером не долбят —
+   до 60 запросов/мин на IP */
+if (!rl_check('poll', 60, 60)) {
+    http_response_code(429);
+    echo json_encode(['error' => 'rate_limited']);
+    exit;
+}
+
 if (!isset($_SESSION['admin_id'])) {
     http_response_code(401);
     echo json_encode(['error' => 'unauthorized']);

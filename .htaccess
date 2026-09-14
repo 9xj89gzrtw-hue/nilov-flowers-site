@@ -3,6 +3,10 @@
 RewriteEngine On
 RewriteBase /
 
+# Критик security re-check LOW: www-дубль → canonical apex (один хоп, https)
+RewriteCond %{HTTP_HOST} ^www\. [NC]
+RewriteRule ^ https://flowers.interfood-catering.ru%{REQUEST_URI} [R=301,L]
+
 # Критик security (4/10): http→https 301 (кроме ACME-валидации)
 RewriteCond %{HTTPS} !=on
 RewriteCond %{HTTP:X-Forwarded-Proto} !https

@@ -171,7 +171,7 @@ label.f{display:block;font-size:.8rem;font-weight:600;margin:12px 0 4px}
     </nav>
     <span class="spacer"></span>
     <a href="/" target="_blank" class="btn btn--ghost">Открыть сайт</a>
-    <a href="/admin/logout.php" class="btn btn--ghost">Выйти</a>
+    <a href="/admin/logout.php?t=<?= e(csrf_token()) ?>" class="btn btn--ghost">Выйти</a>
   </div>
 </header>
 <main class="wrap">
