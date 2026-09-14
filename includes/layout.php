@@ -100,7 +100,7 @@ td input[type=checkbox]{margin:12px auto;display:block}
 /* file-input не липнет к label */
 input[type=file]{margin-top:6px}
 /* нативный Choose File приобщаем к системе */
-input[type=file]{font:400 .85rem var(--font-ui);color:var(--ink-soft);padding:8px;border:1.5px dashed var(--line);border-radius:10px;background:var(--bg);width:100%}
+input[type=file]{font:400 .85rem var(--font-ui);color:var(--ink);padding:8px;border:1.5px dashed var(--line);border-radius:10px;background:var(--bg);width:100%}
 input[type=file]::file-selector-button{font:600 .82rem var(--font-ui);border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--ink);padding:7px 14px;margin-right:10px;cursor:pointer}
 label.f{display:block;font-size:.8rem;font-weight:600;margin:12px 0 4px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 28px;align-items:start}
@@ -163,7 +163,7 @@ table tr.row-flash{animation:rowFlash 2.5s ease-out 1}
 .dash-metric__label{display:block;font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);font-weight:600}
 .dash-metric__value{display:block;font-family:var(--font-display);font-size:1.45rem;font-weight:700;margin-top:2px}
 .dash-spark{margin-bottom:16px}
-.sparkline{display:block;width:100%;height:64px;margin-top:6px}
+.sparkline{display:block;width:100%;height:64px;margin-top:6px;border-bottom:1px solid var(--line)}
 .sparkline rect{transition:opacity .15s ease}
 .sparkline rect:hover{opacity:.75}
 .dash-row{display:grid;grid-template-columns:1fr 1fr;gap:0 24px}

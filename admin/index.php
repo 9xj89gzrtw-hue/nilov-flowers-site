@@ -217,7 +217,7 @@ $dashqs = fn(string $r) => '/admin/index.php?' . e(http_build_query(array_merge(
       <?php foreach ($sparkData as $i => $sd):
         $h = $sparkMax > 0 ? max(2, (int)round($sd['rev'] / $sparkMax * 56)) : 2; ?>
         <rect x="<?= $i * 8 ?>" y="<?= 60 - $h ?>" width="6" height="<?= $h ?>" rx="1.5"
-          fill="<?= $sd['rev'] > 0 ? 'var(--rose-deep)' : 'var(--bg-alt)' ?>">
+          fill="<?= $sd['rev'] > 0 ? 'var(--rose-cta,#AE4A71)' : 'var(--bg-alt)' ?>">
           <title><?= e($sd['d']) ?>: <?= formatPrice($sd['rev']) ?></title>
         </rect>
       <?php endforeach; ?>
