@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save'
 
     if ($name === '' || $price <= 0) {
         flash('Укажите название и цену товара', true);
-        header('Location: /admin/products.php?page=' . max(1, (int)($_POST['back_page'] ?? 1)));
+        header('Location: /admin/products.php?page=' . max(1, (int)($_POST['back_page'] ?? 1)) . (trim((string)($_POST['back_filters'] ?? '')) !== '' ? '&' . trim((string)$_POST['back_filters']) : ''));
         exit;
     }
 
@@ -82,7 +82,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save'
        страницу списка и якорь на строку (на 2-й странице товар не исчезает из вида). */
     $backPage = max(1, (int)($_POST['back_page'] ?? 1));
     $backId = (int)($_POST['id'] ?? 0);
-    header('Location: /admin/products.php?page=' . $backPage . ($backId ? '#row-' . $backId : ''));
+    $bf = trim((string)($_POST['back_filters'] ?? ''));
+    header('Location: /admin/products.php?page=' . $backPage . ($bf !== '' ? '&' . $bf : '') . ($backId ? '#row-' . $backId : ''));
     exit;
 }
 
@@ -295,6 +296,8 @@ if ($page < 1 || $page > $pages) {
     $page = 1;
 }
 $products = array_slice($allProducts, ($page - 1) * $perPage, $perPage);
+/* W45-финал (владелец T3): контекст фильтра для «Изменить»/«Отмена»/возвратов */
+$ctxQ = ($__ctx = http_build_query(array_filter(['q' => ($fQ ?: null), 'f_cat' => ($fCat ?: null), 'f_status' => ($fSt ?: null), 'page' => ($page > 1 ? $page : null)]))) !== '' ? '&' . $__ctx : '';
 $categories = $pdo->query('SELECT * FROM categories ORDER BY sort, id')->fetchAll();
 
 /* Операционный-критик W32: напоминания владельцу — черновики/устаревшие одним взглядом */
@@ -323,6 +326,7 @@ flash();
     <input type="hidden" name="action" value="save">
     <input type="hidden" name="id" value="<?= $editing ? (int)$editing['id'] : 0 ?>">
     <input type="hidden" name="back_page" value="<?= $page ?>">
+    <input type="hidden" name="back_filters" value="<?= e(http_build_query(array_filter(['q' => ($fQ ?: null), 'f_cat' => ($fCat ?: null), 'f_status' => ($fSt ?: null)]))) ?>">
     <div class="grid2">
       <div>
         <label class="f" for="p-name">Название *</label>
@@ -364,7 +368,7 @@ flash();
     </div>
     <div style="display:flex;gap:10px;margin-top:18px;position:sticky;bottom:12px;z-index:30;background:rgba(255,255,255,.94);backdrop-filter:blur(8px);padding:10px 12px;border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px -18px rgba(43,45,47,.5)">
       <button class="btn btn--accent" type="submit" style="padding:10px 22px;min-height:44px"><?= $editing ? 'Сохранить' : 'Добавить товар' ?></button>
-      <?php if ($editing): ?><a class="btn btn--ghost" href="/admin/products.php<?= ($__qs = http_build_query(array_filter(['page' => ($page > 1 ? $page : null), 'q' => ($fQ ?: null), 'f_cat' => ($fCat ?: null), 'f_status' => ($fSt ?: null)]))) !== '' ? '?' . e($__qs) : '' ?>">Отмена</a><?php endif; ?>
+      <?php if ($editing): ?><a class="btn btn--ghost" href="/admin/products.php?edit=0<?= e($ctxQ) ?>" data-real="1">Отмена</a><?php endif; ?>
     </div>
   </form>
 </div>
@@ -431,7 +435,7 @@ flash();
       <td><small style="color:var(--ink-soft)"><?= $p['updated_at'] !== '' ? e(date('d.m', strtotime((string)$p['updated_at']))) : '—' ?></small></td>
       <td>
         <div class="row-actions">
-          <a href="/admin/products.php?edit=<?= (int)$p['id'] ?>">Изменить</a>
+          <a href="/admin/products.php?edit=<?= (int)$p['id'] ?><?= $ctxQ ?>">Изменить</a>
           <form method="post">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="toggle"><input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
