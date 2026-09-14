@@ -60,7 +60,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save'
                 ->execute([':img' => $image, ':i' => $id]);
         }
         $pdo->prepare('UPDATE products SET category_id = :c, name = :n, slug = :sl, price = :p,
-                sale_price = :sp, description = :d, is_active = :a, show_in_upsell = :u, sort = :s WHERE id = :i')
+                sale_price = :sp, description = :d, is_active = :a, show_in_upsell = :u, sort = :s,
+                updated_at = datetime(\'now\',\'localtime\') WHERE id = :i')
             ->execute([':c' => $categoryId, ':n' => $name, ':sl' => slugify($name), ':p' => $price,
                 ':sp' => $salePrice, ':d' => $description, ':a' => $isActive, ':u' => $showInUpsell, ':s' => $sort, ':i' => $id]);
         flash('Товар обновлён');
@@ -71,8 +72,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save'
         while ((int)$pdo->query('SELECT COUNT(*) FROM products WHERE slug = ' . $pdo->quote($slug))->fetchColumn() > 0) {
             $slug = $base . '-' . (++$n);
         }
-        $pdo->prepare('INSERT INTO products (category_id, name, slug, price, sale_price, description, image, is_active, show_in_upsell, sort)
-                VALUES (:c, :n, :sl, :p, :sp, :d, :img, :a, :u, :s)')
+        $pdo->prepare('INSERT INTO products (category_id, name, slug, price, sale_price, description, image, is_active, show_in_upsell, sort, updated_at)
+                VALUES (:c, :n, :sl, :p, :sp, :d, :img, :a, :u, :s, datetime(\'now\',\'localtime\'))')
             ->execute([':c' => $categoryId, ':n' => $name, ':sl' => $slug, ':p' => $price,
                 ':sp' => $salePrice, ':d' => $description, ':img' => $image, ':a' => $isActive, ':u' => $showInUpsell, ':s' => $sort]);
         flash('Товар добавлен');
@@ -81,9 +82,76 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save'
     exit;
 }
 
+/* Операционный-критик W32 top#1: пакетное изменение цен — главный ежедневный сценарий
+   (сезон, закупка подорожала). Выделенные чекбоксами товары: = N, +N, -N, ±X%. */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'bulk_vis') {
+    /* Массовое скрытие/показ выделенных (W32 missing_ops#1). Показ — с той же валидацией
+       цены/фото, что и одиночный toggle. */
+    $ids = array_values(array_filter(array_map('intval', (array)($_POST['ids'] ?? []))));
+    $want = isset($_POST['set']) && (int)$_POST['set'] === 1 ? 1 : 0;
+    $done = 0;
+    $skipped = 0;
+    foreach ($ids as $pid) {
+        if ($want === 1) {
+            $row = $pdo->prepare('SELECT price, image FROM products WHERE id = :i');
+            $row->execute([':i' => $pid]);
+            $pr = $row->fetch();
+            if (!$pr || (int)$pr['price'] <= 0 || trim((string)$pr['image']) === '') { $skipped++; continue; }
+        }
+        $done += $pdo->prepare('UPDATE products SET is_active = :a, updated_at = datetime(\'now\',\'localtime\') WHERE id = :i')
+            ->execute([':a' => $want, ':i' => $pid]) ? 1 : 0;
+    }
+    flash(($want ? "Показано: $done" : "Скрыто: $done") . ($skipped ? ", пропущено без цены/фото: $skipped" : ''));
+    header('Location: /admin/products.php');
+    exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'bulk_price') {
+    $ids = array_values(array_filter(array_map('intval', (array)($_POST['ids'] ?? []))));
+    $mode = (string)($_POST['mode'] ?? '');
+    $val = (int)($_POST['val'] ?? 0);
+    if (!$ids || !in_array($mode, ['set', 'add', 'sub', 'pct'], true) || ($mode === 'pct' ? $val === 0 : $val <= 0) || abs($val) > 1000000) {
+        flash('Выберите товары, режим и число', true);
+    } else {
+        $n = 0;
+        foreach ($ids as $pid) {
+            $row = $pdo->prepare('SELECT price FROM products WHERE id = :i');
+            $row->execute([':i' => $pid]);
+            $cur = (int)$row->fetchColumn();
+            $new = $cur;
+            if ($mode === 'set') { $new = $val; }
+            if ($mode === 'add') { $new = $cur + $val; }
+            if ($mode === 'sub') { $new = max(1, $cur - $val); }
+            if ($mode === 'pct') { $new = max(1, (int)round($cur * (100 + $val) / 100)); } /* val может быть отрицательным через режим «уменьшить» */
+            if ($new > 0 && $new !== $cur) {
+                $pdo->prepare('UPDATE products SET price = :p, updated_at = datetime(\'now\',\'localtime\') WHERE id = :i')
+                    ->execute([':p' => $new, ':i' => $pid]);
+                $n++;
+            }
+        }
+        flash("Цены обновлены у $n товар(а/ов)");
+    }
+    header('Location: /admin/products.php');
+    exit;
+}
+
 // Скрыть/показать
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'toggle') {
     $id = (int)($_POST['id'] ?? 0);
+    /* Операционный-критик W32: «Показать» товара с ценой 0 или без фото — гарантия, что
+       покупатель никогда не увидит битую карточку «0 ₽» с пустой картинкой. */
+    $stmt = $pdo->prepare('SELECT is_active, price, sale_price, image FROM products WHERE id = :i');
+    $stmt->execute([':i' => $id]);
+    $pr = $stmt->fetch();
+    if ($pr && (int)$pr['is_active'] === 0) { /* показываем */
+        $hasPrice = (int)$pr['price'] > 0;
+        $hasImg = trim((string)$pr['image']) !== '';
+        if (!$hasPrice || !$hasImg) {
+            flash('Нельзя показать: ' . (!$hasPrice ? 'не заполнена цена. ' : '') . (!$hasImg ? 'нет фото.' : ''), true);
+            header('Location: /admin/products.php');
+            exit;
+        }
+    }
     $pdo->prepare('UPDATE products SET is_active = 1 - is_active WHERE id = :i')->execute([':i' => $id]);
     header('Location: /admin/products.php');
     exit;
@@ -160,8 +228,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'bulk_
             while ((int)$pdo->query('SELECT COUNT(*) FROM products WHERE slug = ' . $pdo->quote($try))->fetchColumn() > 0) {
                 $try = $slug . '-' . (++$n);
             }
-            $pdo->prepare('INSERT INTO products (category_id, name, slug, price, sale_price, description, image, is_active, show_in_upsell, sort)
-                    VALUES (NULL, :n, :sl, 0, NULL, :d, :img, 0, 0, :s)')
+            $pdo->prepare('INSERT INTO products (category_id, name, slug, price, sale_price, description, image, is_active, show_in_upsell, sort, updated_at)
+                    VALUES (NULL, :n, :sl, 0, NULL, :d, :img, 0, 0, :s, datetime(\'now\',\'localtime\'))')
                 ->execute([':n' => $name, ':sl' => $try, ':d' => '', ':img' => $imgName, ':s' => 999]);
             $added++;
         }
@@ -180,8 +248,22 @@ if ($editId > 0) {
     $stmt->execute([':i' => $editId]);
     $editing = $stmt->fetch();
 }
+/* Операционный-критик W32: фильтры/поиск — при 200 SKU искать глазами невозможно. */
+$fCat = (int)($_GET['f_cat'] ?? 0);
+$fSt = (string)($_GET['f_status'] ?? '');
+$fQ = mb_strtolower(trim((string)($_GET['q'] ?? '')));
 $allProducts = $pdo->query('SELECT p.*, c.name AS category_name FROM products p
     LEFT JOIN categories c ON c.id = p.category_id ORDER BY p.sort, p.id')->fetchAll();
+$allProducts = array_values(array_filter($allProducts, function ($p) use ($fCat, $fSt, $fQ) {
+    if ($fCat > 0 && (int)$p['category_id'] !== $fCat) { return false; }
+    if ($fSt === 'active' && (int)$p['is_active'] !== 1) { return false; }
+    if ($fSt === 'hidden' && (int)$p['is_active'] !== 0) { return false; }
+    if ($fSt === 'no_price' && (int)$p['price'] > 0) { return false; }
+    if ($fSt === 'no_image' && trim((string)$p['image']) !== '') { return false; }
+    if ($fSt === 'stale' && $p['updated_at'] !== '' && strtotime((string)$p['updated_at']) > time() - 7 * 86400) { return false; }
+    if ($fQ !== '' && mb_strpos(mb_strtolower($p['name'] . ' ' . $p['slug']), $fQ) === false) { return false; }
+    return true;
+}));
 
 /* Пагинация: 25 товаров на страницу */
 $perPage = 25;
@@ -194,10 +276,22 @@ if ($page < 1 || $page > $pages) {
 $products = array_slice($allProducts, ($page - 1) * $perPage, $perPage);
 $categories = $pdo->query('SELECT * FROM categories ORDER BY sort, id')->fetchAll();
 
+/* Операционный-критик W32: напоминания владельцу — черновики/устаревшие одним взглядом */
+$attnDrafts = (int)$pdo->query('SELECT COUNT(*) FROM products WHERE price <= 0')->fetchColumn();
+$attnNoImg = (int)$pdo->query("SELECT COUNT(*) FROM products WHERE image = ''")->fetchColumn();
+$attnStale = (int)$pdo->query("SELECT COUNT(*) FROM products WHERE is_active = 1 AND updated_at != '' AND updated_at < datetime('now','localtime','-14 day')")->fetchColumn();
+
 adminHeader('Товары', 'products');
 flash();
 ?>
 <h1>Товары</h1>
+<?php if ($attnDrafts + $attnNoImg + $attnStale > 0): ?>
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin:0 0 14px;font-size:.85rem">
+  <?php if ($attnDrafts): ?><a href="/admin/products.php?f_status=no_price" style="background:#fff7e0;border:1px solid #e8d48a;border-radius:999px;padding:6px 14px;text-decoration:none;color:var(--ink)">📝 Черновиков без цены: <?= $attnDrafts ?> →</a><?php endif; ?>
+  <?php if ($attnNoImg): ?><a href="/admin/products.php?f_status=no_image" style="background:#fdecec;border:1px solid #eab5b5;border-radius:999px;padding:6px 14px;text-decoration:none;color:var(--ink)">🖼 Без фото: <?= $attnNoImg ?> →</a><?php endif; ?>
+  <?php if ($attnStale): ?><a href="/admin/products.php?f_status=stale" style="background:#eef3fb;border:1px solid #b9c9e4;border-radius:999px;padding:6px 14px;text-decoration:none;color:var(--ink)">⏳ Не обновлялись 2+ недели: <?= $attnStale ?> →</a><?php endif; ?>
+</div>
+<?php endif; ?>
 
 <div class="card">
   <h2 style="font-family:var(--font-display);font-size:1.2rem;margin-bottom:8px">
@@ -267,12 +361,42 @@ flash();
 
 <div class="card">
   <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
-    <h2 style="font-family:var(--font-display);font-size:1.2rem">Все товары</h2>
+    <h2 style="font-family:var(--font-display);font-size:1.2rem">Все товары <small style="font-weight:400;color:var(--ink-soft)">(<?= count($allProducts) ?>)</small></h2>
+    <form method="get" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:.85rem">
+      <input class="input" type="search" name="q" value="<?= e((string)($_GET['q'] ?? '')) ?>" placeholder="Поиск по названию…" style="width:170px;padding:7px 12px;border:1px solid var(--line);border-radius:8px">
+      <select name="f_cat" class="input" style="width:auto;padding:7px 12px;border:1px solid var(--line);border-radius:8px">
+        <option value="0">Все категории</option>
+        <?php foreach ($categories as $c): ?><option value="<?= (int)$c['id'] ?>" <?= $fCat === (int)$c['id'] ? 'selected' : '' ?>><?= e($c['name']) ?></option><?php endforeach; ?>
+      </select>
+      <select name="f_status" class="input" style="width:auto;padding:7px 12px;border:1px solid var(--line);border-radius:8px">
+        <?php $stMap = ['' => 'Все статусы', 'active' => 'Показаны', 'hidden' => 'Скрыты', 'no_price' => 'Без цены', 'no_image' => 'Без фото', 'stale' => 'Не менялись 7+ дней']; ?>
+        <?php foreach ($stMap as $k => $lbl): ?><option value="<?= $k ?>" <?= $fSt === $k ? 'selected' : '' ?>><?= $lbl ?></option><?php endforeach; ?>
+      </select>
+      <button type="submit" class="btn btn--ghost" style="font-size:.82rem;padding:7px 14px">Применить</button>
+      <?php if ($fCat || $fSt || $fQ): ?><a href="/admin/products.php" style="font-size:.82rem">Сбросить</a><?php endif; ?>
+    </form>
   </div>
+  <?php /* Пакетные цены (W32 top#1): выделить чекбоксами → = / + / − / % одним нажатием.
+     Отправляет выделенные ids на action=bulk_price (обработчик выше, с CSRF). */ ?>
+  <form method="post" id="bulkPriceForm" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0;padding:10px 12px;background:var(--mint,#D9E9DF);border-radius:10px;font-size:.85rem">
+    <?= csrf_field() ?>
+    <input type="hidden" name="action" value="bulk_price">
+    <span style="font-weight:600">Цены выделенным:</span>
+    <select name="mode" style="padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:#fff">
+      <option value="set">сделать равной</option><option value="add">повысить на</option><option value="sub">понизить на</option><option value="pct">изменить на %</option>
+    </select>
+    <input class="input" type="number" name="val" min="-90" max="1000000" placeholder="напр. 500 или -10" style="width:130px;padding:6px 10px;border:1px solid var(--line);border-radius:8px" required>
+    <button type="submit" class="btn btn--accent" style="font-size:.82rem;padding:7px 16px" onclick="return confirm('Применить к выделенным товарам?')">Применить</button>
+    <a href="#" id="bulkSelAll" style="font-size:.8rem">выделить все на странице</a>
+    <span style="flex-basis:100%;height:0"></span>
+    <button class="btn btn--ghost" style="font-size:.8rem;padding:6px 14px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer" type="button" id="bulkHideBtn">Скрыть выделенные</button>
+    <button class="btn btn--ghost" style="font-size:.8rem;padding:6px 14px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer" type="button" id="bulkShowBtn">Показать выделенные</button>
+  </form>
   <div class="table-scroll"><table>
-    <tr><th>Фото</th><th>Название</th><th>Категория</th><th>Цена</th><th>Акция</th><th>Сорт.</th><th>Статус</th><th></th><th></th></tr>
+    <tr><th></th><th>Фото</th><th>Название</th><th>Категория</th><th>Цена</th><th>Акция</th><th>Сорт.</th><th>Статус</th><th>Обновлён</th><th></th><th></th></tr>
     <?php foreach ($products as $p): ?>
     <tr>
+      <td><input type="checkbox" name="ids[]" value="<?= (int)$p['id'] ?>" form="bulkPriceForm" style="width:auto"></td>
       <td><?= $p['image'] !== '' ? '<img class="thumb" src="/img/products/' . e($p['image']) . '" alt="">' : '<div class="thumb"></div>' ?></td>
       <td><strong><?= e($p['name']) ?></strong><br><small style="color:var(--ink-soft)"><?= e($p['slug']) ?></small></td>
       <td><?= e($p['category_name'] ?? '—') ?></td>
@@ -280,6 +404,8 @@ flash();
       <td><?= $p['sale_price'] !== null ? formatPrice((int)$p['sale_price']) : '—' ?></td>
       <td><?= (int)$p['sort'] ?></td>
       <td><?= (int)$p['is_active'] === 1 ? 'Показан' : 'Скрыт' ?><?= (int)($p['show_in_upsell'] ?? 0) === 1 ? ' <span style="display:inline-block;background:var(--rose,#F4A9BE);color:#fff;border-radius:999px;padding:2px 8px;font-size:.68rem;font-weight:700;vertical-align:middle">К корзине</span>' : '' ?></td>
+      <?php /* Операционный-критик W32: видна свежесть карточки (обновления/черновики) */ ?>
+      <td><small style="color:var(--ink-soft)"><?= $p['updated_at'] !== '' ? e(date('d.m', strtotime((string)$p['updated_at']))) : '—' ?></small></td>
       <td>
         <div class="row-actions">
           <a href="/admin/products.php?edit=<?= (int)$p['id'] ?>">Изменить</a>
@@ -311,11 +437,13 @@ flash();
   </table></div>
   <?php if ($pages > 1): ?>
   <div style="text-align:center;margin-top:14px">
-    <?php for ($p = 1; $p <= $pages; $p++): ?>
+    <?php for ($p = 1; $p <= $pages; $p++):
+   $qs = array_filter(['page' => ($p > 1 ? $p : null), 'f_cat' => ($fCat ?: null), 'f_status' => ($fSt ?: null), 'q' => ($fQ ?: null)]);
+   $href = '/admin/products.php' . ($qs ? '?' . http_build_query($qs) : ''); ?>
       <?php if ($p === $page): ?>
         <strong style="margin:0 6px"><?= $p ?></strong>
       <?php else: ?>
-        <a style="margin:0 6px" href="/admin/products.php<?= $p > 1 ? '?page=' . $p : '' ?>"><?= $p ?></a>
+        <a style="margin:0 6px" href="<?= e($href) ?>"><?= $p ?></a>
       <?php endif; ?>
     <?php endfor; ?>
     <small style="display:block;color:var(--ink-soft)"><?= $totalProducts ?> товар(ов), страница <?= $page ?> из <?= $pages ?></small>
@@ -331,4 +459,34 @@ flash();
     </form>
   </details>
 </div>
+<script>
+/* W32: «выделить все на странице» для пакетных цен */
+document.getElementById('bulkSelAll')?.addEventListener('click', function (ev) {
+  ev.preventDefault();
+  var boxes = document.querySelectorAll('input[name="ids[]"]');
+  var allOn = Array.prototype.every.call(boxes, function (b) { return b.checked; });
+  boxes.forEach(function (b) { b.checked = !allOn; });
+});
+/* W32 missing_ops: массовое скрытие/показ выделенных — отдельный POST bulk_vis
+   (action главной формы — bulk_price, поэтому кнопками-сабмитами нельзя). */
+(function () {
+  var csrf = '';
+  document.querySelectorAll('#bulkPriceForm input[name="csrf_token"]').forEach(function (i) { csrf = i.value; });
+  function send(set) {
+    var ids = Array.prototype.slice.call(document.querySelectorAll('input[name="ids[]"]:checked')).map(function (b) { return b.value; });
+    if (!ids.length) { alert('Сначала отметьте товары галочками слева.'); return; }
+    if (!confirm((set ? 'Показать' : 'Скрыть') + ' выбранные (' + ids.length + ' шт.) на витрине?')) return;
+    var f = document.createElement('form');
+    f.method = 'post';
+    f.action = '/admin/products.php';
+    function inp(n, v) { var i = document.createElement('input'); i.type = 'hidden'; i.name = n; i.value = v; f.appendChild(i); }
+    inp('action', 'bulk_vis'); inp('set', String(set)); inp('csrf_token', csrf);
+    ids.forEach(function (id) { inp('ids[]', id); });
+    document.body.appendChild(f);
+    f.submit();
+  }
+  document.getElementById('bulkHideBtn')?.addEventListener('click', function () { send(0); });
+  document.getElementById('bulkShowBtn')?.addEventListener('click', function () { send(1); });
+})();
+</script>
 <?php adminFooter(); ?>

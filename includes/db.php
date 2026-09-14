@@ -303,6 +303,12 @@ function migrateSchema(PDO $pdo): void
     if (!in_array('show_in_upsell', $prodCols2, true)) {
         $pdo->exec('ALTER TABLE products ADD COLUMN show_in_upsell INTEGER NOT NULL DEFAULT 0');
     }
+    /* Операционный-критик W32: отслеживание актуальности — когда карточку последний раз
+       правили (для напоминания «не обновлялся N дней»). */
+    if (!in_array('updated_at', $prodCols2, true)) {
+        $pdo->exec("ALTER TABLE products ADD COLUMN updated_at TEXT NOT NULL DEFAULT ''");
+        $pdo->exec("UPDATE products SET updated_at = datetime('now','localtime') WHERE updated_at = ''");
+    }
     /* orders: лог согласия на обработку ПД (152-ФЗ) — дата/время/IP/значение */
     $ordCols2 = array_column($pdo->query("PRAGMA table_info(orders)")->fetchAll(), 'name');
     if (!in_array('consent_log', $ordCols2, true)) {
