@@ -289,10 +289,12 @@ flash();
             <button type="submit"><?= (int)$p['is_active'] === 1 ? 'Скрыть' : 'Показать' ?></button>
           </form>
           <form method="post">
+            <?= csrf_field() ?>
             <input type="hidden" name="action" value="urgent"><input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
             <button type="submit"<?= (int)($p['is_urgent'] ?? 0) === 1 ? ' style="background:var(--rose-deep,#E2799C);color:#fff;border-color:var(--rose-deep,#E2799C);font-weight:700"' : '' ?>><?= (int)($p['is_urgent'] ?? 0) === 1 ? '★ Успеть сегодня — включено' : 'Успеть сегодня' ?></button>
           </form>
           <form method="post" style="display:inline-flex;gap:4px">
+            <?= csrf_field() ?>
             <input type="hidden" name="action" value="move"><input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
             <button type="submit" name="dir" value="up" title="Выше" aria-label="Выше">↑</button>
             <button type="submit" name="dir" value="down" title="Ниже" aria-label="Ниже">↓</button>
@@ -322,6 +324,7 @@ flash();
   <details style="margin-top:14px">
     <summary style="cursor:pointer;color:var(--ink-soft);font-size:.85rem">Опасная зона: снять ВСЕ товары с продажи</summary>
     <form method="post" onsubmit="return confirm('Снять ВСЕ товары с продажи? Витрина станет пустой. Товары можно вернуть по одному кнопкой «Показать».')" style="margin-top:8px">
+      <?= csrf_field() ?>
       <input type="hidden" name="action" value="hide_all">
       <button type="submit" class="danger" style="font-size:.8rem;padding:7px 14px;border-radius:8px;border:1px solid var(--err,#c0392b);color:#c0392b;background:#fff;cursor:pointer;font-family:inherit">Снять всё с продажи</button>
       <small style="display:block;margin-top:6px;color:var(--ink-soft)">Витрина станет пустой. Вернуть можно кнопкой «Показать» у каждого товара.</small>

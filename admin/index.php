@@ -314,6 +314,7 @@ $dashqs = fn(string $r) => '/admin/index.php?' . e(http_build_query(array_merge(
           <?php elseif ($o['status'] === 'confirmed'): ?>
           <a href="/admin/order.php?id=<?= (int)$o['id'] ?>">Выполнен →</a>
           <form method="post" onsubmit="return confirm('Отметить заказ №<?= (int)$o['id'] ?> как «Не выкуплен»?')">
+            <?= csrf_field() ?>
             <input type="hidden" name="action" value="status"><input type="hidden" name="id" value="<?= (int)$o['id'] ?>">
             <input type="hidden" name="status" value="unredeemed"><input type="hidden" name="page" value="<?= $page ?>">
             <button type="submit" class="danger">Не выкуплен</button>
