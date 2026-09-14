@@ -10,47 +10,43 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      SSH_HOST: ${{{ secrets.SSH_HOST }}
-      SSH_USER: ${{{ secrets.SSH_USER }}
-      SSH_PORT: ${{{ secrets.SSH_PORT }}
-      REMOTE_DIR: ${{{ secrets.REMOTE_DIR }}
-      SSHPASS: ${{{ secrets.SSH_PASS }}
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+      SSH_PORT: ${{ secrets.SSH_PORT }}
+      REMOTE_DIR: ${{ secrets.REMOTE_DIR }}
+      SSHPASS: ${{ secrets.SSH_PASS }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Install sshpass
         run: sudo apt-get update -y && sudo apt-get install -y sshpass
-      - name: Rsync site (tar-fallback if remote shell dirty)
+      - name: Rsync site (no-delete)
         run: |
-          PORT="${SSH_PORT:-22}"
-          EXCLUDES="--exclude=.git --exclude=.github --exclude=.gitignore --exclude=db --exclude=state --exclude=admin/state --exclude=img/uploads --exclude=img/products --exclude=.DS_Store --exclude=._* --exclude=.worktrees"
-          if sshpass -e rsync -az --checksum -e "ssh -o StrictHostKeyChecking=accept-new -p $PORT" ./ "$SSH_USER@$SSH_HOST:${REMOTE_DIR}"; then
-            echo "rsync OK"
-          else
-            echo "rsync FAIL -> tar over ssh fallback"
-            tar czf - $EXCLUDES . | sshpass -e ssh -o StrictHostKeyChecking=accept-new -p "$PORT" "$SSH_USER@$SSH_HOST" "cd ${REMOTE_DIR} && tar xzf -"
-            echo "tar fallback OK"
-          fi
+          sshpass -e rsync -az --checksum \
+            -e "ssh -o StrictHostKeyChecking=accept-new -p ${SSH_PORT:-22}" \
+            --exclude='.git' --exclude='.github' --exclude='.gitignore' \
+            --exclude='db' --exclude='state' --exclude='admin/state' \
+            --exclude='img/uploads' --exclude='img/products' \
+            --exclude='.DS_Store' --exclude='._*' --exclude='.worktrees' \
+            ./ "$SSH_USER@$SSH_HOST:${REMOTE_DIR}"
       - name: Opcache touch changed php
         run: |
-          PORT="${SSH_PORT:-22}"
-          PREV="${{{  github.event.before }"
+          PREV="${{ github.event.before }}"
           if [ "$PREV" = "0000000000000000000000000000000000000000" ] || [ -z "$PREV" ]; then
             FILES=$(git ls-tree -r --name-only HEAD | grep -E '\.php$')
           else
-            FILES=$(git diff --name-only "$PREV" "${{{  github.sha }" | grep -E '\.php$' || true)
+            FILES=$(git diff --name-only "$PREV" "${{ github.sha }}" | grep -E '\.php$' || true)
           fi
           LIST=$(echo "$FILES" | grep -v '^$' | tr '\n' ' ')
           [ -z "$LIST" ] && { echo "no changed PHP"; exit 0; }
-          sshpass -e ssh -o StrictHostKeyChecking=accept-new -p "$PORT" \
+          sshpass -e ssh -o StrictHostKeyChecking=accept-new -p "${SSH_PORT:-22}" \
             "$SSH_USER@$SSH_HOST" "cd ~/flowers.interfood-catering.ru/public_html && touch $LIST && echo TOUCHED"
       - name: Verify md5 sw.js
         run: |
-          PORT="${SSH_PORT:-22}"
           LOCAL=$(md5sum sw.js | cut -d' ' -f1)
-          REMOTE=$(sshpass -e ssh -o StrictHostKeyChecking=accept-new -p "$PORT" \
+          REMOTE=$(sshpass -e ssh -o StrictHostKeyChecking=accept-new -p "${SSH_PORT:-22}" \
             "$SSH_USER@$SSH_HOST" "md5sum ~/flowers.interfood-catering.ru/public_html/sw.js | cut -d' ' -f1")
           echo "local=$LOCAL remote=$REMOTE"
           [ "$LOCAL" = "$REMOTE" ] || { echo "MD5 MISMATCH"; exit 1; }
       - name: Done
-        run: echo "Deployed ${{{  github.sha }"
+        run: echo "Deployed ${{ github.sha }}"
