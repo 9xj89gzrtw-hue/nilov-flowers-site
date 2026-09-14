@@ -20,15 +20,16 @@ jobs:
         uses: actions/checkout@v4
       - name: Install sshpass
         run: sudo apt-get update -y && sudo apt-get install -y sshpass
-      - name: Rsync site (no-delete)
+      - name: Rsync site (no-delete; tar-fallback если shell «грязный» = rsync protocol mismatch)
         run: |
-          sshpass -e rsync -az --checksum \
-            -e "ssh -o StrictHostKeyChecking=accept-new -p ${SSH_PORT:-22}" \
-            --exclude='.git' --exclude='.github' --exclude='.gitignore' \
-            --exclude='db' --exclude='state' --exclude='admin/state' \
-            --exclude='img/uploads' --exclude='img/products' \
-            --exclude='.DS_Store' --exclude='._*' --exclude='.worktrees' \
-            ./ "$SSH_USER@$SSH_HOST:${REMOTE_DIR}"
+          EXCLUDES="--exclude=.git --exclude=.github --exclude=.gitignore --exclude=db --exclude=state --exclude=admin/state --exclude=img/uploads --exclude=img/products --exclude=.DS_Store --exclude=._* --exclude=.worktrees"
+          if sshpass -e rsync -az --checksum -e "ssh -o StrictHostKeyChecking=accept-new -p ${SSH_PORT:-*** ./ $SSH_USER@$SSH_HOST:${REMOTE_DIR}; then
+            echo "rsync OK"
+          else
+            echo "rsync FAIL -> tar over ssh fallback"
+            tar czf - $EXCLUDES . | sshpass -e ssh -o StrictHostKeyChecking=accept-new -p "${SSH_PORT:-***" "$SSH_USER@$SSH_HOST" "cd ${REMOTE_DIR} && tar xzf -"
+            echo "tar fallback OK"
+          fi
       - name: Opcache touch changed php
         run: |
           PREV="${{ github.event.before }}"
