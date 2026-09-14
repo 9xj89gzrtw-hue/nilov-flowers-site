@@ -133,7 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'bulk_
                 $n++;
             }
         }
-        flash("Цены обновлены у $n товар(а/ов)");
+        flash("Цены обновлены: $n " . pluralRu($n, ["товар","товара","товаров"]));
     }
     header('Location: /admin/products.php');
     exit;
@@ -157,7 +157,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'toggl
         }
     }
     $pdo->prepare('UPDATE products SET is_active = 1 - is_active WHERE id = :i')->execute([':i' => $id]);
-    header('Location: /admin/products.php');
+    /* Владелец-критик W44: подтверждение + возврат с сохранением фильтра/поиска/страницы
+       («Скрыл проданный — списокreset'нулся, товар потерялся» — страх потери). */
+    flash($pr && (int)$pr['is_active'] === 1 ? 'Товар скрыт из продажи — он по-прежнему здесь, в фильтре «Скрытые»' : 'Товар показан в каталоге');
+    $bq = trim((string)($_POST['back_qs'] ?? ''));
+    header('Location: /admin/products.php' . ($bq !== '' ? '?' . $bq : ''));
     exit;
 }
 
@@ -356,9 +360,9 @@ flash();
         </label>
       </div>
     </div>
-    <div style="display:flex;gap:10px;margin-top:18px">
-      <button class="btn btn--accent" type="submit"><?= $editing ? 'Сохранить' : 'Добавить товар' ?></button>
-      <?php if ($editing): ?><a class="btn btn--ghost" href="/admin/products.php">Отмена</a><?php endif; ?>
+    <div style="display:flex;gap:10px;margin-top:18px;position:sticky;bottom:12px;z-index:30;background:rgba(255,255,255,.94);backdrop-filter:blur(8px);padding:10px 12px;border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px -18px rgba(43,45,47,.5)">
+      <button class="btn btn--accent" type="submit" style="padding:10px 22px;min-height:44px"><?= $editing ? 'Сохранить' : 'Добавить товар' ?></button>
+      <?php if ($editing): ?><a class="btn btn--ghost" href="/admin/products.php<?= $page > 1 ? '?page=' . $page : '' ?>">Отмена</a><?php endif; ?>
     </div>
   </form>
 </div>
@@ -401,7 +405,7 @@ flash();
     <select name="mode" style="padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:#fff">
       <option value="set">сделать равной</option><option value="add">повысить на</option><option value="sub">понизить на</option><option value="pct">изменить на %</option>
     </select>
-    <input class="input" type="number" name="val" min="-90" max="1000000" placeholder="напр. 500 или -10" style="width:130px;padding:6px 10px;border:1px solid var(--line);border-radius:8px" required>
+    <input class="input" type="number" name="val" min="-90" max="1000000" placeholder="500 или -10 (минус = снизить)" style="width:130px;padding:6px 10px;border:1px solid var(--line);border-radius:8px" required>
     <button type="submit" class="btn btn--accent" style="font-size:.82rem;padding:7px 16px" onclick="return confirm('Применить к выделенным товарам?')">Применить</button>
     <a href="#" id="bulkSelAll" style="font-size:.8rem">выделить все на странице</a>
     <span style="flex-basis:100%;height:0"></span>
@@ -428,6 +432,7 @@ flash();
           <form method="post">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="toggle"><input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
+            <input type="hidden" name="back_qs" value="<?= e($_SERVER['QUERY_STRING'] ?? '') ?>">
             <button type="submit"><?= (int)$p['is_active'] === 1 ? 'Скрыть' : 'Показать' ?></button>
           </form>
           <form method="post">
@@ -462,7 +467,7 @@ flash();
         <a style="margin:0 6px" href="<?= e($href) ?>"><?= $p ?></a>
       <?php endif; ?>
     <?php endfor; ?>
-    <small style="display:block;color:var(--ink-soft)"><?= $totalProducts ?> товар(ов), страница <?= $page ?> из <?= $pages ?></small>
+    <small style="display:block;color:var(--ink-soft)"><?= $totalProducts ?> <?= e(pluralRu($totalProducts, ["товар","товара","товаров"])) ?>, страница <?= $page ?> из <?= $pages ?></small>
   </div>
   <?php endif; ?>
   <details style="margin-top:14px">

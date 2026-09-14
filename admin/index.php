@@ -357,7 +357,7 @@ $dashqs = fn(string $r) => '/admin/index.php?' . e(http_build_query(array_merge(
       <a style="margin:0 6px" href="/admin/index.php?<?= e(http_build_query(array_merge($qs, ['page' => $p]))) ?>"><?= $p ?></a>
     <?php endif; ?>
   <?php endfor; ?>
-  <small style="display:block;color:var(--ink-soft)"><?= $totalOrders ?> заказ(ов), страница <?= $page ?> из <?= $pages ?></small>
+  <small style="display:block;color:var(--ink-soft)"><?= $totalOrders ?> <?= e(pluralRu($totalOrders, ["заказ","заказа","заказов"])) ?>, страница <?= $page ?> из <?= $pages ?></small>
 </div>
 <?php endif; ?>
 <?php adminFooter(); ?>

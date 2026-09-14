@@ -69,11 +69,25 @@ function slugify(string $s): string
     return trim($s, '-') ?: 'product-' . time();
 }
 
+
+/** Русское склонение существительного по числу: pluralRu(5, ['товар','товара','товаров']) → «товаров».
+    Владелец-критик W44: «товар(а/ов)» без человеческой формы. */
+function pluralRu(int $n, array $forms): string
+{
+    $n = abs($n) % 100;
+    $k = $n % 10;
+    if ($n > 10 && $n < 20) return $forms[2];
+    if ($k > 1 && $k < 5) return $forms[1];
+    if ($k === 1) return $forms[0];
+    return $forms[2];
+}
+
 function statuses(): array
 {
     return [
         'new' => 'Новый',
         'confirmed' => 'Подтверждён',
+        'in_progress' => 'В работе',
         'done' => 'Выполнен',
         'canceled' => 'Отменён',
         'unredeemed' => 'Не выкуплен',
