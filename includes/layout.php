@@ -93,6 +93,11 @@ table tr:hover td:has(.row-actions form),table tr:hover th{background:transparen
 .input:focus,select:focus,textarea:focus{outline:none;border-color:var(--rose-deep)}
 /* Visual-критик W52: нативный синий чекбокс кричит на розово-бежевой палитре */
 input[type=checkbox],input[type=radio]{width:20px;height:20px;min-width:20px;accent-color:var(--rose-deep)}
+/* Visual W54: чекбокс — hit-area ≥44px (визуально компакт); td-ячейка шире колонки */
+td:first-child:has(input[type=checkbox]){width:44px;min-width:44px;text-align:center}
+td input[type=checkbox]{margin:12px auto;display:block}
+/* file-input не липнет к label */
+input[type=file]{margin-top:6px}
 /* нативный Choose File приобщаем к системе */
 input[type=file]{font:400 .85rem var(--font-ui);color:var(--ink-soft);padding:8px;border:1.5px dashed var(--line);border-radius:10px;background:var(--bg);width:100%}
 input[type=file]::file-selector-button{font:600 .82rem var(--font-ui);border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--ink);padding:7px 14px;margin-right:10px;cursor:pointer}

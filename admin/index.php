@@ -210,6 +210,9 @@ $dashqs = fn(string $r) => '/admin/index.php?' . e(http_build_query(array_merge(
 
   <div class="dash-spark">
     <span class="dash-metric__label">Выручка по дням (<?= $sparkDays ?> дн.)</span>
+    <?php if ($sparkMax <= 0): /* Visual W54: пустой график выглядел «сломанным» — говорим прямо */ ?>
+      <p style="margin:6px 0 0;font-size:.85rem;color:var(--ink-soft)">За <?= $sparkDays ?> дн. подтверждённых заказов с выручкой ещё нет — столбики появятся, когда пойдут оплаты.</p>
+    <?php else: ?>
     <svg class="sparkline" viewBox="0 0 <?= max(1, $sparkDays) * 8 ?> 60" preserveAspectRatio="none" role="img" aria-label="Выручка по дням">
       <?php foreach ($sparkData as $i => $sd):
         $h = $sparkMax > 0 ? max(2, (int)round($sd['rev'] / $sparkMax * 56)) : 2; ?>
@@ -219,6 +222,7 @@ $dashqs = fn(string $r) => '/admin/index.php?' . e(http_build_query(array_merge(
         </rect>
       <?php endforeach; ?>
     </svg>
+    <?php endif; ?>
   </div>
 
   <div class="dash-row">
@@ -274,7 +278,7 @@ $dashqs = fn(string $r) => '/admin/index.php?' . e(http_build_query(array_merge(
       <?php if ($statusFilter !== '' || $dateFrom !== '' || $dateTo !== ''): ?>
         <a class="btn btn--ghost" href="/admin/index.php">Сбросить</a>
       <?php endif; ?>
-      <a class="btn btn--accent" href="/admin/export.php?<?= e(http_build_query(array_filter($_GET, fn($v) => $v !== ''))) ?>">Экспорт в CSV</a>
+      <a class="btn btn--ghost" href="/admin/export.php?<?= e(http_build_query(array_filter($_GET, fn($v) => $v !== ''))) ?>">Экспорт в CSV</a>
     </div>
   </form>
 </div>

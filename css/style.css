@@ -288,7 +288,7 @@ body.cookie-visible{padding-bottom:180px}
 .product-gallery__zoom{width:100%;aspect-ratio:4/4.8;background-size:165%;background-position:50% 36%;background-repeat:no-repeat;filter:saturate(1.04) contrast(1.03)}
 .product-gallery__thumb--zoom{transform:scale(2)}
 /* Визуал-критик W52: на desktop не было аффорданса перелистывания — стрелки */
-.product-gallery__nav{display:none;position:absolute;top:50%;transform:translateY(-50%);z-index:5;width:40px;height:40px;min-width:40px;border-radius:50%;border:1px solid var(--line);background:rgba(255,255,255,.94);color:var(--ink);font-size:1.1rem;cursor:pointer;place-items:center;box-shadow:0 6px 18px -10px rgba(43,45,47,.4)}
+.product-gallery__nav{display:none;position:absolute;top:50%;transform:translateY(-50%);z-index:5;width:44px;height:44px;min-width:44px;border-radius:50%;border:1px solid var(--line);background:rgba(255,255,255,.94);color:var(--ink);font-size:1.1rem;cursor:pointer;place-items:center;box-shadow:0 6px 18px -10px rgba(43,45,47,.4)}
 .product-gallery__nav--l{left:8px}.product-gallery__nav--r{right:8px}
 @media(hover:hover){.product-gallery__nav{display:grid}}
 .product-gallery__slide img{width:100%;height:auto;aspect-ratio:4/4.8;object-fit:cover}

@@ -389,12 +389,12 @@ flash();
   <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
     <h2 style="font-family:var(--font-display);font-size:1.2rem">Все товары <small style="font-weight:400;color:var(--ink-soft)">(<?= count($allProducts) ?>)</small></h2>
     <form method="get" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:.85rem">
-      <input class="input" type="search" name="q" value="<?= e((string)($_GET['q'] ?? '')) ?>" placeholder="Поиск по названию…" style="width:170px;padding:7px 12px;border:1px solid var(--line);border-radius:8px">
-      <select name="f_cat" class="input" style="width:auto;padding:7px 12px;border:1px solid var(--line);border-radius:8px">
+      <input class="input" type="search" name="q" value="<?= e((string)($_GET['q'] ?? '')) ?>" placeholder="Поиск по названию…" style="width:170px;padding:7px 12px;border:1.5px solid rgba(43,45,47,.28);border-radius:8px">
+      <select name="f_cat" class="input" style="width:auto;padding:7px 12px;border:1.5px solid rgba(43,45,47,.28);border-radius:8px">
         <option value="0">Все категории</option>
         <?php foreach ($categories as $c): ?><option value="<?= (int)$c['id'] ?>" <?= $fCat === (int)$c['id'] ? 'selected' : '' ?>><?= e($c['name']) ?></option><?php endforeach; ?>
       </select>
-      <select name="f_status" class="input" style="width:auto;padding:7px 12px;border:1px solid var(--line);border-radius:8px">
+      <select name="f_status" class="input" style="width:auto;padding:7px 12px;border:1.5px solid rgba(43,45,47,.28);border-radius:8px">
         <?php $stMap = ['' => 'Все статусы', 'active' => 'Показаны', 'hidden' => 'Скрыты', 'no_price' => 'Без цены', 'no_image' => 'Без фото', 'stale' => 'Не менялись 7+ дней']; ?>
         <?php foreach ($stMap as $k => $lbl): ?><option value="<?= $k ?>" <?= $fSt === $k ? 'selected' : '' ?>><?= $lbl ?></option><?php endforeach; ?>
       </select>
@@ -409,10 +409,10 @@ flash();
     <input type="hidden" name="action" value="bulk_price">
     <input type="hidden" name="back_qs" value="<?= e($_SERVER['QUERY_STRING'] ?? '') ?>">
     <span style="font-weight:600">Цены выделенным:</span>
-    <select name="mode" style="padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:#fff">
+    <select name="mode" style="padding:6px 10px;border:1.5px solid rgba(43,45,47,.28);border-radius:8px;background:#fff">
       <option value="set">сделать равной</option><option value="add">повысить на</option><option value="sub">понизить на</option><option value="pct">изменить на %</option>
     </select>
-    <input class="input" type="number" name="val" min="-90" max="1000000" placeholder="500 или -10" title="Минус со знаком − снизит цены" style="width:150px;padding:6px 10px;border:1px solid var(--line);border-radius:8px" required>
+    <input class="input" type="number" name="val" min="-90" max="1000000" placeholder="500 или -10" title="Минус со знаком − снизит цены" style="width:150px;padding:6px 10px;border:1.5px solid rgba(43,45,47,.28);border-radius:8px" required>
     <button type="submit" class="btn btn--accent" style="font-size:.82rem;padding:7px 16px" onclick="return confirm('Применить к выделенным товарам?')">Применить</button>
     <a href="#" id="bulkSelAll" style="font-size:.8rem">выделить все на странице</a>
     <span style="flex-basis:100%;height:0"></span>
