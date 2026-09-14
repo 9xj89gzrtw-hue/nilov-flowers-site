@@ -391,7 +391,7 @@ img.product-card__img{
   backdrop-filter:blur(4px);
 }
 .product-card__fav:hover{transform:scale(1.12)}
-.product-card__fav.is-active{color:#e3527d;background:#fff0f4;border-color:#e3527d}
+.product-card__fav.is-active{color:var(--rose-live);background:var(--rose-live-soft,#fff0f4);border-color:var(--rose-live)}
 /* Счётчик избранного в шапке каталога */
 .fav-toggle{
   display:inline-flex;align-items:center;gap:6px;
@@ -399,4 +399,4 @@ img.product-card__img{
   background:#fff;font-size:.85rem;font-weight:600;color:var(--ink);cursor:pointer;
   transition:border-color .18s ease;
 }
-.fav-toggle.is-active{border-color:#e3527d;color:#e3527d}
+.fav-toggle.is-active{border-color:var(--rose-live);color:var(--rose-live)}

@@ -522,7 +522,7 @@ if ($__heroPre !== '') {
 
   <?php /* FAQ (критерий 13, SEO FAQPage — паттерн Цветовика): реальные вопросы покупателей. Отключаем (критерий 16). */ ?>
   <?php if ($featFaq): ?>
-  <section class="section" id="faq" style="padding-top:40px">
+  <section class="section section--faq" id="faq">
     <div class="wrap" style="max-width:720px">
       <h2 class="section-title"><?= e(setting('faq_title', 'Частые вопросы')) ?></h2>
       <?php
@@ -534,12 +534,10 @@ if ($__heroPre !== '') {
           $a = trim(setting("faq_a{$i}", ''));
           if ($q !== '' && $a !== '') { $faqItems[] = ['q' => $q, 'a' => $a]; }
       }
-      foreach ($faqItems as $fi => $f):
-          $last = $fi === count($faqItems) - 1;
-      ?>
-      <details style="border:1px solid var(--line);border-radius:14px;padding:14px 18px;<?= $last ? '' : 'margin-bottom:10px;' ?>background:#fff">
-        <summary style="font-weight:600;cursor:pointer"><?= e($f['q']) ?></summary>
-        <p style="margin-top:8px;color:var(--ink-soft);font-size:.92rem"><?= e($f['a']) ?></p>
+      foreach ($faqItems as $f): ?>
+      <details class="faq-item">
+        <summary class="faq-item__q"><?= e($f['q']) ?></summary>
+        <p class="faq-item__a"><?= e($f['a']) ?></p>
       </details>
       <?php endforeach; ?>
       <?php if ($faqItems !== []): ?>
