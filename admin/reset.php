@@ -69,6 +69,7 @@ button:hover{background:#9E4062}
 .err{margin-top:14px;color:var(--err);font-size:.85rem}
 .ok{margin-top:14px;color:#3e8e5a;font-size:.85rem}
 a.back{display:block;margin-top:16px;text-align:center;font-size:.85rem;color:var(--ink-soft)}
+@media(hover:none),(pointer:coarse){a.back{min-height:44px;display:inline-flex;align-items:center;justify-content:center}} /* W76 */
 </style>
 </head>
 <body>

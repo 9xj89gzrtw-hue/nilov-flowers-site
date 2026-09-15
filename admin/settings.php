@@ -853,7 +853,7 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
 <details style="margin-top:10px"><summary style="font-size:.82rem;color:var(--ink-soft);cursor:pointer">Последние изменения (<?= count($hist) ?>)</summary>
 <ol style="font-size:.78rem;color:var(--ink-soft);margin:6px 0 0 18px">
   <?php foreach ($hist as $hh): ?>
-  <li><?= e($hh['ts']) ?> — <?= e(['save' => 'сохранение', 'undo' => 'отмена', 'defaults' => 'сброс к заводским'][$hh['source']] ?? $hh['source']) ?></li>
+  <li><?= e($hh['ts']) ?> — <?= e(['save' => 'сохранение', 'undo' => 'отмена', 'defaults' => 'сброс к „по умолчанию“', 'defaults-save' => 'эталон обновлён текущим', 'defaults-reset' => 'сброс к „по умолчанию“'][$hh['source']] ?? $hh['source']) ?></li>
   <?php endforeach; ?>
 </ol></details>
 <?php endif; ?>

@@ -47,6 +47,7 @@ input:focus-visible{outline:3px solid rgba(174,74,113,.55);outline-offset:2px}
 button{width:100%;margin-top:20px;border:none;border-radius:999px;padding:14px;font:600 .95rem var(--font-ui);background:#AE4A71;color:#fff;cursor:pointer}
 button:hover{background:#9E4062}
 .err{margin-top:14px;color:var(--err);font-size:.85rem}
+@media(hover:none),(pointer:coarse){.forgot-link{min-height:44px;display:flex !important;align-items:center;justify-content:center}} /* W76 */
 </style>
 </head>
 <body>
@@ -60,7 +61,7 @@ button:hover{background:#9E4062}
   <button type="submit">Войти</button>
   <?= csrf_field() ?>
   <?php if ($err !== ''): ?><p class="err"><?= e($err) ?></p><?php endif; ?>
-  <a href="/admin/forgot.php" style="display:block;margin-top:14px;text-align:center;font-size:.85rem;color:var(--ink-soft)">Забыли пароль?</a>
+  <a class="forgot-link" href="/admin/forgot.php" style="display:block;margin-top:14px;text-align:center;font-size:.85rem;color:var(--ink-soft)">Забыли пароль?</a>
 </form>
 </body>
 </html>

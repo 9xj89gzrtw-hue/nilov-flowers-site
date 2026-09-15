@@ -5,7 +5,7 @@
 declare(strict_types=1);
 
 /** Сохранить текущее состояние settings как точку отката ПЕРЕД записью newValues.
- *  source: save | undo | defaults. Вызывается из admin/settings.php. */
+ *  source: save | undo | defaults | defaults-save | defaults-reset (W76). Вызывается из admin/settings.php. */
 function settingsSnapshot(string $source): void
 {
     $snap = allSettings();
@@ -129,7 +129,7 @@ function settingsDefaultKeys(): array
  *  не могут туда записаться. Перед изменением — снимок истории. */
 function settingsSaveCurrentAsDefaults(): int
 {
-    settingsSnapshot('defaults');
+    settingsSnapshot('defaults-save'); /* W76 (владелец H2): distinct source — не путать со сбросом */
     $cur = allSettings();
     $now = date('Y-m-d H:i:s');
     $stmt = db()->prepare('INSERT INTO settings_defaults (key, value, updated_at) VALUES (:k, :v, :t)
@@ -157,7 +157,7 @@ function settingsDefaultsUpdatedAt(): string
  *  Перед записью — снимок, чтобы кнопка «Отменить» работала и после сброса. */
 function settingsResetToDefaults(): bool
 {
-    settingsSnapshot('defaults');
+    settingsSnapshot('defaults-reset'); /* W76: distinct source */
     saveSettings(settingsDefaults());
     return true;
 }
