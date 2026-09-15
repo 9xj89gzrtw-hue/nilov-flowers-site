@@ -39,6 +39,19 @@
       /* Awwwards-usability -0.2: «1 товар(ов)» → русское склонение (совпадает с itemsWord в cart-ui) */
       var w = c % 10 === 1 && c % 100 !== 11 ? 'товар' : (c % 10 >= 2 && c % 10 <= 4 && (c % 100 < 12 || c % 100 > 14) ? 'товара' : 'товаров');
       sr.textContent = (productName || 'Букет') + ' добавлен' + (c ? ', в корзине ' + c + ' ' + w : '');
+      /* W67 (obvious-витрина NEW-6): на десктопе фидбек был только счётчик — sr-анонс невидим.
+         Визуальный тост: pointer-events:none, над таббаром, под drawer; без открытия панели (FRICTION). */
+      var tt = document.getElementById('cartToast');
+      if (!tt) {
+        tt = document.createElement('div');
+        tt.id = 'cartToast';
+        tt.setAttribute('role', 'status');
+        document.body.appendChild(tt);
+      }
+      tt.textContent = (productName || 'Букет') + ' — в корзине' + (c ? ' (' + c + ' ' + w + ')' : '');
+      tt.classList.add('is-visible');
+      clearTimeout(tt._hideT);
+      tt._hideT = setTimeout(function () { tt.classList.remove('is-visible'); }, 1800);
     });
   });
 })();
