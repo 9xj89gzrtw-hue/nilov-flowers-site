@@ -144,6 +144,16 @@
     itemsEl.hidden = items.length === 0;
 
     totalEl.textContent = formatPrice(window.cart.getTotal()) + ' ₽';
+    /* W81 (владелец OPEN_NEW-1): пустая корзина — блок промо и его сообщения глушим
+       целиком: «действует от 5 000 ₽» на экране «Корзина пуста» выглядит залипшим. */
+    var promoWrap = document.getElementById('cartPromo');
+    var promoEmpty = items.length === 0;
+    if (promoEmpty && (promoState.code || promoState.lastCode)) {
+      promoClear(true);
+      promoState.lastCode = ''; promoMsgEl && (promoMsgEl.textContent = '');
+    } /* иначе minOrder=0 и зелёная ветка сработала бы ложно после возврата товара */
+    if (promoWrap) promoWrap.hidden = promoEmpty;
+    if (promoMsgEl) promoMsgEl.hidden = promoEmpty;
     /* Промокод (критик functional top#3): показываем серверную скидку; код и скидка
        уходят в POST /api/orders, где пересчитываются заново (клиенту не доверяем). */
     if (promoMsgEl) {
