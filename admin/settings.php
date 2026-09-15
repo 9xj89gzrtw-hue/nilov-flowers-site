@@ -834,6 +834,9 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
   <input type="hidden" name="hist_action" value="undo">
   <button class="btn btn--outline" type="submit" style="padding:12px 22px;font-size:.85rem" <?= settingsCanUndo() ? '' : 'disabled title="Отменять пока нечего"' ?>>↩ Отменить последнее изменение</button>
 </form>
+<details style="margin-top:14px;background:var(--bg-alt,#F1EAD9);border:1px dashed var(--ink-soft);border-radius:12px;padding:10px 14px">
+  <summary style="cursor:pointer;font-size:.85rem;font-weight:600">⚙️ Расширенные: значения по умолчанию (редко)</summary>
+  <p style="font-size:.8rem;color:var(--ink-soft);margin:8px 0 6px">Эти кнопки <strong>не сохраняют</strong> ваши правки — они работают с «эталоном». Обычное сохранение — синяя кнопка выше.</p>
 <form method="post" style="display:inline;margin-top:8px" onsubmit="return confirm('Вернуть витринные тексты и тумблеры к значению по умолчанию? Ваши контакты, секретные коды и реквизиты останутся как есть.');">
   <?= csrf_field() ?>
   <input type="hidden" name="hist_action" value="defaults">
@@ -844,6 +847,7 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
   <input type="hidden" name="hist_action" value="save-defaults">
   <button class="btn btn--outline" type="submit" style="padding:12px 22px;font-size:.85rem">💾 Сохранить текущее как «по умолчанию»</button>
 </form>
+</details>
 <?php if (($du = settingsDefaultsUpdatedAt()) !== ''): ?><p style="font-size:.75rem;color:var(--ink-soft);margin:6px 0 0">Сейчас «по умолчанию» = ваш сохранённый вариант от <?= e($du) ?></p><?php endif; ?>
 <?php if (count($hist = settingsHistoryList(5)) > 0): ?>
 <details style="margin-top:10px"><summary style="font-size:.82rem;color:var(--ink-soft);cursor:pointer">Последние изменения (<?= count($hist) ?>)</summary>

@@ -37,8 +37,11 @@ a{color:inherit;text-decoration:none}
 .wrap{max-width:1100px;margin:0 auto;padding:0 20px}
 .admin-top{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50} /* W68 (obvious NEW-6): sticky на всех брейках — desktop-оглавление top:64 теперь опирается на реальную шапку */
 .admin-top .wrap{display:flex;align-items:center;gap:24px;min-height:60px;flex-wrap:wrap}
+.admin-top .admin-nav{flex:1;min-width:0;overflow-x:auto;white-space:nowrap;scrollbar-width:none}
+.admin-top .admin-nav::-webkit-scrollbar{display:none}
+@media(min-width:821px){.admin-top .wrap{flex-wrap:nowrap}}
 .admin-logo{font-family:var(--font-display);font-weight:700;font-size:1.05rem}
-.admin-nav{display:flex;gap:4px;flex-wrap:wrap}
+.admin-nav{display:flex;gap:4px;flex-wrap:nowrap} /* W70 (владелец NEW-4): nowrap+overflow-x:auto выше = один ряд (было 3 ряда, 155px) */
 .admin-nav a{padding:8px 14px;border-radius:999px;font-size:.9rem;font-weight:500;color:var(--ink-soft);display:inline-flex;align-items:center;min-height:44px}
 .admin-nav a.active{background:var(--rose);color:var(--ink);box-shadow:inset 0 0 0 1.5px rgba(174,74,113,.55)}
 .admin-top .spacer{flex:1}
@@ -82,6 +85,8 @@ h1 .status-badge{vertical-align:middle;margin-left:10px}
 .order-link{font-weight:700;text-decoration:underline}
 .filters-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:14px}
 .filters-bar input,.filters-bar select,.filters-bar button,.filters-bar a.btn{height:42px;min-height:42px}
+.filters-bar .input{width:auto;min-width:130px}
+.filters-bar select.input{width:auto}
 .filters-bar .f{margin:0}
 .card{background:#fff;border-radius:var(--radius-lg);padding:22px;box-shadow:0 14px 40px -28px rgba(43,45,47,.35);margin-bottom:20px;transition:box-shadow .2s ease}
 table{width:100%;border-collapse:collapse;font-size:.9rem}
@@ -132,8 +137,10 @@ label.f{display:block;font-size:.8rem;font-weight:600;margin:12px 0 4px}
 /* W68 (владелец #2): лента дашборда на телефоне — ссылки «№ id»/телефон были 37×17px
    (9 из 19 тап-целей <44). Инлайн-ссылки в ячейке получают min-height и воздух. */
 a.order-link{display:inline-block;min-height:28px;line-height:28px}
-.card td a[href^="tel:"]{display:inline-block;min-height:28px;line-height:28px;padding-right:8px}
-@media(hover:none),(pointer:coarse){a.order-link,.card td a[href^="tel:"]{min-height:44px;line-height:44px}}
+.card a[href^="tel:"]{display:inline-block;min-height:28px;line-height:28px;padding-right:8px}
+.back-link{display:inline-flex;align-items:center;min-height:28px}
+#bulkPriceForm a#bulkSelAll{display:inline-flex;align-items:center;min-height:42px}
+@media(hover:none),(pointer:coarse){a.order-link,.card a[href^="tel:"],.back-link{min-height:44px}}
 
 .toast{position:fixed;top:16px;right:16px;z-index:1000;background:#fff;box-shadow:0 14px 40px -20px rgba(43,45,47,.5);border-radius:var(--radius);padding:14px 18px;font-size:.9rem;max-width:320px}
 .flash{padding:12px 16px;border-radius:12px;background:var(--mint);margin-bottom:16px;font-size:.9rem;border:1px solid rgba(62,142,90,.25);color:#2c5e40}

@@ -29,13 +29,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'status') {
         $status = (string)($_POST['status'] ?? '');
-        if (array_key_exists($status, statuses()) && $status !== 'done') {
+        $curSt = '';
+        $stQ = $pdo->prepare('SELECT status FROM orders WHERE id = :i');
+        $stQ->execute([':i' => $id]);
+        $curSt = (string)($stQ->fetchColumn() ?: '');
+        /* W70 (владелец NEW-2): валидация по тому же словарю, что и UI */
+        if (array_key_exists($status, statuses()) && $status !== 'done' && in_array($status, orderTransitions()[$curSt] ?? [], true)) {
             $pdo->prepare('UPDATE orders SET status = :s WHERE id = :i')
                 ->execute([':s' => $status, ':i' => $id]);
             flash('Статус заказа обновлён');
         } elseif ($status === 'done') {
             /* «Выполнен» только через форму вручения */
             flash('Для статуса «Выполнен» заполните подтверждение вручения', true);
+        } else {
+            flash('Недопустимый переход статуса', true);
         }
         header('Location: /admin/order.php?id=' . $id);
         exit;
@@ -89,7 +96,7 @@ $items = $items->fetchAll();
 adminHeader('Заказ №' . $id, 'index');
 flash();
 ?>
-<p><a href="/admin/index.php" style="color:var(--ink-soft);font-size:.85rem">← Все заказы</a></p>
+<p><a class="back-link" href="/admin/index.php" style="color:var(--ink-soft);font-size:.85rem">← Все заказы</a></p>
 <h1>Заказ № <?= (int)$order['id'] ?> <span class="status-badge <?= e($order['status']) ?>"><?= e(statuses()[$order['status']] ?? $order['status']) ?></span></h1>
 
 <div class="card">
@@ -154,15 +161,18 @@ flash();
   <?php if ($order['no_photo_reason'] !== ''): ?><p style="color:var(--ink-soft)">Причина отсутствия фото: <?= e($order['no_photo_reason']) ?></p><?php endif; ?>
   <p style="color:var(--ink-soft);font-size:.85rem;margin-top:6px">Заказ выполнен — статус больше не меняется.</p>
 </div>
-<?php elseif (in_array($order['status'], ['new', 'confirmed'], true)): ?>
+<?php elseif (in_array($order['status'], ['new', 'confirmed', 'in_progress'], true)): /* W70 (владелец NEW-1): «В работе» больше не тупик — вручение доступно */ ?>
 <div class="card">
   <h2 style="font-family:var(--font-display);font-size:1.05rem;margin-bottom:6px">Изменить статус</h2>
   <form method="post" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
     <?= csrf_field() ?>
     <input type="hidden" name="action" value="status">
     <select name="status" style="width:auto">
-      <?php foreach (statuses() as $key => $label): if ($key === 'done') continue; ?>
-        <option value="<?= e($key) ?>" <?= $order['status'] === $key ? 'selected' : '' ?>><?= e($label) ?></option>
+      <?php /* W70 (владелец NEW-2): только легальные переходы — тот же словарь, что в ленте */
+             $allowed = orderTransitions()[$order['status']] ?? [];
+             $labels = statuses();
+             foreach ($allowed as $key): ?>
+        <option value="<?= e($key) ?>"><?= e($labels[$key] ?? $key) ?></option>
       <?php endforeach; ?>
     </select>
     <button class="btn" type="submit">Применить</button>
@@ -191,7 +201,7 @@ flash();
     <form method="post" onsubmit="return confirm('Удалить заказ №<?= (int)$order['id'] ?> безвозвратно? Восстановить будет нельзя.')">
       <?= csrf_field() ?>
       <input type="hidden" name="action" value="delete">
-      <button type="submit" class="danger" style="font-size:.85rem;padding:8px 16px;border-radius:10px;border:1.5px solid var(--err,#C43A3A);color:var(--err,#C43A3A);background:#fff;cursor:pointer;font-weight:600">Удалить безвозвратно</button>
+      <button type="submit" class="btn btn--danger">Удалить безвозвратно</button>
     </form>
   </details>
 </div>

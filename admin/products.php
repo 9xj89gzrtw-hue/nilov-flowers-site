@@ -402,7 +402,7 @@ flash();
         <?php foreach ($stMap as $k => $lbl): ?><option value="<?= $k ?>" <?= $fSt === $k ? 'selected' : '' ?>><?= $lbl ?></option><?php endforeach; ?>
       </select>
       <button type="submit" class="btn btn--ghost">Найти</button>
-      <?php if ($fCat || $fSt || $fQ): ?><a href="/admin/products.php" style="font-size:.82rem">Сбросить</a><?php endif; ?>
+      <?php if ($fCat || $fSt || $fQ): ?><a class="btn btn--ghost" href="/admin/products.php">Сбросить</a><?php endif; ?>
     </form>
   </div>
   <?php /* Пакетные цены (W32 top#1): выделить чекбоксами → = / + / − / % одним нажатием.

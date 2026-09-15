@@ -17,14 +17,8 @@ $pdo = db();
 $flash_err = false;
 
 // Смена статуса (кроме «Выполнен» — он через /admin/order.php с подтверждением вручения).
-// Разрешённые переходы: new→confirmed/canceled, confirmed→canceled/unredeemed,
-// canceled/unredeemed→new. done — финальный, через вручение.
-$allowedTransitions = [
-    'new' => ['confirmed', 'canceled'],
-    'confirmed' => ['canceled', 'unredeemed'],
-    'canceled' => ['new'],
-    'unredeemed' => ['new'],
-];
+/* W70 (владелец NEW-1/2): переходы — из единого словаря orderTransitions() */
+$allowedTransitions = orderTransitions();
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'status') {
     $id = (int)($_POST['id'] ?? 0);
     $status = (string)($_POST['status'] ?? '');
@@ -307,7 +301,7 @@ $dashqs = fn(string $r) => '/admin/index.php?' . e(http_build_query(array_merge(
         <?php
         $itemsStmt->execute([':i' => $o['id']]);
         $its = $itemsStmt->fetchAll();
-        if (!$its) { echo '<small style=\"color:var(--ink-soft)\">позиции не записаны</small>'; }
+        if (!$its) { echo '<small style="color:var(--ink-soft)">позиции не записаны</small>'; }
         foreach ($its as $it) {
             echo e($it['name']) . ' × ' . (int)$it['qty'] . ' — ' . formatPrice((int)$it['price']) . '<br>';
         }
@@ -332,12 +326,32 @@ $dashqs = fn(string $r) => '/admin/index.php?' . e(http_build_query(array_merge(
             <button type="submit" class="danger">Отменить</button>
           </form>
           <?php elseif ($o['status'] === 'confirmed'): ?>
-          <a class="primary-action" href="/admin/order.php?id=<?= (int)$o['id'] ?>">Выполнен →</a>
+          <form method="post">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="status"><input type="hidden" name="id" value="<?= (int)$o['id'] ?>">
+            <input type="hidden" name="status" value="in_progress"><input type="hidden" name="page" value="<?= $page ?>">
+            <button type="submit" class="primary-action">🚚 В работу</button>
+          </form>
+          <a class="primary-action" href="/admin/order.php?id=<?= (int)$o['id'] ?>">Вручение →</a>
           <form method="post" onsubmit="return confirm('Отметить заказ №<?= (int)$o['id'] ?> как «Не выкуплен»?')">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="status"><input type="hidden" name="id" value="<?= (int)$o['id'] ?>">
             <input type="hidden" name="status" value="unredeemed"><input type="hidden" name="page" value="<?= $page ?>">
             <button type="submit" class="danger">Не выкуплен</button>
+          </form>
+          <?php elseif ($o['status'] === 'in_progress'): ?>
+          <a class="primary-action" href="/admin/order.php?id=<?= (int)$o['id'] ?>">✅ Выполнен →</a>
+          <form method="post" onsubmit="return confirm('Вернуть заказ №<?= (int)$o['id'] ?> в «Подтверждён»?')">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="status"><input type="hidden" name="id" value="<?= (int)$o['id'] ?>">
+            <input type="hidden" name="status" value="confirmed"><input type="hidden" name="page" value="<?= $page ?>">
+            <button type="submit">↩ Назад</button>
+          </form>
+          <form method="post" onsubmit="return confirm('Отменить заказ №<?= (int)$o['id'] ?>?')">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="status"><input type="hidden" name="id" value="<?= (int)$o['id'] ?>">
+            <input type="hidden" name="status" value="canceled"><input type="hidden" name="page" value="<?= $page ?>">
+            <button type="submit" class="danger">Отменить</button>
           </form>
           <?php elseif ($o['status'] === 'canceled' || $o['status'] === 'unredeemed'): ?>
           <form method="post">

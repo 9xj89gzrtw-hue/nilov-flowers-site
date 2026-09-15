@@ -82,6 +82,21 @@ function pluralRu(int $n, array $forms): string
     return $forms[2];
 }
 
+/* W70 (владелец NEW-2): ОДИН словарь переходов для ленты и деталки.
+   new→confirmed/in_progress/canceled; confirmed→canceled/unredeemed; in_progress→confirmed/canceled
+   (+«Выполнен» только через handover); canceled/unredeemed→new; done — финальный. */
+function orderTransitions(): array
+{
+    return [
+        'new' => ['confirmed', 'in_progress', 'canceled'],
+        'confirmed' => ['in_progress', 'canceled', 'unredeemed'],
+        'in_progress' => ['confirmed', 'canceled'],
+        'canceled' => ['new'],
+        'unredeemed' => ['new'],
+        'done' => [],
+    ];
+}
+
 function statuses(): array
 {
     return [

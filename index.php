@@ -433,8 +433,15 @@ if ($__heroPre !== '') {
               $pickupAddr = trim(setting('pickup_address', '')) ?: trim(setting('shop_address', ''));
               ?>
               <option value="0" data-price="0" selected><?= e(setting('pickup_option_text', 'Самовывоз · 0 ₽')) ?></option>
-              <?php foreach ($zones as $z): ?>
-                <option value="<?= (int)$z['id'] ?>" data-price="<?= (int)$z['price'] ?>"><?= e($z['name']) ?> · <?= (int)$z['price'] ?>&#8381;</option>
+              <?php /* W70 (obvious-витрина NEW-1): native select режет длинные имена зон на 390
+                     (366px в 220px-бокс без эллипсиса). Корень — метка: «район»→«р-н»,
+                     пояснение в скобках и цена уходят в title/hint (цена есть в «К оплате»). */
+                 foreach ($zones as $z):
+                     $zFull = (string)$z['name'];
+                     $zShort = trim(str_replace([' район ', ' район'], [' р-н ', ' р-н'], $zFull));
+                     $zShort = trim((string)preg_replace('/\s*\([^)]*\)/u', '', $zShort));
+                     ?>
+                <option value="<?= (int)$z['id'] ?>" data-price="<?= (int)$z['price'] ?>" title="<?= e($zFull) ?> · <?= (int)$z['price'] ?> ₽"><?= e($zShort) ?></option>
               <?php endforeach; ?>
             </select>
             <?php if ($pickupAddr !== ''): ?>
