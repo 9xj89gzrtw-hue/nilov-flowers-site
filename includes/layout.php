@@ -150,7 +150,7 @@ input[type=range]{height:40px}
 @media(hover:none),(pointer:coarse){summary,summary.del-summary{min-height:44px}input[type=range]{height:44px}} /* W77: +del-summary — W76 сам себя обошёл по specificity (32px база (0,1,1) > media (0,0,1)) */ /* W71: door-таргеты + слайдер на тап */
 #bulkPriceForm a#bulkSelAll{display:inline-flex;align-items:center;min-height:42px}
 @media(hover:none),(pointer:coarse){a.order-link,.card a[href^="tel:"],.back-link{min-height:44px}}
-.card a[href^="tel:"]{white-space:nowrap} /* W73 (обvious мелочь-4): телефон не в 3 строки, target 44 соблюдён
+.card a[href^="tel:"]{white-space:nowrap} /* W73 (обvious мелочь-4): телефон не в 3 строки, target 44 соблюдён (W78: закрыт незакрытый коммент — съедал 11 правил) */
 
 .toast{position:fixed;top:16px;right:16px;z-index:1000;background:#fff;box-shadow:0 14px 40px -20px rgba(43,45,47,.5);border-radius:var(--radius);padding:14px 18px;font-size:.9rem;max-width:320px}
 .flash{padding:12px 16px;border-radius:12px;background:var(--mint);margin-bottom:16px;font-size:.9rem;border:1px solid rgba(62,142,90,.25);color:#2c5e40}

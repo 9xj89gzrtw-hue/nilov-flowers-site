@@ -352,9 +352,9 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
       <div>
         <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
           <input type="checkbox" name="feature_delivery_badge" style="width:auto" <?= sv('feature_delivery_badge', $s) === '1' ? 'checked' : '' ?>>
-          Бейдж «Доставка 0 ₽» на карточках букетов
+          Бейдж «Доставка» на карточках букетов
         </label>
-        <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 10px 26px">Зелёная плачка про бесплатную доставку по Приморскому на каждой карточке каталога.</p>
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 10px 26px">Зелёная плачка про доставку по Санкт-Петербургу на каждой карточке каталога.</p>
         <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
           <input type="checkbox" name="feature_countdown" style="width:auto" <?= sv('feature_countdown', $s) === '1' ? 'checked' : '' ?>>
           Таймер «успейте заказать до 20:00»
@@ -369,10 +369,10 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
           <input type="checkbox" name="feature_zone_check" style="width:auto" <?= sv('feature_zone_check', $s) === '1' ? 'checked' : '' ?>>
           Проверка зоны доставки в каталоге
         </label>
-        <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 6px 26px">Поле «Например: Приморский» — покупатель сразу видит стоимость для своего района.</p>
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 6px 26px">Поле «Например: Центральный» — покупатель сразу видит стоимость для своего района.</p>
         <div style="margin-left:26px">
           <label class="f" for="zc-ph">Серый текст-пример внутри поля «Район»</label>
-          <input class="input" id="zc-ph" name="zone_check_placeholder" value="<?= sv('zone_check_placeholder', $s) !== '' ? sv('zone_check_placeholder', $s) : 'Например: Приморский' ?>" maxlength="60">
+          <input class="input" id="zc-ph" name="zone_check_placeholder" value="<?= sv('zone_check_placeholder', $s) !== '' ? sv('zone_check_placeholder', $s) : 'Например: Центральный' ?>" maxlength="60">
           <label class="f" for="zc-fb" style="margin-top:8px">Если район не найден</label>
           <input class="input" id="zc-fb" name="zone_check_fallback" value="<?= sv('zone_check_fallback', $s) !== '' ? sv('zone_check_fallback', $s) : 'не нашли — уточним по телефону' ?>" maxlength="80">
         </div>
@@ -447,7 +447,7 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
     <div class="grid2">
       <div>
         <label class="f" for="badge-text">Текст бейджа на карточках</label>
-        <input class="input" id="badge-text" name="delivery_badge_text" value="<?= sv('delivery_badge_text', $s) !== '' ? sv('delivery_badge_text', $s) : 'Доставка 0₽ · Приморский' ?>" maxlength="60">
+        <input class="input" id="badge-text" name="delivery_badge_text" value="<?= sv('delivery_badge_text', $s) !== '' ? sv('delivery_badge_text', $s) : 'Доставка по Санкт-Петербургу' ?>" maxlength="60">
         <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Зелёная плашка на каждой карточке букета в каталоге. Оставьте как есть или впишите свой тариф.</p>
       </div>
       <div>
@@ -464,7 +464,7 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
       </div>
       <div>
         <label class="f" for="faq-a<?= $i ?>">Ответ <?= $i ?></label>
-        <input class="input" id="faq-a<?= $i ?>" name="faq_a<?= $i ?>" value="<?= sv("faq_a{$i}", $s) ?>" maxlength="300" placeholder="<?= $i === 1 ? 'По Приморскому району — бесплатно…' : '' ?>">
+        <input class="input" id="faq-a<?= $i ?>" name="faq_a<?= $i ?>" value="<?= sv("faq_a{$i}", $s) ?>" maxlength="300" placeholder="<?= $i === 1 ? 'Стоимость зависит от района — посчитаем при подтверждении…' : '' ?>">
       </div>
     </div>
     <?php endfor; ?>
@@ -746,7 +746,7 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
     <label class="f" for="seo-t">Title (виден во вкладке и в Яндексе)</label>
     <input class="input" id="seo-t" name="seo_title" value="<?= sv('seo_title', $s) !== '' ? sv('seo_title', $s) : 'Доставка цветов в СПб — ' . sv('shop_name', $s) . ' | Свежие букеты с доставкой сегодня' ?>" maxlength="80">
     <label class="f" for="seo-d" style="margin-top:8px">Description (описание в результатах поиска)</label>
-    <input class="input" id="seo-d" name="seo_description" value="<?= sv('seo_description', $s) !== '' ? sv('seo_description', $s) : 'Доставка букетов по Санкт-Петербургу в день заказа. Свежие цветы с утренней поставки, фото перед отправкой, бесплатная доставка по Приморскому району. Заказы до 20:00 — доставим сегодня.' ?>" maxlength="200">
+    <input class="input" id="seo-d" name="seo_description" value="<?= sv('seo_description', $s) !== '' ? sv('seo_description', $s) : 'Доставка букетов по Санкт-Петербургу в день заказа. Свежие цветы с утренней поставки, фото перед отправкой. Заказы до 20:00 — доставим сегодня.' ?>" maxlength="200">
     <label class="f" for="mk-id" style="margin-top:8px">Счётчик Яндекс.Метрики (номер)</label>
     <input class="input" id="mk-id" name="metrika_counter_id" value="<?= sv('metrika_counter_id', $s) ?>" placeholder="12345678" inputmode="numeric" maxlength="12">
     <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Метрика грузится только после согласия на cookie. Номер — из личного кабинета Метрики. Пусто = счётчик не ставится.</p>

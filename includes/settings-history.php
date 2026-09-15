@@ -100,6 +100,16 @@ function settingsDefaults(): array
         'feature_zone_check' => '1',
         'feature_track_link' => '1',
         'feature_favicon_badge' => '1',
+        /* W78 (владелец-критик w4h8 OPEN_NEW-3): сброс обещает вернуть и витринные
+           тумблеры — все витринные чекбоксы формы настроек теперь в объёме.
+           Значения = фактические дефолты кода (setting(k, fallback) в index/footer/product). */
+        'feature_promo' => '1',
+        'feature_gallery' => '1',
+        'feature_gift_fields' => '1',
+        'feature_delivery_slots' => '0', /* = дефолт seed/migration, не «1» */
+        'feature_related' => '1',
+        'feature_webpush' => '0', /* notify.php: setting('feature_webpush','0') */
+        'upsell_enabled' => '1',
         'wa_enabled' => '1',
         'tg_enabled' => '1',
         'vk_enabled' => '1',

@@ -86,7 +86,7 @@ if ($trust === []) {
         'availability' => $product['is_urgent'] == 1 ? 'https://schema.org/InStock' : 'https://schema.org/InStock',
     ],
     /* SEO-критик W40: brand + shippingDetails + return — merchant-listing rich-результаты Google.
-       Ставка доставки — честный минимум из таблицы зон (Приморский = 0 ₽). */
+       Ставка доставки — честный минимум из таблицы зон (минимальная тарифная зона). */
     'brand' => ['@type' => 'Brand', 'name' => setting('shop_name', 'Nilov Flowers')],
     'shippingDetails' => [
         '@type' => 'OfferShippingDetails',

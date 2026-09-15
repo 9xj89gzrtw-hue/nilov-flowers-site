@@ -53,6 +53,12 @@ try {
         'ok' => true,
         'code' => $code,
         'discount' => $discount,
+        /* W78 (владелец-критик w4h8 OPEN_NEW-1): отдаём порог — клиентский guard
+           «пропала скидка при уменьшении корзины» был мёртвым (minOrder вечно 0).
+           kind/value — чтобы клиент пересчитывал скидку по ТОЙ ЖЕ формуле, что /api/orders. */
+        'min' => (int)$promo['min_order'],
+        'kind' => $promo['kind'] === 'fixed' ? 'fixed' : 'percent', /* W78b: нормализуем legacy 'pct' из БД к канону клиента */
+        'val' => (int)$promo['value'],
         'label' => $promo['kind'] === 'fixed'
             ? '−' . number_format($discount, 0, '', ' ') . ' ₽ по промокоду ' . $code
             : '−' . (int)$promo['value'] . '% по промокоду ' . $code,

@@ -70,8 +70,18 @@
   const promoMsgEl = document.getElementById('cartPromoMsg');
   const promoInput = document.getElementById('cartPromoInput');
   const promoApplyBtn = document.getElementById('cartPromoApply');
-  const promoState = { code: '', discount: 0, minOrder: 0, lastCode: '' };
+  const promoState = { code: '', discount: 0, minOrder: 0, lastCode: '', kind: '', val: 0 };
   window.PROMO_STATE = promoState;
+
+  /* W78 (владелец-критик w4h8 OPEN_NEW-1): та же формула, что в /api/promo и /api/orders
+     (fixed: min(value, subtotal); percent: floor(subtotal*min(90,value)/100)) —
+     итог в drawer всегда совпадает с тем, что засчитает сервер. */
+  function serverDiscount(subtotal) {
+    if (!promoState.kind) return 0;
+    return promoState.kind === 'fixed'
+      ? Math.min(promoState.val, subtotal)
+      : Math.floor(subtotal * Math.max(0, Math.min(90, promoState.val)) / 100);
+  }
 
   function promoFeedback(text, isErr) {
     if (!promoMsgEl) return;
@@ -81,6 +91,7 @@
 
   function promoClear(silent) {
     promoState.code = ''; promoState.discount = 0; promoState.minOrder = 0;
+    promoState.kind = ''; promoState.val = 0;
     if (!silent) promoFeedback('', false);
   }
 
@@ -98,14 +109,17 @@
         promoApplyBtn.disabled = false;
         if (res && res.ok) {
           promoState.code = res.code; promoState.discount = res.discount;
-          promoState.lastCode = res.code; promoState.minOrder = 0;
+          promoState.lastCode = res.code;
+          /* W78: сохраняем реальный порог и формулу — раньше minOrder вечно =0 убивал guard ниже */
+          promoState.minOrder = (res.min | 0) > 0 ? (res.min | 0) : 0;
+          promoState.kind = res.kind === 'fixed' ? 'fixed' : (res.kind === 'percent' ? 'percent' : '');
+          promoState.val = res.val | 0;
           promoFeedback(res.label || 'Промокод применён', false);
         } else {
           promoClear(true);
           const msg = res && res.error === 'min_order' && res.min
             ? 'Промокод действует от ' + formatPrice(res.min) + ' ₽'
             : 'Такого промокода нет или он истёк';
-          if (res && res.error === 'min_order') promoState.minOrder = 0;
           promoFeedback(msg, true);
           promoState.code = ''; promoState.discount = 0;
         }
@@ -134,8 +148,16 @@
     if (promoMsgEl) {
       if (promoState.code && window.cart.getTotal() < promoState.minOrder) {
         promoState.code = ''; promoState.discount = 0;
+        promoState.kind = ''; promoState.val = 0;
         promoMsgEl.textContent = 'Промокод ' + promoState.lastCode + ' действует от ' + formatPrice(promoState.minOrder) + ' ₽ — добавьте ещё цветов';
         promoMsgEl.style.color = 'var(--err,#d64545)';
+      } else if (promoState.code && promoState.kind) {
+        /* W78: пересчёт по текущей корзине — скидка не должна «застывать» при смене qty.
+           (Совпадение с серверной формулой /api/orders гарантировано той же функцией.) */
+        promoState.discount = serverDiscount(window.cart.getTotal());
+        promoFeedback((promoState.kind === 'fixed'
+          ? '−' + formatPrice(promoState.discount) + ' ₽'
+          : '−' + promoState.val + '%') + ' по промокоду ' + promoState.code, false);
       }
     }
     if (promoState.code && promoState.discount > 0) {
