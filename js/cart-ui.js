@@ -151,6 +151,11 @@
         promoState.kind = ''; promoState.val = 0;
         promoMsgEl.textContent = 'Промокод ' + promoState.lastCode + ' действует от ' + formatPrice(promoState.minOrder) + ' ₽ — добавьте ещё цветов';
         promoMsgEl.style.color = 'var(--err,#d64545)';
+      } else if (!promoState.code && promoState.lastCode && window.cart.getTotal() >= promoState.minOrder) {
+        /* W79 (владелец OPEN_NEW-1): корзина снова выше порога — залипшее красное
+           предупреждение врёт о текущем состоянии; снимаем его, подсказываем повтор. */
+        promoMsgEl.textContent = 'Порог для промокода ' + promoState.lastCode + ' достигнут — введите код заново';
+        promoMsgEl.style.color = 'var(--ok,#2e7d32)';
       } else if (promoState.code && promoState.kind) {
         /* W78: пересчёт по текущей корзине — скидка не должна «застывать» при смене qty.
            (Совпадение с серверной формулой /api/orders гарантировано той же функцией.) */
