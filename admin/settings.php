@@ -528,7 +528,7 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
     <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
     <p style="font-size:.85rem;font-weight:600;margin:0 0 8px">Окно про cookie (появляется при первом визите)</p>
     <label class="f" for="cb-text">Текст</label>
-    <input class="input" id="cb-text" name="cookie_banner_text" value="<?= sv('cookie_banner_text', $s) !== '' ? sv('cookie_banner_text', $s) : 'Сайт использует cookie и Яндекс.Метрику для работы и анализа трафика. Подробнее — в <a href="/policy" target="_blank" rel="noopener">Политике обработки персональных данных</a>.' ?>" maxlength="260">
+    <input class="input" id="cb-text" name="cookie_banner_text" value="<?= sv('cookie_banner_text', $s) !== '' ? sv('cookie_banner_text', $s) : e('Сайт использует cookie и Яндекс.Метрику для работы и анализа трафика. Подробнее — в <a href="/policy" target="_blank" rel="noopener">Политике обработки персональных данных</a>.') /* W82 (владелец OPEN_OLD): e() для фолбэка — иначе сырые " обрезали value и «Сохранить» без правок персил битый HTML */ ?>" maxlength="260">
     <div class="grid2" style="margin-top:8px">
       <div>
         <label class="f" for="cb-acc">Кнопка «согласиться»</label>
