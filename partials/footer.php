@@ -121,7 +121,7 @@ $igDisclaimer = $igOn; /* пометку Meta показываем только 
 <script src="/js/reveal.js"></script>
 <script src="/js/nilov.js" defer></script>
 <script>window.COOKIE_BANNER_CONFIG = {
-  text: <?= json_encode(setting('cookie_banner_text', 'Сайт использует cookie и Яндекс.Метрику для работы и анализа трафика. Подробнее — в <a href="/policy" target="_blank" rel="noopener">Политике обработки персональных данных</a>.'), JSON_UNESCAPED_UNICODE) ?>,
+  text: <?= json_encode(sanitize_rich_text(setting('cookie_banner_text', 'Сайт использует cookie и Яндекс.Метрику для работы и анализа трафика. Подробнее — в <a href="/policy" target="_blank" rel="noopener">Политике обработки персональных данных</a>.'), 260), JSON_UNESCAPED_UNICODE) ?>,
   accept: <?= json_encode(setting('cookie_accept_text', 'Принять'), JSON_UNESCAPED_UNICODE) ?>,
   reject: <?= json_encode(setting('cookie_reject_text', 'Только необходимые'), JSON_UNESCAPED_UNICODE) ?>
 };</script>
