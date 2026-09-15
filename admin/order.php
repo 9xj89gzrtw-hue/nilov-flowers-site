@@ -11,9 +11,9 @@ requireAdmin();
 
 /* CSRF: админ-POST без валидного токена — отказ */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !csrf_check()) {
-    $back = $_SERVER['HTTP_REFERER'] ?? '/admin/index.php';
-    header('Location: ' . $back);
-    exit;
+    /* Стресс-критик W88: отказ = HTTP 400, а не 302-редирект (семантика ошибки запроса) */
+    http_response_code(400);
+    exit('Неверный CSRF-токен. Обновите страницу.');
 }
 
 $pdo = db();

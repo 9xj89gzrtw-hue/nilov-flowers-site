@@ -9,9 +9,9 @@ requireAdmin();
 
 /* CSRF: админ-POST без валидного токена — отказ */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !csrf_check()) {
-    $back = $_SERVER['HTTP_REFERER'] ?? '/admin/index.php';
-    header('Location: ' . $back);
-    exit;
+    /* Стресс-критик W88: отказ = HTTP 400, а не 302-редирект (семантика ошибки запроса) */
+    http_response_code(400);
+    exit('Неверный CSRF-токен. Обновите страницу.');
 }
 
 $pdo = db();
@@ -69,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
     $cbTrackAll = ($cbRendered === [''] || $cbRendered === []); // JS выключен → старое поведение
     foreach ($keys as $k) {
         if (!array_key_exists($k, $_POST)) { continue; }
-        $values[$k] = trim((string)($_POST[$k] ?? ''));
+        $values[$k] = mb_substr(trim((string)($_POST[$k] ?? '')), 0, 5000); /* W88 stress: серверный clamp всех текстовых полей (100k-POST) */
     }
     /* Стресс-критик W87: cookie-тексты — rich-text с whitelist <a>, серверный clamp (не maxlength). */
     foreach (['cookie_banner_text' => 260, 'cookie_accept_text' => 40, 'cookie_reject_text' => 40] as $rk => $rmax) {
