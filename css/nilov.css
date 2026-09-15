@@ -101,7 +101,7 @@
   font-family:var(--font-display,Georgia,serif);
   font-weight:600;
   font-size:clamp(2.6rem,7vw,5.6rem);
-  line-height:.98;
+  line-height:1.02;
   letter-spacing:.01em;
   color:var(--ink,#2B2D2F);
 }

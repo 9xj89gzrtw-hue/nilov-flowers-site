@@ -235,7 +235,10 @@ select.pill{padding:8px 34px 8px 14px;border-radius:999px;border:1px solid var(-
 .cookie-settings{position:fixed;inset:0;z-index:120;background:rgba(20,20,22,.55);display:grid;place-items:center;padding:20px}
 .cookie-settings__panel{background:#fff;color:var(--ink);border-radius:16px;padding:20px 22px;max-width:420px;width:100%;box-shadow:0 18px 50px rgba(0,0,0,.25)}
 .cookie-settings__row{display:flex;gap:10px;align-items:center;font-size:.9rem;padding:8px 0}
-.cookie-settings__row input{width:20px;height:20px}
+.cookie-settings__row input{appearance:none;-webkit-appearance:none;width:22px;height:22px;flex:none;background:#fff;border:1.5px solid rgba(43,45,47,.4);border-radius:6px;cursor:pointer;position:relative;transition:background .15s ease,border-color .15s ease}
+.cookie-settings__row input:checked{background:var(--rose-cta);border-color:var(--rose-cta)}
+.cookie-settings__row input:focus-visible{outline:3px solid var(--rose-cta);outline-offset:2px}
+.cookie-settings__row input:checked::after{content:"";position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M20 6L9 17l-5-5' fill='none' stroke='white' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/14px 14px no-repeat}
 .cookie-settings__btns{display:flex;gap:10px;margin-top:12px}
 /* Критик покупатель B6: ошибка в статусе должна читаться цветом, а не только фоном.
    #9E2626 на #fbe3e3 = 6.23:1 (AA). */
@@ -321,7 +324,7 @@ body.cookie-visible{padding-bottom:180px}
   /* Критик-визит W59: 3-кнопочный ряд + 2 строки текста давали 111px и на 6px наезжали
      на H1 товара при загрузке. Компакт: clamp текста в 1 строку, gap 6, шрифт .76. */
   .cookie-banner{padding:8px 12px;gap:6px;left:10px;right:10px;bottom:calc(72px + env(safe-area-inset-bottom));font-size:.76rem}
-  .cookie-banner__text{margin:0;flex:1 0 100%;max-height:2.8em;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .cookie-banner__text{margin:0;flex:1 0 100%;line-height:1.3}
   .cookie-banner__btn{padding:10px 14px;font-size:.78rem;flex:1;min-height:44px}
 }
 /* Якорные переходы не заводят заголовки под fixed-баннер/таббар */
@@ -350,7 +353,8 @@ html{scroll-padding-bottom:230px}
 .site-logo,.site-header__call{min-height:44px}}
 @media(max-width:820px){input[type=search],select,input[type=text],input[type=tel]{font-size:16px}}
 .product-gallery{position:sticky;top:88px}
-@media(max-width:820px){.product-gallery{position:static}}
+/* W66: relative (было static) — sale-бейдж position:absolute должен иметь containing block на мобиле */
+@media(max-width:820px){.product-gallery{position:relative}}
 .product-page__media{position:relative;display:block;width:100%;border:none;padding:0;background:none;cursor:zoom-in;border-radius:var(--radius-lg);overflow:hidden;box-shadow:0 24px 48px -24px rgba(43,45,47,.35)}
 .product-gallery__viewport{overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;border-radius:var(--radius-lg)}
 .product-gallery__viewport::-webkit-scrollbar{display:none}
@@ -375,7 +379,7 @@ html{scroll-padding-bottom:230px}
 .product-page__info{display:flex;flex-direction:column;gap:14px;padding-top:8px}
 .product-page__name{font-family:var(--font-display);font-weight:600;font-size:clamp(1.9rem,4vw,2.7rem);line-height:1.1}
 .product-page__price{font-size:1.5rem;font-weight:700;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
-.product-page__price--old{color:var(--ink-soft);text-decoration:line-through;font-weight:400;font-size:1.05rem}
+.product-page__price--old{color:rgba(43,45,47,.65);text-decoration:line-through;text-decoration-thickness:2px;text-decoration-color:rgba(174,74,113,.7);font-weight:400;font-size:1.05rem}
 .product-page__price--discount{color:var(--rose-cta)}
 .product-page__save-badge{display:inline-block;background:var(--mint);color:var(--ink);border-radius:999px;padding:4px 12px;font-size:.75rem;font-weight:700}
 .product-page__category{font-size:.8rem;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-soft);font-weight:600}

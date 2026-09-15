@@ -119,6 +119,8 @@ if ($trust === []) {
     </nav>
     <div class="product-page__layout">
       <div class="product-gallery">
+        <?php /* W66 (design-жюри NEW-6): sale-бейдж с −% был только в каталоге — товарка со скидкой без него. Общий слой поверх обоих вариантов галереи. */ ?>
+        <?php if ($isSale): $offPct = (int)$product['price'] > 0 ? (int)round((1 - $price / (int)$product['price']) * 100) : 0; ?><span class="product-page__badge">Скидка<?php if ($offPct > 0): ?> −<?= $offPct ?>%<?php endif; ?></span><?php endif; ?>
         <?php /* Design-критик W47: честная multi-view галерея из ОДНОГО реального фото —
                   слайд 2 = крупный план того же снимка (CSS-zoom), не выдуманный ракурс.
                   Вторые настоящие фото — данные клиента (feature_gallery выключает всё). */ ?>
@@ -157,8 +159,7 @@ if ($trust === []) {
               <svg viewBox="0 0 80 94" style="width:30%;margin:auto;color:var(--blue)" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="40" cy="30" r="11"/><circle cx="26" cy="38" r="8"/><circle cx="54" cy="38" r="8"/><path d="M40 41v20M40 61c-8 6-14 14-16 25M40 61c8 6 14 14 16 25"/></svg>
             </div>
           <?php endif; ?>
-          <?php if ($isSale): ?><span class="product-page__badge">Скидка</span><?php endif; ?>
-        </div>
+          </div>
         <?php endif; ?>
       </div>
       <div class="product-page__info">

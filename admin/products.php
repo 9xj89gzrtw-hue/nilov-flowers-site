@@ -260,7 +260,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'bulk_
     }
     flash($added > 0 ? "Добавлено товаров: $added (скрытые, с ценой 0 — заполните карточку каждого)" . ($rejected ? '; отклонено: ' . implode('; ', array_slice($rejected, 0, 4)) . (count($rejected) > 4 ? '…' : '') : '')
                       : 'Ни одно фото не принято. ' . ($rejected ? 'Причины: ' . implode('; ', array_slice($rejected, 0, 4)) . (count($rejected) > 4 ? ' и др.' : '') : 'Формат: jpg/png/webp/gif, до 12 МБ'), $added === 0);
-    header('Location: /admin/products.php');
+    /* W66 (статич. выверка #5): импорт из-под фильтра «Без фото» сбрасывал список — носим back_qs */
+    header('Location: /admin/products.php' . (trim((string)($_POST['back_qs'] ?? '')) !== '' ? '?' . trim((string)$_POST['back_qs']) : ''));
     exit;
 }
 
@@ -380,7 +381,7 @@ flash();
   <p style="font-size:.85rem;color:var(--ink-soft);margin-bottom:10px">Выберите несколько фотографий букетов (или перетащите сюда). Каждый файл станет отдельным скрытым товаром с названием по имени файла — потом откроете и заполните цену/описание.</p>
   <form method="post" enctype="multipart/form-data">
     <?= csrf_field() ?>
-    <input type="hidden" name="action" value="bulk_import">
+    <input type="hidden" name="action" value="bulk_import"><input type="hidden" name="back_qs" value="<?= e($_SERVER['QUERY_STRING'] ?? '') ?>">
     <label class="f" for="p-bulk">Фото (можно несколько)</label>
     <input class="input" id="p-bulk" name="bulk_images[]" type="file" accept="image/*" multiple>
     <div style="margin-top:12px"><button class="btn btn--accent" type="submit">Создать товары из фото</button></div>
