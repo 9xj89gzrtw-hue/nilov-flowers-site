@@ -395,7 +395,7 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
         <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 0 26px">Включите, чтобы кнопка «Включить уведомления» внизу страницы настроек работала (нужны созданные ключи).</p>
         <div style="margin-left:26px;margin-top:6px">
           <label class="f" for="bd-sale">Бейдж со скидкой</label>
-          <input class="input" id="bd-sale" name="badge_sale_text" value="<?= sv('badge_sale_text', $s) !== '' ? sv('badge_sale_text', $s) : 'Акционая цена' ?>" maxlength="40">
+          <input class="input" id="bd-sale" name="badge_sale_text" value="<?= sv('badge_sale_text', $s) !== '' ? sv('badge_sale_text', $s) : 'Акционная цена' ?>" maxlength="40">
           <label class="f" for="bd-urg" style="margin-top:8px">Бейдж «успеть сегодня» (ограниченные букеты)</label>
           <input class="input" id="bd-urg" name="badge_urgent_text" value="<?= sv('badge_urgent_text', $s) !== '' ? sv('badge_urgent_text', $s) : 'Успеть сегодня' ?>" maxlength="40">
         </div>
