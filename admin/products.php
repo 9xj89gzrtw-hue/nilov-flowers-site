@@ -357,7 +357,7 @@ flash();
           <input type="checkbox" name="is_active" style="width:auto" <?= $editing ? ((int)$editing['is_active'] === 1 ? 'checked' : '') : '' ?>>
           <?php /* Новый товар = черновик (не показан): владелец проверит фото/текст и сам нажмёт «Показать».
                  Критик-владелец: «товар сразу продаётся до проверки — страшно». */ ?>
-          <?php if (!$editing): ?><p style="font-size:.8rem;color:var(--ink-soft);margin-top:4px">Новый товар создастся скрытым — проверьте фото и текст, потом нажмите «Показать» в списке.</p><?php endif; ?>
+          <?php if (!$editing): ?><p style="font-size:.8rem;color:var(--ink-soft);margin:6px 4px 0 4px">Новый товар создастся скрытым — проверьте фото и текст, потом нажмите «Показать» в списке.</p><?php endif; ?>
           Показывать в каталоге
         </label>
         <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500;margin-top:8px">
@@ -445,7 +445,7 @@ flash();
           <form method="post">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="urgent"><input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
-            <button type="submit"<?= (int)($p['is_urgent'] ?? 0) === 1 ? ' style="background:var(--rose-deep,#E2799C);color:#fff;border-color:var(--rose-deep,#E2799C);font-weight:700"' : '' ?>><?= (int)($p['is_urgent'] ?? 0) === 1 ? '★ Успеть сегодня — включено' : 'Успеть сегодня' ?></button>
+            <button type="submit" class="<?= (int)($p['is_urgent'] ?? 0) === 1 ? 'primary-action' : '' ?>"><?= (int)($p['is_urgent'] ?? 0) === 1 ? '★ Успеть сегодня — включено' : 'Успеть сегодня' ?></button>
           </form>
           <form method="post" style="display:inline-flex;gap:4px">
             <?= csrf_field() ?>
@@ -482,7 +482,7 @@ flash();
     <form method="post" onsubmit="return confirm('Снять ВСЕ товары с продажи? Витрина станет пустой. Товары можно вернуть по одному кнопкой «Показать».')" style="margin-top:8px">
       <?= csrf_field() ?>
       <input type="hidden" name="action" value="hide_all">
-      <button type="submit" class="danger" style="font-size:.8rem;padding:7px 14px;border-radius:8px;border:1px solid var(--err,#c0392b);color:#c0392b;background:#fff;cursor:pointer;font-family:inherit">Снять всё с продажи</button>
+      <button type="submit" class="btn btn--danger" style="font-size:.8rem;padding:7px 14px">Снять всё с продажи</button>
       <small style="display:block;margin-top:6px;color:var(--ink-soft)">Витрина станет пустой. Вернуть можно кнопкой «Показать» у каждого товара.</small>
     </form>
   </details>

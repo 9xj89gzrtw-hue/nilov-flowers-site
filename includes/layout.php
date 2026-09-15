@@ -26,7 +26,7 @@ function adminHeader(string $title, string $active = ''): void
 :root{
   --rose:#F4A9BE; --rose-deep:#E2799C; --blue:#A3C4D9; --mint:#D9E9DF;
   --bg:#F6F1E6; --bg-alt:#EFE7D8; --ink:#2B2D2F; --ink-soft:#6E6A61;
-  --line:rgba(43,45,47,.12); --err:#d64545; --ok:#3e8e5a;
+  --line:rgba(43,45,47,.12); --err:#C43A3A; --ok:#3e8e5a;
   --font-display:'Playfair Display',Georgia,serif;
   --font-ui:'Golos Text',system-ui,-apple-system,sans-serif;
   --radius:14px; --radius-lg:22px;
@@ -52,12 +52,14 @@ a{color:inherit;text-decoration:none}
   .admin-top{position:sticky;top:0;z-index:50} /* единственный sticky: выше карточек и таблиц */
   main.wrap{padding:16px 16px 80px}
 }
-.btn{display:inline-flex;align-items:center;gap:8px;border:none;border-radius:999px;padding:9px 18px;font:600 .85rem var(--font-ui);cursor:pointer;background:var(--ink);color:#fff;transition:background .15s ease}
-.btn:hover{background:#000}
+.btn{display:inline-flex;align-items:center;gap:8px;border:none;border-radius:999px;padding:9px 18px;font:600 .85rem var(--font-ui);cursor:pointer;background:var(--ink);color:#fff;transition:background .15s ease,transform .12s ease,box-shadow .15s ease}
+.btn:hover{transform:translateY(-1px)}
+.btn:active{transform:translateY(1px)}
+.btn:hover{background:#1A1B1D}
 .btn--accent{background:var(--rose-cta,#AE4A71);color:#fff}
 .btn--accent:hover{background:var(--rose-cta-hover,#9E4062)}
 .btn--ghost{background:transparent;border:1.5px solid var(--line);color:var(--ink);transition:border-color .15s ease,color .15s ease}
-.btn--ghost:hover{border-color:var(--ink-soft);color:var(--ink)}
+.btn--ghost:hover{background:var(--bg-alt);border-color:var(--ink-soft);color:var(--ink)}
 .btn--danger{background:#fff;border:1.5px solid var(--err);color:var(--err);transition:background .15s ease,color .15s ease}
 .btn--danger:hover{background:var(--err);color:#fff;border-color:var(--err)}
 main.wrap{padding:28px 20px 60px}
@@ -77,7 +79,7 @@ h1 .status-badge{vertical-align:middle;margin-left:10px}
 .order-link{font-weight:700;text-decoration:underline}
 .filters-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:14px}
 .filters-bar .f{margin:0}
-.card{background:#fff;border-radius:var(--radius-lg);padding:22px;box-shadow:0 14px 40px -28px rgba(43,45,47,.35);margin-bottom:20px}
+.card{background:#fff;border-radius:var(--radius-lg);padding:22px;box-shadow:0 14px 40px -28px rgba(43,45,47,.35);margin-bottom:20px;transition:box-shadow .2s ease}
 table{width:100%;border-collapse:collapse;font-size:.9rem}
 /* Мобильные таблицы: горизонтальный скролл внутри карточки, документ не рвётся */
 .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
@@ -92,8 +94,12 @@ table tr:hover td:has(.row-actions form),table tr:hover th{background:transparen
 /* Visual W52: бежевый фон+бежевая рамка = границ не видно; микро-текст мелок */
 .input,select,textarea{width:100%;border:1.5px solid rgba(43,45,47,.28);border-radius:10px;padding:9px 12px;font:400 .92rem var(--font-ui);background:#fff;color:var(--ink)}
 .input:focus,select:focus,textarea:focus{outline:none;border-color:var(--rose-deep)}
+.input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible,a:focus-visible,input[type=checkbox]:focus-visible{outline:3px solid rgba(174,74,113,.55);outline-offset:2px;border-radius:6px}
 /* Visual-критик W52: нативный синий чекбокс кричит на розово-бежевой палитре */
-input[type=checkbox],input[type=radio]{width:20px;height:20px;min-width:20px;accent-color:var(--rose-deep)}
+input[type=checkbox],input[type=radio]{width:22px;height:22px;min-width:22px;accent-color:var(--rose-cta,#AE4A71);cursor:pointer}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+input[type=number]{-moz-appearance:textfield;appearance:textfield}
+select{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%232B2D2F' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;padding-right:34px}
 /* Visual W54: чекбокс — hit-area ≥44px (визуально компакт); td-ячейка шире колонки */
 td:first-child:has(input[type=checkbox]){width:44px;min-width:44px;text-align:center}
 td input[type=checkbox]{margin:12px auto;display:block}
@@ -124,9 +130,11 @@ label.f{display:block;font-size:.8rem;font-weight:600;margin:12px 0 4px}
 .empty-state strong{display:block;font-family:var(--font-display);font-size:1.15rem;color:var(--ink);margin-bottom:6px;font-weight:600}
 .linklike{background:none;border:none;color:var(--rose-deep);font:600 .85rem var(--font-ui);cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px}
 .linklike:hover{color:#d4638a}
-.thumb{width:48px;height:48px;object-fit:cover;border-radius:8px;background:var(--bg-alt)}
+.thumb{width:48px;height:48px;object-fit:cover;border-radius:10px;background:var(--bg-alt)}
 .row-actions{display:flex;gap:6px;flex-wrap:wrap}
-.row-actions a,.row-actions button{font-size:.78rem;padding:5px 10px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;font-family:var(--font-ui)}
+.row-actions a,.row-actions button{font-size:.78rem;padding:5px 10px;border-radius:10px;border:1px solid var(--line);background:#fff;cursor:pointer;font-family:var(--font-ui);transition:background .15s ease,color .15s ease,transform .12s ease}
+.row-actions a:hover,.row-actions button:hover{transform:translateY(-1px)}
+.row-actions a:active,.row-actions button:active{transform:translateY(1px)}
 .row-actions a.danger,.row-actions button.danger{color:var(--err);border-color:var(--err)}
 /* W59 (визит-критик CODE_OPEN#5): единый паттерн иерархии действий — главное
    следующее действие (переход статуса) акцентное, прочие нейтральные */
@@ -160,6 +168,7 @@ table tr.row-flash{animation:rowFlash 2.5s ease-out 1}
 #top-nav{overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap;-webkit-overflow-scrolling:touch}
 #top-nav::-webkit-scrollbar{display:none}
 #top-nav a{white-space:nowrap;flex:0 0 auto}
+.dash-ranges{-webkit-mask-image:linear-gradient(90deg,#000 92%,transparent);mask-image:linear-gradient(90deg,#000 92%,transparent)}
 .dash-ranges a{padding:5px 12px;border-radius:999px;font-size:.8rem;font-weight:600;color:var(--ink-soft);background:var(--bg);transition:background .15s ease,color .15s ease}
 .dash-ranges a:hover{color:var(--ink)}
 .dash-ranges a.active{background:var(--rose);color:var(--ink)}

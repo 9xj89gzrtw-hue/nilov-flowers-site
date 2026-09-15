@@ -140,7 +140,7 @@ if ($__heroPre !== '') {
           ?>
           <span class="nv-line">
             <?php foreach (mb_str_split($line['text']) as $ci => $ch): ?>
-              <span class="nv-ch" style="--i:<?= $gi++ ?><?= $ci < $line['accent'] ? ';color:var(--rose-deep,#E2799C)' : '' ?>"><?= e($ch) ?></span>
+              <span class="nv-ch" style="--i:<?= $gi++ ?><?= $ci < $line['accent'] ? ';color:var(--rose-cta,#AE4A71)' : '' ?>"><?= e($ch) ?></span>
             <?php endforeach; ?>
           </span>
           <?php endforeach; ?>
@@ -251,7 +251,7 @@ if ($__heroPre !== '') {
       ?>
       <div class="catalog-price-filter" style="display:flex;align-items:center;gap:10px;margin:0 0 18px;flex-wrap:wrap">
         <label for="priceFilter" style="font-size:.85rem;font-weight:600;color:var(--ink-soft)">Цена:</label>
-        <select id="priceFilter" style="padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:.85rem;cursor:pointer">
+        <select id="priceFilter" class="pill">
           <option value="all" selected>Любая</option>
           <option value="low" data-max="<?= $pfLow ?>">до <?= number_format($pfLow, 0, '', ' ') ?> ₽</option>
           <option value="mid" data-min="<?= $pfLow ?>" data-max="<?= $pfHigh ?>"><?= number_format($pfLow, 0, '', ' ') ?>–<?= number_format($pfHigh, 0, '', ' ') ?> ₽</option>
@@ -271,7 +271,7 @@ if ($__heroPre !== '') {
           <label for="zoneCheckInput" style="font-size:.85rem;font-weight:600;color:var(--ink-soft)">Район:</label>
           <input type="search" id="zoneCheckInput" placeholder="<?= e(setting('zone_check_placeholder', 'Например: Приморский')) ?>" aria-label="Узнать стоимость доставки в ваш район"
                  data-fallback="<?= e(setting('zone_check_fallback', 'не нашли — уточним по телефону')) ?>"
-                 style="padding:8px 14px;border-radius:999px;border:1px solid rgba(43,45,47,.35);background:#fff;font-size:.85rem;width:170px;max-width:55vw;min-width:0;min-height:44px"
+                 style="width:clamp(150px,46vw,240px);min-width:0" class="pill"
                  list="zoneCheckList">
           <datalist id="zoneCheckList">
             <?php foreach ($zones as $z): ?><option value="<?= e($z['name']) ?>"></option><?php endforeach; ?>

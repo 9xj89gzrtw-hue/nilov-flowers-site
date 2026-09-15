@@ -175,7 +175,7 @@ if ($trust === []) {
         </p>
         <?php if ((int)($product['is_urgent'] ?? 0) === 1): ?><p class="product-card__urgent-note">Соберём и доставим в течение дня — количество ограничено</p><?php endif; ?>
         <?php if ($product['description'] !== ''): ?><p class="product-page__description"><?= nl2br(e($product['description'])) ?></p><?php endif; ?>
-        <button type="button" class="btn btn--accent product-page__cta" data-order-cta
+        <button type="button" class="btn btn--accent product-page__cta product-page__cta--sticky" data-order-cta
           data-product-id="<?= (int)$product['id'] ?>"
           data-product-name="<?= e($product['name']) ?>"
           data-product-price-raw="<?= $price ?>"

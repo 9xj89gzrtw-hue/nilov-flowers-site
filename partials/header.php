@@ -28,7 +28,7 @@ $cartMode = in_array(setting('cart_mode', 'drawer'), ['drawer', 'hybrid', 'page'
     </a>
     <div class="site-header__contact">
       <?php if ($headerPhone !== ''): ?><a href="tel:+<?= e(preg_replace('/\D/', '', $headerPhone)) ?>" class="site-header__contact-phone"><?= e($headerPhone) ?></a><?php endif; ?>
-      <?php if ($headerAddress !== ''): ?><span> · <?= e($headerAddress) ?></span><?php endif; ?>
+      <?php if ($headerAddress !== ''): ?><span><?= e($headerAddress) ?></span><?php endif; ?>
     </div>
     <nav class="site-nav">
       <a href="/#catalog">Каталог</a>

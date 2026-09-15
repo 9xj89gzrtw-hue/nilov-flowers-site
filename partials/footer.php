@@ -81,7 +81,7 @@ $igDisclaimer = $igOn; /* пометку Meta показываем только 
       <?php /* Промокод (критик functional top#3): применяется по серверной проверке /api/promo */ ?>
       <?php if (setting('feature_promo', '1') === '1'): ?>
       <div class="cart-promo" id="cartPromo">
-        <input type="text" id="cartPromoInput" maxlength="32" placeholder="Промокод" aria-label="Промокод" autocomplete="off" style="flex:1;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font:inherit">
+        <input type="text" id="cartPromoInput" maxlength="32" placeholder="Промокод" aria-label="Промокод" autocomplete="off" style="flex:1;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius,12px);font:inherit">
         <button type="button" id="cartPromoApply" class="cart-promo__btn" style="min-height:44px;padding:11px 16px;border:1px solid var(--line);border-radius:10px;background:#fff;font:600 .85rem var(--font-ui);cursor:pointer">Применить</button>
       </div>
       <p id="cartPromoMsg" class="cart-promo__msg" style="margin:4px 0 0;font-size:.8rem;color:var(--ink-soft)" aria-live="polite"></p>
