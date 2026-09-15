@@ -60,6 +60,9 @@ a{color:inherit;text-decoration:none}
 .btn--accent:hover{background:var(--rose-cta-hover,#9E4062)}
 .btn--ghost{background:transparent;border:1.5px solid var(--line);color:var(--ink);transition:border-color .15s ease,color .15s ease}
 .btn--ghost:hover{background:var(--bg-alt);border-color:var(--ink-soft);color:var(--ink)}
+.btn--outline{background:#fff;border:1.5px solid var(--line);color:var(--ink);transition:background .15s ease,border-color .15s ease}
+.btn--outline:hover{background:var(--bg-alt);border-color:var(--ink-soft);color:var(--ink)}
+.btn--outline:disabled{opacity:.45;cursor:not-allowed;transform:none}
 .btn--danger{background:#fff;border:1.5px solid var(--err);color:var(--err);transition:background .15s ease,color .15s ease}
 .btn--danger:hover{background:var(--err);color:#fff;border-color:var(--err)}
 main.wrap{padding:28px 20px 60px}

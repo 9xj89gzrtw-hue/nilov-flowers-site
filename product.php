@@ -184,6 +184,19 @@ if ($trust === []) {
           Добавить в корзину · <?= formatPrice($price) ?>
         </button>
         <span class="product-page__cta-spacer" aria-hidden="true"></span>
+        <script>
+        /* W62 (obvious-критик NEW-2): fixed-CTA на мобиле ложилась на legal-ссылки футера
+           (elementFromPoint попадал в кнопку). Как только футер входит во вьюпорт —
+           кнопка честно исчезает: покупателю она уже не нужна (страница дочитана). */
+        document.addEventListener('DOMContentLoaded', function(){
+          var cta=document.querySelector('.product-page__cta--sticky');
+          var ft=document.querySelector('.site-footer');
+          if(!cta||!ft||!window.IntersectionObserver) return;
+          new IntersectionObserver(function(es){
+            es.forEach(function(e){cta.classList.toggle('product-page__cta--hidden',e.isIntersecting);});
+          },{threshold:0.02}).observe(ft);
+        });
+        </script>
         <?php $ykOn = setting('yk_enabled', '0') === '1' && trim(setting('yk_shop_id', '')) !== '' && trim(setting('yk_secret_key', '')) !== ''; ?>
         <p class="cart-note"><?php if ($ykOn): ?>Оплата — картой, СБП или при получении. На защищённой странице платёжного провайдера.<?php else: ?>Оплата — курьеру при получении заказа.<?php endif; ?></p>
         <?php if ($trust !== []): ?>

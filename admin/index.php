@@ -209,7 +209,7 @@ $dashqs = fn(string $r) => '/admin/index.php?' . e(http_build_query(array_merge(
   <p style="font-size:.78rem;color:var(--ink-soft);margin:-8px 0 14px">Выручка и средний чек считаются только по подтверждённым, выполненным и забранным заказам — новые и отменённые не учитываются.</p>
 
   <div class="dash-spark">
-    <span class="dash-metric__label">Выручка по дням (<?= $sparkDays ?> дн.)<?php if ($sparkMax > 0): ?> · максимум <?= formatPrice($sparkMax) ?> ₽<?php endif ?></span>
+    <span class="dash-metric__label">Выручка по дням (<?= $sparkDays ?> дн.)<?php if ($sparkMax > 0): ?> · максимум <?= formatPrice($sparkMax) ?><?php endif ?></span>
     <?php if ($sparkMax <= 0): /* Visual W54: пустой график выглядел «сломанным» — говорим прямо */ ?>
       <p style="margin:6px 0 0;font-size:.85rem;color:var(--ink-soft)">За <?= $sparkDays ?> дн. подтверждённых заказов с выручкой ещё нет — столбики появятся, когда пойдут оплаты.</p>
     <?php else: ?>

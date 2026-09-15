@@ -830,12 +830,12 @@ flash();
 <form method="post" style="display:inline;margin-top:8px" onsubmit="return confirm('Вернуть витринные тексты и тумблеры к значению по умолчанию? Ваши контакты, секретные коды и реквизиты останутся как есть.');">
   <?= csrf_field() ?>
   <input type="hidden" name="hist_action" value="defaults">
-  <button class="btn btn--outline" type="submit" style="padding:12px 22px;font-size:.85rem;color:var(--ink-soft)">⎌ Вернуть все значения по умолчанию</button>
+  <button class="btn btn--outline" type="submit" style="padding:12px 22px;font-size:.85rem">⎌ Вернуть все значения по умолчанию</button>
 </form>
 <form method="post" style="display:inline;margin-top:8px" onsubmit="return confirm('Запомнить текущие витринные тексты и тумблеры как новое «по умолчанию»? Теперь кнопка ⎌ будет возвращать к этому состоянию.');">
   <?= csrf_field() ?>
   <input type="hidden" name="hist_action" value="save-defaults">
-  <button class="btn btn--outline" type="submit" style="padding:12px 22px;font-size:.85rem;color:var(--ink-soft)">💾 Сохранить текущее как «по умолчанию»</button>
+  <button class="btn btn--outline" type="submit" style="padding:12px 22px;font-size:.85rem">💾 Сохранить текущее как «по умолчанию»</button>
 </form>
 <?php if (($du = settingsDefaultsUpdatedAt()) !== ''): ?><p style="font-size:.75rem;color:var(--ink-soft);margin:6px 0 0">Сейчас «по умолчанию» = ваш сохранённый вариант от <?= e($du) ?></p><?php endif; ?>
 <?php if (count($hist = settingsHistoryList(5)) > 0): ?>
