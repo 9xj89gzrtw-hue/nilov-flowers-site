@@ -426,7 +426,7 @@ flash();
     <tr><th></th><th>Фото</th><th>Название</th><th>Категория</th><th>Цена</th><th>Акция</th><th>Сорт.</th><th>Статус</th><th>Обновлён</th><th></th><th></th></tr>
     <?php foreach ($products as $p): ?>
     <tr id="row-<?= (int)$p['id'] ?>">
-      <td><input type="checkbox" name="ids[]" value="<?= (int)$p['id'] ?>" form="bulkPriceForm" style="width:auto"></td>
+      <td style="text-align:center"><label class="bulk-hit"><input class="bulk-check" type="checkbox" name="ids[]" value="<?= (int)$p['id'] ?>" form="bulkPriceForm"></label></td>
       <td><?= $p['image'] !== '' ? '<img class="thumb" src="/img/products/' . e($p['image']) . '" alt="">' : '<div class="thumb"></div>' ?></td>
       <td><strong><?= e($p['name']) ?></strong><br><small style="color:var(--ink-soft)"><?= e($p['slug']) ?></small></td>
       <td><?= e($p['category_name'] ?? '—') ?></td>

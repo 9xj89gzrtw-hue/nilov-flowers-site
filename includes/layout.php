@@ -130,7 +130,7 @@ label.f{display:block;font-size:.8rem;font-weight:600;margin:12px 0 4px}
 .status-badge.done::before{content:"💐 ";font-size:.7rem}
 .status-badge.canceled{background:#eee;opacity:.85}
 .status-badge.canceled::before{content:"✖ ";font-size:.7rem}
-.status-badge.unredeemed{background:#f3d9a4}
+.status-badge.unredeemed{background:#DCD3F0;color:#3d2e66} /* W71: не персик — путался с in_progress */
 .status-badge.unredeemed::before{content:"🕒 ";font-size:.7rem}
 .status-badge.in_progress{background:#FFE9C7;color:#7a4a00}
 .status-badge.in_progress::before{content:"🚚 ";font-size:.7rem}
@@ -139,6 +139,13 @@ label.f{display:block;font-size:.8rem;font-weight:600;margin:12px 0 4px}
 a.order-link{display:inline-block;min-height:28px;line-height:28px}
 .card a[href^="tel:"]{display:inline-block;min-height:28px;line-height:28px;padding-right:8px}
 .back-link{display:inline-flex;align-items:center;min-height:28px}
+summary.del-summary{cursor:pointer;color:var(--err,#C43A3A);font-size:.9rem;font-weight:600;display:inline-flex;align-items:center;min-height:32px}
+.bulk-hit{display:grid;place-items:center;min-height:44px;cursor:pointer;margin:-6px}
+.bulk-check{appearance:none;-webkit-appearance:none;width:22px;height:22px;border:1.5px solid rgba(43,45,47,.35);border-radius:6px;background:#fff;cursor:pointer;display:inline-grid;place-content:center;vertical-align:middle}
+.bulk-check:checked{background:var(--rose-cta,#AE4A71);border-color:var(--rose-cta,#AE4A71)}
+.bulk-check:checked::before{content:"";width:12px;height:7px;border:2px solid #fff;border-width:0 0 2.5px 2.5px;transform:rotate(-45deg) translateY(-1px)}
+input[type=range]{height:40px}
+@media(hover:none),(pointer:coarse){summary.del-summary{min-height:44px}input[type=range]{height:44px}} /* W71: door-таргеты + слайдер на тап */
 #bulkPriceForm a#bulkSelAll{display:inline-flex;align-items:center;min-height:42px}
 @media(hover:none),(pointer:coarse){a.order-link,.card a[href^="tel:"],.back-link{min-height:44px}}
 
