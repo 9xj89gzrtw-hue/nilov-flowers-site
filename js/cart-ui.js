@@ -150,7 +150,7 @@
     var promoEmpty = items.length === 0;
     if (promoEmpty && (promoState.code || promoState.lastCode)) {
       promoClear(true);
-      promoState.lastCode = ''; promoMsgEl && (promoMsgEl.textContent = '');
+      promoState.lastCode = ''; if (promoMsgEl) { promoMsgEl.textContent = ''; promoMsgEl.style.color = ''; } /* W81b: не прятать msg с залипшим красным inline-color */
     } /* иначе minOrder=0 и зелёная ветка сработала бы ложно после возврата товара */
     if (promoWrap) promoWrap.hidden = promoEmpty;
     if (promoMsgEl) promoMsgEl.hidden = promoEmpty;
