@@ -47,7 +47,7 @@ a{color:inherit;text-decoration:none}
 .site-header__contact span::before{content:"·";position:absolute;left:2px;color:var(--line)}
 .site-header__contact-phone{font-weight:600;color:var(--ink)}
 .site-nav{display:flex;align-items:center;gap:18px;font-size:.92rem}
-.site-nav a:not(.cart-toggle):hover{color:var(--rose-cta)}
+.site-nav a:not(.cart-toggle):hover{color:#9E4062;text-decoration:underline;text-underline-offset:3px}
 /* Тап-таргеты навигации ≥44px (fix критика: 34-35px) */
 .site-nav a:not(.cart-toggle){display:inline-flex;align-items:center;min-height:44px;padding:0 2px}
 .cart-toggle{position:relative;display:grid;place-items:center;width:40px;height:40px;border:1px solid var(--line);border-radius:50%;background:#fff;cursor:pointer;transition:transform .15s}
@@ -86,6 +86,7 @@ a{color:inherit;text-decoration:none}
 /* ============ HERO ============ */
 .hero{padding:40px 0 64px}
 .hero__grid{display:grid;grid-template-columns:1.15fr .85fr;gap:clamp(24px,4vw,56px);align-items:center}
+@media(min-width:700px) and (max-width:900px){.hero__grid{grid-template-columns:1fr 1fr}}
 .hero__media{position:relative}
 .hero__media::before{content:"";position:absolute;inset:-14px -14px auto auto;width:55%;height:55%;background:var(--mint);border-radius:50% 50% 0 50%;z-index:-1}
 .hero__media::after{content:"";position:absolute;left:-14px;bottom:-14px;width:40%;height:40%;background:var(--rose);opacity:.5;border-radius:50% 50% 50% 0;z-index:-1}
@@ -136,11 +137,17 @@ select.pill{padding:8px 34px 8px 14px;border-radius:999px;border:1px solid var(-
 /* W57/W60: на 2 колонках карточка 164px — фото не читается; ≤480 одна колонка */
 @media(max-width:480px){.catalog__grid{grid-template-columns:1fr}}
 /* Критерий 36: 2 колонки на мобиле (карточка не во всю высоту экрана), «вдова» —
-      последняя нечётная карточка широкой горизонтальной плиткой, фото landscape-crop */
-@media(max-width:480px){
+      последняя нечётная карточка широкой горизонтальной плиткой, фото landscape-crop.
+      W64 (obvious NEW-2): в одноколонной сетке (≤480) плитка не нужна — была 46% медиа,
+      бейдж резало по словам и сердечко налезало; оставляем только диапазон 2 колонок. */
+@media(max-width:699px){
   .catalog__grid .product-card:last-child:nth-child(odd){grid-column:1/-1;flex-direction:row}
   .catalog__grid .product-card:last-child:nth-child(odd) .product-card__media{width:46%;aspect-ratio:4/3.4}
   .catalog__grid .product-card:last-child:nth-child(odd) .product-card__body{justify-content:center}
+}
+@media(max-width:480px){
+  .catalog__grid .product-card:last-child:nth-child(odd){grid-column:auto;flex-direction:column}
+  .catalog__grid .product-card:last-child:nth-child(odd) .product-card__media{width:auto;aspect-ratio:4/4.7}
 }
 @media(min-width:820px){.catalog__grid{grid-template-columns:repeat(3,1fr)}}
 .product-card{background:#fff;border-radius:var(--radius-lg);overflow:hidden;box-shadow:0 10px 30px -18px rgba(43,45,47,.25);transition:transform .2s,box-shadow .2s;display:flex;flex-direction:column}
@@ -150,7 +157,11 @@ select.pill{padding:8px 34px 8px 14px;border-radius:999px;border:1px solid var(-
 .product-card__img{width:100%;height:100%;object-fit:cover;transition:transform .5s}
 .product-card:hover .product-card__img{transform:scale(1.05)}
 .product-card__media-link{display:grid;place-items:center;width:100%;height:100%}
-.product-card__badge{position:absolute;top:12px;left:12px;right:12px;background:rgba(255,255,255,.92);backdrop-filter:blur(6px);border-radius:999px;padding:5px 12px;font-size:.72rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:calc(100% - 24px)}
+.product-card__badge{position:absolute;top:12px;left:12px;right:56px;background:rgba(255,255,255,.92);backdrop-filter:blur(6px);border-radius:999px;padding:5px 12px;font-size:.72rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:calc(100% - 68px)}
+/* W64 (obvious-критик w4g4 NEW-1): скидка/urgent/доставка лежали ДРУГ НА ДРУГЕ (одинаковые top:12) —
+   конверсионные бейджи были невидимы. Стек по DOM-порядку с шагом 34px; right:56px — отступ от сердечка. */
+.product-card__badge:nth-of-type(2){top:46px}
+.product-card__badge:nth-of-type(3){top:80px}
 .product-card__badge--urgent{background:var(--rose-cta,#AE4A71);color:#fff;letter-spacing:.04em;text-transform:uppercase;font-size:.66rem}
 .product-page__urgent-badge{position:static;display:inline-block;margin-bottom:10px}
 /* Критик покупатель B3: #E2799C на белом = 2.81:1 (fail AA). --rose-cta #AE4A71 = 5.23:1 */

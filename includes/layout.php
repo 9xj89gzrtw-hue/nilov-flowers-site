@@ -81,6 +81,7 @@ h1{font-family:var(--font-display);font-weight:600;font-size:1.8rem;margin-botto
 h1 .status-badge{vertical-align:middle;margin-left:10px}
 .order-link{font-weight:700;text-decoration:underline}
 .filters-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:14px}
+.filters-bar input,.filters-bar select,.filters-bar button{height:42px;min-height:42px}
 .filters-bar .f{margin:0}
 .card{background:#fff;border-radius:var(--radius-lg);padding:22px;box-shadow:0 14px 40px -28px rgba(43,45,47,.35);margin-bottom:20px;transition:box-shadow .2s ease}
 table{width:100%;border-collapse:collapse;font-size:.9rem}
@@ -126,12 +127,14 @@ label.f{display:block;font-size:.8rem;font-weight:600;margin:12px 0 4px}
 .status-badge.canceled::before{content:"✖ ";font-size:.7rem}
 .status-badge.unredeemed{background:#f3d9a4}
 .status-badge.unredeemed::before{content:"🕒 ";font-size:.7rem}
+.status-badge.in_progress{background:#d8ecd6}
+.status-badge.in_progress::before{content:"🚚 ";font-size:.7rem}
 .toast{position:fixed;top:16px;right:16px;z-index:1000;background:#fff;box-shadow:0 14px 40px -20px rgba(43,45,47,.5);border-radius:var(--radius);padding:14px 18px;font-size:.9rem;max-width:320px}
 .flash{padding:12px 16px;border-radius:12px;background:var(--mint);margin-bottom:16px;font-size:.9rem;border:1px solid rgba(62,142,90,.25);color:#2c5e40}
 .flash--err{background:#fbe3e3;border-color:rgba(214,69,69,.3);color:#8c2f2f}
 .empty-state{text-align:center;padding:36px 20px;color:var(--ink-soft);font-size:.95rem}
 .empty-state strong{display:block;font-family:var(--font-display);font-size:1.15rem;color:var(--ink);margin-bottom:6px;font-weight:600}
-.linklike{background:none;border:none;color:var(--rose-deep);font:600 .85rem var(--font-ui);cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px}
+.linklike{background:none;border:none;color:var(--rose-cta,#AE4A71);font:600 .85rem var(--font-ui);cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px}
 .linklike:hover{color:#d4638a}
 .thumb{width:48px;height:48px;object-fit:cover;border-radius:10px;background:var(--bg-alt)}
 .row-actions{display:flex;gap:6px;flex-wrap:wrap}

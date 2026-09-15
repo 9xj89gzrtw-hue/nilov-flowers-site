@@ -306,7 +306,9 @@ $dashqs = fn(string $r) => '/admin/index.php?' . e(http_build_query(array_merge(
       <td style="width:240px">
         <?php
         $itemsStmt->execute([':i' => $o['id']]);
-        foreach ($itemsStmt->fetchAll() as $it) {
+        $its = $itemsStmt->fetchAll();
+        if (!$its) { echo '<small style=\"color:var(--ink-soft)\">позиции не записаны</small>'; }
+        foreach ($its as $it) {
             echo e($it['name']) . ' × ' . (int)$it['qty'] . ' — ' . formatPrice((int)$it['price']) . '<br>';
         }
         ?>

@@ -224,7 +224,7 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
         <input class="input" id="s-addr" name="shop_address" value="<?= sv('shop_address', $s) ?>">
       </div>
       <div>
-        <label class="f" for="s-logo" style="color:var(--rose-deep);font-size:.95rem">🖼 Логотип в шапке сайта</label>
+        <label class="f" for="s-logo" style="color:var(--rose-cta,#AE4A71);font-size:.95rem">🖼 Логотип в шапке сайта</label>
         <input class="input" id="s-logo" name="logo_image" type="file" accept="image/*">
         <?php if (($s['logo_image'] ?? '') !== ''): ?>
           <?php $logoPath = (__DIR__) . '/../img/uploads/' . $s['logo_image']; $logoVer = is_file($logoPath) ? substr(md5_file($logoPath), 0, 8) : '0'; ?>
@@ -808,7 +808,7 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
   <?php /* Критерий 25: кнопка сохранения прижата к низу окна — не надо листать до неё
           через всю форму; sticky bottom работает внутри form-контейнера. */ ?>
   <div style="position:sticky;bottom:12px;z-index:40;display:flex;align-items:center;gap:12px;margin:24px 0 0;padding:10px 12px;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 28px -12px rgba(43,45,47,.35)">
-    <span id="dirty-hint" style="display:none;font-size:.82rem;font-weight:600;color:var(--rose-deep)">● Есть несохранённые изменения</span>
+    <span id="dirty-hint" style="display:none;font-size:.82rem;font-weight:600;color:var(--rose-cta,#AE4A71)">● Есть несохранённые изменения</span>
     <button class="btn btn--accent" type="submit" style="padding:14px 32px;font-size:.95rem;margin-left:auto">💾 Сохранить настройки</button>
     <a class="btn btn--outline" href="#top-nav" style="padding:14px 18px;font-size:.85rem;text-decoration:none">↑ Наверх</a>
   </div>

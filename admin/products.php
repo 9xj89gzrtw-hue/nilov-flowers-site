@@ -507,7 +507,7 @@ document.getElementById('bulkSelAll')?.addEventListener('click', function (ev) {
   document.querySelectorAll('#bulkPriceForm input[name="csrf_token"]').forEach(function (i) { csrf = i.value; });
   function send(set) {
     var ids = Array.prototype.slice.call(document.querySelectorAll('input[name="ids[]"]:checked')).map(function (b) { return b.value; });
-    if (!ids.length) { alert('Сначала отметьте товары галочками слева.'); return; }
+    if (!ids.length) { (window.adminToast||function(m){alert(m);})('Сначала отметьте товары галочками слева.'); return; }
     if (!confirm((set ? 'Показать' : 'Скрыть') + ' выбранные (' + ids.length + ' шт.) на витрине?')) return;
     var f = document.createElement('form');
     f.method = 'post';

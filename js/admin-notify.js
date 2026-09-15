@@ -66,6 +66,7 @@
         }
     }
 
+    window.adminToast = function (text) { toast(text); };
     function toast(text) {
         var el = document.createElement('div');
         el.className = 'card toast';
