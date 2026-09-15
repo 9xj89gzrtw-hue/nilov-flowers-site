@@ -71,6 +71,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
         if (!array_key_exists($k, $_POST)) { continue; }
         $values[$k] = trim((string)($_POST[$k] ?? ''));
     }
+    /* Стресс-критик W87: cookie-тексты — rich-text с whitelist <a>, серверный clamp (не maxlength). */
+    foreach (['cookie_banner_text' => 260, 'cookie_accept_text' => 40, 'cookie_reject_text' => 40] as $rk => $rmax) {
+        if (array_key_exists($rk, $values)) { $values[$rk] = sanitize_rich_text($values[$rk], $rmax); }
+    }
     /* Чекбоксы: 0 если снят (не пришёл), но ТОЛЬКО для реально отрендеренных в форме */
     foreach (['yk_enabled', 'upsell_enabled', 'hero_text_enabled', 'yandex_reviews_enabled',
               'wa_enabled', 'tg_enabled', 'vk_enabled', 'ig_enabled', 'email_enabled', 'max_enabled',

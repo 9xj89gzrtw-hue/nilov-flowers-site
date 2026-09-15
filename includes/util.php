@@ -7,6 +7,30 @@ function e(mixed $v): string
     return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
 }
 
+/**
+ * Стресс-критик W87 (stored XSS admin->посетитель): витринные rich-text поля (cookie_banner_text).
+ * Whitelist: только <a href="/..."> или <a href="https://..."> без иных атрибутов.
+ * Остальная разметка срезается strip_tags. Clamp длины — сервером (не maxlength).
+ */
+function sanitize_rich_text(string $v, int $max = 500): string
+{
+    $v = strip_tags($v, '<a>');
+    $v = preg_replace_callback('/<a\b[^>]*>/i', function ($m) {
+        $href = '';
+        $x = $m[0];
+        if (preg_match('/href\s*=\s*"([^"]*)"/i', $x, $h)) { $href = $h[1]; }
+        elseif (preg_match('/href\s*=\s*\'([^\']*)\'/i', $x, $h)) { $href = $h[1]; }
+        elseif (preg_match('/href\s*=\s*([^\s"\x27>]+)/i', $x, $h)) { $href = $h[1]; }
+        $href = html_entity_decode($href, ENT_QUOTES, 'UTF-8');
+        if ($href !== '' && preg_match('#^(?:/(?!/)|https://)#i', $href)) {
+            return '<a href="' . htmlspecialchars($href, ENT_QUOTES) . '" rel="nofollow">';
+        }
+        return '<a>';
+    }, $v);
+    $v = preg_replace('/<\/a\s*>/i', '</a>', $v);
+    return mb_substr(trim($v), 0, $max);
+}
+
 function setting(string $key, string $default = ''): string
 {
     static $cache = null;
