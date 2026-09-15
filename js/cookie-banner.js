@@ -79,21 +79,32 @@
           '<div class="cookie-settings__panel">' +
           '<h3 style="margin:0 0 8px;font-size:1rem">Настройки cookie</h3>' +
           '<p style="margin:0 0 10px;font-size:.85rem;color:inherit;opacity:.8">Технические cookie (корзина, согласие) работают всегда — без них сайт не может. Аналитика включается только с вашего согласия.</p>' +
-          '<label class="cookie-settings__row"><input type="checkbox" id="ckAnalytics" checked> Яндекс.Метрика (аналитика посещений)</label>' +
+          '<label class="cookie-settings__row"><input type="checkbox" id="ckAnalytics"> Яндекс.Метрика /* W85 (a11y-критик): opt-in без галочки по умолчанию */ (аналитика посещений)</label>' +
           '<div class="cookie-settings__btns">' +
           '<button type="button" class="btn cookie-banner__btn" id="ckSave">Сохранить</button>' +
           '<button type="button" class="btn cookie-banner__btn cookie-banner__btn--secondary" id="ckClose">Закрыть</button>' +
           '</div></div>';
         document.body.appendChild(modal);
+        /* W85 (a11y-критик polish-2): фокус-менеджмент role=dialog — перенос фокуса,
+           возврат на триггер, Escape. */
+        var opener = document.activeElement;
+        var closeSettings = function () {
+          document.removeEventListener('keydown', onKey);
+          modal.remove();
+          if (opener && opener.focus) opener.focus();
+        };
+        var onKey = function (ev) { if (ev.key === 'Escape') closeSettings(); };
+        document.addEventListener('keydown', onKey);
+        document.getElementById('ckSave').focus();
         var box = document.getElementById('ckAnalytics');
         document.getElementById('ckSave').addEventListener('click', function () {
           saveState(box.checked ? 'accept' : 'necessary');
           dismissBanner();
-          modal.remove();
+          closeSettings();
           if (box.checked) startAnalytics();
         });
-        document.getElementById('ckClose').addEventListener('click', function () { modal.remove(); });
-        modal.addEventListener('click', function (ev) { if (ev.target === modal) modal.remove(); });
+        document.getElementById('ckClose').addEventListener('click', function () { closeSettings(); });
+        modal.addEventListener('click', function (ev) { if (ev.target === modal) closeSettings(); });
       });
     }
   }

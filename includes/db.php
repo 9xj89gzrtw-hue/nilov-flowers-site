@@ -13,6 +13,9 @@ function db(): PDO
         ]);
         $pdo->exec('PRAGMA foreign_keys = ON');
         $pdo->exec('PRAGMA journal_mode = WAL');
+        /* W85 (стресс-критик прогон 1): 20 параллельных POST в WAL без таймаута давали
+           SQLSTATE[HY000] General error 5 (database is locked) с телом фатала в HTTP 200. */
+        $pdo->exec('PRAGMA busy_timeout = 5000');
         if ($new) {
             seedDatabase($pdo);
         }
