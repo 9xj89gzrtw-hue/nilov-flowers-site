@@ -432,9 +432,9 @@ if ($__heroPre !== '') {
                  (с фолбэком на shop_address), иначе город без улицы. */
               $pickupAddr = trim(setting('pickup_address', '')) ?: trim(setting('shop_address', ''));
               ?>
-              <option value="0" data-price="0" selected><?= e(setting('pickup_option_text', 'Самовывоз — бесплатно')) ?></option>
+              <option value="0" data-price="0" selected><?= e(setting('pickup_option_text', 'Самовывоз · 0 ₽')) ?></option>
               <?php foreach ($zones as $z): ?>
-                <option value="<?= (int)$z['id'] ?>" data-price="<?= (int)$z['price'] ?>">Доставка: <?= e($z['name']) ?> — <?= formatPrice((int)$z['price']) ?></option>
+                <option value="<?= (int)$z['id'] ?>" data-price="<?= (int)$z['price'] ?>"><?= e($z['name']) ?> · <?= (int)$z['price'] ?>&#8381;</option>
               <?php endforeach; ?>
             </select>
             <?php if ($pickupAddr !== ''): ?>

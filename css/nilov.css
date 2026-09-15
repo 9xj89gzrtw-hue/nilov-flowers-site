@@ -248,9 +248,8 @@ img.product-card__img{
 .product-card__cta{
   min-width:44px;min-height:44px;
 }
-.row-actions a,.row-actions button{
-  min-height:34px; /* админ: компенсируем плотность, но строки таблиц остаются компактными */
-}
+/* W65 (статич. выверка #4): админский .row-actions вычищен — nilov.css в админку
+   не линкуется, а при случайной линковке убил бы тач-правило 44px */
 
 /* Карточки товара: lift+shadow при hover */
 .product-card{
@@ -336,7 +335,7 @@ img.product-card__img{
 
 /* 3) Живая CTA: магнитный подъём + распускание тени */
 .btn--accent{
-  transition:transform .3s cubic-bezier(.22,1,.36,1),box-shadow .3s ease,background .3s ease;
+  transition:transform .3s cubic-bezier(.22,1,.36,1),box-shadow .3s ease,background .3s ease,opacity .2s ease; /* W65 #2: opacity — fade скрытия fixed-CTA (nilov грузится после style.css) */
   box-shadow:0 10px 24px -12px rgba(226,121,156,.55);
 }
 .btn--accent:hover{

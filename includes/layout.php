@@ -181,6 +181,10 @@ table tr.row-flash{animation:rowFlash 2.5s ease-out 1}
 #top-nav::-webkit-scrollbar{display:none}
 #top-nav a{white-space:nowrap;flex:0 0 auto}
 .dash-ranges{-webkit-mask-image:linear-gradient(90deg,#000 92%,transparent);mask-image:linear-gradient(90deg,#000 92%,transparent)}
+/* W65 (статич. выверка #3): sticky-оглавление настроек пряталось под двухстрочную
+   моб-шапку (inline top:64px < фактические ~90px шапки на ≤700). Класс вместо inline. */
+.settings-nav{margin-bottom:16px;position:sticky;top:64px;z-index:30;background:var(--bg,#F6F1E6);padding:8px 0;border-radius:0 0 12px 12px}
+@media(max-width:700px){.settings-nav{top:122px}}
 .dash-ranges a{padding:5px 12px;border-radius:999px;font-size:.8rem;font-weight:600;color:var(--ink-soft);background:var(--bg);transition:background .15s ease,color .15s ease}
 .dash-ranges a:hover{color:var(--ink)}
 .dash-ranges a.active{background:var(--rose);color:var(--ink)}

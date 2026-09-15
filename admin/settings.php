@@ -146,7 +146,7 @@ flash();
 
 <?php /* Оглавление настроек (критик-владелец: «9 секций на одной простыне — листать всё»).
        Якоря-чипы, прыжок в один клик, sticky — всегда под рукой. */ ?>
-<nav id="top-nav" class="dash-ranges" style="margin-bottom:16px;position:sticky;top:64px;z-index:30;background:var(--bg,#F6F1E6);padding:8px 0;border-radius:0 0 12px 12px" aria-label="Разделы настроек">
+<nav id="top-nav" class="dash-ranges settings-nav" aria-label="Разделы настроек">
   <a href="#s-common">Общие</a>
   <a href="#s-main">Главная</a>
   <a href="#s-look">Вид</a>
@@ -545,7 +545,7 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
     <div class="grid2">
       <div>
         <label class="f" for="pk-opt">Пункт самовывоза в списке</label>
-        <input class="input" id="pk-opt" name="pickup_option_text" value="<?= sv('pickup_option_text', $s) !== '' ? sv('pickup_option_text', $s) : 'Самовывоз — бесплатно' ?>" maxlength="40">
+        <input class="input" id="pk-opt" name="pickup_option_text" value="<?= sv('pickup_option_text', $s) !== '' ? sv('pickup_option_text', $s) : 'Самовывоз · 0 ₽' ?>" maxlength="40">
         <label class="f" for="pk-addr" style="margin-top:10px">Точный адрес самовывоза (улица, дом)</label>
         <input class="input" id="pk-addr" name="pickup_address" value="<?= sv('pickup_address', $s) ?>" placeholder="Например: Полевая Сабировская ул., 47, корп. 1" maxlength="120">
         <label class="f" for="dl-hint" style="margin-top:8px">Подсказка под доставкой</label>

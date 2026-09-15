@@ -217,6 +217,9 @@ function migrateSchema(PDO $pdo): void
        строка НЕ пустая, старый «анти-оффер» остался. Пересаживаем по точному совпадению старого. */
     $pdo->exec("UPDATE settings SET value='Нас находят по словам «цветы с доставкой СПб» и возвращаются за вторым букетом — это лучшая рекомендация. Все оценки и отзывы покупателей — в профиле на Яндекс Картах: там же можно оставить своё впечатление после доставки.' WHERE key='reviews_card_text' AND value='Мы не публикуем отзывы на сайте — пусть их пишут за нас. Все оценки и слова покупателей живут в профиле на Яндекс Картах: там же вы сможете оставить своё впечатление после доставки.'");
     $pdo->exec("UPDATE settings SET value='Отзывы о нас на Яндекс Картах' WHERE key='reviews_title' AND value=''");
+    /* W65 (obvious NEW-1): нативный select режет длинные подписи зон на 390px без «…» —
+       короткие подписи; старое длинное дефолтное значение самовывоза мигрируем. */
+    $pdo->exec("UPDATE settings SET value='Самовывоз · 0 ₽' WHERE key='pickup_option_text' AND value='Самовывоз — бесплатно'");
     $pdo->exec("UPDATE settings SET value='Реальные отзывы покупателей — на карте города' WHERE key='reviews_sub' AND value=''");
 
     $orderCols = array_column($pdo->query("PRAGMA table_info(orders)")->fetchAll(), 'name');

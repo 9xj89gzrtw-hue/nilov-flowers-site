@@ -432,7 +432,7 @@ flash();
       <td><?= formatPrice((int)$p['price']) ?></td>
       <td><?= $p['sale_price'] !== null ? formatPrice((int)$p['sale_price']) : '—' ?></td>
       <td><?= (int)$p['sort'] ?></td>
-      <td><?= (int)$p['is_active'] === 1 ? 'Показан' : 'Скрыт' ?><?= (int)($p['show_in_upsell'] ?? 0) === 1 ? ' <span style="display:inline-block;background:var(--rose,#F4A9BE);color:#fff;border-radius:999px;padding:2px 8px;font-size:.68rem;font-weight:700;vertical-align:middle">К корзине</span>' : '' ?></td>
+      <td><?= (int)$p['is_active'] === 1 ? 'Показан' : 'Скрыт' ?><?= (int)($p['show_in_upsell'] ?? 0) === 1 ? ' <span style="display:inline-block;background:var(--rose-cta,#AE4A71);color:#fff;border-radius:999px;padding:2px 8px;font-size:.68rem;font-weight:700;vertical-align:middle">К корзине</span>' : '' ?></td>
       <?php /* Операционный-критик W32: видна свежесть карточки (обновления/черновики) */ ?>
       <td><small style="color:var(--ink-soft)"><?= $p['updated_at'] !== '' ? e(date('d.m', strtotime((string)$p['updated_at']))) : '—' ?></small></td>
       <td>
