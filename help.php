@@ -10,9 +10,11 @@ require_once __DIR__ . '/includes/util.php';
 <head>
 <title>Инструкция — Админ-панель</title>
 <meta name="robots" content="noindex">
+/* W90 (obvious-admin nit-2): self-hosted шрифты + метрический fallback как в остальной админке */
+<link rel="stylesheet" href="/css/fonts.css">
 <style>
 :root{--rose:#F4A9BE;--rose-deep:#E2799C;--bg:#F6F1E6;--bg-alt:#EFE7D8;--ink:#2B2D2F;--ink-soft:#6E6A61;--line:rgba(43,45,47,.12);
---font-display:'Playfair Display',Georgia,serif;--font-ui:'Golos Text',system-ui,sans-serif}
+--font-display:'Playfair Display','Playfair Fallback',Georgia,serif;--font-ui:'Golos Text','Golos Fallback',system-ui,sans-serif}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--font-ui);color:var(--ink);background:var(--bg);line-height:1.6;padding:24px 16px 60px}
 .wrap{max-width:820px;margin:0 auto}

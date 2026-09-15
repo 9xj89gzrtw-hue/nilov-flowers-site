@@ -25,9 +25,9 @@ function adminHeader(string $title, string $active = ''): void
 :root{
   --rose:#F4A9BE; --rose-deep:#E2799C; --rose-cta:#AE4A71; --rose-cta-hover:#9E4062; --blue:#A3C4D9; --mint:#D9E9DF;
   --bg:#F6F1E6; --bg-alt:#EFE7D8; --ink:#2B2D2F; --ink-soft:#6E6A61;
-  --line:rgba(43,45,47,.12); --err:#C43A3A; --ok:#3e8e5a;
-  --font-display:'Playfair Display',Georgia,serif;
-  --font-ui:'Golos Text',system-ui,-apple-system,sans-serif;
+  --line:rgba(43,45,47,.12); --err:#C43A3A; --ok:#2f7a4a;
+  --font-display:'Playfair Display','Playfair Fallback',Georgia,serif;
+  --font-ui:'Golos Text','Golos Fallback',system-ui,-apple-system,sans-serif;
   --radius:14px; --radius-lg:22px;
 }
 *{box-sizing:border-box;margin:0;padding:0}

@@ -18,7 +18,7 @@ $canonicalUrl = 'https://flowers.interfood-catering.ru/';
 <link rel="icon" href="/img/favicon-32.png" sizes="32x32">
 <link rel="stylesheet" href="/css/fonts.css">
 <style>
-:root{--bg:#F6F1E6;--ink:#2B2D2F;--ink-soft:#6E6A61;--rose:#AE4A71;--font-display:'Playfair Display',Georgia,serif;--font-ui:'Golos Text',system-ui,sans-serif}
+:root{--bg:#F6F1E6;--ink:#2B2D2F;--ink-soft:#6E6A61;--rose:#AE4A71;--font-display:'Playfair Display','Playfair Fallback',Georgia,serif;--font-ui:'Golos Text','Golos Fallback',system-ui,sans-serif}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--font-ui);background:var(--bg);color:var(--ink);min-height:100vh;display:grid;place-items:center;padding:24px;text-align:center}
 h1{font-family:var(--font-display);font-size:clamp(2.4rem,8vw,4.6rem);margin-bottom:.3em}

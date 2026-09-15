@@ -11,8 +11,9 @@ $pdo = db();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_check()) {
-        header('Location: /admin/profile.php');
-        exit;
+        /* W90 (stress P3): отказ = HTTP 400, exit ДО PRG-редиректа */
+        http_response_code(400);
+        exit('Неверный CSRF-токен. Обновите страницу.');
     }
     $admin = currentAdmin();
     if ($admin === null) {

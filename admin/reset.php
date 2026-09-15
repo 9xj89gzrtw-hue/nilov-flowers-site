@@ -55,7 +55,7 @@ unset($_SESSION['flash'], $_SESSION['flash_err']);
 <link rel="stylesheet" href="/css/fonts.css">
 <style>
 :root{--rose:#F4A9BE;--rose-deep:#E2799C;--bg:#F6F1E6;--ink:#2B2D2F;--ink-soft:#6E6A61;--line:rgba(43,45,47,.12);--err:#C43A3A;
---font-display:'Playfair Display',Georgia,serif;--font-ui:'Golos Text',system-ui,sans-serif}
+--font-display:'Playfair Display','Playfair Fallback',Georgia,serif;--font-ui:'Golos Text','Golos Fallback',system-ui,sans-serif}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--font-ui);color:var(--ink);background:var(--bg);min-height:100vh;display:grid;place-items:center;padding:20px}
 .login{background:#fff;border-radius:26px;padding:36px;width:100%;max-width:380px;box-shadow:0 20px 50px -30px rgba(43,45,47,.4)}
@@ -68,7 +68,7 @@ input:focus-visible{outline:3px solid rgba(174,74,113,.55);outline-offset:2px}
 button{width:100%;margin-top:20px;border:none;border-radius:999px;padding:14px;font:600 .95rem var(--font-ui);background:#AE4A71;color:#fff;cursor:pointer}
 button:hover{background:#9E4062}
 .err{margin-top:14px;color:var(--err);font-size:.85rem}
-.ok{margin-top:14px;color:#3e8e5a;font-size:.85rem}
+.ok{margin-top:14px;color:#2f7a4a;font-size:.85rem}
 a.back{display:block;margin-top:16px;text-align:center;font-size:.85rem;color:var(--ink-soft)}
 @media(hover:none),(pointer:coarse){a.back{min-height:44px;display:inline-flex;align-items:center;justify-content:center}} /* W76 */
 </style>

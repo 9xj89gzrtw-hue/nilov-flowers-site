@@ -34,7 +34,7 @@ if (isAdmin()) {
 <link rel="stylesheet" href="/css/fonts.css">
 <style>
 :root{--rose:#F4A9BE;--rose-deep:#E2799C;--bg:#F6F1E6;--bg-alt:#EFE7D8;--ink:#2B2D2F;--ink-soft:#6E6A61;--line:rgba(43,45,47,.12);--err:#C43A3A;
---font-display:'Playfair Display',Georgia,serif;--font-ui:'Golos Text',system-ui,sans-serif}
+--font-display:'Playfair Display','Playfair Fallback',Georgia,serif;--font-ui:'Golos Text','Golos Fallback',system-ui,sans-serif}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--font-ui);color:var(--ink);background:var(--bg);min-height:100vh;display:grid;place-items:center;padding:20px}
 .login{background:#fff;border-radius:26px;padding:36px;width:100%;max-width:380px;box-shadow:0 20px 50px -30px rgba(43,45,47,.4)}
