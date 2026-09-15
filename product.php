@@ -120,7 +120,7 @@ if ($trust === []) {
     <div class="product-page__layout">
       <div class="product-gallery">
         <?php /* W66 (design-жюри NEW-6): sale-бейдж с −% был только в каталоге — товарка со скидкой без него. Общий слой поверх обоих вариантов галереи. */ ?>
-        <?php if ($isSale): $offPct = (int)$product['price'] > 0 ? (int)round((1 - $price / (int)$product['price']) * 100) : 0; ?><span class="product-page__badge">Скидка<?php if ($offPct > 0): ?> −<?= $offPct ?>%<?php endif; ?></span><?php endif; ?>
+        <?php if ($isSale): $offPct = (int)$product['price'] > 0 ? (int)round((1 - $price / (int)$product['price']) * 100) : 0; ?><span class="product-page__badge"><?= e(setting('badge_sale_text', 'Акционная цена')) ?><?php if ($offPct > 0): ?> −<?= $offPct ?>%<?php endif; ?></span><?php endif; ?>
         <?php /* Design-критик W47: честная multi-view галерея из ОДНОГО реального фото —
                   слайд 2 = крупный план того же снимка (CSS-zoom), не выдуманный ракурс.
                   Вторые настоящие фото — данные клиента (feature_gallery выключает всё). */ ?>
