@@ -141,7 +141,7 @@ a.order-link{display:inline-block;min-height:28px;line-height:28px}
 .card a[href^="tel:"]{display:inline-block;min-height:28px;line-height:28px;padding-right:8px}
 .back-link{display:inline-flex;align-items:center;min-height:28px}
 summary.del-summary{cursor:pointer;color:var(--err,#C43A3A);font-size:.9rem;font-weight:600;display:inline-flex;align-items:center;min-height:32px}
-.bulk-hit{display:grid;place-items:center;min-height:44px;cursor:pointer;margin:-6px}
+.bulk-hit{display:grid;place-items:center;min-height:44px;min-width:44px;width:calc(100% + 12px);margin:-6px;cursor:pointer} /* W74 (владелец NEW): растяжка на всю ячейку — мёртвых краёв td нет */
 .bulk-check{appearance:none;-webkit-appearance:none;width:22px;height:22px;border:1.5px solid rgba(43,45,47,.35);border-radius:6px;background:#fff;cursor:pointer;display:inline-grid;place-content:center;vertical-align:middle}
 .bulk-check:checked{background-color:var(--rose-cta,#AE4A71);border-color:var(--rose-cta,#AE4A71);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' d='M3 8.5l3.2 3.3L13 4.6'/%3E%3C/svg%3E");background-size:14px 14px;background-position:center;background-repeat:no-repeat} /* W73: галочка SVG-фоном (::before на input не рендерится) */
 
