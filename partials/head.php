@@ -37,7 +37,9 @@ $googleVerification = trim(setting('google_site_verification', ''));
 <link rel="stylesheet" href="/css/fonts.css">
 <script src="/js/pwa-register.js" defer></script>
 <meta property="og:site_name" content="<?= e($shopName) ?>">
-<meta property="og:type" content="website">
+<?php /* SEO-критик W86: страница товара печатает свой og:type=product ДО require head —
+   не дублировать og:type=website (парсеры берут первый, валидаторы warn). */ ?>
+<?php if (empty($ogType)): ?><meta property="og:type" content="website"><?php endif; ?>
 <meta property="og:locale" content="ru_RU">
 <?php /* SEO-критик W40: twitter/X и Telegram превью без twitter:card беднее — добавляем карточку */ ?>
 <meta name="twitter:card" content="summary_large_image">

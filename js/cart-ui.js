@@ -117,7 +117,7 @@
           promoFeedback(res.label || 'Промокод применён', false);
         } else {
           promoClear(true);
-          if (res && res.error === 'min_order' && res.min) { promoState.lastCode = code; promoState.minOrder = res.min | 0; } /* W80: рост корзины → зелёная подсказка вместо залипшего красного */
+          if (res && res.error === 'min_order' && res.min) { promoState.lastCode = code.trim().toUpperCase(); promoState.minOrder = res.min | 0; } /* W86: регистр как на success */ /* W80: рост корзины → зелёная подсказка вместо залипшего красного */
           const msg = res && res.error === 'min_order' && res.min
             ? 'Промокод действует от ' + formatPrice(res.min) + ' ₽'
             : 'Такого промокода нет или он истёк';

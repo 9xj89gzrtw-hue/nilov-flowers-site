@@ -61,7 +61,9 @@ if ($trust === []) {
 ?><!DOCTYPE html>
 <html lang="ru">
 <head>
-<title><?= e($product['name']) ?> — <?= e(setting('shop_name', 'Nilov Flowers')) ?></title>
+<?php /* SEO-критик W86: og:type=product (уникальный) + twitter:title = имя товара, не бренд */ ?>
+<?php $pageTitle = $product['name'] . ' — ' . setting('shop_name', 'Nilov Flowers'); $ogType = 'product'; ?>
+<title><?= e($pageTitle) ?></title>
 <meta property="og:title" content="<?= e($product['name']) ?> — <?= e(setting('shop_name', 'Nilov Flowers')) ?>">
 <meta property="og:description" content="<?= e(mb_substr($product['description'] !== '' ? $product['description'] : $product['name'], 0, 200)) ?>">
 <meta property="og:url" content="https://flowers.interfood-catering.ru/product/<?= e($product['slug']) ?>">
@@ -81,6 +83,7 @@ if ($trust === []) {
     'image' => $img !== '' ? ['https://flowers.interfood-catering.ru' . $img] : [],
     'offers' => [
         '@type' => 'Offer',
+        'url' => 'https://flowers.interfood-catering.ru/product/' . rawurlencode($product['slug']),
         'price' => $price,
         'priceCurrency' => 'RUB',
         'availability' => $product['is_urgent'] == 1 ? 'https://schema.org/InStock' : 'https://schema.org/InStock',
@@ -101,6 +104,12 @@ if ($trust === []) {
         'returnFees' => 'https://schema.org/FreeReturn',
     ],
     'category' => $product['category_name'] ?? 'Букеты',
+    /* SEO-критик W86: BreadcrumbList — SERP-фичер хлебных крошек */
+    'breadcrumb' => ['@type' => 'BreadcrumbList', 'itemListElement' => [
+        ['@type' => 'ListItem', 'position' => 1, 'name' => 'Главная', 'item' => 'https://flowers.interfood-catering.ru/'],
+        ['@type' => 'ListItem', 'position' => 2, 'name' => 'Каталог', 'item' => 'https://flowers.interfood-catering.ru/#catalog'],
+        ['@type' => 'ListItem', 'position' => 3, 'name' => $product['name'], 'item' => 'https://flowers.interfood-catering.ru/product/' . rawurlencode($product['slug'])],
+    ]],
 ] + ($product['sale_price'] !== null ? ['basePrice' => (int)$product['price']] : []), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>
 </script>
 </head>
