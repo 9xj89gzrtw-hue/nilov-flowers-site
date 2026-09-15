@@ -19,8 +19,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         http_response_code(429);
         $sent = false; // показываем форму без отправки
     } elseif (!csrf_check()) {
-        header('Location: /admin/forgot.php');
-        exit;
+        /* W89 (stress O2): CSRF-отказ = HTTP 400, согласованно с остальным admin */
+        http_response_code(400);
+        exit('Неверный CSRF-токен. Обновите страницу.');
     }
     $email = trim((string)($_POST['email'] ?? ''));
     if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -49,7 +50,7 @@ unset($_SESSION['flash'], $_SESSION['flash_err']);
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Восстановление пароля — Админ-панель</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Golos+Text:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/fonts.css">
 <style>
 :root{--rose:#F4A9BE;--rose-deep:#E2799C;--bg:#F6F1E6;--ink:#2B2D2F;--ink-soft:#6E6A61;--line:rgba(43,45,47,.12);--err:#C43A3A;
 --font-display:'Playfair Display',Georgia,serif;--font-ui:'Golos Text',system-ui,sans-serif}

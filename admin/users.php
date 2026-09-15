@@ -16,7 +16,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$isOwner) {
         http_response_code(403);
     } elseif (!csrf_check()) {
-        flash('Ошибка безопасности: неверный CSRF-токен. Обновите страницу и попробуйте снова.', true);
+        /* W89 (stress O2): отказ = HTTP 400 сразу (exit ДО PRG-редиректа, иначе 302 перекрывает код) */
+        http_response_code(400);
+        exit('Неверный CSRF-токен. Обновите страницу.');
     } else {
         $action = (string)($_POST['action'] ?? '');
 

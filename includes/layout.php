@@ -20,8 +20,7 @@ function adminHeader(string $title, string $active = ''): void
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title><?= e($title) ?> — Админ-панель</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/fonts.css">
 <style>
 :root{
   --rose:#F4A9BE; --rose-deep:#E2799C; --rose-cta:#AE4A71; --rose-cta-hover:#9E4062; --blue:#A3C4D9; --mint:#D9E9DF;

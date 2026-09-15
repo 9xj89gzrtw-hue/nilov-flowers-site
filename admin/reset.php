@@ -18,8 +18,9 @@ $done = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_check()) {
-        header('Location: /admin/login.php');
-        exit;
+        /* W89 (stress O2): CSRF-отказ = HTTP 400 */
+        http_response_code(400);
+        exit('Неверный CSRF-токен. Обновите страницу.');
     }
     $new = (string)($_POST['new'] ?? '');
     $new2 = (string)($_POST['new2'] ?? '');
@@ -51,7 +52,7 @@ unset($_SESSION['flash'], $_SESSION['flash_err']);
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Новый пароль — Админ-панель</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Golos+Text:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/fonts.css">
 <style>
 :root{--rose:#F4A9BE;--rose-deep:#E2799C;--bg:#F6F1E6;--ink:#2B2D2F;--ink-soft:#6E6A61;--line:rgba(43,45,47,.12);--err:#C43A3A;
 --font-display:'Playfair Display',Georgia,serif;--font-ui:'Golos Text',system-ui,sans-serif}
