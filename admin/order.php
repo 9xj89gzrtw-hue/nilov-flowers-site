@@ -183,12 +183,12 @@ flash();
 
 <div class="card" style="margin-top:20px">
   <details>
-    <summary style="cursor:pointer;color:var(--err,#d64545);font-size:.9rem;font-weight:600">Удалить заказ №<?= (int)$order['id'] ?></summary>
+    <summary style="cursor:pointer;color:var(--err,#C43A3A);font-size:.9rem;font-weight:600">Удалить заказ №<?= (int)$order['id'] ?></summary>
     <p style="font-size:.85rem;color:var(--ink-soft);margin:10px 0">Заказ исчезнет из списка вместе с составом. Действие необратимо — если заказ просто не нужен, лучше «Отменить» (данные сохранятся в статистике).</p>
     <form method="post" onsubmit="return confirm('Удалить заказ №<?= (int)$order['id'] ?> безвозвратно? Восстановить будет нельзя.')">
       <?= csrf_field() ?>
       <input type="hidden" name="action" value="delete">
-      <button type="submit" class="danger" style="font-size:.85rem;padding:8px 16px;border-radius:10px;border:1.5px solid var(--err,#d64545);color:var(--err,#d64545);background:#fff;cursor:pointer;font-weight:600">Удалить безвозвратно</button>
+      <button type="submit" class="danger" style="font-size:.85rem;padding:8px 16px;border-radius:10px;border:1.5px solid var(--err,#C43A3A);color:var(--err,#C43A3A);background:#fff;cursor:pointer;font-weight:600">Удалить безвозвратно</button>
     </form>
   </details>
 </div>

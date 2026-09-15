@@ -51,7 +51,7 @@ unset($_SESSION['flash'], $_SESSION['flash_err']);
 <title>Восстановление пароля — Админ-панель</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Golos+Text:wght@400;600&display=swap" rel="stylesheet">
 <style>
-:root{--rose:#F4A9BE;--rose-deep:#E2799C;--bg:#F6F1E6;--ink:#2B2D2F;--ink-soft:#6E6A61;--line:rgba(43,45,47,.12);--err:#d64545;
+:root{--rose:#F4A9BE;--rose-deep:#E2799C;--bg:#F6F1E6;--ink:#2B2D2F;--ink-soft:#6E6A61;--line:rgba(43,45,47,.12);--err:#C43A3A;
 --font-display:'Playfair Display',Georgia,serif;--font-ui:'Golos Text',system-ui,sans-serif}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--font-ui);color:var(--ink);background:var(--bg);min-height:100vh;display:grid;place-items:center;padding:20px}
@@ -61,6 +61,7 @@ p.sub{color:var(--ink-soft);font-size:.85rem;margin-bottom:20px}
 label{display:block;font-size:.8rem;font-weight:600;margin:12px 0 4px}
 input{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;font:400 .95rem var(--font-ui);background:var(--bg)}
 input:focus{outline:none;border-color:var(--rose-deep)}
+input:focus-visible{outline:3px solid rgba(174,74,113,.55);outline-offset:2px}
 button{width:100%;margin-top:20px;border:none;border-radius:999px;padding:14px;font:600 .95rem var(--font-ui);background:var(--rose-deep);color:#fff;cursor:pointer}
 button:hover{background:#d46a90}
 .err{margin-top:14px;color:var(--err);font-size:.85rem}

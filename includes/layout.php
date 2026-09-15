@@ -39,7 +39,7 @@ a{color:inherit;text-decoration:none}
 .admin-top .wrap{display:flex;align-items:center;gap:24px;min-height:60px;flex-wrap:wrap}
 .admin-logo{font-family:var(--font-display);font-weight:700;font-size:1.05rem}
 .admin-nav{display:flex;gap:4px;flex-wrap:wrap}
-.admin-nav a{padding:8px 14px;border-radius:999px;font-size:.9rem;font-weight:500;color:var(--ink-soft)}
+.admin-nav a{padding:8px 14px;border-radius:999px;font-size:.9rem;font-weight:500;color:var(--ink-soft);display:inline-flex;align-items:center;min-height:44px}
 .admin-nav a.active{background:var(--rose);color:var(--ink);box-shadow:inset 0 0 0 1.5px rgba(174,74,113,.55)}
 .admin-top .spacer{flex:1}
 /* Мобильная админка (W4): шапка не рвётся, nav скроллится горизонтально внутри себя */
@@ -135,9 +135,14 @@ label.f{display:block;font-size:.8rem;font-weight:600;margin:12px 0 4px}
 .row-actions a,.row-actions button{font-size:.78rem;padding:5px 10px;border-radius:10px;border:1px solid var(--line);background:#fff;cursor:pointer;font-family:var(--font-ui);transition:background .15s ease,color .15s ease,transform .12s ease}
 .row-actions a:hover,.row-actions button:hover{transform:translateY(-1px)}
 .row-actions a:active,.row-actions button:active{transform:translateY(1px)}
+/* W61 (дизайн-критик): уважение prefers-reduced-motion — как на витрине, в админке не было */
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 .row-actions a.danger,.row-actions button.danger{color:var(--err);border-color:var(--err)}
 /* W59 (визит-критик CODE_OPEN#5): единый паттерн иерархии действий — главное
    следующее действие (переход статуса) акцентное, прочие нейтральные */
+.card form button[type=submit]:not(.primary-action):not(.btn):not(.danger){font:600 .82rem var(--font-ui);color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px 12px;cursor:pointer;transition:background .15s ease,border-color .15s ease,transform .12s ease;min-height:36px}
+.card form button[type=submit]:not(.primary-action):not(.btn):not(.danger):hover{background:var(--bg-alt);border-color:var(--ink-soft)}
+.card form button[type=submit]:not(.primary-action):not(.btn):not(.danger):active{transform:translateY(1px)}
 button.primary-action,a.primary-action{background:var(--rose-cta,#AE4A71);color:#fff;border:1.5px solid var(--rose-cta,#AE4A71);border-radius:10px;padding:7px 13px;font:600 .85rem var(--font-ui);cursor:pointer;text-decoration:none;display:inline-block}
 button.primary-action:hover,a.primary-action:hover{background:var(--rose-cta-hover,#9E4062);border-color:var(--rose-cta-hover,#9E4062);color:#fff}
 .row-actions a.primary-action,.row-actions button.primary-action{font-weight:700}
