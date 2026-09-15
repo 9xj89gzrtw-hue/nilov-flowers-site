@@ -165,7 +165,12 @@ $hello = $newCount > 0
     <b><?= e($hello[1]) ?></b>
     <p><?= e($hello[2]) ?></p>
   </div>
+  <?php if ($newCount > 0): /* W73 (obvious мелочь-3): CTA по контексту — при новых заказах ведёт к ним, не на витрину */ ?>
+  <a class="btn btn--accent" style="margin-left:auto" href="/admin/index.php?f_status=new">Открыть новые</a>
+  <a class="btn btn--ghost" href="/" target="_blank">Посмотреть сайт</a>
+  <?php else: ?>
   <a class="btn btn--accent" style="margin-left:auto" href="/" target="_blank">Посмотреть сайт</a>
+  <?php endif; ?>
 </div>
 
 <?php

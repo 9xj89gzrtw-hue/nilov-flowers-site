@@ -143,12 +143,13 @@ a.order-link{display:inline-block;min-height:28px;line-height:28px}
 summary.del-summary{cursor:pointer;color:var(--err,#C43A3A);font-size:.9rem;font-weight:600;display:inline-flex;align-items:center;min-height:32px}
 .bulk-hit{display:grid;place-items:center;min-height:44px;cursor:pointer;margin:-6px}
 .bulk-check{appearance:none;-webkit-appearance:none;width:22px;height:22px;border:1.5px solid rgba(43,45,47,.35);border-radius:6px;background:#fff;cursor:pointer;display:inline-grid;place-content:center;vertical-align:middle}
-.bulk-check:checked{background:var(--rose-cta,#AE4A71);border-color:var(--rose-cta,#AE4A71)}
-.bulk-check:checked::before{content:"";width:12px;height:7px;border:2px solid #fff;border-width:0 0 2.5px 2.5px;transform:rotate(-45deg) translateY(-1px)}
+.bulk-check:checked{background-color:var(--rose-cta,#AE4A71);border-color:var(--rose-cta,#AE4A71);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' d='M3 8.5l3.2 3.3L13 4.6'/%3E%3C/svg%3E");background-size:14px 14px;background-position:center;background-repeat:no-repeat} /* W73: галочка SVG-фоном (::before на input не рендерится) */
+
 input[type=range]{height:40px}
 @media(hover:none),(pointer:coarse){summary.del-summary{min-height:44px}input[type=range]{height:44px}} /* W71: door-таргеты + слайдер на тап */
 #bulkPriceForm a#bulkSelAll{display:inline-flex;align-items:center;min-height:42px}
 @media(hover:none),(pointer:coarse){a.order-link,.card a[href^="tel:"],.back-link{min-height:44px}}
+.card a[href^="tel:"]{white-space:nowrap} /* W73 (обvious мелочь-4): телефон не в 3 строки, target 44 соблюдён
 
 .toast{position:fixed;top:16px;right:16px;z-index:1000;background:#fff;box-shadow:0 14px 40px -20px rgba(43,45,47,.5);border-radius:var(--radius);padding:14px 18px;font-size:.9rem;max-width:320px}
 .flash{padding:12px 16px;border-radius:12px;background:var(--mint);margin-bottom:16px;font-size:.9rem;border:1px solid rgba(62,142,90,.25);color:#2c5e40}
