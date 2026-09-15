@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
     }
     $pdo->prepare('DELETE FROM products WHERE id = :i')->execute([':i' => $id]);
     flash('Товар удалён');
-    header('Location: /admin/products.php');
+    header('Location: /admin/products.php' . (trim((string)($_POST['back_qs'] ?? '')) !== '' ? '?' . trim((string)$_POST['back_qs']) : ''));
     exit;
 }
 
@@ -164,7 +164,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'toggl
        («Скрыл проданный — списокreset'нулся, товар потерялся» — страх потери). */
     flash($pr && (int)$pr['is_active'] === 1 ? 'Товар скрыт из продажи. Он никуда не делся: найдёте его в фильтре статуса «Скрыты» над списком.' : 'Товар показан в каталоге');
     $bq = trim((string)($_POST['back_qs'] ?? ''));
-    header('Location: /admin/products.php' . ($bq !== '' ? '?' . $bq : ''));
+    header('Location: /admin/products.php' . ($bq !== '' ? '?' . $bq : '') . '#row-' . $id);
     exit;
 }
 
@@ -172,7 +172,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'toggl
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'urgent') {
     $id = (int)($_POST['id'] ?? 0);
     $pdo->prepare('UPDATE products SET is_urgent = 1 - is_urgent WHERE id = :i')->execute([':i' => $id]);
-    header('Location: /admin/products.php');
+    /* W63 (владелец OPEN#2): «Успеть» не должен терять поиск/фильтр + возвращаем к строке */
+    header('Location: /admin/products.php' . (trim((string)($_POST['back_qs'] ?? '')) !== '' ? '?' . trim((string)$_POST['back_qs']) : '') . '#row-' . $id);
     exit;
 }
 
@@ -212,7 +213,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'move'
             $pdo->prepare('UPDATE products SET sort = :s WHERE id = :i')->execute([':s' => $newSort, ':i' => $id]);
         }
     }
-    header('Location: /admin/products.php');
+    /* W63 (владелец OPEN#2): ↑/↓ к строке вне видимой страницы = «товар пропал» */
+    header('Location: /admin/products.php' . (trim((string)($_POST['back_qs'] ?? '')) !== '' ? '?' . trim((string)$_POST['back_qs']) : '') . '#row-' . $id);
     exit;
 }
 
@@ -445,17 +447,20 @@ flash();
           <form method="post">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="urgent"><input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
+            <input type="hidden" name="back_qs" value="<?= e($_SERVER['QUERY_STRING'] ?? '') ?>">
             <button type="submit" class="<?= (int)($p['is_urgent'] ?? 0) === 1 ? 'primary-action' : '' ?>"><?= (int)($p['is_urgent'] ?? 0) === 1 ? '★ Успеть сегодня — включено' : 'Успеть сегодня' ?></button>
           </form>
           <form method="post" style="display:inline-flex;gap:4px">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="move"><input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
+            <input type="hidden" name="back_qs" value="<?= e($_SERVER['QUERY_STRING'] ?? '') ?>">
             <button type="submit" name="dir" value="up" title="Выше" aria-label="Выше">↑</button>
             <button type="submit" name="dir" value="down" title="Ниже" aria-label="Ниже">↓</button>
           </form>
           <form method="post" onsubmit="return confirm('Удалить товар безвозвратно?')">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
+            <input type="hidden" name="back_qs" value="<?= e($_SERVER['QUERY_STRING'] ?? '') ?>">
             <button type="submit" class="danger">Удалить</button>
           </form>
         </div>

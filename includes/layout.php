@@ -161,6 +161,7 @@ table tr.row-flash{animation:rowFlash 2.5s ease-out 1}
   textarea{font-size:16px}
   input[type=checkbox],input[type=radio]{width:24px;height:24px;min-height:24px}
   .btn,.row-actions a,.row-actions button,.dash-ranges a{min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+  .card form button[type=submit]:not(.primary-action):not(.btn):not(.danger){min-height:44px}
   .chip,label.f input[type=checkbox]{min-height:40px}
   .f,.field-hint,p[style*=".78rem"],p[style*=".8rem"]{font-size:.9rem !important}
 }
@@ -170,7 +171,7 @@ table tr.row-flash{animation:rowFlash 2.5s ease-out 1}
 .dash-section{margin-bottom:20px}
 .dash-card{background:linear-gradient(180deg,#fff 0%,var(--mint) 220%);border:1px solid rgba(163,196,217,.35)}
 .dash-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
-.dash-ranges{display:flex;gap:4px;flex-wrap:wrap}
+.dash-ranges{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 /* W59 (визит-критик): чипы разделов настроек на узких — горизонтальный скролл-ряд,
    не «лестница» с рваными отступами */
 #top-nav{overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap;-webkit-overflow-scrolling:touch}
@@ -240,7 +241,7 @@ function adminFooter(): void
 /* Владелец-критик W48: подсветка строки после save — анимацией, а не хрупким :target */
 (function () {
   try {
-    var el = location.hash && document.querySelector('tr' + CSS.escape(location.hash));
+    var el = location.hash ? document.getElementById(location.hash.slice(1)) : null;
     if (el) { el.classList.add('row-flash'); el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
   } catch (e) {}
 })();

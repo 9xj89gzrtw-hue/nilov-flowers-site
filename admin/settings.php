@@ -160,8 +160,10 @@ flash();
 </nav>
 <script>
 /* Критик-владелец W36 B5: scrollspy — подсвечиваем чип активной секции,
-   новичок видит, где он в простыне настроек. */
-(function () {
+   новичок видит, где он в простыне настроек.
+   W63 (владелец OPEN#1): скрипт шёл ДО секций в DOM — getElementById давал null,
+   наблюдатель ни за чем не следил. Откладываем на DOMContentLoaded. */
+function nilovInitSpy() {
   var links = Array.prototype.slice.call(document.querySelectorAll('#top-nav a'));
   if (!links.length || !('IntersectionObserver' in window)) return;
   function setActive(id) {
@@ -172,17 +174,22 @@ flash();
       if (on) { a.setAttribute('aria-current', 'true'); } else { a.removeAttribute('aria-current'); }
     });
   }
-  var seen = {};
-  var io = new IntersectionObserver(function (ents) {
-    ents.forEach(function (en) { seen[en.target.id] = en.isIntersecting; });
-    /* верхняя видимая секция = активная */
-    for (var i = 0; i < sections.length; i++) {
-      if (seen[sections[i]]) { setActive(sections[i]); return; }
-    }
-  }, { rootMargin: '-72px 0px -70% 0px' });
   var sections = links.map(function (a) { return a.getAttribute('href').slice(1); });
+  function pick() {
+    /* «последняя секция, начавшаяся выше 35% экрана» — честный spy:
+       при скролле к features нижняя кромка s-look ещё в полосе → прежний
+       «верхняя видимая» давал ложную подсветку (мок-тест W63). */
+    var act = sections[0], line = innerHeight * 0.35;
+    for (var i = 0; i < sections.length; i++) {
+      var el = document.getElementById(sections[i]);
+      if (el && el.getBoundingClientRect().top <= line) act = sections[i];
+    }
+    setActive(act);
+  }
+  var io = new IntersectionObserver(pick, { rootMargin: '-72px 0px -70% 0px' });
   sections.forEach(function (id) { var el = document.getElementById(id); if (el) io.observe(el); });
-})();
+}
+if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', nilovInitSpy); } else { nilovInitSpy(); }
 </script>
 
 <form method="post" enctype="multipart/form-data" style="padding-bottom:84px">

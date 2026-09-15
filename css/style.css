@@ -17,6 +17,7 @@
   --radius:18px; --radius-lg:26px;
   --wrap:1140px;
   --wrap-wide:1360px;
+  --wrap-ultra:1560px;
   /* Design-критик ось (D2/D3): единая модульная шкала отступов/типографики (шаг ~1.26) —
      лечит «плато 16px» карточек и случайные inline-отступы. */
   --s-1:.5rem; --s-2:.75rem; --s-3:1rem; --s-4:1.5rem; --s-5:2.25rem; --s-6:3.5rem;
@@ -71,7 +72,7 @@ a{color:inherit;text-decoration:none}
 /* ============ ACCESSIBILITY (фикс a11y-критика 5/10) ============ */
 /* Focus-кольцо: WCAG 2.2 Focus Appearance — ≥2px, контрастное (rose-cta на светлом,
    белый на тёмном/активном), offset 2px чтобы не сливалось с рамкой поля. */
-:focus-visible{outline:2px solid var(--rose-cta);outline-offset:2px;border-radius:6px}
+:focus-visible{outline:3px solid var(--rose-cta);outline-offset:2px;border-radius:6px}
 .site-header :focus-visible,.catalog-tabs__tab.is-active:focus-visible,.btn--accent:focus-visible,.cookie-banner :focus-visible{outline:2px solid var(--ink);box-shadow:0 0 0 5px rgba(174,74,113,.85)}
 /* Перемычка через skip-link (появляется при Tab с самого верха) */
 .skip-link{position:fixed;left:12px;top:-48px;z-index:200;background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-size:.85rem;transition:top .15s}
@@ -116,7 +117,7 @@ select.pill{padding:8px 34px 8px 14px;border-radius:999px;border:1px solid var(-
 .btn--accent:hover{background:var(--rose-cta-hover)}
 .btn--outline{background:transparent;color:var(--ink);border:1.5px solid var(--ink)}
 .btn--outline:hover{background:var(--ink);color:#fff}
-@media(max-width:760px){.hero__grid{grid-template-columns:1fr}.hero__img{aspect-ratio:16/10;max-height:46vh}}
+@media(max-width:760px){.hero__grid{grid-template-columns:1fr}.hero__img{aspect-ratio:1/1;max-height:48vh}}
 
 /* ============ TRUST STRIP ============ */
 .trust-strip{border-block:1px solid var(--line);background:#fff}
@@ -162,7 +163,7 @@ select.pill{padding:8px 34px 8px 14px;border-radius:999px;border:1px solid var(-
 .product-card__body{padding:16px 18px 20px;display:flex;flex-direction:column;gap:4px}
 .product-card__name{font-weight:600;font-size:var(--fs-md);line-height:1.3}
 .product-card__price{margin-top:2px;font-weight:700;font-size:var(--fs-base)}
-.product-card__price--old{color:var(--ink-soft);text-decoration:line-through;font-weight:400;font-size:.88rem;margin-right:8px}
+.product-card__price--old{color:rgba(43,45,47,.65);text-decoration:line-through;text-decoration-thickness:2px;text-decoration-color:rgba(174,74,113,.7);font-weight:500;font-size:.88rem;margin-right:8px}
 .product-card__price--discount{color:var(--rose-cta)}
 
 /* ============ HOW IT WORKS ============ */
@@ -191,6 +192,11 @@ select.pill{padding:8px 34px 8px 14px;border-radius:999px;border:1px solid var(-
 .order-form__field input,.order-form__field select,.order-form__field textarea{border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;font:400 1rem var(--font-ui);background-color:var(--bg);transition:border-color .15s;max-width:100%}
 .order-form__field select{width:100%;min-width:0;padding-right:36px}
 .order-form__field input:focus,.order-form__field select:focus,.order-form__field textarea:focus{border-color:var(--rose-cta)}
+/* def.4 (awwwards-жюри): date/time в систему (рамка/радиус как у select); индикатор — родимый,
+   календарь браузера полезнее самописного. */
+.order-form__field input[type=date],.order-form__field input[type=time]{appearance:none;-webkit-appearance:none;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;font:400 1rem var(--font-ui);min-height:46px}
+.order-form__field input[type=date]:hover,.order-form__field input[type=time]:hover{border-color:var(--rose-cta)}
+.order-form__field input[type=date]::-webkit-calendar-picker-indicator{opacity:.65;cursor:pointer}
 .order-form__field input.order-form__input--error{border-color:var(--err)}
 .order-form__error{color:var(--err);font-size:.875rem;min-height:1em}
 /* a11y-критик S3: дефолтный placeholder #757575 = 4.09:1 на фоне формы (fail AA) → #62605A = 6.29:1 */
@@ -202,7 +208,11 @@ select.pill{padding:8px 34px 8px 14px;border-radius:999px;border:1px solid var(-
 .order-form__radio input{accent-color:var(--rose-cta);width:20px;height:20px}
 .order-form__total{font-weight:700}
 .order-form__checkbox{display:flex;gap:10px;font-size:.82rem;color:var(--ink-soft);align-items:flex-start}
-.order-form__checkbox input{margin-top:3px;accent-color:var(--rose-cta);width:20px;height:20px;flex:none}
+.order-form__checkbox input{margin-top:2px;width:22px;height:22px;flex:none;appearance:none;-webkit-appearance:none;background:#fff;border:1.5px solid rgba(43,45,47,.4);border-radius:6px;cursor:pointer;transition:border-color .15s ease,background .15s ease}
+.order-form__checkbox input:hover{border-color:var(--rose-cta)}
+.order-form__checkbox input:checked{background:var(--rose-cta);border-color:var(--rose-cta)}
+.order-form__checkbox input:checked::after{content:"";display:block;width:100%;height:100%;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center/14px 14px no-repeat}
+.order-form__checkbox input:focus-visible{outline:3px solid var(--rose-cta);outline-offset:2px}
 .order-form__status{padding:12px 16px;border-radius:12px;font-size:.9rem;background:var(--mint)}
 /* Honeypot: люди не видят и не фокусят; боты заполняют (критик security) */
 .hp-field{position:absolute!important;left:-9999px;width:1px;height:1px;overflow:hidden}
@@ -295,8 +305,8 @@ body.cookie-visible{padding-bottom:180px}
 @media (max-width:820px){
   /* Критик-визит W59: 3-кнопочный ряд + 2 строки текста давали 111px и на 6px наезжали
      на H1 товара при загрузке. Компакт: clamp текста в 1 строку, gap 6, шрифт .76. */
-  .cookie-banner{padding:9px 12px;gap:6px;left:10px;right:10px;bottom:calc(72px + env(safe-area-inset-bottom));font-size:.76rem}
-  .cookie-banner__text{margin:0;flex:1 0 100%;max-height:24vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .cookie-banner{padding:8px 12px;gap:6px;left:10px;right:10px;bottom:calc(72px + env(safe-area-inset-bottom));font-size:.76rem}
+  .cookie-banner__text{margin:0;flex:1 0 100%;max-height:2.8em;overflow-y:auto;-webkit-overflow-scrolling:touch}
   .cookie-banner__btn{padding:10px 14px;font-size:.78rem;flex:1;min-height:44px}
 }
 /* Якорные переходы не заводят заголовки под fixed-баннер/таббар */
@@ -401,3 +411,10 @@ html{scroll-padding-bottom:230px}
 .btn:active,.card-btn:active,.cookie-banner__btn:active{transform:scale(.97)}
 a:active,button:active{transform:scale(.98);opacity:.96;transition:transform .1s,opacity .1s}
 
+/* awwwards-жюри def.8: 1920 с полями ~280px читается пустотой — на ultra-экранах
+   контент и hero расширяются, каталог в 4 колонки. В КОНЦЕ файла: иначе min-width:820 перебивает cols (одинаковая специфичность). */
+@media(min-width:1700px){
+  :root{--wrap:var(--wrap-ultra);--wrap-wide:var(--wrap-ultra)}
+  .hero__img{aspect-ratio:1/1;max-height:min(640px,74vh)}
+  .catalog__grid{grid-template-columns:repeat(4,1fr)}
+}
