@@ -150,7 +150,9 @@ select.pill{padding:8px 34px 8px 14px;border-radius:999px;border:1px solid var(-
 .product-card__urgent-note{margin:4px 0 0;font-size:.78rem;font-weight:500;color:var(--rose-cta,#AE4A71)}
 .product-card__cta{position:absolute;right:12px;bottom:12px;width:44px;height:44px;border-radius:50%;border:none;background:var(--ink);color:#fff;font-size:1.3rem;cursor:pointer;display:grid;place-items:center;opacity:0;transform:translateY(8px);transition:.2s}
 .product-card:hover .product-card__cta,.product-card__cta:focus-visible{opacity:1;transform:none}
-@media(hover:none){.product-card__cta{opacity:1;transform:none}}
+/* W60b (критик-витрина #6): hover:none не покрывало планшеты-гибриды (hover:hover + палец) —
+   кнопка «+» была не видна, пока не наведёшь. pointer:coarse ловит любой основной указатель-палец. */
+@media(hover:none),(pointer:coarse){.product-card__cta{opacity:1;transform:none}}
 .product-card__body{padding:16px 18px 20px;display:flex;flex-direction:column;gap:4px}
 .product-card__name{font-weight:600;font-size:var(--fs-md);line-height:1.3}
 .product-card__price{margin-top:2px;font-weight:700;font-size:var(--fs-base)}
