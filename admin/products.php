@@ -412,11 +412,11 @@ flash();
     <input type="hidden" name="action" value="bulk_price">
     <input type="hidden" name="back_qs" value="<?= e($_SERVER['QUERY_STRING'] ?? '') ?>">
     <span style="font-weight:600">Цены выделенным:</span>
-    <select name="mode" style="padding:6px 10px;border:1.5px solid rgba(43,45,47,.28);border-radius:8px;background:#fff">
+    <select name="mode" class="input" style="width:auto">
       <option value="set">сделать равной</option><option value="add">повысить на</option><option value="sub">понизить на</option><option value="pct">изменить на %</option>
     </select>
-    <input class="input" type="number" name="val" min="-90" max="1000000" placeholder="500 или -10" title="Минус со знаком − снизит цены" style="width:150px;padding:6px 10px;border:1.5px solid rgba(43,45,47,.28);border-radius:8px" required>
-    <button type="submit" class="btn btn--accent" style="font-size:.82rem;padding:7px 16px" onclick="return confirm('Применить к выделенным товарам?')">Применить</button>
+    <input class="input" type="number" name="val" min="-90" max="1000000" placeholder="500 или -10" title="Минус со знаком − снизит цены" style="width:150px" required>
+    <button type="submit" class="btn btn--accent" onclick="return confirm('Применить к выделенным товарам?')">Применить</button>
     <a href="#" id="bulkSelAll" style="font-size:.8rem">выделить все на странице</a>
     <span style="flex-basis:100%;height:0"></span>
     <button class="btn btn--ghost" style="font-size:.8rem;padding:6px 14px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer" type="button" id="bulkHideBtn">Скрыть выделенные</button>

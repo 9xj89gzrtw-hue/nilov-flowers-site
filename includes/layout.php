@@ -52,7 +52,7 @@ a{color:inherit;text-decoration:none}
   .admin-top{position:sticky;top:0;z-index:50} /* единственный sticky: выше карточек и таблиц */
   main.wrap{padding:16px 16px 80px}
 }
-.btn{display:inline-flex;align-items:center;gap:8px;border:none;border-radius:999px;padding:9px 18px;font:600 .85rem var(--font-ui);cursor:pointer;background:var(--ink);color:#fff;transition:background .15s ease,transform .12s ease,box-shadow .15s ease}
+.btn{display:inline-flex;align-items:center;gap:8px;min-height:42px;border:none;border-radius:999px;padding:9px 18px;font:600 .85rem var(--font-ui);cursor:pointer;background:var(--ink);color:#fff;transition:background .15s ease,transform .12s ease,box-shadow .15s ease}
 .btn:hover{transform:translateY(-1px)}
 .btn:active{transform:translateY(1px)}
 .btn:hover{background:#1A1B1D}
@@ -96,7 +96,7 @@ tbody tr,table tr{transition:background .12s ease}
 table tr:hover td{background:rgba(244,169,190,.08)}
 table tr:hover td:has(.row-actions form),table tr:hover th{background:transparent}
 /* Visual W52: бежевый фон+бежевая рамка = границ не видно; микро-текст мелок */
-.input,select,textarea{width:100%;border:1.5px solid rgba(43,45,47,.28);border-radius:10px;padding:9px 12px;font:400 .92rem var(--font-ui);background:#fff;color:var(--ink)}
+.input,select,textarea{width:100%;min-height:42px;border:1.5px solid rgba(43,45,47,.28);border-radius:10px;padding:9px 12px;font:400 .92rem var(--font-ui);background:#fff;color:var(--ink)}
 .input:focus,select:focus,textarea:focus{outline:none;border-color:var(--rose-deep)}
 .input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible,a:focus-visible,input[type=checkbox]:focus-visible{outline:3px solid rgba(174,74,113,.55);outline-offset:2px;border-radius:6px}
 /* Visual-критик W52: нативный синий чекбокс кричит на розово-бежевой палитре */
@@ -150,9 +150,11 @@ a.order-link{display:inline-block;min-height:28px;line-height:28px}
 /* W61 (дизайн-критик): уважение prefers-reduced-motion — как на витрине, в админке не было */
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 .row-actions a.danger,.row-actions button.danger{color:var(--err);border-color:var(--err)}
+.card form button.danger[type=submit]{min-height:42px}
+#bulkPriceForm select,#bulkPriceForm input[type=number]{min-height:42px;background:#fff}
 /* W59 (визит-критик CODE_OPEN#5): единый паттерн иерархии действий — главное
    следующее действие (переход статуса) акцентное, прочие нейтральные */
-.card form button[type=submit]:not(.primary-action):not(.btn):not(.danger){font:600 .82rem var(--font-ui);color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px 12px;cursor:pointer;transition:background .15s ease,border-color .15s ease,transform .12s ease;min-height:36px}
+.card form button[type=submit]:not(.primary-action):not(.btn):not(.danger){font:600 .82rem var(--font-ui);color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px 12px;cursor:pointer;transition:background .15s ease,border-color .15s ease,transform .12s ease;min-height:42px}
 .card form button[type=submit]:not(.primary-action):not(.btn):not(.danger):hover{background:var(--bg-alt);border-color:var(--ink-soft)}
 .card form button[type=submit]:not(.primary-action):not(.btn):not(.danger):active{transform:translateY(1px)}
 button.primary-action,a.primary-action{background:var(--rose-cta,#AE4A71);color:#fff;border:1.5px solid var(--rose-cta,#AE4A71);border-radius:10px;padding:7px 13px;font:600 .85rem var(--font-ui);cursor:pointer;text-decoration:none;display:inline-block}
