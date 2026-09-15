@@ -396,7 +396,7 @@ html{scroll-padding-bottom:230px}
 /* W67: тост добавления в корзину (desktop-фидбек, NEW-6) */
 #cartToast{position:fixed;left:50%;bottom:calc(80px + env(safe-area-inset-bottom));transform:translate(-50%,8px);z-index:80;background:var(--ink);color:#fff;border-radius:999px;padding:10px 18px;font:600 .85rem var(--font-ui);box-shadow:0 12px 30px -12px rgba(43,45,47,.5);opacity:0;pointer-events:none;transition:opacity .25s ease,transform .25s ease;max-width:calc(100vw - 40px);text-align:center}
 #cartToast.is-visible{opacity:1;transform:translate(-50%,0)}
-body.cookie-visible #cartToast{bottom:calc(246px + env(safe-area-inset-bottom))}
+body.cookie-visible #cartToast{bottom:calc(258px + env(safe-area-inset-bottom))} /* W80: 246 давало box-cover 22% на 375×812 */
 @media(min-width:821px){body.cookie-visible #cartToast{bottom:130px}} /* W72 (obvious NEW): тост не под cookie-баннером (z80<z90, 100% cover) */
 @media(min-width:821px){#cartToast{bottom:28px}}
 @media(prefers-reduced-motion:reduce){#cartToast{transition:none}}
