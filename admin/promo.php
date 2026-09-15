@@ -148,7 +148,7 @@ flash();
     <?php foreach ($promos as $pr): ?>
     <tr>
       <td><strong><?= e($pr['code']) ?></strong></td>
-      <td><?= $pr['kind'] === 'fixed' ? formatPrice((int)$pr['value']) . ' ₽' : (int)$pr['value'] . '%' ?></td>
+      <td><?= $pr['kind'] === 'fixed' ? formatPrice((int)$pr['value']) /* W72: formatPrice уже добавляет ₽ */ : (int)$pr['value'] . '%' ?></td>
       <td><?= (int)$pr['min_order'] > 0 ? formatPrice((int)$pr['min_order']) . ' ₽' : '—' ?></td>
       <td><?= (int)$pr['used'] ?><?= (int)$pr['max_uses'] > 0 ? ' из ' . (int)$pr['max_uses'] : '' ?></td>
       <td><?= (int)$pr['active'] === 1 ? 'Действует' : 'Выключен' ?></td>

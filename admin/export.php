@@ -45,7 +45,7 @@ $csvCell = static function ($v) {
         ? "'" . $v : $v;
 };
 fputcsv($out, ['ID', 'Дата', 'Имя', 'Телефон', 'Email', 'Доставка', 'Адрес', 'Оплата',
-    'Состав', 'Сумма', 'Статус', 'Комментарий'], ';');
+    'Состав', 'Сумма', 'Статус', 'Комментарий'], ';', '"', ''); /* W72 (владелец W71-1): PHP 8.5 deprecated $escape — явный '' */
 $itemsStmt = $pdo->prepare('SELECT name, qty FROM order_items WHERE order_id = :i');
 foreach ($stmt->fetchAll() as $o) {
     $itemsStmt->execute([':i' => $o['id']]);
@@ -58,7 +58,7 @@ foreach ($stmt->fetchAll() as $o) {
         $csvCell($o['zone_name'] ?? 'Самовывоз'), $csvCell($o['delivery_address']),
         $o['payment_method'] === 'online' ? 'онлайн' : 'при получении',
         $csvCell($composition), $o['total'], statuses()[$o['status']] ?? $o['status'], $csvCell($o['comment']),
-    ], ';');
+    ], ';', '"', '');
 }
 rewind($out);
 $csv = stream_get_contents($out);

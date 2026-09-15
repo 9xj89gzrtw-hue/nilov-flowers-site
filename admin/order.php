@@ -161,6 +161,16 @@ flash();
   <?php if ($order['no_photo_reason'] !== ''): ?><p style="color:var(--ink-soft)">Причина отсутствия фото: <?= e($order['no_photo_reason']) ?></p><?php endif; ?>
   <p style="color:var(--ink-soft);font-size:.85rem;margin-top:6px">Заказ выполнен — статус больше не меняется.</p>
 </div>
+<?php elseif (in_array($order['status'], ['canceled', 'unredeemed'], true)): /* W72 (владелец NEW-5): деталка canceled/unredeemed — выход из тупика */ ?>
+<div class="card">
+  <h2 style="font-family:var(--font-display);font-size:1.05rem;margin-bottom:6px">Вернуть заказ в работу</h2>
+  <form method="post" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <?= csrf_field() ?>
+    <input type="hidden" name="action" value="status">
+    <button class="btn btn--accent" type="submit" name="status" value="new">↩ Вернуть в «Новые»</button>
+    <span style="font-size:.85rem;color:var(--ink-soft)">Заказ вернётся в ленту новых — можно подтвердить заново.</span>
+  </form>
+</div>
 <?php elseif (in_array($order['status'], ['new', 'confirmed', 'in_progress'], true)): /* W70 (владелец NEW-1): «В работе» больше не тупик — вручение доступно */ ?>
 <div class="card">
   <h2 style="font-family:var(--font-display);font-size:1.05rem;margin-bottom:6px">Изменить статус</h2>

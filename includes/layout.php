@@ -36,9 +36,10 @@ body{font-family:var(--font-ui);color:var(--ink);background:var(--bg);line-heigh
 a{color:inherit;text-decoration:none}
 .wrap{max-width:1100px;margin:0 auto;padding:0 20px}
 .admin-top{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50} /* W68 (obvious NEW-6): sticky на всех брейках — desktop-оглавление top:64 теперь опирается на реальную шапку */
-.admin-top .wrap{display:flex;align-items:center;gap:24px;min-height:60px;flex-wrap:wrap}
-.admin-top .admin-nav{flex:1;min-width:0;overflow-x:auto;white-space:nowrap;scrollbar-width:none}
-.admin-top .admin-nav::-webkit-scrollbar{display:none}
+.admin-top .wrap{display:flex;align-items:center;gap:24px;min-height:60px;flex-wrap:wrap;max-width:none}
+.admin-top .admin-nav{flex:1;min-width:0;overflow-x:auto;white-space:nowrap;scrollbar-width:thin;scrollbar-color:rgba(174,74,113,.45) transparent;-webkit-overflow-scrolling:touch;mask-image:linear-gradient(90deg,#000 calc(100% - 34px),rgba(0,0,0,.35))} /* W72 (владелец NEW-4): конец ряда виден — не молчаливый оверфлоу */
+.admin-top .admin-nav::-webkit-scrollbar{height:6px}
+.admin-top .admin-nav::-webkit-scrollbar-thumb{background:rgba(174,74,113,.45);border-radius:3px}
 @media(min-width:821px){.admin-top .wrap{flex-wrap:nowrap}}
 .admin-logo{font-family:var(--font-display);font-weight:700;font-size:1.05rem}
 .admin-nav{display:flex;gap:4px;flex-wrap:nowrap} /* W70 (владелец NEW-4): nowrap+overflow-x:auto выше = один ряд (было 3 ряда, 155px) */

@@ -239,7 +239,7 @@ $dashqs = fn(string $r) => '/admin/index.php?' . e(http_build_query(array_merge(
       <ol class="dash-top-list">
         <?php foreach ($topProducts as $tp): ?>
         <li>
-          <?= $tp['image'] !== '' ? '<img class="thumb dash-thumb" src="/img/products/' . e($tp['image']) . '" alt="">' : '<div class="thumb dash-thumb"></div>' ?>
+          <?= (string)($tp['image'] ?? '') !== '' ? '<img class="thumb dash-thumb" src="/img/products/' . e($tp['image']) . '" alt="">' : '<div class="thumb dash-thumb"></div>' /* W72: NULL-товар из LEFT JOIN больше не бьёт 404 */ ?>
           <span class="dash-top-name"><?= e($tp['name']) ?></span>
           <strong><?= (int)$tp['sold'] ?> шт.</strong>
         </li>
