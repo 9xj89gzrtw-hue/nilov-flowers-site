@@ -129,6 +129,9 @@ flash();
     <div>
       <h2 style="font-family:var(--font-display);font-size:1.05rem;margin-bottom:6px">Состав</h2>
       <table>
+        <?php if (!$items): /* W68 (obvious NEW-2): заказ без строк — не пустая таблица «Итого», а объяснение */ ?>
+        <tr><td style="color:var(--ink-soft)">Позиции не записаны (заказ без состава)</td><td></td></tr>
+        <?php endif; ?>
         <?php foreach ($items as $it): ?>
         <tr><td><?= e($it['name']) ?> × <?= (int)$it['qty'] ?></td><td style="text-align:right"><?= formatPrice((int)$it['price'] * (int)$it['qty']) ?></td></tr>
         <?php endforeach; ?>

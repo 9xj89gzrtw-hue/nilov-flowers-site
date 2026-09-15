@@ -45,7 +45,7 @@ input{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:12px 
 input:focus{outline:none;border-color:var(--rose-deep)}
 input:focus-visible{outline:3px solid rgba(174,74,113,.55);outline-offset:2px}
 button{width:100%;margin-top:20px;border:none;border-radius:999px;padding:14px;font:600 .95rem var(--font-ui);background:#AE4A71;color:#fff;cursor:pointer}
-button:hover{background:#d46a90}
+button:hover{background:#9E4062}
 .err{margin-top:14px;color:var(--err);font-size:.85rem}
 </style>
 </head>

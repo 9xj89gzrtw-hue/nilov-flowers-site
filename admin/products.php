@@ -244,7 +244,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'bulk_
                 $rejected[] = mb_substr((string)$one['name'], 0, 40) . ' — ' . $why;
                 continue;
             }
-            $base = trim(pathinfo((string)$files['name'][$bi], PATHINFO_FILENAME));
+            $base = trim(str_replace(array('_','-'), ' ', pathinfo((string)$files['name'][$bi], PATHINFO_FILENAME)));
             $name = $base !== '' ? mb_substr($base, 0, 80) : 'Новый букет';
             $slug = slugify($name);
             if ($slug === '') { $slug = 'bukets'; }
@@ -391,17 +391,17 @@ flash();
 <div class="card">
   <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
     <h2 style="font-family:var(--font-display);font-size:1.2rem">Все товары <small style="font-weight:400;color:var(--ink-soft)">(<?= count($allProducts) ?>)</small></h2>
-    <form method="get" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:.85rem">
-      <input class="input" type="search" name="q" value="<?= e((string)($_GET['q'] ?? '')) ?>" placeholder="Поиск по названию…" style="width:170px;padding:7px 12px;border:1.5px solid rgba(43,45,47,.28);border-radius:8px">
-      <select name="f_cat" class="input" style="width:auto;padding:7px 12px;border:1.5px solid rgba(43,45,47,.28);border-radius:8px">
+    <form method="get" class="filters-bar">
+      <input class="input" type="search" name="q" value="<?= e((string)($_GET['q'] ?? '')) ?>" placeholder="Поиск по названию…" style="width:170px">
+      <select name="f_cat" class="input">
         <option value="0">Все категории</option>
         <?php foreach ($categories as $c): ?><option value="<?= (int)$c['id'] ?>" <?= $fCat === (int)$c['id'] ? 'selected' : '' ?>><?= e($c['name']) ?></option><?php endforeach; ?>
       </select>
-      <select name="f_status" class="input" style="width:auto;padding:7px 12px;border:1.5px solid rgba(43,45,47,.28);border-radius:8px">
+      <select name="f_status" class="input">
         <?php $stMap = ['' => 'Все статусы', 'active' => 'Показаны', 'hidden' => 'Скрыты', 'no_price' => 'Без цены', 'no_image' => 'Без фото', 'stale' => 'Не менялись 7+ дней']; ?>
         <?php foreach ($stMap as $k => $lbl): ?><option value="<?= $k ?>" <?= $fSt === $k ? 'selected' : '' ?>><?= $lbl ?></option><?php endforeach; ?>
       </select>
-      <button type="submit" class="btn btn--ghost" style="font-size:.82rem;padding:7px 14px">Найти</button>
+      <button type="submit" class="btn btn--ghost">Найти</button>
       <?php if ($fCat || $fSt || $fQ): ?><a href="/admin/products.php" style="font-size:.82rem">Сбросить</a><?php endif; ?>
     </form>
   </div>
@@ -449,14 +449,14 @@ flash();
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="urgent"><input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
             <input type="hidden" name="back_qs" value="<?= e($_SERVER['QUERY_STRING'] ?? '') ?>">
-            <button type="submit" class="<?= (int)($p['is_urgent'] ?? 0) === 1 ? 'primary-action' : '' ?>"><?= (int)($p['is_urgent'] ?? 0) === 1 ? '★ Успеть сегодня — включено' : 'Успеть сегодня' ?></button>
+            <button type="submit" class="<?= (int)($p['is_urgent'] ?? 0) === 1 ? 'primary-action' : '' ?>"><?= (int)($p['is_urgent'] ?? 0) === 1 ? '★ Срочно' : 'Успеть сегодня' ?></button>
           </form>
           <form method="post" style="display:inline-flex;gap:4px">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="move"><input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
             <input type="hidden" name="back_qs" value="<?= e($_SERVER['QUERY_STRING'] ?? '') ?>">
-            <button type="submit" name="dir" value="up" title="Выше" aria-label="Выше">↑</button>
-            <button type="submit" name="dir" value="down" title="Ниже" aria-label="Ниже">↓</button>
+            <button type="submit" name="dir" value="up" title="Выше" aria-label="Выше" style="min-width:44px">↑</button>
+            <button type="submit" name="dir" value="down" title="Ниже" aria-label="Ниже" style="min-width:44px">↓</button>
           </form>
           <form method="post" onsubmit="return confirm('Удалить товар безвозвратно?')">
             <?= csrf_field() ?>

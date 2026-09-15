@@ -24,7 +24,7 @@ function adminHeader(string $title, string $active = ''): void
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --rose:#F4A9BE; --rose-deep:#E2799C; --blue:#A3C4D9; --mint:#D9E9DF;
+  --rose:#F4A9BE; --rose-deep:#E2799C; --rose-cta:#AE4A71; --rose-cta-hover:#9E4062; --blue:#A3C4D9; --mint:#D9E9DF;
   --bg:#F6F1E6; --bg-alt:#EFE7D8; --ink:#2B2D2F; --ink-soft:#6E6A61;
   --line:rgba(43,45,47,.12); --err:#C43A3A; --ok:#3e8e5a;
   --font-display:'Playfair Display',Georgia,serif;
@@ -35,7 +35,7 @@ function adminHeader(string $title, string $active = ''): void
 body{font-family:var(--font-ui);color:var(--ink);background:var(--bg);line-height:1.55}
 a{color:inherit;text-decoration:none}
 .wrap{max-width:1100px;margin:0 auto;padding:0 20px}
-.admin-top{background:#fff;border-bottom:1px solid var(--line)}
+.admin-top{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50} /* W68 (obvious NEW-6): sticky на всех брейках — desktop-оглавление top:64 теперь опирается на реальную шапку */
 .admin-top .wrap{display:flex;align-items:center;gap:24px;min-height:60px;flex-wrap:wrap}
 .admin-logo{font-family:var(--font-display);font-weight:700;font-size:1.05rem}
 .admin-nav{display:flex;gap:4px;flex-wrap:wrap}
@@ -81,7 +81,7 @@ h1{font-family:var(--font-display);font-weight:600;font-size:1.8rem;margin-botto
 h1 .status-badge{vertical-align:middle;margin-left:10px}
 .order-link{font-weight:700;text-decoration:underline}
 .filters-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:14px}
-.filters-bar input,.filters-bar select,.filters-bar button{height:42px;min-height:42px}
+.filters-bar input,.filters-bar select,.filters-bar button,.filters-bar a.btn{height:42px;min-height:42px}
 .filters-bar .f{margin:0}
 .card{background:#fff;border-radius:var(--radius-lg);padding:22px;box-shadow:0 14px 40px -28px rgba(43,45,47,.35);margin-bottom:20px;transition:box-shadow .2s ease}
 table{width:100%;border-collapse:collapse;font-size:.9rem}
@@ -127,15 +127,21 @@ label.f{display:block;font-size:.8rem;font-weight:600;margin:12px 0 4px}
 .status-badge.canceled::before{content:"✖ ";font-size:.7rem}
 .status-badge.unredeemed{background:#f3d9a4}
 .status-badge.unredeemed::before{content:"🕒 ";font-size:.7rem}
-.status-badge.in_progress{background:#d8ecd6}
+.status-badge.in_progress{background:#FFE9C7;color:#7a4a00}
 .status-badge.in_progress::before{content:"🚚 ";font-size:.7rem}
+/* W68 (владелец #2): лента дашборда на телефоне — ссылки «№ id»/телефон были 37×17px
+   (9 из 19 тап-целей <44). Инлайн-ссылки в ячейке получают min-height и воздух. */
+a.order-link{display:inline-block;min-height:28px;line-height:28px}
+.card td a[href^="tel:"]{display:inline-block;min-height:28px;line-height:28px;padding-right:8px}
+@media(hover:none),(pointer:coarse){a.order-link,.card td a[href^="tel:"]{min-height:44px;line-height:44px}}
+
 .toast{position:fixed;top:16px;right:16px;z-index:1000;background:#fff;box-shadow:0 14px 40px -20px rgba(43,45,47,.5);border-radius:var(--radius);padding:14px 18px;font-size:.9rem;max-width:320px}
 .flash{padding:12px 16px;border-radius:12px;background:var(--mint);margin-bottom:16px;font-size:.9rem;border:1px solid rgba(62,142,90,.25);color:#2c5e40}
 .flash--err{background:#fbe3e3;border-color:rgba(214,69,69,.3);color:#8c2f2f}
 .empty-state{text-align:center;padding:36px 20px;color:var(--ink-soft);font-size:.95rem}
 .empty-state strong{display:block;font-family:var(--font-display);font-size:1.15rem;color:var(--ink);margin-bottom:6px;font-weight:600}
-.linklike{background:none;border:none;color:var(--rose-cta,#AE4A71);font:600 .85rem var(--font-ui);cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px}
-.linklike:hover{color:#d4638a}
+.linklike{background:none;border:none;color:var(--rose-cta);font:600 .85rem var(--font-ui);cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px}
+.linklike:hover{color:var(--rose-cta-hover)}
 .thumb{width:48px;height:48px;object-fit:cover;border-radius:10px;background:var(--bg-alt)}
 .row-actions{display:flex;gap:6px;flex-wrap:wrap}
 .row-actions a,.row-actions button{font-size:.78rem;padding:5px 10px;border-radius:10px;border:1px solid var(--line);background:#fff;cursor:pointer;font-family:var(--font-ui);transition:background .15s ease,color .15s ease,transform .12s ease}
