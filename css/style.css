@@ -52,7 +52,7 @@ a{color:inherit;text-decoration:none}
 .site-nav a:not(.cart-toggle){display:inline-flex;align-items:center;min-height:44px;padding:0 2px}
 .cart-toggle{position:relative;display:grid;place-items:center;width:40px;height:40px;border:1px solid var(--line);border-radius:50%;background:#fff;cursor:pointer;transition:transform .15s;color:inherit}
 .cart-toggle:hover{transform:scale(1.06)}
-.cart-toggle__icon{width:20px;height:20px}
+.cart-toggle__icon{width:20px;height:20px;transform:translate(0px,-0.7px)}/* W95: компенсация массы колёс (ink-центроид +0.70px) — тот же метод, что трубка call */
 .cart-toggle__count{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;border-radius:9px;background:var(--rose-cta);color:#fff;font-size:.68rem;font-weight:700;display:grid;place-items:center;padding:0 4px}
 /* Мобильный телефон в шапке (критик-покупатель B7: до футера ~9000px).
    Показываемcompact иконку-звонилку рядом с корзиной. */
