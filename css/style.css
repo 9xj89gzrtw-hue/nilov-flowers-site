@@ -58,7 +58,7 @@ a{color:inherit;text-decoration:none}
   .site-header__contact{display:none}
   .site-nav{margin-left:auto}
   .site-nav a:not(.cart-toggle):not(.site-header__call){display:none}
-  .site-header__call{display:grid}
+  .site-nav a.site-header__call{display:grid;min-height:44px}
 }
 /* mobile bottom tabbar */
 .mnav{display:none}
@@ -79,7 +79,7 @@ a{color:inherit;text-decoration:none}
 .skip-link:focus{top:12px}
 /* Мобильный телефон в шапке (критик-покупатель B7: до футера ~9000px).
    Показываемcompact иконку-звонилку рядом с корзиной. */
-.site-header__call{display:none;position:relative;place-items:center;width:44px;height:44px;border:1px solid var(--line);border-radius:50%;background:#fff;transition:transform .15s}
+.site-nav a.site-header__call{display:none;position:relative;place-items:center;width:44px;height:44px;border:1px solid var(--line);border-radius:50%;background:#fff;transition:transform .15s}
 .site-header__call svg{width:22px;height:22px;stroke-width:1.8px}
 .site-header__call:hover{transform:scale(1.06)}
 
