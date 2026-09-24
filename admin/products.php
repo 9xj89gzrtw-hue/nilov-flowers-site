@@ -41,6 +41,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save'
     $description = trim((string)($_POST['description'] ?? ''));
     $isActive = isset($_POST['is_active']) ? 1 : 0;
     $showInUpsell = isset($_POST['show_in_upsell']) ? 1 : 0;
+    /* W96 (5cv): бейджи карточек — «Хит продаж» и «Премиум» (секции витрины) */
+    $isHit = isset($_POST['is_hit']) ? 1 : 0;
+    $isPremium = isset($_POST['is_premium']) ? 1 : 0;
     $sort = (int)($_POST['sort'] ?? 0);
 
     if ($name === '' || $price <= 0) {
@@ -60,10 +63,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save'
                 ->execute([':img' => $image, ':i' => $id]);
         }
         $pdo->prepare('UPDATE products SET category_id = :c, name = :n, slug = :sl, price = :p,
-                sale_price = :sp, description = :d, is_active = :a, show_in_upsell = :u, sort = :s,
+                sale_price = :sp, description = :d, is_active = :a, show_in_upsell = :u,
+                is_hit = :ih, is_premium = :ip, sort = :s,
                 updated_at = datetime(\'now\',\'localtime\') WHERE id = :i')
             ->execute([':c' => $categoryId, ':n' => $name, ':sl' => slugify($name), ':p' => $price,
-                ':sp' => $salePrice, ':d' => $description, ':a' => $isActive, ':u' => $showInUpsell, ':s' => $sort, ':i' => $id]);
+                ':sp' => $salePrice, ':d' => $description, ':a' => $isActive, ':u' => $showInUpsell,
+                ':ih' => $isHit, ':ip' => $isPremium, ':s' => $sort, ':i' => $id]);
         flash('Товар обновлён');
     } else {
         $slug = slugify($name);
@@ -72,10 +77,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save'
         while ((int)$pdo->query('SELECT COUNT(*) FROM products WHERE slug = ' . $pdo->quote($slug))->fetchColumn() > 0) {
             $slug = $base . '-' . (++$n);
         }
-        $pdo->prepare('INSERT INTO products (category_id, name, slug, price, sale_price, description, image, is_active, show_in_upsell, sort, updated_at)
-                VALUES (:c, :n, :sl, :p, :sp, :d, :img, :a, :u, :s, datetime(\'now\',\'localtime\'))')
+        $pdo->prepare('INSERT INTO products (category_id, name, slug, price, sale_price, description, image, is_active, show_in_upsell, is_hit, is_premium, sort, updated_at)
+                VALUES (:c, :n, :sl, :p, :sp, :d, :img, :a, :u, :ih, :ip, :s, datetime(\'now\',\'localtime\'))')
             ->execute([':c' => $categoryId, ':n' => $name, ':sl' => $slug, ':p' => $price,
-                ':sp' => $salePrice, ':d' => $description, ':img' => $image, ':a' => $isActive, ':u' => $showInUpsell, ':s' => $sort]);
+                ':sp' => $salePrice, ':d' => $description, ':img' => $image, ':a' => $isActive, ':u' => $showInUpsell,
+                ':ih' => $isHit, ':ip' => $isPremium, ':s' => $sort]);
         flash('Товар добавлен');
     }
     /* Операционный критик W38: после сохранения не «терять» товар — возврат на ту же
@@ -367,6 +373,15 @@ flash();
           <input type="checkbox" name="show_in_upsell" style="width:auto" <?= $editing && (int)($editing['show_in_upsell'] ?? 0) === 1 ? 'checked' : '' ?>>
           Добавлять в блок «Добавьте к букету» в корзине
         </label>
+        <?php /* W96 (5cv): бейджи на карточках + секции «Хиты продаж» / «Премиум» на главной */ ?>
+        <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500;margin-top:8px">
+          <input type="checkbox" name="is_hit" style="width:auto" <?= $editing && (int)($editing['is_hit'] ?? 0) === 1 ? 'checked' : '' ?>>
+          Хит продаж (жёлтый бейдж + секция «Хиты продаж» на главной)
+        </label>
+        <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500;margin-top:8px">
+          <input type="checkbox" name="is_premium" style="width:auto" <?= $editing && (int)($editing['is_premium'] ?? 0) === 1 ? 'checked' : '' ?>>
+          Премиум (тёмный бейдж + секция «Премиум» на главной)
+        </label>
       </div>
     </div>
     <div style="display:flex;gap:10px;margin-top:18px;position:sticky;bottom:12px;z-index:25;background:rgba(255,255,255,.97);backdrop-filter:blur(8px);padding:10px 12px;border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px -18px rgba(43,45,47,.5)">
@@ -428,7 +443,7 @@ flash();
     <tr id="row-<?= (int)$p['id'] ?>">
       <td style="text-align:center"><label class="bulk-hit"><input class="bulk-check" type="checkbox" name="ids[]" value="<?= (int)$p['id'] ?>" form="bulkPriceForm"></label></td>
       <td><?= $p['image'] !== '' ? '<img class="thumb" src="/img/products/' . e($p['image']) . '" alt="">' : '<div class="thumb"></div>' ?></td>
-      <td><strong><?= e($p['name']) ?></strong><br><small style="color:var(--ink-soft)"><?= e($p['slug']) ?></small></td>
+      <td><strong><?= e($p['name']) ?></strong><?= (int)($p['is_hit'] ?? 0) === 1 ? ' <span style="display:inline-block;background:#f5b301;color:#1c1a1e;border-radius:999px;padding:2px 8px;font-size:.68rem;font-weight:700;vertical-align:middle">Хит</span>' : '' ?><?= (int)($p['is_premium'] ?? 0) === 1 ? ' <span style="display:inline-block;background:#1c1a1e;color:#fff;border-radius:999px;padding:2px 8px;font-size:.68rem;font-weight:700;vertical-align:middle">Премиум</span>' : '' ?><br><small style="color:var(--ink-soft)"><?= e($p['slug']) ?></small></td>
       <td><?= e($p['category_name'] ?? '—') ?></td>
       <td><?= formatPrice((int)$p['price']) ?></td>
       <td><?= $p['sale_price'] !== null ? formatPrice((int)$p['sale_price']) : '—' ?></td>

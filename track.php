@@ -3,6 +3,7 @@
  * Страница трекинга заказа «Где мой заказ?» (критерий 13, паттерн branded tracking 2026).
  * Покупатель вводит телефон последнего заказа → видит статус + состав + сумму.
  * Без пароля: маскируем чувствительное (адрес → только район), максимум 5 записей.
+ * Редизайн 5cv (W96/T2-d): fc-section + форма в карточке .order-form (поля уже перекрашены).
  */
 declare(strict_types=1);
 require_once __DIR__ . '/includes/config.php';
@@ -34,14 +35,8 @@ if (!rl_check('track', 10, 600)) {
     $orders = $rows->fetchAll();
 }
 
-$pageTitle = 'Где мой заказ? — Nilov Flowers';
-require __DIR__ . '/partials/head.php';
-?>
-<title><?= e($pageTitle) ?></title>
-<meta name="robots" content="noindex, follow">
-<meta name="description" content="Проверьте статус заказа букета по номеру телефона — Nilov Flowers, доставка цветов в Санкт-Петербурге.">
-<?php
-require __DIR__ . '/partials/header.php';
+$shopPhone = setting('shop_phone', '');
+$pageTitle = 'Где мой заказ? — ' . setting('shop_name', 'Nilov Flowers');
 
 $statusEmoji = [
     'new' => '🌸 Новый',
@@ -55,73 +50,91 @@ function trackStep(string $status): int {
         'new' => 1, 'confirmed' => 2, 'done' => 3, default => 0,
     };
 }
-$shopPhone = setting('shop_phone', '');
-?>
+?><!DOCTYPE html>
+<html lang="ru">
+<head>
+<title><?= e($pageTitle) ?></title>
+<meta name="robots" content="noindex, follow">
+<meta name="description" content="Проверьте статус заказа букета по номеру телефона — Nilov Flowers, доставка цветов в Санкт-Петербурге.">
+<?php require __DIR__ . '/partials/head.php'; ?>
 <style>
-.track{max-width:680px;margin:0 auto;padding:48px 20px 80px}
-.track h1{font-family:var(--font-display);font-weight:600;font-size:2rem;margin-bottom:8px}
-.track__lead{color:var(--ink-soft);margin-bottom:24px}
-.track-form{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:28px}
-.track-form input{flex:1 1 240px;padding:12px 16px;border-radius:12px;border:1px solid var(--line);font-size:1rem;background:#fff}
-.track-form button{padding:12px 22px;border-radius:12px;border:0;background:var(--rose);color:#fff;font-weight:600;font-size:.95rem;cursor:pointer}
-.track-card{border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-bottom:12px;background:#fff}
+/* Локальные стили результатов трекинга (fc-* их не покрывает); цвета — токены 5cv */
+.track-card{border:1.5px solid var(--line);border-radius:16px;padding:18px 20px;margin-top:12px;background:#fff}
 .track-card__top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
-.track-card__id{font-weight:600}
-.track-card__status{padding:3px 12px;border-radius:999px;font-size:.8rem;font-weight:600;white-space:nowrap}
-.track-card__status.new{background:#fdeef2;color:#c2497a}
+.track-card__id{font-weight:700;color:var(--ink)}
+.track-card__status{padding:3px 12px;border-radius:999px;font-size:.8rem;font-weight:700;white-space:nowrap}
+.track-card__status.new{background:var(--surface-warm);color:var(--pink-dark)}
 .track-card__status.confirmed{background:#e8f0fb;color:#3a6db3}
 .track-card__status.done{background:#e7f5ec;color:#2e7d4f}
-.track-card__status.canceled,.track-card__status.unredeemed{background:#f5f5f5;color:#777}
-.track-card__meta{color:var(--ink-soft);font-size:.88rem;margin-top:8px;line-height:1.55}
+.track-card__status.canceled,.track-card__status.unredeemed{background:var(--surface-subtle);color:var(--ink-muted)}
+.track-card__meta{color:var(--ink-muted);font-size:.88rem;margin:8px 0 0;line-height:1.55}
 .track-steps{display:flex;gap:4px;margin-top:14px}
 .track-steps span{flex:1;height:6px;border-radius:3px;background:var(--line)}
-.track-steps span.on{background:var(--rose)}
-.track-empty{padding:36px 20px;text-align:center;color:var(--ink-soft);border:1px dashed var(--line);border-radius:16px}
-@media (max-width:640px){.track{padding:32px 16px 64px}.track h1{font-size:1.6rem}}
+.track-steps span.on{background:var(--pink)}
+.track-empty{padding:36px 20px;text-align:center;color:var(--ink-muted);border:1.5px dashed var(--line);border-radius:16px;margin-top:16px}
 </style>
-<main id="main" class="track">
-  <h1>Где мой заказ?</h1>
-  <p class="track__lead">Введите телефон, который указали при оформлении — покажем статус ваших последних заказов.</p>
+</head>
+<body>
+<?php require __DIR__ . '/partials/header.php'; ?>
 
-  <form class="track-form" method="get" action="/track">
-    <input type="tel" name="phone" value="<?= e($phone) ?>" placeholder="+7 (900) 123-45-67" required>
-    <button type="submit">Проверить статус</button>
-  </form>
-
-  <?php if ($rlLimited): ?>
-    <div class="track-empty">Слишком много проверок подряд — подождите минуту и попробуйте снова. Если срочно — позвоните: <a href="tel:<?= e($shopPhone) ?>"><?= e($shopPhone) ?></a></div>
-  <?php elseif ($normalized !== ''): ?>
-    <?php if ($orders === []): ?>
-      <div class="track-empty">По этому телефону заказов не найдено.<br>Проверьте номер или позвоните нам: <a href="tel:<?= e($shopPhone) ?>"><?= e($shopPhone) ?></a></div>
-    <?php else: ?>
-      <?php foreach ($orders as $o):
-          $step = trackStep($o['status']);
-          $addr = $o['zone'] ? 'Доставка: ' . $o['zone'] : 'Самовывоз';
-      ?>
-      <div class="track-card">
-        <div class="track-card__top">
-          <span class="track-card__id">Заказ №<?= (int)$o['id'] ?> · <?= e($o['created_at']) ?></span>
-          <span class="track-card__status <?= e($o['status']) ?>"><?= $statusEmoji[$o['status']] ?? e($o['status']) ?></span>
-        </div>
-        <p class="track-card__meta">
-          <?= e($addr) ?> · Сумма: <strong><?= formatPrice((int)$o['total']) ?></strong>
-          <?php if ($o['status'] === 'new'): ?><br>Мы свяжемся с вами для подтверждения в течение 30 минут.
-          <?php elseif ($o['status'] === 'confirmed'): ?><br>Букет собираем — фото пришлём перед отправкой.
-          <?php elseif ($o['status'] === 'done'): ?><br>Доставлено. Спасибо, что выбираете нас! 💐
-          <?php endif; ?>
-        </p>
-        <?php if ($step > 0): ?>
-        <div class="track-steps" aria-label="Прогресс заказа">
-          <span class="<?= $step >= 1 ? 'on' : '' ?>"></span>
-          <span class="<?= $step >= 2 ? 'on' : '' ?>"></span>
-          <span class="<?= $step >= 3 ? 'on' : '' ?>"></span>
-        </div>
-        <?php endif; ?>
+<main id="main" tabindex="-1">
+  <section class="fc-section">
+    <div class="wrap" style="max-width:560px">
+      <nav class="breadcrumbs" aria-label="Хлебные крошки">
+        <a href="/">Главная</a> / <span aria-current="page">Где мой заказ?</span>
+      </nav>
+      <div class="page-hero">
+        <h1 class="page-hero__title">Где мой заказ?</h1>
+        <p class="section-sub">Введите телефон, который указали при оформлении — покажем статус ваших последних заказов.</p>
       </div>
-      <?php endforeach; ?>
-    <?php endif; ?>
-  <?php endif; ?>
 
-  <p style="margin-top:24px;color:var(--ink-soft);font-size:.85rem"><a href="/">← Вернуться в каталог</a></p>
+      <form class="order-form" method="get" action="/track" style="grid-template-columns:1fr">
+        <div class="order-form__field">
+          <label for="trackPhone">Телефон из заказа</label>
+          <input type="tel" id="trackPhone" name="phone" value="<?= e($phone) ?>" placeholder="+7 (900) 123-45-67" required>
+          <span class="order-form__hint">Без пароля: адрес видим только районом доставки</span>
+        </div>
+        <button type="submit" class="btn btn--accent order-form__submit">Проверить статус</button>
+      </form>
+
+      <?php if ($rlLimited): ?>
+        <div class="track-empty">Слишком много проверок подряд — подождите минуту и попробуйте снова. Если срочно — позвоните: <a href="tel:<?= e($shopPhone) ?>"><?= e($shopPhone) ?></a></div>
+      <?php elseif ($normalized !== ''): ?>
+        <?php if ($orders === []): ?>
+          <div class="track-empty">По этому телефону заказов не найдено.<br>Проверьте номер или позвоните нам: <a href="tel:<?= e($shopPhone) ?>"><?= e($shopPhone) ?></a></div>
+        <?php else: ?>
+          <?php foreach ($orders as $o):
+              $step = trackStep($o['status']);
+              $addr = $o['zone'] ? 'Доставка: ' . $o['zone'] : 'Самовывоз';
+          ?>
+          <div class="track-card">
+            <div class="track-card__top">
+              <span class="track-card__id">Заказ №<?= (int)$o['id'] ?> · <?= e($o['created_at']) ?></span>
+              <span class="track-card__status <?= e($o['status']) ?>"><?= $statusEmoji[$o['status']] ?? e($o['status']) ?></span>
+            </div>
+            <p class="track-card__meta">
+              <?= e($addr) ?> · Сумма: <strong><?= formatPrice((int)$o['total']) ?></strong>
+              <?php if ($o['status'] === 'new'): ?><br>Мы свяжемся с вами для подтверждения в течение 30 минут.
+              <?php elseif ($o['status'] === 'confirmed'): ?><br>Букет собираем — фото пришлём перед отправкой.
+              <?php elseif ($o['status'] === 'done'): ?><br>Доставлено. Спасибо, что выбираете нас! 💐
+              <?php endif; ?>
+            </p>
+            <?php if ($step > 0): ?>
+            <div class="track-steps" aria-label="Прогресс заказа">
+              <span class="<?= $step >= 1 ? 'on' : '' ?>"></span>
+              <span class="<?= $step >= 2 ? 'on' : '' ?>"></span>
+              <span class="<?= $step >= 3 ? 'on' : '' ?>"></span>
+            </div>
+            <?php endif; ?>
+          </div>
+          <?php endforeach; ?>
+        <?php endif; ?>
+      <?php endif; ?>
+
+      <p style="margin-top:24px;color:var(--ink-soft);font-size:.85rem"><a href="/">← Вернуться в каталог</a></p>
+    </div>
+  </section>
 </main>
 <?php require __DIR__ . '/partials/footer.php'; ?>
+</body>
+</html>

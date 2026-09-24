@@ -1,122 +1,150 @@
 <?php
 /* Инструкция для владельца магазина: как управлять сайтом через админку.
-   Статичный справочник — обновляется вместе с панелью. */
+   Статичный справочник — обновляется вместе с панелью.
+   Редизайн 5cv (W96/T2-d): каркас сайта (partials) + page-hero + карточки .fc-store. */
 declare(strict_types=1);
 require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/util.php';
+
+$pageTitle = 'Инструкция — Админ-панель';
 ?><!DOCTYPE html>
 <html lang="ru">
 <head>
 <title>Инструкция — Админ-панель</title>
 <meta name="robots" content="noindex">
-/* W90 (obvious-admin nit-2): self-hosted шрифты + метрический fallback как в остальной админке */
-<link rel="stylesheet" href="/css/fonts.css">
+<?php require __DIR__ . '/partials/head.php'; ?>
 <style>
-:root{--rose:#F4A9BE;--rose-deep:#E2799C;--bg:#F6F1E6;--bg-alt:#EFE7D8;--ink:#2B2D2F;--ink-soft:#6E6A61;--line:rgba(43,45,47,.12);
---font-display:'Playfair Display','Playfair Fallback',Georgia,serif;--font-ui:'Golos Text','Golos Fallback',system-ui,sans-serif}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--font-ui);color:var(--ink);background:var(--bg);line-height:1.6;padding:24px 16px 60px}
-.wrap{max-width:820px;margin:0 auto}
-h1{font-family:var(--font-display);font-weight:600;font-size:1.7rem;margin-bottom:6px}
-p.sub{color:var(--ink-soft);font-size:.9rem;margin-bottom:22px}
-.card{background:#fff;border-radius:18px;padding:20px 22px;box-shadow:0 14px 40px -28px rgba(43,45,47,.35);margin-bottom:14px}
-.card h2{font-size:1.02rem;font-weight:700;margin-bottom:6px}
-.card p,.card li{font-size:.9rem}
-.card ul{padding-left:18px;margin-top:4px}
-.card ol{padding-left:18px;margin-top:4px}
-kbd{background:var(--bg-alt);border:1px solid var(--line);border-radius:6px;padding:1px 7px;font-size:.82rem;font-family:var(--font-ui)}
-a.top{display:inline-block;color:var(--ink-soft);font-size:.85rem;margin-bottom:14px;text-decoration:underline}
-table{width:100%;border-collapse:collapse;font-size:.88rem;margin-top:6px}
-td,th{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
-th{font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft)}
-.tag{display:inline-block;background:var(--rose);border-radius:999px;padding:1px 10px;font-size:.72rem;font-weight:700;margin-left:8px;vertical-align:middle}
+/* Локальные стили справки: kbd/таблица/тег — в five.css аналогов нет, красим токенами 5cv */
+.help-text p{margin:6px 0}
+.help-text ul,.help-text ol{padding-left:20px;margin:6px 0}
+.help-text li{margin:4px 0}
+.help-text table{width:100%;border-collapse:collapse;font-size:.88rem;margin-top:6px}
+.help-text td,.help-text th{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.help-text th{font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-muted)}
+kbd{background:var(--surface-warm);border:1px solid var(--line);border-radius:6px;padding:1px 7px;font-size:.82rem;font-family:var(--font-ui)}
+.help-tag{display:inline-block;background:var(--amber);color:var(--ink);border-radius:999px;padding:2px 10px;font-size:.72rem;font-weight:700;margin-left:8px;vertical-align:middle}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <h1>Как пользоваться сайтом</h1>
-  <p class="sub">Короткая инструкция для владельца магазина. Всё меняется через админ-панель, программист не нужен.</p>
+<?php require __DIR__ . '/partials/header.php'; ?>
 
-  <div class="card">
-    <h2>Заказы каждый день</h2>
-    <ul>
-      <li>Новый заказ появляется в разделе <a href="/admin/index.php"><kbd>Заказы</kbd></a>. Статус меняется кнопками прямо в строке заказа: <b>Новый → Подтверждён → Выполнен</b> (или <b>Отменён</b>).</li>
-      <li>В строке заказа видно имя, телефон, состав, сумму, способ оплаты и комментарий (например, текст открытки).</li>
-    </ul>
-  </div>
+<main id="main" tabindex="-1">
+  <section class="fc-section">
+    <div class="wrap" style="max-width:820px">
+      <nav class="breadcrumbs" aria-label="Хлебные крошки">
+        <a href="/">Главная</a> / <span aria-current="page">Инструкция</span>
+      </nav>
+      <div class="page-hero">
+        <h1 class="page-hero__title">Как пользоваться сайтом</h1>
+        <p class="section-sub">Короткая инструкция для владельца магазина. Всё меняется через админ-панель, программист не нужен.</p>
+      </div>
 
-  <div class="card">
-    <h2>Букеты и цены — раздел «Товары» <span class="tag">ежедневно</span></h2>
-    <ul>
-      <li><b>Новый букет:</b> Товары → «Новый товар» → название, цена, категория, описание, фото → «Добавить товар». Он сразу появится в каталоге.</li>
-      <li><b>Смена цены:</b> Товары → «Изменить» → новое значение цены → «Сохранить».</li>
-      <li><b>Скидка:</b> в той же форме заполните «Цена по акции» — на витрине появится зачёркнутая старая цена и бейдж с текстом акции (настраивается в «Настройках»). Уберите значение — скидка исчезнет.</li>
-      <li><b>Закончился:</b> кнопка «Скрыть» в строке товара — букет мгновенно пропадает с сайта. «Показать» возвращает.</li>
-    </ul>
-  </div>
+      <div class="fc-stores" style="grid-template-columns:1fr;gap:14px;margin-top:24px">
+        <div class="fc-store">
+          <h2 class="fc-store__title">Заказы каждый день</h2>
+          <div class="fc-store__text help-text">
+            <ul>
+              <li>Новый заказ появляется в разделе <a href="/admin/index.php"><kbd>Заказы</kbd></a>. Статус меняется кнопками прямо в строке заказа: <b>Новый → Подтверждён → Выполнен</b> (или <b>Отменён</b>).</li>
+              <li>В строке заказа видно имя, телефон, состав, сумму, способ оплаты и комментарий (например, текст открытки).</li>
+            </ul>
+          </div>
+        </div>
 
-  <div class="card">
-    <h2>Фото товара с телефона</h2>
-    <p>В форме товара нажмите «Фото» и выберите снимок из галереи телефона — загружать по ссылке не обязательно. Снимайте вертикально, как портретное фото — тогда букет красиво поместится в карточку.</p>
-  </div>
+        <div class="fc-store">
+          <h2 class="fc-store__title">Букеты и цены — раздел «Товары»<span class="help-tag">ежедневно</span></h2>
+          <div class="fc-store__text help-text">
+            <ul>
+              <li><b>Новый букет:</b> Товары → «Новый товар» → название, цена, категория, описание, фото → «Добавить товар». Он сразу появится в каталоге.</li>
+              <li><b>Смена цены:</b> Товары → «Изменить» → новое значение цены → «Сохранить».</li>
+              <li><b>Скидка:</b> в той же форме заполните «Цена по акции» — на витрине появится зачёркнутая старая цена и бейдж с текстом акции (настраивается в «Настройках»). Уберите значение — скидка исчезнет.</li>
+              <li><b>Закончился:</b> кнопка «Скрыть» в строке товара — букет мгновенно пропадает с сайта. «Показать» возвращает.</li>
+            </ul>
+          </div>
+        </div>
 
-  <div class="card">
-    <h2>Категории и вкладки каталога</h2>
-    <p>Раздел <a href="/admin/categories.php"><kbd>Категории</kbd></a> — это вкладки над каталогом на сайте («Розы», «Сборные букеты»…). Добавляйте, переименовывайте, меняйте порядок полем «Сортировка». Категорию с товарами удалить нельзя — сначала перенесите товары.</p>
-  </div>
+        <div class="fc-store">
+          <h2 class="fc-store__title">Фото товара с телефона</h2>
+          <div class="fc-store__text help-text">
+            <p>В форме товара нажмите «Фото» и выберите снимок из галереи телефона — загружать по ссылке не обязательно. Снимайте вертикально, как портретное фото — тогда букет красиво поместится в карточку.</p>
+          </div>
+        </div>
 
-  <div class="card">
-    <h2>Зоны и цены доставки</h2>
-    <p>Раздел <a href="/admin/zones.php"><kbd>Зоны доставки</kbd></a>: район + стоимость. Покупатель видит их списком в форме заказа, стоимость зоны автоматически прибавляется к сумме.</p>
-  </div>
+        <div class="fc-store">
+          <h2 class="fc-store__title">Категории и вкладки каталога</h2>
+          <div class="fc-store__text help-text">
+            <p>Раздел <a href="/admin/categories.php"><kbd>Категории</kbd></a> — это вкладки над каталогом на сайте («Розы», «Сборные букеты»…). Добавляйте, переименовывайте, меняйте порядок полем «Сортировка». Категорию с товарами удалить нельзя — сначала перенесите товары.</p>
+          </div>
+        </div>
 
-  <div class="card">
-    <h2>Главная страница</h2>
-    <p>Раздел <a href="/admin/settings.php"><kbd>Настройки</kbd></a>:</p>
-    <table>
-      <tr><th>Что меняете</th><th>Где на сайте</th></tr>
-      <tr><td>Фото для главной</td><td>Большое фото справа в hero-блоке</td></tr>
-      <tr><td>Заголовок / подзаголовок / кнопка</td><td>Текст поверх hero-блока</td></tr>
-      <tr><td>Логотип</td><td>Слева в шапке</td></tr>
-      <tr><td>Название, телефон, адрес</td><td>Шапка, подвал, футер</td></tr>
-      <tr><td>Шаги 1–3</td><td>Блок «Как это работает»</td></tr>
-      <tr><td>Гарантии 1–3</td><td>Строка преимуществ и страница товара</td></tr>
-    </table>
-  </div>
+        <div class="fc-store">
+          <h2 class="fc-store__title">Зоны и цены доставки</h2>
+          <div class="fc-store__text help-text">
+            <p>Раздел <a href="/admin/zones.php"><kbd>Зоны доставки</kbd></a>: район + стоимость. Покупатель видит их списком в форме заказа, стоимость зоны автоматически прибавляется к сумме.</p>
+          </div>
+        </div>
 
-  <div class="card">
-    <h2>Документы и реквизиты</h2>
-    <p>В «Настройках» внизу заполните реквизиты (ИП/ООО, ОГРН, адрес) — они автоматически подставятся на страницы <a href="/policy" target="_blank">«Политика ПД»</a> и <a href="/offer" target="_blank">«Публичная оферта»</a>. Пока не заполнены, страницы честно пишут, что реквизиты не внесены.</p>
-  </div>
+        <div class="fc-store">
+          <h2 class="fc-store__title">Главная страница</h2>
+          <div class="fc-store__text help-text">
+            <p>Раздел <a href="/admin/settings.php"><kbd>Настройки</kbd></a>:</p>
+            <table>
+              <tr><th>Что меняете</th><th>Где на сайте</th></tr>
+              <tr><td>Фото для главной</td><td>Большое фото в hero-блоке</td></tr>
+              <tr><td>Заголовок / подзаголовок / кнопка</td><td>Текст поверх hero-блока</td></tr>
+              <tr><td>Логотип</td><td>Слева в шапке</td></tr>
+              <tr><td>Название, телефон, адрес</td><td>Шапка, подвал, футер</td></tr>
+              <tr><td>Шаги 1–3</td><td>Блок «Как это работает»</td></tr>
+              <tr><td>Гарантии 1–3</td><td>Строка преимуществ и страница товара</td></tr>
+            </table>
+          </div>
+        </div>
 
-  <div class="card">
-    <h2>Безопасность — сделать при первом входе</h2>
-    <ol>
-      <li>Смените пароль администратора (по запросу — добавим страницу смены пароля или сообщите новый пароль тому, кто настраивал сайт).</li>
-      <li>Не передавайте ссылку на админку третьим лицам.</li>
-    </ol>
-  </div>
+        <div class="fc-store">
+          <h2 class="fc-store__title">Документы и реквизиты</h2>
+          <div class="fc-store__text help-text">
+            <p>В «Настройках» внизу заполните реквизиты (ИП/ООО, ОГРН, адрес) — они автоматически подставятся на страницы <a href="/policy" target="_blank">«Политика ПД»</a> и <a href="/offer" target="_blank">«Публичная оферта»</a>. Пока не заполнены, страницы честно пишут, что реквизиты не внесены.</p>
+          </div>
+        </div>
 
-  <div class="card">
-    <h2>Оплата</h2>
-    <p>Сейчас заказы принимаются в полном объёме, онлайн-оплата работает в тестовом режиме (без списания денег). Для боевой оплаты подключается ЮKassa — это делается один раз специалистом: понадобится shopId и секретный ключ из личного кабинета.</p>
-  </div>
+        <div class="fc-store">
+          <h2 class="fc-store__title">Безопасность — сделать при первом входе</h2>
+          <div class="fc-store__text help-text">
+            <ol>
+              <li>Смените пароль администратора (по запросу — добавим страницу смены пароля или сообщите новый пароль тому, кто настраивал сайт).</li>
+              <li>Не передавайте ссылку на админку третьим лицам.</li>
+            </ol>
+          </div>
+        </div>
 
-  <div class="card">
-    <h2>Продвижение: Яндекс и Google увидят сайт <span class="tag">один раз, 15 минут</span></h2>
-    <p style="margin-bottom:6px">Сайт уже готов к подключению: карта сайта работает по адресу <kbd>/sitemap.xml</kbd>, роботы-файл настроен. Осталось подтвердить права — это бесплатные сервисы:</p>
-    <ol>
-      <li><b>Яндекс.Вебмастер</b> (<a href="https://webmaster.yandex.ru" target="_blank" rel="noopener">webmaster.yandex.ru</a>) — войдите в свою Яндекc-почту → «Добавить сайт» → укажите адрес. Яндекс покажет способ подтверждения «метатег»: скопируйте длинный код и вставьте в админке: <b>Настройки → блок «Продвижение» → «Подтверждение прав для Яндекса и Google» → код Яндекс.Вебмастера</b> → Сохранить. Вернитесь в Вебмастер и нажмите «Проверить».</li>
-      <li>Там же в Вебмастере: раздел «Индексирование → Карта сайта» — добавьте <kbd>https://flowers.interfood-catering.ru/sitemap.xml</kbd>. Теперь новые букеты будут попадать в поиск автоматически.</li>
-      <li><b>Google Search Console</b> (<a href="https://search.google.com/search-console" target="_blank" rel="noopener">search.google.com/search-console</a>) — «Добавить ресурс» → префикс URL → адрес сайта → способ «HTML-тег»: код в то же поле админки (строка Google). Прогресс по запросам видно в разделе «Эффективность».</li>
-      <li><b>Яндекс Бизнес</b> (<a href="https://business.yandex.ru" target="_blank" rel="noopener">business.yandex.ru</a>) — бесплатно: добавьте «Цветочный магазин Nilov Flowers» с адресом Полевая Сабировская 47 и телефоном, подтвердите адрес (придёт код). После подтверждения магазин с фото, отзывами и часами появится на Яндекс.Картах — по этому адресу ищут «цветы рядом».</li>
-      <li><b>Метрика</b>: счётчик включается в том же блоке «Продвижение» — просто номер из личного кабинета метрики. Покупателям согласия не мешаем: статистика пишется только после «Принять» в баннере cookie. Цель по заказам (ORDER_SUBMIT) уже настроена на сайте — в отчётах Метрики будете видеть суммы.</li>
-    </ol>
-    <p style="margin-top:6px;font-size:.82rem;color:#6E6A61">Ничего из этого не требует программиста. Порядок действий: 1 → 2 → 4 (карты важнее поиска для цветочного), 3 и 5 по желанию.</p>
-  </div>
+        <div class="fc-store">
+          <h2 class="fc-store__title">Оплата</h2>
+          <div class="fc-store__text help-text">
+            <p>Сейчас заказы принимаются в полном объёме, онлайн-оплата работает в тестовом режиме (без списания денег). Для боевой оплаты подключается ЮKassa — это делается один раз специалистом: понадобится shopId и секретный ключ из личного кабинета.</p>
+          </div>
+        </div>
 
-  <p style="text-align:center;margin-top:24px"><a class="btn-top" href="/admin/" style="color:#E2799C;font-weight:600">Открыть админ-панель →</a></p>
-</div>
+        <div class="fc-store">
+          <h2 class="fc-store__title">Продвижение: Яндекс и Google увидят сайт<span class="help-tag">один раз, 15 минут</span></h2>
+          <div class="fc-store__text help-text">
+            <p style="margin-bottom:6px">Сайт уже готов к подключению: карта сайта работает по адресу <kbd>/sitemap.xml</kbd>, роботы-файл настроен. Осталось подтвердить права — это бесплатные сервисы:</p>
+            <ol>
+              <li><b>Яндекс.Вебмастер</b> (<a href="https://webmaster.yandex.ru" target="_blank" rel="noopener">webmaster.yandex.ru</a>) — войдите в свою Яндекc-почту → «Добавить сайт» → укажите адрес. Яндекс покажет способ подтверждения «метатег»: скопируйте длинный код и вставьте в админке: <b>Настройки → блок «Продвижение» → «Подтверждение прав для Яндекса и Google» → код Яндекс.Вебмастера</b> → Сохранить. Вернитесь в Вебмастер и нажмите «Проверить».</li>
+              <li>Там же в Вебмастере: раздел «Индексирование → Карта сайта» — добавьте <kbd>https://flowers.interfood-catering.ru/sitemap.xml</kbd>. Теперь новые букеты будут попадать в поиск автоматически.</li>
+              <li><b>Google Search Console</b> (<a href="https://search.google.com/search-console" target="_blank" rel="noopener">search.google.com/search-console</a>) — «Добавить ресурс» → префикс URL → адрес сайта → способ «HTML-тег»: код в то же поле админки (строка Google). Прогресс по запросам видно в разделе «Эффективность».</li>
+              <li><b>Яндекс Бизнес</b> (<a href="https://business.yandex.ru" target="_blank" rel="noopener">business.yandex.ru</a>) — бесплатно: добавьте «Цветочный магазин Nilov Flowers» с адресом Полевая Сабировская 47 и телефоном, подтвердите адрес (придёт код). После подтверждения магазин с фото, отзывами и часами появится на Яндекс.Картах — по этому адресу ищут «цветы рядом».</li>
+              <li><b>Метрика</b>: счётчик включается в том же блоке «Продвижение» — просто номер из личного кабинета метрики. Покупателям согласия не мешаем: статистика пишется только после «Принять» в баннере cookie. Цель по заказам (ORDER_SUBMIT) уже настроена на сайте — в отчётах Метрики будете видеть суммы.</li>
+            </ol>
+            <p style="margin-top:6px;font-size:.82rem;color:var(--ink-muted)">Ничего из этого не требует программиста. Порядок действий: 1 → 2 → 4 (карты важнее поиска для цветочного), 3 и 5 по желанию.</p>
+          </div>
+        </div>
+      </div>
+
+      <p style="text-align:center;margin-top:28px"><a class="btn btn--accent" href="/admin/">Открыть админ-панель</a></p>
+    </div>
+  </section>
+</main>
+
+<?php require __DIR__ . '/partials/footer.php'; ?>
 </body>
 </html>

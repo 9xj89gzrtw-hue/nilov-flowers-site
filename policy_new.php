@@ -1,6 +1,7 @@
 <?php
 /* Страница «Политика обработки персональных данных».
-   Реквизиты — из настроек; пока не заполнены, честно сообщаем об этом. */
+   Реквизиты — из настроек; пока не заполнены, честно сообщаем об этом.
+   Редизайн 5cv (W96/T2-d): page-hero + prose (контент без изменений). */
 declare(strict_types=1);
 require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/db.php';
@@ -15,6 +16,7 @@ $legalContact = setting('legal_contact_email', '') !== '' ? setting('legal_conta
 $requisitesReady = $subjectType !== '' && $subjectName !== '' && $legalNumber !== '';
 $subjectLabel = $subjectType === 'ip' ?  'ИП' : ($subjectType === 'ooo' ?  'ООО' : '');
 $canonicalUrl = 'https://flowers.interfood-catering.ru/policy';
+$pageTitle = 'Политика обработки персональных данных — ' . setting('shop_name', 'Nilov Flowers');
 ?>
 <!DOCTYPE html>
 <html lang="ru">
@@ -27,17 +29,23 @@ $canonicalUrl = 'https://flowers.interfood-catering.ru/policy';
 <body>
 <?php require __DIR__ . '/partials/header.php'; ?>
 
-<main id="main" class="doc-page">
-  <div class="wrap doc-page__inner">
-    <h1 class="section-title">Политика обработки персональных данных</h1>
+<main id="main" tabindex="-1">
+  <section class="fc-section">
+    <div class="wrap">
+      <nav class="breadcrumbs" aria-label="Хлебные крошки">
+        <a href="/">Главная</a> / <span aria-current="page">Политика конфиденциальности</span>
+      </nav>
+      <div class="page-hero">
+        <h1 class="page-hero__title">Политика обработки персональных данных</h1>
+      </div>
 
-    <div class="doc-page__card">
+      <div class="prose">
       <h2>1. Общие положения</h2>
       <p>Настоящая политика обработки персональных данных составлена в соответствии с Федеральным законом №152-ФЗ «О персональных данных» и определяет порядок обработки персональных данных и меры по обеспечению их безопасности, предпринимаемые оператором.</p>
       <?php if ($requisitesReady): ?>
       <p>Оператор: <?= e($subjectName !== '' && str_starts_with($subjectName, $subjectLabel) ? $subjectName : ($subjectLabel !== '' ? $subjectLabel . ' ' . $subjectName : $subjectName)) ?><?= $legalNumber !== '' ? ', ' . e(($subjectType === 'ip' ?  'ОГРНИП ' : 'ОГРН ') . $legalNumber) : '' ?><?= setting('legal_inn', '') !== '' ? ', ИНН ' . e(setting('legal_inn')) : '' ?><?= $legalAddress !== '' ? ', адрес: ' . e($legalAddress) : '' ?>.</p>
       <?php else: ?>
-      <p class="doc-page__note">Реквизиты оператора ещё не внесены в настройках сайта.</p>
+      <p><em>Реквизиты оператора ещё не внесены в настройках сайта.</em></p>
       <?php endif; ?>
 
       <h2>2. Какие данные мы собираем</h2>
@@ -75,10 +83,11 @@ $canonicalUrl = 'https://flowers.interfood-catering.ru/policy';
       <p>Сайт использует технические cookie и localStorage, необходимые для работы корзины — они не требуют согласия. Аналитические cookie Яндекс.Метрики загружаются только после нажатия кнопки «Принять» в cookie-баннере. Вы можете отказаться: нажмите «Только необходимые» в баннере либо очистите cookie браузера — в этом случае Метрика не загрузится. Повторно изменить решение можно, удалив ключ <code>cookieConsent</code> в localStorage сайта.</p>
 
       <p style="margin-top:24px;font-size:.85rem;color:var(--ink-soft)">Дата последнего обновления политики: <?= date('d.m.Y') ?>.</p>
-    </div>
+      </div>
 
-    <p class="doc-page__back"><a href="/" class="btn btn--accent">Вернуться в магазин</a></p>
-  </div>
+      <p style="margin-top:28px"><a href="/" class="btn btn--accent">Вернуться в магазин</a></p>
+    </div>
+  </section>
 </main>
 
 <?php require __DIR__ . '/partials/footer.php'; ?>

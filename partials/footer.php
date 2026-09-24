@@ -59,7 +59,8 @@ $igDisclaimer = $igOn; /* пометку Meta показываем только 
 
 <nav class="mnav" aria-label="Мобильная навигация">
   <a href="/#catalog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-4.6-7-10a4.5 4.5 0 0 1 7-3.7A4.5 4.5 0 0 1 19 11c0 5.4-7 10-7 10z"/></svg>Каталог</a>
-  <a href="/#how-it-works"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Как работаем</a>
+  <?php /* W96 (5cv): «Как работаем» → «Поводы» (how-it-works на витрине больше нет) */ ?>
+  <a href="/#occasions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="2.6"/></svg>Поводы</a>
   <a href="/#contacts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.6 10.8c1.4 2.8 3.8 5.2 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.4c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.4 0 .8-.2 1L6.6 10.8z"/></svg>Контакты</a>
   <a href="/#order"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h13l-1.5 8.5H7.2L5 4H2"/><circle cx="8.5" cy="19" r="1.4"/><circle cx="14.5" cy="19" r="1.4"/></svg>Заказать</a>
 </nav>
@@ -115,6 +116,8 @@ $igDisclaimer = $igOn; /* пометку Meta показываем только 
 <script src="/js/cart-cta.js"></script>
 <script src="/js/order-form.js"></script>
 <script src="/js/catalog-filter.js"></script>
+<?php /* W96 (5cv): город-бар, карусели, чипы цен, поиск — поверх catalog-filter.js */ ?>
+<script src="/js/five.js"></script>
 <script src="/js/product-gallery.js"></script>
 <script src="/js/lightbox.js"></script>
 <script src="/js/lazy-images.js"></script>

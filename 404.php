@@ -1,38 +1,35 @@
 <?php
 /* Честный 404 (критик security: catch-all отдавал главную с 200 на /img/nope.png, /.env и пр.
-   — SEO-мусор и сокрытие роутинга). Статус 404 + понятная страница с выходом в магазин. */
+   — SEO-мусор и сокрытие роутинга). Статус 404 + понятная страница с выходом в магазин.
+   Редизайн 5cv (W96/T2-d): каркас сайта + центрированная карточка. */
 declare(strict_types=1);
 require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/util.php';
 
 http_response_code(404);
-$canonicalUrl = 'https://flowers.interfood-catering.ru/';
+$pageTitle = 'Страница не найдена — ' . setting('shop_name', 'Nilov Flowers');
 ?><!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,follow">
-<title>Страница не найдена — <?= e(setting('shop_name', 'Nilov Flowers')) ?></title>
-<link rel="icon" href="/img/favicon-32.png" sizes="32x32">
-<link rel="stylesheet" href="/css/fonts.css">
-<style>
-:root{--bg:#F6F1E6;--ink:#2B2D2F;--ink-soft:#6E6A61;--rose:#AE4A71;--font-display:'Playfair Display','Playfair Fallback',Georgia,serif;--font-ui:'Golos Text','Golos Fallback',system-ui,sans-serif}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--font-ui);background:var(--bg);color:var(--ink);min-height:100vh;display:grid;place-items:center;padding:24px;text-align:center}
-h1{font-family:var(--font-display);font-size:clamp(2.4rem,8vw,4.6rem);margin-bottom:.3em}
-p{color:var(--ink-soft);max-width:34ch;margin:0 auto 1.6rem;font-size:1rem}
-a.btn{display:inline-block;background:var(--rose);color:#fff;border-radius:999px;padding:14px 30px;font:600 .95rem var(--font-ui);text-decoration:none}
-a.btn:hover{background:#9E4062}
-:focus-visible{outline:2px solid var(--rose);outline-offset:2px}
-</style>
+<title><?= e($pageTitle) ?></title>
+<?php require __DIR__ . '/partials/head.php'; ?>
 </head>
 <body>
-  <div>
-    <h1>404</h1>
-    <p>Такой страницы нет. Зато свежие букеты — на главной.</p>
-    <a class="btn" href="/">В каталог</a>
-  </div>
+<?php require __DIR__ . '/partials/header.php'; ?>
+
+<main id="main" tabindex="-1">
+  <section class="fc-section">
+    <div class="wrap" style="max-width:560px;text-align:center">
+      <p aria-hidden="true" style="margin:0;font-weight:800;font-size:clamp(4.5rem,16vw,7.5rem);line-height:1;letter-spacing:-.04em;color:var(--pink)">404</p>
+      <h1 class="page-hero__title" style="margin-bottom:10px">Страница не найдена</h1>
+      <p class="section-sub" style="margin:0 auto 24px">Такой страницы нет. Зато свежие букеты — на главной.</p>
+      <a class="btn btn--accent" href="/">На главную</a>
+    </div>
+  </section>
+</main>
+
+<?php require __DIR__ . '/partials/footer.php'; ?>
 </body>
 </html>

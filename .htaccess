@@ -62,6 +62,9 @@ RewriteRule ^offer$ offer_new.php [L,QSA]
 RewriteRule ^policy$ policy_new.php [L,QSA]
 RewriteRule ^track$ track.php [L,QSA]
 
+# Помощь (W96: красивый URL вместо /help.php)
+RewriteRule ^help$ help.php [L,QSA]
+
 # Страница благодарности
 RewriteRule ^order-thanks$ order-thanks.php [L,QSA]
 

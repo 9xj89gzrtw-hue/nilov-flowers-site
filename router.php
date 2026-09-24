@@ -39,6 +39,11 @@ if ($path === '/track') {
     require __DIR__ . '/track.php';
     return true;
 }
+/* W96: /help — паритет с прод-ревайтом (.htaccess) */
+if ($path === '/help') {
+    require __DIR__ . '/help.php';
+    return true;
+}
 if ($path === '/api/payment/create') {
     require __DIR__ . '/api/payment-create.php';
     return true;

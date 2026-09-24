@@ -59,7 +59,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
         /* Hero-eyebrow (критерий 16, P2 аудита) */
         'hero_eyebrow',
         /* Порог бесплатной доставки (критерий 13/16): 0 = выключено */
-        'free_delivery_threshold'];
+        'free_delivery_threshold',
+        /* W96 (редизайн 5cv): тексты новых блоков витрины — город, hero-промо, чипы цен,
+           секции хитов/премиума/бюджета/допов, поводы, магазины, SEO-текст, журнал */
+        'citybar_text','city_label','search_placeholder','catalog_btn_text',
+        'hero_promo_badge','hero_promo_title','hero_promo_text','hero_promo_btn_text','hero_promo_link',
+        'hero_delivery_title','hero_delivery_text',
+        'chips_price_low','chips_price_high',
+        'section_hits_title','section_hits_sub','section_premium_title','section_premium_sub',
+        'section_budget_title','section_addons_title','badge_hit_text','badge_premium_text',
+        'occasions_title','stores_title','stores_sub',
+        'stores_1_title','stores_1_text','stores_2_title','stores_2_text','stores_3_title','stores_3_text',
+        'seo_text_title','seo_text_body',
+        'journal_title',
+        'journal_1_title','journal_1_text','journal_1_link',
+        'journal_2_title','journal_2_text','journal_2_link',
+        'journal_3_title','journal_3_text','journal_3_link'];
     $values = [];
     /* КЛАСС-ЗАЩИТА (критик-2): ключ из allowlist, которого нет в отправленной форме,
        НЕ должен затираеться пустотой. Текстовые поля: пишем только если ключ реально пришёл
@@ -75,6 +90,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
     foreach (['cookie_banner_text' => 260, 'cookie_accept_text' => 40, 'cookie_reject_text' => 40] as $rk => $rmax) {
         if (array_key_exists($rk, $values)) { $values[$rk] = sanitize_rich_text($values[$rk], $rmax); }
     }
+    /* W96 (5cv): SEO-текст витрины — rich-поле, как cookie-тексты (whitelist <a>, серверный clamp) */
+    if (array_key_exists('seo_text_body', $values)) { $values['seo_text_body'] = sanitize_rich_text($values['seo_text_body'], 5000); }
+    /* W96 (5cv): пороги чипов цен — целые числа строкой (settings — TEXT), только если ключ пришёл */
+    if (array_key_exists('chips_price_low', $_POST)) {
+        $values['chips_price_low'] = (string)max(0, (int)($_POST['chips_price_low'] ?? 3500));
+    }
+    if (array_key_exists('chips_price_high', $_POST)) {
+        $values['chips_price_high'] = (string)max(0, (int)($_POST['chips_price_high'] ?? 7000));
+    }
     /* Чекбоксы: 0 если снят (не пришёл), но ТОЛЬКО для реально отрендеренных в форме */
     foreach (['yk_enabled', 'upsell_enabled', 'hero_text_enabled', 'yandex_reviews_enabled',
               'wa_enabled', 'tg_enabled', 'vk_enabled', 'ig_enabled', 'email_enabled', 'max_enabled',
@@ -87,7 +111,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
               /* Промокод в корзине (критик functional top#3) */
               'feature_promo',
               /* Awwwards-design D8: блок «С этим берут» на странице товара */
-              'feature_related'] as $cb) {
+              'feature_related',
+              /* W96 (редизайн 5cv): новые блоки витрины — город, hero-промо, чипы, карусели,
+                 секции каталога, поводы, магазины, SEO-текст, журнал */
+              'feature_citybar', 'hero_promo_enabled', 'hero_delivery_card_enabled',
+              'feature_chips', 'feature_carousels',
+              'feature_section_hits', 'feature_section_premium', 'feature_section_budget', 'feature_section_addons',
+              'feature_occasions', 'feature_stores', 'feature_seotext', 'feature_journal'] as $cb) {
         if (!$cbTrackAll && !in_array($cb, $cbRendered, true)) { continue; } // не в форме — не трогаем
         $values[$cb] = isset($_POST[$cb]) ? '1' : '0';
     }
@@ -115,6 +145,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
     } elseif (isset($_POST['site_favicon_remove'])) {
         deleteImage(setting('site_favicon'), IMG_UPLOADS_DIR);
         $values['site_favicon'] = '';
+    }
+    /* W96 (5cv): обложки журнала — новый файл заменяет, чекбокс удаляет (паттерн favicon) */
+    foreach ([1, 2, 3] as $jn) {
+        $jimg = saveUpload($_FILES["journal_{$jn}_image"] ?? [], IMG_UPLOADS_DIR);
+        if ($jimg !== '') {
+            deleteImage(setting("journal_{$jn}_image"), IMG_UPLOADS_DIR);
+            $values["journal_{$jn}_image"] = $jimg;
+        } elseif (isset($_POST["journal_{$jn}_image_remove"])) {
+            deleteImage(setting("journal_{$jn}_image"), IMG_UPLOADS_DIR);
+            $values["journal_{$jn}_image"] = '';
+        }
     }
     saveSettings($values);
     flash('Настройки сохранены');
@@ -153,6 +194,7 @@ flash();
 <nav id="top-nav" class="dash-ranges settings-nav" aria-label="Разделы настроек">
   <a href="#s-common">Общие</a>
   <a href="#s-main">Главная</a>
+  <a href="#s-5cv">Витрина 5cv</a>
   <a href="#s-look">Вид</a>
   <a href="#s-features">Функции</a>
   <a href="#s-steps">Этапы</a>
@@ -304,6 +346,226 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
         <input class="input" id="ord-t" name="order_title" value="<?= sv('order_title', $s) !== '' ? sv('order_title', $s) : 'Оформление заказа' ?>" maxlength="40">
       </div>
     </div>
+  </div>
+
+  <?php /* W96 (редизайн 5cv): тексты и тумблеры новых блоков витрины */ ?>
+  <div class="card" id="s-5cv">
+    <h2 style="font-family:var(--font-display);font-size:1.2rem;margin-bottom:8px">Витрина 5cv (новый дизайн)</h2>
+    <p style="font-size:.85rem;color:var(--ink-soft);margin:0 0 14px">Блоки нового дизайна: бар города, hero-бенто с промо-карточкой, чипы цен, секции «Хиты» / «Премиум» / «До N ₽» / «Дополните букет», поводы, магазины, SEO-текст и журнал. Пустые тексты на сайте не показываются.</p>
+
+    <p style="font-size:.85rem;font-weight:600;margin:0 0 8px">Шапка и город</p>
+    <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+      <input type="checkbox" name="feature_citybar" style="width:auto" <?= sv('feature_citybar', $s) !== '0' ? 'checked' : '' ?>>
+      Полоска «Ваш город — Санкт-Петербург?» над шапкой
+    </label>
+    <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 10px 26px">Покупатель сразу видит город доставки — и не звонит уточнять.</p>
+    <div class="grid2">
+      <div>
+        <label class="f" for="cb-bar">Текст полоски города</label>
+        <input class="input" id="cb-bar" name="citybar_text" value="<?= sv('citybar_text', $s) !== '' ? sv('citybar_text', $s) : 'Ваш город — Санкт-Петербург?' ?>" maxlength="90">
+        <label class="f" for="cb-city" style="margin-top:8px">Название города в шапке</label>
+        <input class="input" id="cb-city" name="city_label" value="<?= sv('city_label', $s) !== '' ? sv('city_label', $s) : 'Санкт-Петербург' ?>" maxlength="40">
+      </div>
+      <div>
+        <label class="f" for="cb-search">Подсказка в строке поиска</label>
+        <input class="input" id="cb-search" name="search_placeholder" value="<?= sv('search_placeholder', $s) !== '' ? sv('search_placeholder', $s) : 'Розы, пионы, букет маме…' ?>" maxlength="60">
+        <label class="f" for="cb-cat" style="margin-top:8px">Текст кнопки «Каталог» в шапке</label>
+        <input class="input" id="cb-cat" name="catalog_btn_text" value="<?= sv('catalog_btn_text', $s) !== '' ? sv('catalog_btn_text', $s) : 'Каталог' ?>" maxlength="30">
+      </div>
+    </div>
+
+    <?php /* Hero-бенто: промо-карточка + карточка доставки */ ?>
+    <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
+    <p style="font-size:.85rem;font-weight:600;margin:0 0 8px">Hero-бенто: промо-карточка и доставка</p>
+    <div class="grid2">
+      <div>
+        <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+          <input type="checkbox" name="hero_promo_enabled" style="width:auto" <?= sv('hero_promo_enabled', $s) !== '0' ? 'checked' : '' ?>>
+          Жёлтая промо-карточка рядом с фото
+        </label>
+        <label class="f" for="hp-badge" style="margin-top:8px">Бейдж на промо-карточке</label>
+        <input class="input" id="hp-badge" name="hero_promo_badge" value="<?= sv('hero_promo_badge', $s) !== '' ? sv('hero_promo_badge', $s) : 'Выгодно' ?>" maxlength="30">
+        <label class="f" for="hp-title" style="margin-top:8px">Заголовок промо-карточки</label>
+        <input class="input" id="hp-title" name="hero_promo_title" value="<?= sv('hero_promo_title', $s) !== '' ? sv('hero_promo_title', $s) : 'Цветы по подписке' ?>" maxlength="80">
+        <label class="f" for="hp-text" style="margin-top:8px">Текст промо-карточки</label>
+        <textarea class="input" id="hp-text" name="hero_promo_text" rows="2" maxlength="200"><?= sv('hero_promo_text', $s) !== '' ? sv('hero_promo_text', $s) : 'Регулярные букеты со скидкой до 20% — освежайте дом или радуйте близких каждую неделю' ?></textarea>
+        <div style="display:flex;gap:12px;margin-top:8px">
+          <div style="flex:1">
+            <label class="f" for="hp-btn">Кнопка на карточке</label>
+            <input class="input" id="hp-btn" name="hero_promo_btn_text" value="<?= sv('hero_promo_btn_text', $s) !== '' ? sv('hero_promo_btn_text', $s) : 'Подробнее' ?>" maxlength="30">
+          </div>
+          <div style="flex:1">
+            <label class="f" for="hp-link">Ссылка кнопки</label>
+            <input class="input" id="hp-link" name="hero_promo_link" value="<?= sv('hero_promo_link', $s) !== '' ? sv('hero_promo_link', $s) : '#order' ?>" maxlength="200" placeholder="#order или /help">
+          </div>
+        </div>
+      </div>
+      <div>
+        <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+          <input type="checkbox" name="hero_delivery_card_enabled" style="width:auto" <?= sv('hero_delivery_card_enabled', $s) !== '0' ? 'checked' : '' ?>>
+          Карточка «Доставка 1–2 часа» в hero
+        </label>
+        <label class="f" for="hd-title" style="margin-top:8px">Заголовок карточки доставки</label>
+        <input class="input" id="hd-title" name="hero_delivery_title" value="<?= sv('hero_delivery_title', $s) !== '' ? sv('hero_delivery_title', $s) : 'Доставка 1–2 часа' ?>" maxlength="60">
+        <label class="f" for="hd-text" style="margin-top:8px">Текст карточки доставки</label>
+        <textarea class="input" id="hd-text" name="hero_delivery_text" rows="2" maxlength="160"><?= sv('hero_delivery_text', $s) !== '' ? sv('hero_delivery_text', $s) : 'По Санкт-Петербургу в день заказа — оформите до 20:00' ?></textarea>
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:8px 0 0">Ссылка кнопки промо-карточки: <code>#order</code> — к форме заказа, <code>#catalog</code> — к каталогу, или полный адрес страницы.</p>
+      </div>
+    </div>
+
+    <?php /* Чипы цен + карусели */ ?>
+    <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
+    <p style="font-size:.85rem;font-weight:600;margin:0 0 8px">Чипы цен и карусели</p>
+    <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+      <input type="checkbox" name="feature_chips" style="width:auto" <?= sv('feature_chips', $s) !== '0' ? 'checked' : '' ?>>
+      Чипы цен над каталогом (Хиты · До N · N–M · От M · Премиум)
+    </label>
+    <div class="grid2" style="margin-top:8px">
+      <div>
+        <label class="f" for="cp-low">«До …» — граница, ₽</label>
+        <input class="input" id="cp-low" name="chips_price_low" type="number" min="100" max="200000" step="100" value="<?= sv('chips_price_low', $s) !== '' ? sv('chips_price_low', $s) : '3500' ?>">
+      </div>
+      <div>
+        <label class="f" for="cp-high">«От …» — граница, ₽</label>
+        <input class="input" id="cp-high" name="chips_price_high" type="number" min="200" max="200000" step="100" value="<?= sv('chips_price_high', $s) !== '' ? sv('chips_price_high', $s) : '7000' ?>">
+      </div>
+    </div>
+    <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500;margin-top:10px">
+      <input type="checkbox" name="feature_carousels" style="width:auto" <?= sv('feature_carousels', $s) !== '0' ? 'checked' : '' ?>>
+      Стрелки-карусели у секций каталога
+    </label>
+
+    <?php /* Секции каталога */ ?>
+    <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
+    <p style="font-size:.85rem;font-weight:600;margin:0 0 8px">Секции каталога: Хиты, Премиум, Бюджет, Дополнения</p>
+    <div class="grid2">
+      <div>
+        <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+          <input type="checkbox" name="feature_section_hits" style="width:auto" <?= sv('feature_section_hits', $s) !== '0' ? 'checked' : '' ?>>
+          Секция «Хиты продаж»
+        </label>
+        <div style="margin-left:26px">
+          <label class="f" for="ht-t">Заголовок</label>
+          <input class="input" id="ht-t" name="section_hits_title" value="<?= sv('section_hits_title', $s) !== '' ? sv('section_hits_title', $s) : 'Хиты продаж' ?>" maxlength="60">
+          <label class="f" for="ht-s" style="margin-top:8px">Подпись</label>
+          <input class="input" id="ht-s" name="section_hits_sub" value="<?= sv('section_hits_sub', $s) !== '' ? sv('section_hits_sub', $s) : 'Букеты, которые выбирают чаще всего' ?>" maxlength="120">
+        </div>
+        <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500;margin-top:10px">
+          <input type="checkbox" name="feature_section_premium" style="width:auto" <?= sv('feature_section_premium', $s) !== '0' ? 'checked' : '' ?>>
+          Секция «Премиум»
+        </label>
+        <div style="margin-left:26px">
+          <label class="f" for="pm-t">Заголовок</label>
+          <input class="input" id="pm-t" name="section_premium_title" value="<?= sv('section_premium_title', $s) !== '' ? sv('section_premium_title', $s) : 'Премиум — для особого случая' ?>" maxlength="60">
+          <label class="f" for="pm-s" style="margin-top:8px">Подпись</label>
+          <input class="input" id="pm-s" name="section_premium_sub" value="<?= sv('section_premium_sub', $s) !== '' ? sv('section_premium_sub', $s) : 'Крупные композиции для торжественных поводов' ?>" maxlength="120">
+        </div>
+      </div>
+      <div>
+        <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+          <input type="checkbox" name="feature_section_budget" style="width:auto" <?= sv('feature_section_budget', $s) !== '0' ? 'checked' : '' ?>>
+          Секция «Букеты до N ₽»
+        </label>
+        <div style="margin-left:26px">
+          <label class="f" for="bg-t">Заголовок (%s — подставится граница чипа)</label>
+          <input class="input" id="bg-t" name="section_budget_title" value="<?= sv('section_budget_title', $s) !== '' ? sv('section_budget_title', $s) : 'Букеты до %s ₽' ?>" maxlength="60">
+        </div>
+        <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500;margin-top:10px">
+          <input type="checkbox" name="feature_section_addons" style="width:auto" <?= sv('feature_section_addons', $s) !== '0' ? 'checked' : '' ?>>
+          Секция «Дополните букет»
+        </label>
+        <div style="margin-left:26px">
+          <label class="f" for="ad-t">Заголовок</label>
+          <input class="input" id="ad-t" name="section_addons_title" value="<?= sv('section_addons_title', $s) !== '' ? sv('section_addons_title', $s) : 'Дополните букет 🎈' ?>" maxlength="60">
+        </div>
+        <label class="f" for="bd-hit" style="margin-top:10px">Текст бейджа «Хит» на карточке</label>
+        <input class="input" id="bd-hit" name="badge_hit_text" value="<?= sv('badge_hit_text', $s) !== '' ? sv('badge_hit_text', $s) : 'Хит' ?>" maxlength="20">
+        <label class="f" for="bd-prem" style="margin-top:8px">Текст бейджа «Премиум» на карточке</label>
+        <input class="input" id="bd-prem" name="badge_premium_text" value="<?= sv('badge_premium_text', $s) !== '' ? sv('badge_premium_text', $s) : 'Премиум' ?>" maxlength="20">
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:8px 0 0">Товары попадают в секции галочками «Хит продаж» и «Премиум» в разделе «Товары».</p>
+      </div>
+    </div>
+
+    <?php /* Поводы, магазины, SEO-текст */ ?>
+    <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
+    <p style="font-size:.85rem;font-weight:600;margin:0 0 8px">Поводы, магазины, SEO-текст</p>
+    <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+      <input type="checkbox" name="feature_occasions" style="width:auto" <?= sv('feature_occasions', $s) !== '0' ? 'checked' : '' ?>>
+      Плитки «Цветы по поводу»
+    </label>
+    <div style="margin-left:26px">
+      <label class="f" for="oc-t">Заголовок блока поводов</label>
+      <input class="input" id="oc-t" name="occasions_title" value="<?= sv('occasions_title', $s) !== '' ? sv('occasions_title', $s) : 'Цветы по поводу' ?>" maxlength="60">
+      <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Сами плитки-поводы и их лендинги настраиваются в разделе «Поводы».</p>
+    </div>
+    <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500;margin-top:10px">
+      <input type="checkbox" name="feature_stores" style="width:auto" <?= sv('feature_stores', $s) === '1' ? 'checked' : '' ?>>
+      Секция «Наши магазины»
+    </label>
+    <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 8px 26px">Показываются только заполненные магазины — пустые карточки не выводятся.</p>
+    <div class="grid2">
+      <div>
+        <label class="f" for="st-t">Заголовок секции магазинов</label>
+        <input class="input" id="st-t" name="stores_title" value="<?= sv('stores_title', $s) !== '' ? sv('stores_title', $s) : 'Наши магазины в Петербурге' ?>" maxlength="60">
+        <label class="f" for="st-s" style="margin-top:8px">Подпись</label>
+        <input class="input" id="st-s" name="stores_sub" value="<?= sv('stores_sub', $s) !== '' ? sv('stores_sub', $s) : 'Заберите сами или закажите доставку — букет будет готов в течение дня' ?>" maxlength="140">
+      </div>
+      <div>
+        <?php for ($stn = 1; $stn <= 3; $stn++): ?>
+        <label class="f" for="st-<?= $stn ?>-t">Магазин <?= $stn ?> — название</label>
+        <input class="input" id="st-<?= $stn ?>-t" name="stores_<?= $stn ?>_title" value="<?= sv("stores_{$stn}_title", $s) ?>" maxlength="80" placeholder="напр. Невский проспект">
+        <label class="f" for="st-<?= $stn ?>-x" style="margin-top:8px">Магазин <?= $stn ?> — адрес и часы</label>
+        <input class="input" id="st-<?= $stn ?>-x" name="stores_<?= $stn ?>_text" value="<?= sv("stores_{$stn}_text", $s) ?>" maxlength="160" placeholder="напр. Невский пр., 100 · ежедневно 9:00–21:00">
+        <?php endfor; ?>
+      </div>
+    </div>
+    <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500;margin-top:10px">
+      <input type="checkbox" name="feature_seotext" style="width:auto" <?= sv('feature_seotext', $s) !== '0' ? 'checked' : '' ?>>
+      SEO-текст под каталогом
+    </label>
+    <label class="f" for="seo-5cv-t">Заголовок SEO-блока</label>
+    <input class="input" id="seo-5cv-t" name="seo_text_title" value="<?= sv('seo_text_title', $s) !== '' ? sv('seo_text_title', $s) : 'Доставка цветов в Санкт-Петербурге' ?>" maxlength="120">
+    <label class="f" for="seo-5cv-b" style="margin-top:8px">Текст (абзацы — через пустую строку)</label>
+    <textarea class="input" id="seo-5cv-b" name="seo_text_body" rows="8"><?= sv('seo_text_body', $s) ?></textarea>
+    <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Честный текст про зоны, сроки, свежесть и оплату помогает поисковикам. Разрешены ссылки вида <code>&lt;a href="/help"&gt;…&lt;/a&gt;</code> — как в тексте cookie-окна.</p>
+
+    <?php /* Журнал */ ?>
+    <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
+    <p style="font-size:.85rem;font-weight:600;margin:0 0 8px">Журнал (карточки статей)</p>
+    <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+      <input type="checkbox" name="feature_journal" style="width:auto" <?= sv('feature_journal', $s) === '1' ? 'checked' : '' ?>>
+      Блок «Журнал» на главной
+    </label>
+    <div style="margin-left:26px">
+      <label class="f" for="jr-t">Заголовок блока</label>
+      <input class="input" id="jr-t" name="journal_title" value="<?= sv('journal_title', $s) !== '' ? sv('journal_title', $s) : 'Журнал Nilov Flowers' ?>" maxlength="80">
+    </div>
+    <?php for ($jr = 1; $jr <= 3; $jr++): ?>
+    <div class="grid2" style="margin-top:12px">
+      <div>
+        <label class="f" for="jr<?= $jr ?>-t">Статья <?= $jr ?> — заголовок</label>
+        <input class="input" id="jr<?= $jr ?>-t" name="journal_<?= $jr ?>_title" value="<?= sv("journal_{$jr}_title", $s) ?>" maxlength="120">
+        <label class="f" for="jr<?= $jr ?>-x" style="margin-top:8px">Статья <?= $jr ?> — короткий текст</label>
+        <input class="input" id="jr<?= $jr ?>-x" name="journal_<?= $jr ?>_text" value="<?= sv("journal_{$jr}_text", $s) ?>" maxlength="300">
+      </div>
+      <div>
+        <label class="f" for="jr<?= $jr ?>-l">Статья <?= $jr ?> — ссылка</label>
+        <input class="input" id="jr<?= $jr ?>-l" name="journal_<?= $jr ?>_link" value="<?= sv("journal_{$jr}_link", $s) ?>" maxlength="200" placeholder="/help или https://…">
+        <label class="f" for="jr<?= $jr ?>-img" style="margin-top:8px">Статья <?= $jr ?> — обложка</label>
+        <input class="input" id="jr<?= $jr ?>-img" name="journal_<?= $jr ?>_image" type="file" accept="image/*">
+        <?php if (($s["journal_{$jr}_image"] ?? '') !== ''): ?>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
+            <img class="thumb" style="width:64px;height:48px;object-fit:cover" src="/img/uploads/<?= e($s["journal_{$jr}_image"]) ?>" alt="Обложка статьи <?= $jr ?>">
+            <label class="f" style="display:flex;gap:6px;align-items:center;font-weight:400;font-size:.85rem;margin:0">
+              <input type="checkbox" name="journal_<?= $jr ?>_image_remove" value="1" style="width:auto">
+              Удалить обложку
+            </label>
+          </div>
+        <?php endif; ?>
+      </div>
+    </div>
+    <?php endfor; ?>
+    <p style="font-size:.78rem;color:var(--ink-soft);margin:8px 0 0">Пустые статьи не показываются — заполните только нужные. Новая обложка заменяет старую.</p>
   </div>
 
   <div class="card" id="s-look">

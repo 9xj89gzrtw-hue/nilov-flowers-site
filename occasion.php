@@ -1,7 +1,8 @@
 <?php
 /* Occasion-лендинги (SEO-критик 4/10 critical#2: не было страниц под intent-запросы
    «свадебные букеты спб» / «букет на день рождения» / «траурные композиции»).
-   Контент и тумблер active — в админке (критерии 14/33). */
+   Контент и тумблер active — в админке (критерии 14/33).
+   Редизайн 5cv (W96/T2-d): page-hero + карточки как на витрине + fc-faq. */
 declare(strict_types=1);
 require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/db.php';
@@ -19,8 +20,10 @@ if (!$oc) {
     require __DIR__ . '/partials/head.php';
     echo '<title>' . e($pageTitle) . '</title></head><body>';
     require __DIR__ . '/partials/header.php';
-    echo '<main id="main"><section class="section"><div class="wrap"><h1 class="section-title">Такой страницы нет</h1>'
-        . '<p class="section-sub">Зато свежие букеты — <a href="/#catalog">в каталоге</a>.</p></div></section></main>';
+    echo '<main id="main" tabindex="-1"><section class="fc-section"><div class="wrap" style="max-width:560px;text-align:center">'
+        . '<h1 class="page-hero__title">Такой страницы нет</h1>'
+        . '<p class="section-sub" style="margin:0 auto 24px">Зато свежие букеты — в каталоге.</p>'
+        . '<a class="btn btn--accent" href="/#catalog">В каталог</a></div></section></main>';
     require __DIR__ . '/partials/footer.php';
     echo '</body></html>';
     exit;
@@ -45,6 +48,58 @@ foreach ([['faq_q1', 'faq_a1'], ['faq_q2', 'faq_a2']] as [$qk, $ak]) {
     $a = trim((string)$oc[$ak]);
     if ($q !== '' && $a !== '') { $faq[] = ['q' => $q, 'a' => $a]; }
 }
+
+/* Карточка подборки — как на витрине (бейджи «Хит/Премиум/Скидка» + «+» в корзину) */
+function render_occasion_card(array $p): void
+{
+    $price = productPrice($p);
+    $isSale = $price !== (int)$p['price'];
+    $isHit = (int)($p['is_hit'] ?? 0) === 1;
+    $isPremium = (int)($p['is_premium'] ?? 0) === 1;
+    $isUrgent = (int)($p['is_urgent'] ?? 0) === 1;
+    $file = productImageFile($p);
+    $img = $file !== '' ? '/img/products/' . rawurlencode($file) : '';
+    $webp = '';
+    if ($img !== '') {
+        $w = preg_replace('/\.(jpe?g|png)$/i', '.webp', urldecode($img));
+        $webp = $w !== $img && is_file(BASE_PATH . $w) ? $w : '';
+    }
+    $link = '/product/' . rawurlencode($p['slug']);
+    ?>
+        <article class="product-card">
+          <div class="product-card__media">
+            <a class="product-card__media-link" href="<?= e($link) ?>" aria-label="<?= e($p['name']) ?>">
+              <picture>
+                <?php if ($webp !== ''): ?><source type="image/webp" srcset="<?= e($webp) ?>"><?php endif; ?>
+                <img class="product-card__img" src="<?= e($img) ?>" alt="<?= e($p['name']) ?>" loading="lazy" decoding="async">
+              </picture>
+            </a>
+            <?php if ($isSale): $offPct = (int)$p['price'] > 0 ? (int)round((1 - $price / (int)$p['price']) * 100) : 0; ?><span class="product-card__badge product-card__badge--sale"><?= e(setting('badge_sale_text', 'Акционная цена')) ?><?php if ($offPct > 0): ?> −<?= $offPct ?>%<?php endif; ?></span><?php endif; ?>
+            <?php if ($isUrgent): ?><span class="product-card__badge product-card__badge--urgent"><?= e(setting('badge_urgent_text', 'Успеть сегодня')) ?></span><?php endif; ?>
+            <?php if ($isHit): ?><span class="product-card__badge product-card__badge--hit"><?= e(setting('badge_hit_text', 'Хит')) ?></span><?php endif; ?>
+            <?php if ($isPremium): ?><span class="product-card__badge product-card__badge--premium"><?= e(setting('badge_premium_text', 'Премиум')) ?></span><?php endif; ?>
+            <button type="button" class="product-card__cta" data-order-cta
+              data-product-id="<?= (int)$p['id'] ?>"
+              data-product-name="<?= e($p['name']) ?>"
+              data-product-price-raw="<?= $price ?>"
+              data-product-image="<?= e($img) ?>"
+              aria-label="Добавить в корзину: <?= e($p['name']) ?>" title="В корзину">+</button>
+          </div>
+          <div class="product-card__body">
+            <a class="product-card__name" href="<?= e($link) ?>"><?= e($p['name']) ?></a>
+            <p class="product-card__price">
+              <?php if ($isSale): ?>
+                <span class="product-card__price--old"><?= formatPrice((int)$p['price']) ?></span>
+                <span class="product-card__price--discount"><?= formatPrice($price) ?></span>
+              <?php else: ?>
+                <?= formatPrice($price) ?>
+              <?php endif; ?>
+            </p>
+          </div>
+        </article>
+    <?php
+}
+$pageTitle = $metaTitle;
 ?><!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -72,62 +127,45 @@ foreach ([['faq_q1', 'faq_a1'], ['faq_q2', 'faq_a2']] as [$qk, $ak]) {
 </head>
 <body>
 <?php require __DIR__ . '/partials/header.php'; ?>
-<main id="main">
-  <section class="section" style="padding-top:34px">
-    <div class="wrap" style="max-width:880px">
+<main id="main" tabindex="-1">
+  <section class="fc-section">
+    <div class="wrap">
       <nav class="breadcrumbs" aria-label="Хлебные крошки">
-        <ol>
-          <li><a href="/">Главная</a></li>
-          <li><a href="/#catalog">Каталог</a></li>
-          <li aria-current="page"><?= e($oc['title']) ?></li>
-        </ol>
+        <a href="/">Главная</a> / <a href="/#catalog">Каталог</a> / <span aria-current="page"><?= e($oc['title']) ?></span>
       </nav>
-      <h1 class="section-title"><?= e($oc['title']) ?></h1>
-      <p class="section-sub" style="max-width:720px"><?= e($oc['intro']) ?></p>
+      <div class="page-hero">
+        <h1 class="page-hero__title"><?= e($oc['title']) ?></h1>
+        <p class="section-sub"><?= e($oc['intro']) ?></p>
+      </div>
 
       <?php if ($products !== []): ?>
-      <div class="catalog__grid" style="margin-top:8px">
-        <?php foreach ($products as $p): $price = productPrice($p); $img = '/img/products/' . rawurlencode(productImageFile($p)); ?>
-        <article class="product-card">
-          <div class="product-card__media">
-            <a class="product-card__media-link" href="/product/<?= e($p['slug']) ?>" aria-label="<?= e($p['name']) ?>">
-              <picture>
-                <?php $webp = preg_replace('/\.(jpe?g|png)$/i', '.webp', urldecode($img)); ?>
-                <?php if ($webp !== $img && is_file(BASE_PATH . $webp)): ?><source type="image/webp" srcset="<?= e($webp) ?>"><?php endif; ?>
-                <img class="product-card__img" src="<?= e($img) ?>" alt="<?= e($p['name']) ?>" loading="lazy" decoding="async">
-              </picture>
-            </a>
-            <button type="button" class="product-card__cta" data-order-cta
-              data-product-id="<?= (int)$p['id'] ?>"
-              data-product-name="<?= e($p['name']) ?>"
-              data-product-price-raw="<?= $price ?>"
-              data-product-image="<?= e($img) ?>"
-              aria-label="Добавить в корзину: <?= e($p['name']) ?>" title="В корзину">+</button>
-          </div>
-          <div class="product-card__body">
-            <a class="product-card__name" href="/product/<?= e($p['slug']) ?>"><?= e($p['name']) ?></a>
-            <p class="product-card__price"><?= formatPrice($price) ?></p>
-          </div>
-        </article>
-        <?php endforeach; ?>
+      <div class="catalog__grid">
+        <?php foreach ($products as $p) { render_occasion_card($p); } ?>
       </div>
       <?php endif; ?>
+    </div>
+  </section>
 
-      <?php if ($oc['body'] !== ''): ?>
-      <div style="margin-top:26px;font-size:1rem;line-height:1.65"><?= nl2br(e($oc['body'])) ?></div>
-      <?php endif; ?>
+  <?php if ($oc['body'] !== ''): ?>
+  <section class="fc-section fc-section--subtle">
+    <div class="wrap"><div class="prose"><?= nl2br(e($oc['body'])) ?></div></div>
+  </section>
+  <?php endif; ?>
 
+  <section class="fc-section">
+    <div class="wrap" style="max-width:760px">
       <?php if ($faq !== []): ?>
-      <h2 class="section-title" style="font-size:clamp(1.3rem,2.6vw,1.7rem);margin-top:36px">Частые вопросы</h2>
+      <h2 class="section-title"><?= e(setting('faq_title', 'Частые вопросы')) ?></h2>
+      <div class="fc-faq">
       <?php foreach ($faq as $f): ?>
-      <details class="faq-item" style="margin-top:10px">
+      <details class="faq-item">
         <summary class="faq-item__q"><?= e($f['q']) ?></summary>
         <p class="faq-item__a"><?= e($f['a']) ?></p>
       </details>
       <?php endforeach; ?>
+      </div>
       <?php endif; ?>
-
-      <p style="margin-top:32px;display:flex;gap:10px;flex-wrap:wrap">
+      <p style="margin-top:<?= $faq !== [] ? '32' : '0' ?>px;display:flex;gap:10px;flex-wrap:wrap">
         <a class="btn btn--accent" href="/#order">Заказать с доставкой сегодня</a>
         <a class="btn btn--outline" href="/#catalog">Весь каталог</a>
       </p>
@@ -135,3 +173,5 @@ foreach ([['faq_q1', 'faq_a1'], ['faq_q2', 'faq_a2']] as [$qk, $ak]) {
   </section>
 </main>
 <?php require __DIR__ . '/partials/footer.php'; ?>
+</body>
+</html>

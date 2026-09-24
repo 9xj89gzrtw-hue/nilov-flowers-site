@@ -1,15 +1,15 @@
 <?php
-/* Шапка витрины. Настройки читает напрямую из settings (shop_name, shop_phone, shop_address). */
+/* Шапка витрины (редизайн 5cv, W96): логотип-цветок, кнопка «Каталог», поиск,
+   город, телефон, иконки избранного и корзины. JS-контракты сохранены:
+   #cartToggle/#cartCount (cart-ui.js), #fcSearch (js/five.js). */
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/util.php';
 
 $siteName = setting('shop_name', 'Nilov Flowers');
 $phone = setting('shop_phone', '');
-$address = setting('shop_address', '');
-/* C2: короткие контакты для шапки (пусто → полные из shop_phone/shop_address; совсем пусто → скрыть) */
+/* C2: короткий телефон для шапки (пусто → полный shop_phone; совсем пусто → скрыть) */
 $headerPhone = setting('header_phone', '') !== '' ? setting('header_phone', '') : $phone;
-$headerAddress = setting('header_address', '') !== '' ? setting('header_address', '') : $address;
 /* Режим корзины (settings → cart_mode): drawer | hybrid | page.
    drawer — панель открывается сама при добавлении и по клику на иконку;
    hybrid — только по клику на иконку; page — иконка ведёт к форме заказа. */
@@ -19,31 +19,48 @@ $cartMode = in_array(setting('cart_mode', 'drawer'), ['drawer', 'hybrid', 'page'
 <?php /* a11y-критик re-check: skip-link в общем header.php — есть на каждой витрина-странице
    (home, product, offer, policy, track), а не только на главной */ ?>
 <a class="skip-link" href="#main">Перейти к содержимому</a>
-<header class="site-header">
-  <div class="wrap">
-    <a href="/" class="site-logo">
+<header class="fc-header">
+  <div class="wrap fc-header__inner">
+    <a href="/" class="fc-header__logo">
       <?php /* Логотип-картинка: показывать, только если загружен И включён тумблером (критерий 23). */ ?>
-      <?php if (setting('logo_image') !== '' && setting('logo_enabled', '1') === '1'): ?><img class="site-logo__img" src="/img/uploads/<?= e(setting('logo_image')) ?>" alt=""><?php endif; ?>
+      <?php if (setting('logo_image') !== '' && setting('logo_enabled', '1') === '1'): ?><img class="fc-header__logo-img" src="/img/uploads/<?= e(setting('logo_image')) ?>" alt="<?= e($siteName) ?>"><?php else: ?>
+        <?php /* Фолбэк: простой 5-лепестковый цветок (розовые лепестки + янтарная сердцевина) */ ?>
+        <svg class="fc-header__logo-flower" width="28" height="28" viewBox="0 0 32 32" style="color:var(--pink,#ff4ea2)" aria-hidden="true">
+          <ellipse cx="16" cy="9.5" rx="4.6" ry="7.2" fill="currentColor"/>
+          <ellipse cx="16" cy="9.5" rx="4.6" ry="7.2" fill="currentColor" transform="rotate(72 16 16)"/>
+          <ellipse cx="16" cy="9.5" rx="4.6" ry="7.2" fill="currentColor" transform="rotate(144 16 16)"/>
+          <ellipse cx="16" cy="9.5" rx="4.6" ry="7.2" fill="currentColor" transform="rotate(216 16 16)"/>
+          <ellipse cx="16" cy="9.5" rx="4.6" ry="7.2" fill="currentColor" transform="rotate(288 16 16)"/>
+          <circle cx="16" cy="16" r="3.2" style="fill:var(--amber,#f5b301)"/>
+        </svg>
+      <?php endif; ?>
       <span><?= e($siteName) ?></span>
     </a>
-    <div class="site-header__contact">
-      <?php if ($headerPhone !== ''): ?><a href="tel:+<?= e(preg_replace('/\D/', '', $headerPhone)) ?>" class="site-header__contact-phone"><?= e($headerPhone) ?></a><?php endif; ?>
-      <?php if ($headerAddress !== ''): ?><span><?= e($headerAddress) ?></span><?php endif; ?>
-    </div>
-    <nav class="site-nav">
-      <a href="/#catalog">Каталог</a>
-      <a href="/#how-it-works">Как работаем</a>
-      <a href="/#order">Заказать</a>
-      <?php /* Критик-покупатель B7: на мобильном телефон должен быть в шапке, не только в футере */ ?>
-      <?php if ($headerPhone !== ''): ?>
-      <a href="tel:+<?= e(preg_replace('/\D/', '', $headerPhone)) ?>" class="site-header__call" aria-label="Позвонить нам: <?= e($headerPhone) ?>">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.6 10.8c1.4 2.8 3.8 5.2 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.4c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.4 0 .8-.2 1L6.6 10.8z"/></svg>
+    <?php /* Кнопка «Каталог» — обычный якорь на #catalog (JS не нужен); текст в span — на мобиле CSS прячет */ ?>
+    <a class="fc-catalog-btn" href="#catalog">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.6"/><rect x="14" y="3" width="7" height="7" rx="1.6"/><rect x="3" y="14" width="7" height="7" rx="1.6"/><rect x="14" y="14" width="7" height="7" rx="1.6"/></svg>
+      <span><?= e(setting('catalog_btn_text', 'Каталог')) ?></span>
+    </a>
+    <?php /* Поиск по каталогу: живая фильтрация в js/five.js, никаких внешних скриптов */ ?>
+    <form class="fc-search" role="search" action="#catalog">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input type="search" id="fcSearch" name="q" placeholder="<?= e(setting('search_placeholder', 'Розы, пионы, букет маме…')) ?>" aria-label="Поиск по букетам">
+    </form>
+    <span class="fc-header__city">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="2.6"/></svg>
+      <?= e(setting('city_label', 'Санкт-Петербург')) ?>
+    </span>
+    <?php if ($headerPhone !== ''): ?><a class="fc-header__phone" href="tel:+<?= e(preg_replace('/\D/', '', $headerPhone)) ?>"><?= e($headerPhone) ?></a><?php endif; ?>
+    <div class="fc-header__icons">
+      <?php /* Избранное живёт в каталоге (сердечки на карточках) — ведём туда */ ?>
+      <a class="fc-header__icon" href="#catalog" aria-label="Избранное — в каталоге">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-4.6-7-10a4.5 4.5 0 0 1 7-3.7A4.5 4.5 0 0 1 19 11c0 5.4-7 10-7 10z"/></svg>
       </a>
-      <?php endif; ?>
+      <?php /* Кнопка корзины — контракт cart-ui.js, разметку не меняем (CSS перекрасит) */ ?>
       <button type="button" class="cart-toggle" id="cartToggle" data-cart-mode="<?= e($cartMode) ?>" aria-label="Корзина" aria-haspopup="dialog" aria-expanded="false">
         <svg class="cart-toggle__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/><path d="M2.5 3h2l2.6 12.4a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 2-1.6L21 7H6"/></svg>
         <span class="cart-toggle__count" id="cartCount" hidden>0</span>
       </button>
-    </nav>
+    </div>
   </div>
 </header>

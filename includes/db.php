@@ -90,13 +90,32 @@ function seedDatabase(PDO $pdo): void
         CREATE INDEX IF NOT EXISTS idx_items_order ON order_items(order_id);
     ");
 
+    /* Демо-каталог W96 (дизайн 5cv): категории под секции-карусели витрины.
+       Владелец заменит товары через админку — сид только для свежих БД. */
     $pdo->exec("INSERT INTO categories (name, sort) VALUES
-        ('Розы', 10), ('Сборные букеты', 20), ('Полевые цветы', 30)");
+        ('Розы', 10), ('Сборные букеты', 20), ('Полевые цветы', 30),
+        ('Авторские букеты', 40), ('В шляпной коробке', 50), ('Сладкие подарки', 60)");
 
-    $pdo->exec("INSERT INTO products (category_id, name, slug, price, sale_price, description, sort) VALUES
-        (1, 'Букет из роз', 'buket-iz-roz', 2500, NULL, 'Классический букет из свежих роз с утренней поставки.', 10),
-        (2, 'Весенний этюд', 'vesennij-etyud', 2500, 2100, 'Нежный сборный букет в весенней палитре.', 20),
-        (3, 'Полевые цветы', 'polevye-tsvety', 2100, NULL, 'Лёгкий букет из полевых цветов — просто и со вкусом.', 30)");
+    /* Демо-товары с флагами hit/premium/upsell — секции «Хиты»/«Премиум»/«Дополните букет»
+       сразу живые. Фото gen*.jpg лежат в img/products (локальный дев-набор). */
+    $pdo->exec("INSERT INTO products (category_id, name, slug, price, sale_price, description, image, is_hit, is_premium, show_in_upsell, sort) VALUES
+        (1, 'Букет из роз', 'buket-iz-roz', 2500, NULL, 'Классический букет из свежих роз с утренней поставки.', 'roz.jpg', 1, 0, 0, 10),
+        (2, 'Весенний этюд', 'vesennij-etyud', 2500, 2100, 'Нежный сборный букет в весенней палитре.', 'p2.jpg', 0, 0, 0, 20),
+        (3, 'Полевые цветы', 'polevye-tsvety', 2100, NULL, 'Лёгкий букет из полевых цветов — просто и со вкусом.', 'p3.jpg', 0, 0, 0, 30),
+        (2, 'Букет живых цветов из 7 альстромерий микс', 'buket-7-alstromerii-miks', 2900, NULL, 'Нежный микс альстромерий в пастельной гамме — лёгкий букет на каждый день.', 'gen7.jpg', 1, 0, 0, 40),
+        (1, 'Букет из 19 красных роз с эвкалиптом', 'buket-19-roz-evkalipt', 4900, NULL, 'Эквадорские розы 50 см с эвкалиптом — классика для яркого признания.', 'gen8.jpg', 1, 0, 0, 50),
+        (4, 'Букет из 51 розового пиона', 'buket-51-pion', 11900, NULL, 'Пышные розовые пионы в нежной обёртке — вау-эффект для особого случая.', 'gen9.jpg', 0, 1, 0, 60),
+        (5, 'Гортензии микс в шляпной коробке', 'gortenzii-shlyapnaya-korobka', 8900, NULL, 'Белые и голубые гортензии в круглой коробке — статусный подарок.', 'gen10.jpg', 0, 1, 0, 70),
+        (1, 'Букет из 5 розовых роз, Эквадор', 'buket-5-rozovyh-roz', 2300, NULL, 'Компактный букет из 5 роз — маленький знак внимания без повода.', 'gen11.jpg', 0, 0, 0, 80),
+        (6, 'Мини-набор клубники в шоколаде', 'klubnika-shokolad-mini', 990, NULL, 'Клубника в бельгийском шоколаде — сладкое дополнение к букету.', 'gen12.jpg', 0, 0, 1, 90),
+        (5, '9 красных роз в шляпной коробке', '9-roz-shlyapnaya-korobka', 5500, NULL, 'Классические красные розы в стильной круглой коробке с гипсофилой.', 'gen13.jpg', 1, 0, 0, 100),
+        (2, 'Весенний букет из тюльпанов', 'vesennij-buket-tyulpany', 1900, NULL, 'Яркий весенний микс тюльпанов и нарциссов в крафте.', 'gen14.jpg', 0, 0, 0, 110),
+        (2, 'Авторский букет «Розовое облако»', 'avtorskij-rozovoe-oblako', 4200, NULL, 'Монобукет в розовой гамме — собран нашим флористом утром.', 'gen1.jpg', 1, 0, 0, 120),
+        (2, 'Букет «Белая нежность»', 'buket-belaya-nezhnost', 3500, NULL, 'Белые и кремовые цветы с эвкалиптом — спокойная элегантность.', 'gen2.jpg', 0, 0, 0, 130),
+        (4, 'Пионовидная классика', 'pionovidnaya-klassika', 6800, NULL, 'Крупные пионовидные розы — букет, который запомнится.', 'gen3.jpg', 0, 1, 0, 140),
+        (2, 'Солнечный микс', 'solnechnyj-miks', 2700, 2200, 'Жёлто-оранжевая гамма — букет-заряд бодрости.', 'gen4.jpg', 0, 0, 0, 150),
+        (1, 'Красный акцент', 'krasnyj-akcent', 3800, NULL, 'Красные розы с зеленью — уместно всегда.', 'gen5.jpg', 0, 0, 0, 160),
+        (2, 'Романтика', 'romantika', 3100, 2700, 'Пастельный букет с гипсофилой — нежность в каждой детали.', 'gen6.jpg', 0, 0, 0, 170)");
 
     $pdo->exec("INSERT INTO settings (key, value) VALUES
         ('shop_name', 'Nilov Flowers'),
@@ -376,5 +395,95 @@ function migrateSchema(PDO $pdo): void
     $ordCols2 = array_column($pdo->query("PRAGMA table_info(orders)")->fetchAll(), 'name');
     if (!in_array('consent_log', $ordCols2, true)) {
         $pdo->exec("ALTER TABLE orders ADD COLUMN consent_log TEXT NOT NULL DEFAULT ''");
+    }
+    /* W96 (редизайн 5cv): бейджи карточек — «Хит продаж» и «Премиум» (секции витрины) */
+    $prodCols3 = array_column($pdo->query("PRAGMA table_info(products)")->fetchAll(), 'name');
+    if (!in_array('is_hit', $prodCols3, true)) {
+        $pdo->exec('ALTER TABLE products ADD COLUMN is_hit INTEGER NOT NULL DEFAULT 0');
+    }
+    if (!in_array('is_premium', $prodCols3, true)) {
+        $pdo->exec('ALTER TABLE products ADD COLUMN is_premium INTEGER NOT NULL DEFAULT 0');
+    }
+    /* W96 (редизайн 5cv): тексты/тумблеры новых блоков — бар города, hero-промо, чипы цен,
+       секции хитов/премиума/бюджета/допов, поводы, магазины, SEO-текст, журнал.
+       Пустые строки = карточка/блок не показывается, пока владелец не заполнит
+       (магазины и журнал по умолчанию выключены). Числовые пороги — строками (settings — TEXT). */
+    $pdo->exec("INSERT OR IGNORE INTO settings (key, value) VALUES
+        ('feature_citybar', '1'),
+        ('citybar_text', 'Ваш город — Санкт-Петербург?'),
+        ('city_label', 'Санкт-Петербург'),
+        ('search_placeholder', 'Розы, пионы, букет маме…'),
+        ('catalog_btn_text', 'Каталог'),
+        ('hero_promo_enabled', '1'),
+        ('hero_promo_badge', 'Выгодно'),
+        ('hero_promo_title', 'Цветы по подписке'),
+        ('hero_promo_text', 'Регулярные букеты со скидкой до 20% — освежайте дом или радуйте близких каждую неделю'),
+        ('hero_promo_btn_text', 'Подробнее'),
+        ('hero_promo_link', '#order'),
+        ('hero_delivery_card_enabled', '1'),
+        ('hero_delivery_title', 'Доставка 1–2 часа'),
+        ('hero_delivery_text', 'По Санкт-Петербургу в день заказа — оформите до 20:00'),
+        ('feature_chips', '1'),
+        ('chips_price_low', '3500'),
+        ('chips_price_high', '7000'),
+        ('feature_carousels', '1'),
+        ('feature_section_hits', '1'),
+        ('section_hits_title', 'Хиты продаж'),
+        ('section_hits_sub', 'Букеты, которые выбирают чаще всего'),
+        ('feature_section_premium', '1'),
+        ('section_premium_title', 'Премиум — для особого случая'),
+        ('section_premium_sub', 'Крупные композиции для торжественных поводов'),
+        ('feature_section_budget', '1'),
+        ('section_budget_title', 'Букеты до %s ₽'),
+        ('feature_section_addons', '1'),
+        ('section_addons_title', 'Дополните букет 🎈'),
+        ('badge_hit_text', 'Хит'),
+        ('badge_premium_text', 'Премиум'),
+        ('feature_occasions', '1'),
+        ('occasions_title', 'Цветы по поводу'),
+        ('feature_stores', '0'),
+        ('stores_title', 'Наши магазины в Петербурге'),
+        ('stores_sub', 'Заберите сами или закажите доставку — букет будет готов в течение дня'),
+        ('stores_1_title', ''),
+        ('stores_1_text', ''),
+        ('stores_2_title', ''),
+        ('stores_2_text', ''),
+        ('stores_3_title', ''),
+        ('stores_3_text', ''),
+        ('feature_seotext', '1'),
+        ('seo_text_title', 'Доставка цветов в Санкт-Петербурге'),
+        ('seo_text_body', 'Доставляем букеты по всем районам Санкт-Петербурга в день заказа — от центра до удалённых кварталов. Оформите заказ до 20:00, и курьер привезёт цветы сегодня; точное время согласуем по телефону. Для срочных случаев собираем букет за 1–2 часа.
+
+Свежие цветы поступают к нам с утренней поставки, поэтому мы не собираем букеты заранее «в стол» — каждая композиция составляется под ваш заказ. Если нужного цветка не окажется в идеальном состоянии, предложим равноценную замену до отправки, а не после вручения.
+
+Перед доставкой курьер фотографирует готовый букет и присылает фото вам — вы видите то же, что получит адресат. Если что-то не так, заменим композицию до вручения без лишних вопросов.
+
+Оплатить можно онлайн картой или через СБП, либо наличными курьеру при получении. Стоимость доставки зависит от района — от 300 ₽ по центру; точную сумму посчитаем при подтверждении заказа.'),
+        ('feature_journal', '0'),
+        ('journal_title', 'Журнал Nilov Flowers'),
+        ('journal_1_title', ''),
+        ('journal_1_text', ''),
+        ('journal_1_link', ''),
+        ('journal_1_image', ''),
+        ('journal_2_title', ''),
+        ('journal_2_text', ''),
+        ('journal_2_link', ''),
+        ('journal_2_image', ''),
+        ('journal_3_title', ''),
+        ('journal_3_text', ''),
+        ('journal_3_link', ''),
+        ('journal_3_image', '')");
+
+    /* W96 one-time: редизайн под 5cv — приведение СУЩЕСТВУЮЩИХ прод-настроек к новому
+       дизайн-языку (INSERT OR IGNORE выше на них не действует — ключи уже в БД).
+       Маркер w96_redesign_applied защищает от повтора при последующих выкатах. */
+    $w96marker = $pdo->query("SELECT value FROM settings WHERE key = 'w96_redesign_applied'")->fetchColumn();
+    if ($w96marker === false) {
+        /* 5cv не несёт длинный бейдж доставки на каждой карточке — шум, вырубаем.
+           UPSERT: в локальных/свежих БД ключа может не быть вовсе (тогда INSERT). */
+        $pdo->exec("INSERT INTO settings (key, value) VALUES ('feature_delivery_badge', '0') ON CONFLICT(key) DO UPDATE SET value = '0'");
+        /* Требование заказчика: блок отзывов не переносится в новый дизайн */
+        $pdo->exec("INSERT INTO settings (key, value) VALUES ('yandex_reviews_enabled', '0') ON CONFLICT(key) DO UPDATE SET value = '0'");
+        $pdo->exec("INSERT OR IGNORE INTO settings (key, value) VALUES ('w96_redesign_applied', '1')");
     }
 }

@@ -20,7 +20,7 @@ $googleVerification = trim(setting('google_site_verification', ''));
 <link rel="icon" type="image/svg+xml" href="/img/favicon.svg?v=<?= e(substr(md5_file(__DIR__ . '/../img/favicon.svg'), 0, 8)) ?>">
 <link rel="apple-touch-icon" href="/img/favicon-180.png?v=<?= e(substr(md5_file(__DIR__ . '/../img/favicon-180.png'), 0, 8)) ?>">
 <link rel="manifest" href="/manifest.webmanifest">
-<meta name="theme-color" content="#F6F1E6">
+<meta name="theme-color" content="#ffffff">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -32,8 +32,15 @@ $googleVerification = trim(setting('google_site_verification', ''));
 <?php /* Layout-критик W35: latin-подмножества грузились на ~944мс → font-swap сдвиги 768-load 0.045–0.083 */ ?>
 <link rel="preload" href="/fonts/GolosText-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/PlayfairDisplay-latin.woff2" as="font" type="font/woff2" crossorigin>
+<?php /* W96/T2-a (5cv): Montserrat — основной шрифт нового дизайна. Preload только
+   cyrillic-подмножества (23КБ): latin подтянется по unicode-range при латинице —
+   не грузим лишнее на мобильных. */ ?>
+<link rel="preload" href="/fonts/MontserratVariable-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/css/style.css">
 <link rel="stylesheet" href="/css/nilov.css">
+<?php /* W96/T2-a: дизайн-система 5cv — ПОСЛЕ nilov.css (перекрывает той же специфичностью),
+   ДО fonts.css (токены --font-ui закреплены в five.css на html:root — выше :root из fonts.css). */ ?>
+<link rel="stylesheet" href="/css/five.css">
 <link rel="stylesheet" href="/css/fonts.css">
 <script src="/js/pwa-register.js" defer></script>
 <meta property="og:site_name" content="<?= e($shopName) ?>">
