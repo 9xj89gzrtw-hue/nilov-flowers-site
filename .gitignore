@@ -10,3 +10,5 @@ db/shop.sqlite
 img/uploads/*
 !img/uploads/.gitkeep
 .DS_Store
+includes/flowers.state/
+includes/flowers.state/

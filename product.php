@@ -104,8 +104,11 @@ function render_related_card(array $rp): void
         $rWebp = $w !== $rImg && is_file(BASE_PATH . $w) ? $w : '';
     }
     $rLink = '/product/' . rawurlencode($rp['slug']);
+    /* W96-fix1 (F3): поисковый индекс карточки — как на витрине (имя + категория +
+       описание, нижний регистр); категория приходит из SELECT * как NULL — ?? '' */
+    $rSearch = mb_strtolower(trim($rp['name'] . ' ' . ($rp['category_name'] ?? '') . ' ' . ($rp['description'] ?? '')));
     ?>
-        <article class="product-card">
+        <article class="product-card" data-search="<?= e($rSearch) ?>">
           <div class="product-card__media">
             <a class="product-card__media-link" href="<?= e($rLink) ?>" aria-label="<?= e($rp['name']) ?>">
               <?php if ($rImg !== ''): ?>

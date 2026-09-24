@@ -36,13 +36,16 @@ $cartMode = in_array(setting('cart_mode', 'drawer'), ['drawer', 'hybrid', 'page'
       <?php endif; ?>
       <span><?= e($siteName) ?></span>
     </a>
-    <?php /* Кнопка «Каталог» — обычный якорь на #catalog (JS не нужен); текст в span — на мобиле CSS прячет */ ?>
-    <a class="fc-catalog-btn" href="#catalog">
+    <?php /* W96-fix1 (F2): «Каталог» работает и со вторичных страниц — абсолютный
+       якорь /#catalog (на главной — тот же документ, просто скролл) */ ?>
+    <a class="fc-catalog-btn" href="/#catalog">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.6"/><rect x="14" y="3" width="7" height="7" rx="1.6"/><rect x="3" y="14" width="7" height="7" rx="1.6"/><rect x="14" y="14" width="7" height="7" rx="1.6"/></svg>
       <span><?= e(setting('catalog_btn_text', 'Каталог')) ?></span>
     </a>
-    <?php /* Поиск по каталогу: живая фильтрация в js/five.js, никаких внешних скриптов */ ?>
-    <form class="fc-search" role="search" action="#catalog">
+    <?php /* Поиск по каталогу (W96-fix1/F3): action="/" + name="q" — без JS
+       нативный submit уводит на главную с запросом; js/five.js на главной фильтрует
+       живьём (морфология: «розы» → «роз»), со вторичных страниц — редирект /?q=…#catalog */ ?>
+    <form class="fc-search" role="search" action="/" method="get">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       <input type="search" id="fcSearch" name="q" placeholder="<?= e(setting('search_placeholder', 'Розы, пионы, букет маме…')) ?>" aria-label="Поиск по букетам">
     </form>
@@ -52,8 +55,9 @@ $cartMode = in_array(setting('cart_mode', 'drawer'), ['drawer', 'hybrid', 'page'
     </span>
     <?php if ($headerPhone !== ''): ?><a class="fc-header__phone" href="tel:+<?= e(preg_replace('/\D/', '', $headerPhone)) ?>"><?= e($headerPhone) ?></a><?php endif; ?>
     <div class="fc-header__icons">
-      <?php /* Избранное живёт в каталоге (сердечки на карточках) — ведём туда */ ?>
-      <a class="fc-header__icon" href="#catalog" aria-label="Избранное — в каталоге">
+      <?php /* Избранное живёт в каталоге (сердечки на карточках) — ведём туда;
+         W96-fix1 (F2): абсолютный якорь — работает и с вторичных страниц */ ?>
+      <a class="fc-header__icon" href="/#catalog" aria-label="Избранное — в каталоге">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-4.6-7-10a4.5 4.5 0 0 1 7-3.7A4.5 4.5 0 0 1 19 11c0 5.4-7 10-7 10z"/></svg>
       </a>
       <?php /* Кнопка корзины — контракт cart-ui.js, разметку не меняем (CSS перекрасит) */ ?>

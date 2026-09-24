@@ -78,7 +78,7 @@ $pageTitle = 'Публичная оферта — ' . $shopName;
       </div>
 
       <p style="margin-top:28px"><a href="/" class="btn btn--accent">Вернуться в магазин</a></p>
-      <p style="margin-top:14px;font-size:.85rem;color:var(--ink-soft)">Дата последней редакции оферты: <?= filemtime(__FILE__) ? date('d.m.Y', (int)filemtime(__FILE__)) : date('d.m.Y') ?>. Для текущей редакции действует редакция Политики, указанная на странице <a href="/policy">«Политика конфиденциальности»</a>.</p>
+      <p style="margin-top:14px;font-size:.85rem;color:var(--ink-soft)">Дата последней редакции оферты: <?= filemtime(__FILE__) ? date('d.m.Y', (int)filemtime(__FILE__)) : date('d.m.Y') ?>. <?php /* W96-fix1 (F13): было «Для текущей редакции действует редакция Политики…» — канцелярит */ ?>Сроки и условия — в актуальной редакции <a href="/policy">Политики конфиденциальности</a>.</p>
     </div>
   </section>
 </main>

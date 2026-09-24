@@ -47,6 +47,17 @@ $featJournal = setting('feature_journal', '0') === '1';
 $heroPromoOn = setting('hero_promo_enabled', '1') === '1';
 $heroDeliveryOn = setting('hero_delivery_card_enabled', '1') === '1';
 
+/* W96-fix1 (F8): траст-ряд под hero — те же гарантии, что и на странице товара
+   (дефолты — «заводские» из settings-history.php). Гейт — hero_text_enabled. */
+$guaranteeDefaults = ['Фото букета перед отправкой', 'Свежие цветы с утренней поставки', 'Заменяем увядшие в день доставки'];
+$guarantees = [];
+for ($i = 1; $i <= 3; $i++) {
+    $guaranteeVal = trim(setting('guarantee_' . $i, $guaranteeDefaults[$i - 1]));
+    if ($guaranteeVal !== '') {
+        $guarantees[] = $guaranteeVal;
+    }
+}
+
 /* Пороги чипов/секций цен: N — низ, M — верх */
 $chipsN = (int) setting('chips_price_low', '3500');
 $chipsM = (int) setting('chips_price_high', '7000');
@@ -87,8 +98,11 @@ function render_product_card(array $p, array $ctx): void
     $img = product_img_url($p);
     $imgWebp = product_img_webp($p);
     $link = '/product/' . rawurlencode($p['slug']);
+    /* W96-fix1 (F3): поисковый индекс карточки — имя + категория + описание
+       (нижний регистр; js/five.js матчит по стемму запроса как подстроке) */
+    $searchIndex = mb_strtolower(trim($p['name'] . ' ' . ($p['category_name'] ?? '') . ' ' . ($p['description'] ?? '')));
     ?>
-        <article class="product-card reveal" data-category-id="<?= (int)($p['category_id'] ?? 0) ?>" data-price="<?= (int)$price ?>" data-hit="<?= (int)($p['is_hit'] ?? 0) ?>" data-premium="<?= (int)($p['is_premium'] ?? 0) ?>">
+        <article class="product-card reveal" data-category-id="<?= (int)($p['category_id'] ?? 0) ?>" data-price="<?= (int)$price ?>" data-hit="<?= (int)($p['is_hit'] ?? 0) ?>" data-premium="<?= (int)($p['is_premium'] ?? 0) ?>" data-search="<?= e($searchIndex) ?>">
           <div class="product-card__media">
             <a class="product-card__media-link" href="<?= e($link) ?>" aria-label="<?= e($p['name']) ?>">
               <?php if ($img !== ''): ?>
@@ -135,8 +149,10 @@ function render_product_card(array $p, array $ctx): void
     <?php
 }
 
-/* Секция-карусель 5cv: заголовок + подпись + «Смотреть все» + стрелки + лента карточек */
-function render_fc_row(string $title, string $sub, array $items, array $ctx, string $tabId = ''): void
+/* Секция-карусель 5cv: заголовок + подпись + «Смотреть все» + стрелки + лента карточек.
+   W96-fix1 (F7): $chip — «Смотреть все» у Хитов/Премиума/До N применяет чип каталога
+   (js/five.js по data-chip), у категорийных секций — вкладку (data-tab, как раньше). */
+function render_fc_row(string $title, string $sub, array $items, array $ctx, string $tabId = '', string $chip = ''): void
 {
     if ($items === []) return;
     ?>
@@ -144,7 +160,7 @@ function render_fc_row(string $title, string $sub, array $items, array $ctx, str
       <div class="fc-row"><div class="fc-row__head">
         <h2 class="fc-row__title"><?= e($title) ?></h2>
         <?php if ($sub !== ''): ?><p class="fc-row__sub"><?= e($sub) ?></p><?php endif; ?>
-        <a class="fc-row__link" href="#catalog"<?= $tabId !== '' ? ' data-tab="' . e($tabId) . '"' : '' ?>>Смотреть все</a>
+        <a class="fc-row__link" href="#catalog"<?= $tabId !== '' ? ' data-tab="' . e($tabId) . '"' : '' ?><?= $chip !== '' ? ' data-chip="' . e($chip) . '"' : '' ?>>Смотреть все</a>
         <div class="fc-row__arrows">
           <button class="fc-row__arrow" type="button" aria-label="Назад"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
           <button class="fc-row__arrow fc-row__arrow--next" type="button" aria-label="Вперёд"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
@@ -265,7 +281,7 @@ if (!$featJournal) {
 }
 
 /* ---- SEO-текст: sanitize_rich_text разрешает только <a>, абзацы — через \n\n ---- */
-$seoTextDefault = "Доставка цветов по Санкт-Петербургу — в день заказа. Работаем по всем районам города: в пределах КАД привозим букет за 1–2 часа, в пригороды — Пушкин, Павловск, Гатчина, Всеволожск — в согласованный интервал. Оформите заказ до 20:00, и цветы будут у получателя сегодня же.\n\nСвежесть — главное. Цветы приходят к нам с утренней поставки, а не лежат на складе: букет собираем непосредственно перед отправкой. Перед выездом курьера пришлём фото готовой композиции — вы увидите именно то, что получит адресат. Если какой-то цветок выглядит не идеально, заменим его до доставки.\n\nОплатить можно картой онлайн или курьеру при получении. Поводы бывают разные: букет маме на день рождения, извиниться, поздравить коллегу или сказать «люблю» без повода — подскажем состав под бюджет и характер события. А если сомневаетесь — просто позвоните, соберём букет вместе по телефону.";
+$seoTextDefault = "Доставка цветов по Санкт-Петербургу — в день заказа. Работаем по всем районам города: в пределах КАД привозим букет за 1–2 часа, в пригороды — Пушкин, Павловск, Гатчина, Всеволожск — в согласованный интервал. Оформите заказ до 20:00, и цветы будут у получателя сегодня же.\n\nСвежесть — главное. Цветы приходят к нам с утренней поставки, а не лежат на складе: букет собираем непосредственно перед отправкой. Перед выездом курьера пришлём фото готовой композиции — вы увидите именно то, что получит адресат. Если какой-то цветок выглядит не идеально, заменим его до доставки.\n\nСпособ оплаты выберете при оформлении: наличными курьеру при получении или онлайн — если доступен в заказе. Поводы бывают разные: букет маме на день рождения, извиниться, поздравить коллегу или сказать «люблю» без повода — подскажем состав под бюджет и характер события. А если сомневаетесь — просто позвоните, соберём букет вместе по телефону.";
 ?><!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -380,28 +396,41 @@ if ($__heroPre !== '') {
         };</script>
       </div>
       <div class="fc-hero__side">
-        <?php /* Промо-карточка (жёлтая, 5cv) — «Цветы по подписке» */ ?>
+        <?php /* Промо-карточка (жёлтая, 5cv) — W96-fix1 (F4): честный дефолт «Открытка
+           в подарок» (подписки в магазине нет, открытка — правда есть) */ ?>
         <?php if ($heroPromoOn): ?>
         <div class="fc-hero__promo">
-          <span class="fc-hero__promo-eyebrow"><?= e(setting('hero_promo_badge', 'Выгодно')) ?></span>
-          <h2 class="fc-hero__promo-title"><?= e(setting('hero_promo_title', 'Цветы по подписке')) ?></h2>
-          <p class="fc-hero__promo-text"><?= e(setting('hero_promo_text', 'Регулярные букеты со скидкой до 20% — освежайте дом или радуйте близких каждую неделю')) ?></p>
-          <a class="fc-hero__promo-btn" href="<?= e(setting('hero_promo_link', '#order')) ?>"><?= e(setting('hero_promo_btn_text', 'Подробнее')) ?></a>
+          <span class="fc-hero__promo-eyebrow"><?= e(setting('hero_promo_badge', 'Всегда')) ?></span>
+          <h2 class="fc-hero__promo-title"><?= e(setting('hero_promo_title', 'Открытка в подарок')) ?></h2>
+          <p class="fc-hero__promo-text"><?= e(setting('hero_promo_text', 'Напишем ваш текст от руки и вложим в букет — бесплатно, в каждом заказе')) ?></p>
+          <a class="fc-hero__promo-btn" href="<?= e(setting('hero_promo_link', '#order')) ?>"><?= e(setting('hero_promo_btn_text', 'Оформить заказ')) ?></a>
         </div>
         <?php endif; ?>
-        <?php /* Карточка доставки: сроки по городу */ ?>
+        <?php /* Карточка доставки: сроки по городу (W96-fix1/F4 — без обещания «1–2 часа») */ ?>
         <?php if ($heroDeliveryOn): ?>
         <div class="fc-hero__delivery">
           <span class="fc-hero__delivery-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 6h13v9H1zM14 9h4.5L21 12v3h-7z"/><circle cx="5.5" cy="17.5" r="1.8"/><circle cx="17.5" cy="17.5" r="1.8"/></svg></span>
           <span class="fc-hero__delivery-body">
-          <span class="fc-hero__delivery-title"><?= e(setting('hero_delivery_title', 'Доставка 1–2 часа')) ?></span>
-          <span class="fc-hero__delivery-text"><?= e(setting('hero_delivery_text', 'По Санкт-Петербургу в день заказа — успейте оформить до 20:00')) ?></span>
+          <span class="fc-hero__delivery-title"><?= e(setting('hero_delivery_title', 'Доставка в день заказа')) ?></span>
+          <span class="fc-hero__delivery-text"><?= e(setting('hero_delivery_text', 'По Санкт-Петербургу — оформите до 20:00, привезём сегодня')) ?></span>
           </span>
         </div>
         <?php endif; ?>
       </div>
     </div>
   </section>
+
+  <?php /* W96-fix1 (F8): траст-ряд под hero — гарантии с галочками (гейт hero-текста,
+     те же guarantee_1..3, что на странице товара; прячется вместе с hero-текстом) */ ?>
+  <?php if ($heroTextEnabled && $guarantees !== []): ?>
+  <div class="wrap">
+    <ul class="fc-trust" aria-label="Наши гарантии">
+      <?php foreach (array_slice($guarantees, 0, 3) as $g): ?>
+      <li class="fc-trust__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 12.5l2.6 2.6L16 9.5"/></svg><?= e($g) ?></li>
+      <?php endforeach; ?>
+    </ul>
+  </div>
+  <?php endif; ?>
 
   <!-- ЧИПЫ ЦЕН (5cv): Хиты / До N / N–M / От M / Премиум — фильтруют каталог (js/five.js) -->
   <?php if ($featChips): ?>
@@ -424,23 +453,25 @@ if ($__heroPre !== '') {
     <?php if ($featSectionHits): render_fc_row(
         setting('section_hits_title', 'Хиты продаж'),
         setting('section_hits_sub', 'Букеты, которые выбирают чаще всего'),
-        $hitProducts, $cardCtx);
+        $hitProducts, $cardCtx, '', 'hit');
     endif; ?>
     <?php foreach ($categoryRows as $cr): render_fc_row(
         $cr['name'], '', $cr['items'], $cardCtx, (string)$cr['id']);
     endforeach; ?>
     <?php if ($featSectionPremium): render_fc_row(
         setting('section_premium_title', 'Премиум — для особого случая'),
-        setting('section_premium_sub', ''), $premiumProducts, $cardCtx);
+        setting('section_premium_sub', ''), $premiumProducts, $cardCtx, '', 'premium');
     endif; ?>
     <?php if ($featSectionBudget && $budgetProducts !== []): render_fc_row(
         sprintf(setting('section_budget_title', 'До %s ₽'), number_format($chipsN, 0, ',', ' ')),
-        setting('section_budget_sub', ''), $budgetProducts, $cardCtx);
+        setting('section_budget_sub', ''), $budgetProducts, $cardCtx, '', 'low');
     endif; ?>
   <?php endif; ?>
 
-  <!-- «ДОПОЛНИТЕ БУКЕТ» (5cv): сопутствующие товары show_in_upsell -->
-  <?php if ($addonProducts !== []): render_fc_row(
+  <!-- «ДОПОЛНИТЕ БУКЕТ» (5cv): сопутствующие товары show_in_upsell.
+       W96-fix1 (F11): секция имеет смысл от ≥2 товаров — одиночная карточка
+       в карусели выглядит пусто; жёсткий фильтр, чтобы не зависеть от сида -->
+  <?php if (count($addonProducts) >= 2): render_fc_row(
       setting('section_addons_title', 'Дополните букет 🎈'),
       setting('section_addons_sub', ''), $addonProducts, $cardCtx);
   endif; ?>

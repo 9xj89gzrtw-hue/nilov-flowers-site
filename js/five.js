@@ -90,20 +90,47 @@
   }
 
   /* ---------- 3. Чипы цен + поиск: комбинированный фильтр каталога ---------- */
+
+  /* W96-fix1 (F3): базовый стемминг русского запроса — отрезаем типичные
+     окончания, чтобы «розы» находило «Букет из роз», «пионы» — «пион»,
+     «маме» — «мам». После среза оставляем ≥3 символов (коротко-агрессивный
+     срез вида «ды»→«д» не нужен: закончим на бессмысленных хвостах).
+     Примеры из ТЗ: розы→роз, пионы→пион, маме→мам. */
+  function stemRu(word) {
+    var w = word.toLowerCase();
+    var m = w.match(/^(.+?)(?:ами|ого|ому|ыми|ая|ые|ов|ей|ий|ый|ом|ем|ам|ах|иях|ях|ии|ие|ия|ью|ья|а|я|ы|и|у|ю|е|о)$/);
+    return (m && m[1].length >= 3) ? m[1] : w;
+  }
+
+  /* Слова запроса → стеммы (пустые токены отбрасываем). Матч: каждый стемм
+     входит подстрокой в нормализованный data-search карточки (имя + категория +
+     описание, PHP уже привёл к нижнему регистру) — AND по всем словам. */
+  function queryStems(q) {
+    return q.toLowerCase().trim().split(/\s+/).filter(Boolean).map(stemRu);
+  }
+
   function catalogFilters() {
     var grid = document.getElementById('catalogGrid');
     var form = document.querySelector('.fc-search');
     var chipsBox = document.querySelector('.fc-chips');
+    var inp = document.getElementById('fcSearch');
     if (!grid) {
-      /* Вторичные страницы: каталога нет — поиск ведёт на главную к #catalog */
-      if (form) form.action = '/#catalog';
+      /* Вторичные страницы: каталога нет — поиск уводит на главную с запросом
+         (W96-fix1/F3: было пассивное form.action — теперь JS-редирект с #catalog;
+         без JS срабатывает нативный submit action="/" method="get" с name="q") */
+      if (form) {
+        form.addEventListener('submit', function (e) {
+          e.preventDefault();
+          var q = inp ? (inp.value || '').trim() : '';
+          location.href = q !== '' ? '/?q=' + encodeURIComponent(q) + '#catalog' : '/#catalog';
+        });
+      }
       return;
     }
     var chips = chipsBox ? Array.prototype.slice.call(chipsBox.querySelectorAll('.fc-chip')) : [];
     var countEl = chipsBox ? chipsBox.querySelector('.fc-chips__count') : null;
     var emptyBox = document.getElementById('catalogEmpty');
     var emptyTitle = emptyBox ? emptyBox.querySelector('p') : null; /* первый <p> — заголовок empty */
-    var inp = document.getElementById('fcSearch');
     var state = { chip: null, query: '' };
 
     /* Чип задаёт диапазон: data-min — исключительно («от M»), data-max — включительно («до N»).
@@ -131,6 +158,7 @@
 
     function apply(scroll) {
       var q = state.query.trim().toLowerCase();
+      var stems = q ? queryStems(q) : [];
       var chipVisible = 0;
       grid.querySelectorAll('.product-card').forEach(function (card) {
         var ok = true;
@@ -138,9 +166,12 @@
           ok = chipMatch(card, state.chip);
           if (ok) chipVisible++;
         }
-        if (ok && q) {
-          var name = card.querySelector('.product-card__name');
-          ok = !!name && name.textContent.toLowerCase().indexOf(q) !== -1;
+        if (ok && stems.length) {
+          /* W96-fix1 (F3): морфология — стемм запроса входит в data-search
+             (имя+категория+описание); фолбэк на имя карточки для старого кэша */
+          var nameEl = card.querySelector('.product-card__name');
+          var hay = (card.getAttribute('data-search') || (nameEl ? nameEl.textContent : '')).toLowerCase();
+          ok = stems.every(function (w) { return hay.indexOf(w) !== -1; });
         }
         if (ok) card.removeAttribute('data-fc-filtered');
         else card.setAttribute('data-fc-filtered', '1');
@@ -187,20 +218,35 @@
       });
     });
 
-    /* Поиск: Enter (submit) — фильтр по подстроке имени; пустое значение — сброс */
+    /* Поиск (W96-fix1/F3): живая фильтрация с debounce 250мс — карточки фильтруются
+       по мере ввода, без Enter; Enter — применяет сразу и скроллит к каталогу;
+       пустой запрос (в т.ч. крестик type=search) — снимает фильтр. */
+    var debounceTimer = null;
+    function applySoon() {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(function () {
+        debounceTimer = null;
+        state.query = inp.value || '';
+        apply(false);
+      }, 250);
+    }
     if (form && inp) {
       form.addEventListener('submit', function (e) {
         e.preventDefault();
+        if (debounceTimer) { clearTimeout(debounceTimer); debounceTimer = null; }
         state.query = inp.value || '';
         apply(true);
       });
-      /* Очистка крестиком type=search — сбрасываем сразу */
-      inp.addEventListener('input', function () {
-        if (inp.value === '' && state.query !== '') {
-          state.query = '';
-          apply(false);
-        }
-      });
+      inp.addEventListener('input', applySoon);
+    }
+
+    /* W96-fix1 (F3): перенос запроса со вторичных страниц — /?q=розы#catalog:
+       заполняем поле и применяем фильтр сразу (скролл делает hash #catalog) */
+    var qParam = new URLSearchParams(window.location.search).get('q');
+    if (qParam && inp) {
+      inp.value = qParam;
+      state.query = qParam;
+      apply(false);
     }
 
     /* Сброс фильтров (кнопка в empty-state): снимаем чип и поиск тоже
@@ -220,14 +266,24 @@
     }
   }
 
-  /* ---------- 4. «Смотреть все» у категорийных каруселей ----------
+  /* ---------- 4. «Смотреть все» у каруселей ----------
      data-tab={id}: включаем соответствующую вкладку каталога (её клик
-     обработает catalog-filter.js), якорь #catalog срабатывает сам. */
+     обработает catalog-filter.js), якорь #catalog срабатывает сам.
+     W96-fix1 (F7): data-chip={hit|premium|low} — «Смотреть все» у Хитов/
+     Премиума/До N применяет одноимённый чип (полный путь клика по чипу:
+     active + aria-pressed + фильтр + скролл; уже активный чип — только якорь). */
   function rowLinks() {
     document.querySelectorAll('.fc-row__link[data-tab]').forEach(function (a) {
       a.addEventListener('click', function () {
         var tab = document.querySelector('.catalog-tabs__tab[data-category-id="' + a.getAttribute('data-tab') + '"]');
         if (tab) tab.click();
+      });
+    });
+    document.querySelectorAll('.fc-row__link[data-chip]').forEach(function (a) {
+      a.addEventListener('click', function () {
+        var chip = document.querySelector('.fc-chip[data-chip="' + a.getAttribute('data-chip') + '"]');
+        if (!chip || chip.classList.contains('is-active')) return;
+        chip.click();
       });
     });
   }

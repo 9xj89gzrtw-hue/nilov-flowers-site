@@ -817,3 +817,13 @@ img.product-card__img{background:var(--surface-subtle)}
 /* T3-6: бейдж «Доставка по СПб» (feature_delivery_badge выкл. миграцией W96):
    если владелец включит обратно — не эллипсис-обрубок, а аккуратная пилюля с переносом */
 .product-card__badge--deliv{white-space:normal;overflow:visible;text-overflow:clip;font-size:.7rem;line-height:1.3;max-width:calc(100% - 56px);padding:4px 8px}
+
+/* ================================================================
+   W96-fix1 (F8): траст-ряд под hero — гарантии с галочками в круге.
+   Компактная строка между hero-бенто и чипами цен; прячется вместе
+   с hero-текстом (гейт hero_text_enabled в index.php).
+   ================================================================ */
+.fc-trust{display:flex;flex-wrap:wrap;gap:10px 26px;justify-content:center;margin:-6px 0 26px;padding:0;list-style:none}
+.fc-trust__item{display:inline-flex;align-items:center;gap:8px;font:600 .88rem var(--font-ui);color:var(--ink-muted)}
+.fc-trust__item svg{width:20px;height:20px;color:var(--pink);flex:none}
+@media(max-width:699px){.fc-trust{gap:8px 16px}.fc-trust__item{font-size:.8rem}}

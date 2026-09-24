@@ -45,7 +45,10 @@
     var opt = sel.options[sel.selectedIndex];
     var min = opt.hasAttribute('data-min') ? parseInt(opt.getAttribute('data-min'), 10) : null;
     var max = opt.hasAttribute('data-max') ? parseInt(opt.getAttribute('data-max'), 10) : null;
-    var cards = document.querySelectorAll('.product-card[data-price]');
+    /* W96-fix1 (F6): считаем и скрываем ТОЛЬКО карточки каталога (#catalogGrid) —
+       раньше селектор .product-card[data-price] зацепал и карусели секций
+       (хиты/премиум/…), счётчик показывал «51 букет» и карусели пустели */
+    var cards = document.querySelectorAll('#catalogGrid .product-card[data-price]');
     var visible = 0;
     cards.forEach(function (c) {
       var price = parseInt(c.getAttribute('data-price'), 10) || 0;
