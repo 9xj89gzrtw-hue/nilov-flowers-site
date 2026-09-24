@@ -216,6 +216,13 @@ function render_related_card(array $rp): void
                      слайд 2 = крупный план того же снимка (CSS-zoom), не выдуманный ракурс.
                      Вторые настоящие фото — данные клиента (feature_gallery выключает всё). */ ?>
           <?php if ($img !== '' && setting('feature_gallery', '1') === '1'): ?>
+          <?php /* W96-fix2 (F3): у товара ОДНА картинка — счётчик «1 / 2» и блок
+                     миниатюр-превью (#productGalleryThumbs) не рендерим: две
+                     маленьких копии одного файла выглядели как «несколько фото» —
+                     обманка по отчёту дизайн-критика. Свайп/стрелки на честный
+                     «Приближение этого же фото» остаются. js/product-gallery.js
+                     корректно живёт без thumbs/counter (пустой NodeList + if(counter)).
+                     Появятся реальные вторые фото — вернуть оба блока. */ ?>
           <div class="product-gallery__viewport" id="productGalleryTrack">
             <div class="product-gallery__track">
               <figure class="product-gallery__slide">
@@ -230,13 +237,8 @@ function render_related_card(array $rp): void
                 <figcaption class="product-gallery__cap">Приближение этого же фото</figcaption>
               </figure>
             </div>
-            <span class="product-gallery__counter" id="productGalleryCounter" aria-live="polite">1 / 2</span>
             <button type="button" class="product-gallery__nav product-gallery__nav--l" data-gnav="-1" aria-label="Предыдущий вид">‹</button>
             <button type="button" class="product-gallery__nav product-gallery__nav--r" data-gnav="1" aria-label="Следующий вид">›</button>
-          </div>
-          <div class="fc-product__thumbs product-gallery__thumbs" id="productGalleryThumbs" role="group" aria-label="Виды букета">
-            <button type="button" class="fc-product__thumb product-gallery__thumb" data-index="0" aria-current="true" aria-label="Общий план"><img src="<?= e($img) ?>" alt=""></button>
-            <button type="button" class="fc-product__thumb product-gallery__thumb" data-index="1" aria-label="Крупный план"><img class="product-gallery__thumb--zoom" src="<?= e($img) ?>" alt=""></button>
           </div>
           <?php else: ?>
           <div class="fc-product__media product-page__media" data-lightbox-trigger data-lightbox-src="<?= e($img) ?>" data-lightbox-alt="<?= e($product['name']) ?>">
@@ -324,6 +326,9 @@ function render_related_card(array $rp): void
       <div class="fc-row">
         <div class="fc-row__head">
           <h2 class="fc-related__title"><?= e(setting('related_title', '') ?: 'С этим берут') ?></h2>
+          <?php /* W96-fix2 (F3): «Смотреть все» в шапке related-блока — как у каруселей
+                 витрины (класс/подчёркивание те же); со страницы товара — в каталог */ ?>
+          <a class="fc-row__link" href="/#catalog">Смотреть все</a>
           <div class="fc-row__arrows">
             <button class="fc-row__arrow" type="button" aria-label="Назад"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
             <button class="fc-row__arrow fc-row__arrow--next" type="button" aria-label="Вперёд"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>

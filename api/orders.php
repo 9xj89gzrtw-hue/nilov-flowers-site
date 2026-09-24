@@ -24,9 +24,19 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     respond(405, ['errors' => ['method_not_allowed']]);
 }
 
-/* Критик security (4/10): rate-limit на создание заказов — не больше 6/час на IP. */
-if (!rl_check('orders', 6, 3600)) {
-    header('Retry-After: ' . rl_retry_after('orders', 3600));
+/* Критик security (4/10): rate-limit на создание заказов.
+   W96-fix2 (F7): раньше ЛЮБАЯ POST-попытка (в т.ч. невалидная — пустая корзина,
+   кривой телефон) писалась в бакет 'orders' с лимитом 6/час — QA-критик словил
+   429 уже на 6-й невалидной попытке, а квота «сгорала» без единого заказа.
+   Теперь два независимых бакета:
+   - orders_attempts 60/час — входной гейт от тупого флуда POST-запросами;
+     реальному покупателю с несколькими ошибками заполнения не мешает;
+   - orders_created 12/час — квота РЕАЛЬЬНО созданных заказов: проверяется
+     ниже, ПОСЛЕ полной валидации и ДО INSERT (невалидные попытки её не
+     сжигают; проверка ПОСЛЕ INSERT блокировать нечего — заказ уже сохранён,
+     а rl_check при заполненном бакете ничего не пишет, квота бы не сработала). */
+if (!rl_check('orders_attempts', 60, 3600)) {
+    header('Retry-After: ' . rl_retry_after('orders_attempts', 3600));
     respond(429, ['errors' => ['rate_limited']]);
 }
 
@@ -205,6 +215,14 @@ if ($promoCode !== '') {
 $total = $subtotal + ($zone !== null ? $zonePrice : 0) - $promoDiscount;
 $total = max(0, $total);
 $paymentToken = bin2hex(random_bytes(16));
+
+/* W96-fix2 (F7): квота созданных заказов — 12/час. Сюда доходят только полностью
+   валидные заказы (все 400/422/409/418 отработали выше), поэтому бакет
+   инкрементируется лишь заказами, которые реально будут созданы. */
+if (!rl_check('orders_created', 12, 3600)) {
+    header('Retry-After: ' . rl_retry_after('orders_created', 3600));
+    respond(429, ['errors' => ['rate_limited']]);
+}
 
 $pdo->beginTransaction();
 try {

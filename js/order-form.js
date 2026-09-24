@@ -193,6 +193,15 @@
     return String(Math.round(value)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
   }
 
+  /* W96-fix2 (F6): склонение минут для сообщения о паузе рейт-лимита
+     (1 минуту / 2 минуты / 5 минут) */
+  function pluralMinutes(n) {
+    const m10 = n % 10, m100 = n % 100;
+    if (m10 === 1 && m100 !== 11) return n + ' минуту';
+    if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return n + ' минуты';
+    return n + ' минут';
+  }
+
   function selectedDeliveryPrice() {
     if (!deliveryZoneInput) return 0;
     const option = deliveryZoneInput.selectedOptions[0];
@@ -359,7 +368,21 @@
           : 'Заказ принят! Мы свяжемся с вами в ближайшее время.', wantsOnline ? 'err' : 'ok');
       } else {
         const body = await res.json().catch(function () { return null; });
-        if (body && body.item && window.cartUI) {
+        /* W96-fix2 (F6): 429/rate_limited — было «Не получилось оформить заказ.
+           Позвоните нам…» (невнятно). Теперь честно: подождать N минут.
+           N — из заголовка Retry-After (сервер отдаёт секунды → округляем
+           в минуты); нет заголовка — честная оценка «обычно 5–10 минут». */
+        const rateLimited = res.status === 429
+          || (body && Array.isArray(body.errors) && body.errors.indexOf('rate_limited') !== -1)
+          || (body && typeof body.error === 'string' && body.error.indexOf('rate_limited') !== -1);
+        if (rateLimited) {
+          let waitMin = 0;
+          const retryAfter = parseInt(res.headers.get('Retry-After') || '', 10);
+          if (!isNaN(retryAfter) && retryAfter > 0) waitMin = Math.max(1, Math.round(retryAfter / 60));
+          setStatus(waitMin > 0
+            ? 'Слишком много попыток оформить заказ. Подождите примерно ' + pluralMinutes(waitMin) + ' и попробуйте снова.'
+            : 'Слишком много попыток оформить заказ. Подождите немного (обычно 5–10 минут) и попробуйте снова.', 'err');
+        } else if (body && body.item && window.cartUI) {
           window.cartUI.markUnavailable(body.item.product_id);
           setStatus('Один из товаров в заказе больше недоступен — уберите его из корзины (выделен красным) и попробуйте снова.', 'err');
         } else if (body && Array.isArray(body.errors) && body.errors.length) {
@@ -381,6 +404,8 @@
             item_qty_invalid: 'Количество товара должно быть от 1 до 99 — поправьте в корзине.',
             too_many_items: 'В заказе слишком много позиций — уменьшите корзину.',
             delivery_date_invalid: 'Дата доставки некорректна — выберите сегодня или ближайшие 60 дней.',
+            /* W96-fix2 (F6): страховка — 429 без статуса (прокси/кэш) с errors:[rate_limited] */
+            rate_limited: 'Слишком много попыток оформить заказ. Подождите немного (обычно 5–10 минут) и попробуйте снова.',
           };
           const parts = body.errors.map(function (code) { return map[code] || null; }).filter(Boolean);
           /* Подсветка поля получателя при серверной ошибке recipient_phone (если клиент её пропустил) */

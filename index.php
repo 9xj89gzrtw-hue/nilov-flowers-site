@@ -426,7 +426,7 @@ if ($__heroPre !== '') {
   <div class="wrap">
     <ul class="fc-trust" aria-label="Наши гарантии">
       <?php foreach (array_slice($guarantees, 0, 3) as $g): ?>
-      <li class="fc-trust__item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 12.5l2.6 2.6L16 9.5"/></svg><?= e($g) ?></li>
+      <li class="fc-trust__item"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="currentColor"/><path d="M7 12.5l3.2 3.2L17 9" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><?= e($g) ?></li>
       <?php endforeach; ?>
     </ul>
   </div>
@@ -489,24 +489,28 @@ if ($__heroPre !== '') {
           <button type="button" class="catalog-tabs__tab" aria-pressed="false" data-category-id="<?= (int)$c['id'] ?>"><?= e($c['name']) ?></button>
         <?php endforeach; ?>
       </div>
-      <?php /* Фильтр по цене (критерий 13, EXPRESS-паттерн). Пороги редактируются (критерий 16). */ ?>
-      <?php if ($featPriceFilter):
-          $pfLow = (int)setting('price_filter_low', '2500');
-          $pfHigh = (int)setting('price_filter_high', '4000');
-      ?>
-      <div class="catalog-price-filter" style="display:flex;align-items:center;gap:10px;margin:0 0 18px;flex-wrap:wrap">
-        <label for="priceFilter" style="font-size:.85rem;font-weight:600;color:var(--ink-soft)">Цена:</label>
-        <select id="priceFilter" class="pill">
-          <option value="all" selected>Любая</option>
-          <option value="low" data-max="<?= $pfLow ?>">до <?= number_format($pfLow, 0, '', ' ') ?> ₽</option>
-          <option value="mid" data-min="<?= $pfLow ?>" data-max="<?= $pfHigh ?>"><?= number_format($pfLow, 0, '', ' ') ?>–<?= number_format($pfHigh, 0, '', ' ') ?> ₽</option>
-          <option value="high" data-min="<?= $pfHigh ?>">от <?= number_format($pfHigh, 0, '', ' ') ?> ₽</option>
-        </select>
-        <span id="priceFilterCount" style="font-size:.85rem;color:var(--ink-soft)" aria-live="polite"></span>
-      </div>
-      <?php endif; ?>
-        <?php if ($featFavorites || $featZoneCheck): ?>
-        <div class="catalog-toolbar" style="display:flex;align-items:center;gap:10px;margin:0 0 18px;flex-wrap:wrap">
+      <?php /* W96-fix2 (F9): фильтры каталога — ОДИН аккуратный ряд
+             (цена · избранное · район): flex + space-between, на мобиле wrap.
+             Было два ряда (цена отдельно, избранное+район ниже) с разным
+             выравниванием. ID/классы элементов не менялись — catalog-filter.js
+             и nilov.js работают как раньше. margin-left:auto у zone-check
+             сохранён (правый край при любом наборе включённых фильтров). */ ?>
+      <?php if ($featPriceFilter || $featFavorites || $featZoneCheck): ?>
+      <div class="catalog-toolbar" style="display:flex;align-items:center;justify-content:space-between;gap:10px 18px;margin:0 0 18px;flex-wrap:wrap">
+        <?php if ($featPriceFilter):
+            $pfLow = (int)setting('price_filter_low', '2500');
+            $pfHigh = (int)setting('price_filter_high', '4000');
+        ?>
+        <span style="display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <label for="priceFilter" style="font-size:.85rem;font-weight:600;color:var(--ink-soft)">Цена:</label>
+          <select id="priceFilter" class="pill">
+            <option value="all" selected>Любая</option>
+            <option value="low" data-max="<?= $pfLow ?>">до <?= number_format($pfLow, 0, '', ' ') ?> ₽</option>
+            <option value="mid" data-min="<?= $pfLow ?>" data-max="<?= $pfHigh ?>"><?= number_format($pfLow, 0, '', ' ') ?>–<?= number_format($pfHigh, 0, '', ' ') ?> ₽</option>
+            <option value="high" data-min="<?= $pfHigh ?>">от <?= number_format($pfHigh, 0, '', ' ') ?> ₽</option>
+          </select>
+          <span id="priceFilterCount" style="font-size:.85rem;color:var(--ink-soft)" aria-live="polite"></span>
+        </span>
         <?php endif; ?>
         <?php if ($featFavorites): ?><button type="button" id="favToggle" class="fav-toggle" aria-pressed="false">♡ Избранное</button><?php endif; ?>
         <?php /* Проверка зоны доставки (критерий 13, Семицветик-паттерн): тариф района до чекаута.
@@ -525,6 +529,7 @@ if ($__heroPre !== '') {
         </span>
         <?php endif; ?>
       </div>
+      <?php endif; ?>
       <div class="catalog__grid" id="catalogGrid">
         <?php foreach ($products as $p) { render_product_card($p, $cardCtx); } ?>
       </div>
@@ -753,7 +758,9 @@ if ($__heroPre !== '') {
   <?php /* FAQ (критерий 13, SEO FAQPage — паттерн Цветовика): реальные вопросы покупателей. Отключаем (критерий 16). */ ?>
   <?php if ($featFaq): ?>
   <section class="fc-section section--faq" id="faq">
-    <div class="wrap" style="max-width:760px">
+    <?php /* W96-fix2 (F4): FAQ-колонка шире (760→880) — вопрос-ответ читается
+           без «узкой газетной» колонки; длинные вопросы не переносятся в 3 строки */ ?>
+    <div class="wrap" style="max-width:880px">
       <h2 class="section-title"><?= e(setting('faq_title', 'Частые вопросы')) ?></h2>
       <?php
       /* FAQ редактируется из админки (критерий 16): 4 пары вопрос-ответ.

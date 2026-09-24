@@ -827,3 +827,51 @@ img.product-card__img{background:var(--surface-subtle)}
 .fc-trust__item{display:inline-flex;align-items:center;gap:8px;font:600 .88rem var(--font-ui);color:var(--ink-muted)}
 .fc-trust__item svg{width:20px;height:20px;color:var(--pink);flex:none}
 @media(max-width:699px){.fc-trust{gap:8px 16px}.fc-trust__item{font-size:.8rem}}
+
+/* ================================================================
+   W96-fix2: фиксы дизайн-критика и QA-критика (волна 2)
+   ================================================================ */
+
+/* F1: «Цветы по поводу» — крупные плитки, заполняющие ряд.
+   Было auto-fill 150px → 3 плитки по ~154px + дыра ~660px справа.
+   auto-FIT: пустые треки схлопываются — 3 плитки делят контейнер
+   поровну (~380px при wrap 1200); 4-я плитка владельца ляжет в тот же ряд.
+   Плитка 4/3 (было 3/4), label крупнее (1rem).
+   max-width 460px — страховка от гигантской плитки при 1-2 поводах. */
+.fc-occasions{grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.fc-occasion{aspect-ratio:4/3;min-height:0;max-width:460px}
+.fc-occasion__label{font-size:1rem;line-height:1.3;padding:16px 20px}
+/* Mobile ≤699px: горизонтальный скролл-ряд плиток по 44vw со снапом */
+@media(max-width:699px){
+  .fc-occasions{
+    display:flex;gap:12px;
+    overflow-x:auto;scroll-snap-type:x mandatory;
+    -webkit-overflow-scrolling:touch;scrollbar-width:none;
+    margin:0 -20px;padding:4px 20px 8px;
+  }
+  .fc-occasions::-webkit-scrollbar{display:none}
+  .fc-occasion{flex:0 0 44vw;max-width:44vw;scroll-snap-align:start}
+}
+
+/* F2: «волна цен» в каталоге. Замер вживую: .product-card__name УЖЕ выровнен
+   (min-height:44px ≥ 2 строки = 43.7px; предложенное 2.7em = 39.7px было бы
+   МЕНЬШЕ двух строк и само создало бы волну 4px — не трогаем). Реальный
+   источник волны на мобиле — строка категории .product-card__cat, которая
+   переносится на 2 строки («В шляпной коробке»: 40.7px против 20.3px):
+   одна строка с эллипсисом → нижние края карточек и цены ровные. */
+.product-card__cat{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* F3d: страница товара — воздух между хлебными крошками и сеткой (было 0px);
+   снизу страницу держит padding секций fc-section (56px desktop / 40px + 58px
+   body-паддинг под mnav на мобиле). */
+.fc-product{margin:32px 0 0}
+
+/* F4: FAQ — вопрос чуть ярче (вес 800, чуть крупнее, плюс темнее);
+   колонка 760→880px — в index.php */
+.faq-item__q{font-weight:800;font-size:1.02rem}
+.faq-item__q::after{color:var(--ink)}
+
+/* F5: траст-ряд — текст контрастнее (между ink #1c1a1e и muted #6e6a72);
+   сам SVG в index.php теперь заполненный круг с белой галочкой
+   (цвет круга — color:var(--pink) на .fc-trust__item svg, уже задан). */
+.fc-trust__item{color:#4a4550}

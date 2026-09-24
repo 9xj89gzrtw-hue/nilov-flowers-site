@@ -159,12 +159,10 @@
     function apply(scroll) {
       var q = state.query.trim().toLowerCase();
       var stems = q ? queryStems(q) : [];
-      var chipVisible = 0;
       grid.querySelectorAll('.product-card').forEach(function (card) {
         var ok = true;
         if (state.chip) {
           ok = chipMatch(card, state.chip);
-          if (ok) chipVisible++;
         }
         if (ok && stems.length) {
           /* W96-fix1 (F3): морфология — стемм запроса входит в data-search
@@ -188,8 +186,22 @@
           emptyTitle.textContent = emptyTitle.dataset.origTitle;
         }
       }
-      /* Счётчик у чипов: «N букетов» по активному чипу */
-      if (countEl) countEl.textContent = state.chip ? chipVisible + ' ' + pluralBuket(chipVisible) : '';
+      /* Счётчик у чипов. W96-fix2 (F8): раньше считал ТОЛЬКО по чипу и молчал при
+         поиске. Теперь единая логика: чип → «N букетов»; поиск → «по запросу
+         «…» — N букетов» (live и по Enter — apply() общий); чип+поиск →
+         результат AND-фильтра (= total, всё, что реально видно на экране
+         с учётом вкладки/цены/избранного от catalog-filter.js); без фильтров
+         и при очистке поиска — пусто. */
+      if (countEl) {
+        var qTrim = state.query.trim();
+        if (state.chip) {
+          countEl.textContent = total + ' ' + pluralBuket(total);
+        } else if (qTrim !== '') {
+          countEl.textContent = 'по запросу «' + qTrim + '» — ' + total + ' ' + pluralBuket(total);
+        } else {
+          countEl.textContent = '';
+        }
+      }
       /* Плавный скролл к каталогу — только когда фильтруют чипом/поиском, не по сбросу */
       if (scroll) {
         var cat = document.getElementById('catalog');
