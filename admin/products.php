@@ -54,6 +54,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save'
 
     $image = saveUpload($_FILES['image'] ?? [], IMG_PRODUCTS_DIR);
 
+    /* W98-fixD (D6): updated_at пишем PHP-датой (TZ магазина из config.php — MSK),
+       а не SQLite datetime('now','localtime') — на стенде ОС-зона UTC, отставала на 3 ч. */
+    $nowMs = date('Y-m-d H:i:s');
+
     if ($id > 0) {
         if ($image !== '') {
             $stmt = $pdo->prepare('SELECT image FROM products WHERE id = :i');
@@ -65,10 +69,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save'
         $pdo->prepare('UPDATE products SET category_id = :c, name = :n, slug = :sl, price = :p,
                 sale_price = :sp, description = :d, is_active = :a, show_in_upsell = :u,
                 is_hit = :ih, is_premium = :ip, sort = :s,
-                updated_at = datetime(\'now\',\'localtime\') WHERE id = :i')
+                updated_at = :ua WHERE id = :i')
             ->execute([':c' => $categoryId, ':n' => $name, ':sl' => slugify($name), ':p' => $price,
                 ':sp' => $salePrice, ':d' => $description, ':a' => $isActive, ':u' => $showInUpsell,
-                ':ih' => $isHit, ':ip' => $isPremium, ':s' => $sort, ':i' => $id]);
+                ':ih' => $isHit, ':ip' => $isPremium, ':s' => $sort, ':ua' => $nowMs, ':i' => $id]);
         flash('Товар обновлён');
     } else {
         $slug = slugify($name);
@@ -78,10 +82,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save'
             $slug = $base . '-' . (++$n);
         }
         $pdo->prepare('INSERT INTO products (category_id, name, slug, price, sale_price, description, image, is_active, show_in_upsell, is_hit, is_premium, sort, updated_at)
-                VALUES (:c, :n, :sl, :p, :sp, :d, :img, :a, :u, :ih, :ip, :s, datetime(\'now\',\'localtime\'))')
+                VALUES (:c, :n, :sl, :p, :sp, :d, :img, :a, :u, :ih, :ip, :s, :ua)')
             ->execute([':c' => $categoryId, ':n' => $name, ':sl' => $slug, ':p' => $price,
                 ':sp' => $salePrice, ':d' => $description, ':img' => $image, ':a' => $isActive, ':u' => $showInUpsell,
-                ':ih' => $isHit, ':ip' => $isPremium, ':s' => $sort]);
+                ':ih' => $isHit, ':ip' => $isPremium, ':s' => $sort, ':ua' => $nowMs]);
         flash('Товар добавлен');
     }
     /* Операционный критик W38: после сохранения не «терять» товар — возврат на ту же
@@ -102,6 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'bulk_
     $want = isset($_POST['set']) && (int)$_POST['set'] === 1 ? 1 : 0;
     $done = 0;
     $skipped = 0;
+    $nowMs = date('Y-m-d H:i:s'); /* W98-fixD (D6): PHP-дата в TZ магазина, не SQLite localtime */
     foreach ($ids as $pid) {
         if ($want === 1) {
             $row = $pdo->prepare('SELECT price, image FROM products WHERE id = :i');
@@ -109,8 +114,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'bulk_
             $pr = $row->fetch();
             if (!$pr || (int)$pr['price'] <= 0 || trim((string)$pr['image']) === '') { $skipped++; continue; }
         }
-        $done += $pdo->prepare('UPDATE products SET is_active = :a, updated_at = datetime(\'now\',\'localtime\') WHERE id = :i')
-            ->execute([':a' => $want, ':i' => $pid]) ? 1 : 0;
+        $done += $pdo->prepare('UPDATE products SET is_active = :a, updated_at = :ua WHERE id = :i')
+            ->execute([':a' => $want, ':ua' => $nowMs, ':i' => $pid]) ? 1 : 0;
     }
     flash(($want ? "Показано: $done" : "Скрыто: $done") . ($skipped ? ", пропущено без цены/фото: $skipped" : ''));
     $__bq = trim((string)($_POST['back_qs'] ?? ''));
@@ -126,6 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'bulk_
         flash('Выберите товары, режим и число', true);
     } else {
         $n = 0;
+        $nowMs = date('Y-m-d H:i:s'); /* W98-fixD (D6): PHP-дата в TZ магазина */
         foreach ($ids as $pid) {
             $row = $pdo->prepare('SELECT price FROM products WHERE id = :i');
             $row->execute([':i' => $pid]);
@@ -136,8 +142,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'bulk_
             if ($mode === 'sub') { $new = max(1, $cur - $val); }
             if ($mode === 'pct') { $new = max(1, (int)round($cur * (100 + $val) / 100)); } /* val может быть отрицательным через режим «уменьшить» */
             if ($new > 0 && $new !== $cur) {
-                $pdo->prepare('UPDATE products SET price = :p, updated_at = datetime(\'now\',\'localtime\') WHERE id = :i')
-                    ->execute([':p' => $new, ':i' => $pid]);
+                $pdo->prepare('UPDATE products SET price = :p, updated_at = :ua WHERE id = :i')
+                    ->execute([':p' => $new, ':ua' => $nowMs, ':i' => $pid]);
                 $n++;
             }
         }
@@ -259,8 +265,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'bulk_
                 $try = $slug . '-' . (++$n);
             }
             $pdo->prepare('INSERT INTO products (category_id, name, slug, price, sale_price, description, image, is_active, show_in_upsell, sort, updated_at)
-                    VALUES (NULL, :n, :sl, 0, NULL, :d, :img, 0, 0, :s, datetime(\'now\',\'localtime\'))')
-                ->execute([':n' => $name, ':sl' => $try, ':d' => '', ':img' => $imgName, ':s' => 999]);
+                    VALUES (NULL, :n, :sl, 0, NULL, :d, :img, 0, 0, :s, :ua)') /* W98-fixD (D6): PHP-дата, не SQLite localtime */
+                ->execute([':n' => $name, ':sl' => $try, ':d' => '', ':img' => $imgName, ':s' => 999, ':ua' => date('Y-m-d H:i:s')]);
             $added++;
         }
     }
@@ -312,7 +318,11 @@ $categories = $pdo->query('SELECT * FROM categories ORDER BY sort, id')->fetchAl
 /* Операционный-критик W32: напоминания владельцу — черновики/устаревшие одним взглядом */
 $attnDrafts = (int)$pdo->query('SELECT COUNT(*) FROM products WHERE price <= 0')->fetchColumn();
 $attnNoImg = (int)$pdo->query("SELECT COUNT(*) FROM products WHERE image = ''")->fetchColumn();
-$attnStale = (int)$pdo->query("SELECT COUNT(*) FROM products WHERE is_active = 1 AND updated_at != '' AND updated_at < datetime('now','localtime','-14 day')")->fetchColumn();
+/* W98-fixD (D6): порог «не обновлялись 2+ недели» — PHP-датой в TZ магазина, параметром */
+$staleBefore = date('Y-m-d H:i:s', strtotime('-14 days'));
+$attnStaleSt = $pdo->prepare("SELECT COUNT(*) FROM products WHERE is_active = 1 AND updated_at != '' AND updated_at < :sb");
+$attnStaleSt->execute([':sb' => $staleBefore]);
+$attnStale = (int)$attnStaleSt->fetchColumn();
 
 adminHeader('Товары', 'products');
 flash();

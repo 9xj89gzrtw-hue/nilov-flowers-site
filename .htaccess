@@ -91,6 +91,16 @@ Require all denied
 </FilesMatch>
 RedirectMatch 410 ^/state/
 RedirectMatch 410 ^/admin/state/
+# W98-fixF (F1): .git может остаться на проде после ручного канала заливки —
+# наружу не отдаём (mod_alias в translate-фазе срабатывает раньше per-directory
+# rewrite-правил выше, включая «физические файлы отдаём как есть»).
+RedirectMatch 410 ^/\.git
+# W98-fixF (F1): процессные файлы (worklog/AGENTS/ecosystem) — раскрытие стека
+# и каналов деплоя; 410 по корневым URL + deny-фолбэк по имени в любом каталоге.
+RedirectMatch 410 ^/(worklog\.md|AGENTS\.md|ecosystem\.config\.js)$
+<FilesMatch "^(worklog\.md|AGENTS\.md|ecosystem\.config\.js)$">
+Require all denied
+</FilesMatch>
 <Files "config.php">
 Require all denied
 </Files>

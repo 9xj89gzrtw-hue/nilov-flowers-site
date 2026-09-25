@@ -78,13 +78,19 @@ function notifyNewOrder(int $orderId): void
     $items->execute([':i' => $orderId]);
 
     $lines = '';
+    /* W98-fixF (F3): состав для письма-подтверждения КЛИЕНТУ — только позиции
+       и доставка (без менеджерских деталей: получатель/открытка/слоты). */
+    $clientLines = '';
     $sum = 0;
     foreach ($items->fetchAll() as $it) {
         $lines .= '- ' . $it['name'] . ' × ' . (int)$it['qty'] . ' — ' . formatPrice((int)$it['price']) . "\n";
+        $clientLines .= '- ' . $it['name'] . ' × ' . (int)$it['qty'] . ' — ' . formatPrice((int)$it['price']) . "\n";
         $sum += (int)$it['price'] * (int)$it['qty'];
     }
     if ((int)$order['delivery_zone_id'] > 0) {
-        $lines .= '- Доставка — ' . formatPrice(max(0, (int)$order['total'] - $sum)) . "\n";
+        $deliveryLine = '- Доставка — ' . formatPrice(max(0, (int)$order['total'] - $sum)) . "\n";
+        $lines .= $deliveryLine;
+        $clientLines .= $deliveryLine;
     }
     /* Критик functional: подарок и желаемое время — сразу в уведомлении менеджеру */
     $gift = [];
@@ -127,6 +133,48 @@ function notifyNewOrder(int $orderId): void
             $order['customer_name'] . ' · ' . formatPrice((int)$order['total']) . ' · ' . date('H:i'),
             '/admin/'
         );
+    }
+
+    /* ============ W98-fixF (F3): письмо-подтверждение КЛИЕНТУ (CRO-воронка) ============
+     * Критик: покупатель уходил без фидбэка — «принят ли мой заказ?». Письмо
+     * транзакционное (клиент сам только что оформил заказ) — тихие часы НЕ
+     * уважаем (они для owner-канала); транспорт тот же, что у owner-письма:
+     * mail() с фолбэком в STATE_OUT_DIR/mail-out/*.eml. Домен трекинга —
+     * setting('site_url') с дефолтом (в админку ключ добавит следующая волна). */
+    $clientEmail = trim((string)($order['email'] ?? ''));
+    if ($clientEmail !== '' && filter_var($clientEmail, FILTER_VALIDATE_EMAIL) !== false) {
+        $from = trim(setting('shop_email', ''));
+        if ($from === '' || filter_var($from, FILTER_VALIDATE_EMAIL) === false) {
+            $from = 'shop@nilovflowers.local'; /* дефолт как у owner-письма */
+        }
+        $payLine = ($order['payment_method'] ?? 'cash') === 'online'
+            ? 'К оплате онлайн'
+            : 'К оплате при получении';
+        $trackUrl = rtrim(setting('site_url', 'https://flowers.interfood-catering.ru'), '/') . '/track';
+        $clientSubject = 'Заказ №' . $orderId . ' принят — ' . setting('shop_name', 'Nilov Flowers');
+        $clientBody = 'Здравствуйте, ' . $order['customer_name'] . "!\n\n"
+            . "Ваш заказ №" . $orderId . " принят.\n\n"
+            . "Состав заказа:\n" . $clientLines . "\n"
+            . $payLine . ': ' . formatPrice((int)$order['total']) . "\n\n"
+            . "Мы позвоним в течение 15 минут для подтверждения.\n\n"
+            . 'Отследить заказ: ' . $trackUrl . "\n\n"
+            . '— ' . setting('shop_name', 'Nilov Flowers') . "\n";
+        $clientHeaders = 'From: ' . $from . "\r\n" . 'Content-Type: text/plain; charset=UTF-8';
+        $clientSent = @mail(
+            $clientEmail,
+            '=?UTF-8?B?' . base64_encode($clientSubject) . '?=',
+            $clientBody,
+            $clientHeaders
+        );
+        if (!$clientSent) {
+            $dir = STATE_OUT_DIR . '/mail-out';
+            if (!is_dir($dir)) {
+                @mkdir($dir, 0755, true);
+            }
+            $eml = "Date: " . date('r') . "\nTo: {$clientEmail}\nSubject: =?UTF-8?B?" . base64_encode($clientSubject) . "?=\n"
+                . "MIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\n\n" . $clientBody;
+            @file_put_contents($dir . '/order-' . $orderId . '-client.eml', $eml);
+        }
     }
 
     // Адрес получателя: notify_email → email владельца (role='owner', notify_enabled=1)

@@ -187,8 +187,14 @@ function createPasswordReset(string $email): ?array
 /** Ссылка для письма: /admin/reset.php?token=...&id=UID */
 function passwordResetUrl(array $reset): string
 {
-    $base = (string)(($_SERVER['REQUEST_SCHEME'] ?? 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost'));
-    return $base . '/admin/reset.php?token=' . urlencode($reset['token']) . '&id=' . (int)$reset['user_id'];
+    /* W98 (security-критик): base строился из REQUEST_SCHEME+HTTP_HOST — host-header injection
+       в письме восстановления (отравленная ссылка). Канонический домен задаётся setting'ом
+       site_url (используется и в notify.php), фолбэк — прежнее поведение для CLI/крайних случаев. */
+    $base = trim((string)setting('site_url', ''));
+    if ($base === '' || !preg_match('#^https?://[a-z0-9.\-]+#i', $base)) {
+        $base = (string)(($_SERVER['REQUEST_SCHEME'] ?? 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost'));
+    }
+    return rtrim($base, '/') . '/admin/reset.php?token=' . urlencode($reset['token']) . '&id=' . (int)$reset['user_id'];
 }
 
 /**

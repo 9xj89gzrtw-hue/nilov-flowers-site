@@ -89,7 +89,7 @@ flash();
       <td>
         <div class="row-actions">
           <a href="/admin/zones.php?edit=<?= (int)$z['id'] ?>">Изменить</a>
-          <form method="post" onsubmit="return confirm('Удалить зону доставки?')">
+          <form method="post" onsubmit="return confirm('У заказов с этой зоной доставка станет «Самовывоз». Удалить?')">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?= (int)$z['id'] ?>">
             <button type="submit" class="danger">Удалить</button>

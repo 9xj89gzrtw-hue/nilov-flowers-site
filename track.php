@@ -10,7 +10,10 @@ require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/util.php';
 
-$phone = trim($_GET['phone'] ?? '');
+/* W98-fixE (E5): телефон читаем только из POST — ПД не попадают в URL и логи
+   доступа (GET /track?phone=… уходит в историю). Просто перерисовка — введённый
+   номер остаётся в value, клавиша Enter отправляет форму (submit-кнопка). */
+$phone = trim($_POST['phone'] ?? '');
 $orders = [];
 $rlLimited = false;
 $rlWaitMin = 1;
@@ -94,14 +97,14 @@ function trackStep(string $status): int {
       </nav>
       <div class="page-hero">
         <h1 class="page-hero__title">Где мой заказ?</h1>
-        <p class="section-sub">Введите телефон, который указали при оформлении — покажем статус ваших последних заказов.</p>
+        <p class="section-sub">Введите телефон, который указали при оформлении, — покажем статус ваших последних заказов.</p>
       </div>
 
-      <form class="order-form" method="get" action="/track" style="grid-template-columns:1fr">
+      <form class="order-form" method="post" action="/track" style="grid-template-columns:1fr">
         <div class="order-form__field">
           <label for="trackPhone">Телефон из заказа</label>
           <input type="tel" id="trackPhone" name="phone" value="<?= e($phone) ?>" placeholder="+7 (900) 123-45-67" required>
-          <span class="order-form__hint">Без пароля: адрес видим только районом доставки</span>
+          <span class="order-form__hint">Без пароля: показываем только район доставки</span>
         </div>
         <button type="submit" class="btn btn--accent order-form__submit">Проверить статус</button>
       </form>
@@ -123,7 +126,7 @@ function trackStep(string $status): int {
             </div>
             <p class="track-card__meta">
               <?= e($addr) ?> · Сумма: <strong><?= formatPrice((int)$o['total']) ?></strong>
-              <?php if ($o['status'] === 'new'): ?><br>Мы свяжемся с вами для подтверждения в течение 30 минут.
+              <?php if ($o['status'] === 'new'): ?><br>Мы свяжемся с вами для подтверждения в течение 15 минут.
               <?php elseif ($o['status'] === 'confirmed'): ?><br>Букет собираем — фото пришлём перед отправкой.
               <?php elseif ($o['status'] === 'done'): ?><br>Доставлено. Спасибо, что выбираете нас! 💐
               <?php endif; ?>

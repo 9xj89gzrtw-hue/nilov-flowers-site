@@ -4,6 +4,13 @@
 (function () {
   if (!window.cart) return;
 
+  /* W98-fixF (F4): цель Метрики — guarded (нет счётчика/ym → тихий пропуск) */
+  function nfGoal(name) {
+    if (window.ym && window.__nfYmId) {
+      try { ym(window.__nfYmId, 'reachGoal', name); } catch (e) { /* метрика не критична */ }
+    }
+  }
+
   const toggle = document.getElementById('cartToggle');
   const count = document.getElementById('cartCount');
   const panel = document.getElementById('cartPanel');
@@ -30,7 +37,9 @@
   }
 
   function formatPrice(price) {
-    return String(Math.round(Number(price) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    /* W98-fixF (F6): тысячи — неразрывным пробелом U+00A0 (как PHP formatPrice):
+       «2 500 ₽» не рвётся по строке на «2» и «500» */
+    return String(Math.round(Number(price) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, '\u00A0');
   }
 
   function itemRowHtml(item) {
@@ -224,6 +233,18 @@
     /* Панель открыта — обновляем апсейл при каждой мутации корзины,
        чтобы добавленный товар сразу исчезал из предложений. */
     if (!panel.hidden) renderUpsell();
+
+    /* W98-fixF (F7): пустая корзина на #order — показываем заглушку волны E
+       (#orderEmptyState уже в DOM, скрыта инлайном) и прячем саму форму:
+       заголовок секции и «В заказе: …» остаются. Инлайн-display (не [hidden]):
+       CSS задаёт .order-form{display:grid} и перебил бы атрибут. Добавили товар /
+       вернули из корзины — форма возвращается. */
+    var orderEmptyEl = document.getElementById('orderEmptyState');
+    if (orderEmptyEl) {
+      var orderFormEl = document.getElementById('orderForm');
+      orderEmptyEl.style.display = items.length === 0 ? 'block' : 'none';
+      if (orderFormEl) orderFormEl.style.display = items.length === 0 ? 'none' : '';
+    }
   }
 
   /* Апсейл в корзине: допродаём активные товары, которых ещё нет в корзине
@@ -296,6 +317,8 @@
 
   function open() {
     panel.hidden = false;
+    /* W98-fixF (F4): открытие drawer → cart_open (воронка) */
+    nfGoal('cart_open');
     document.body.classList.add('no-scroll');
     /* a11y-критик S2: body.overflow не блокирует window-scroll на iOS/Safari — вешаем на html */
     document.documentElement.classList.add('no-scroll');

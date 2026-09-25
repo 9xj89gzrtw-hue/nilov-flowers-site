@@ -47,6 +47,14 @@ if ($statusFilter !== '' && !array_key_exists($statusFilter, statuses())) {
 }
 $dateFrom = trim((string)($_GET['date_from'] ?? ''));
 $dateTo = trim((string)($_GET['date_to'] ?? ''));
+/* W98-fixD (D1): планирование по дате ДОСТАВКИ — диапазон + быстрые чипы.
+   Существующие date_from/date_to — это даты СОЗДАНИЯ, их подписи переименованы ниже. */
+$deliveryFrom = trim((string)($_GET['delivery_from'] ?? ''));
+$deliveryTo = trim((string)($_GET['delivery_to'] ?? ''));
+$deliveryChip = (string)($_GET['dchip'] ?? '');
+if (!in_array($deliveryChip, ['today', 'tomorrow', 'week', 'nodate'], true)) {
+    $deliveryChip = '';
+}
 
 $sql = 'SELECT o.*, z.name AS zone_name FROM orders o
         LEFT JOIN delivery_zones z ON z.id = o.delivery_zone_id WHERE 1=1';
@@ -62,6 +70,29 @@ if ($dateFrom !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateFrom)) {
 if ($dateTo !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateTo)) {
     $sql .= ' AND o.created_at <= :dt';
     $params[':dt'] = $dateTo . ' 23:59:59';
+}
+/* W98-fixD (D1): фильтр по желаемой дате доставки (delivery_date — «ГГГГ-ММ-ДД» или пусто) */
+if ($deliveryFrom !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $deliveryFrom)) {
+    $sql .= ' AND o.delivery_date >= :ddf';
+    $params[':ddf'] = $deliveryFrom;
+}
+if ($deliveryTo !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $deliveryTo)) {
+    $sql .= ' AND o.delivery_date <= :ddt';
+    $params[':ddt'] = $deliveryTo;
+}
+if ($deliveryChip === 'today') {
+    $sql .= ' AND o.delivery_date = :dchip_date';
+    $params[':dchip_date'] = date('Y-m-d');
+} elseif ($deliveryChip === 'tomorrow') {
+    $sql .= ' AND o.delivery_date = :dchip_date';
+    $params[':dchip_date'] = date('Y-m-d', strtotime('+1 day'));
+} elseif ($deliveryChip === 'week') {
+    $sql .= ' AND o.delivery_date >= :dchip_from AND o.delivery_date <= :dchip_to';
+    $params[':dchip_from'] = date('Y-m-d');
+    $params[':dchip_to'] = date('Y-m-d', strtotime('+6 days'));
+} elseif ($deliveryChip === 'nodate') {
+    /* «как можно скорее» — без даты доставки */
+    $sql .= " AND (o.delivery_date IS NULL OR o.delivery_date = '')";
 }
 $sql .= ' ORDER BY o.id DESC';
 $stmt = $pdo->prepare($sql);
@@ -94,28 +125,45 @@ if (!in_array($range, ['1', '7', '30', '90', 'all'], true)) {
     $range = '30';
 }
 $revenueStatuses = "('confirmed','done','unredeemed')";
-/* Операционный критик W38: «как сегодня?» — главный вопрос флориста; range=1 = с полуночи. */
+/* Операционный критик W38: «как сегодня?» — главный вопрос флориста; range=1 = с полуночи.
+   W98-fixD (D6): SQLite datetime('now','localtime') живёт по таймзоне ОС (на стенде UTC —
+   на 3 часа позади MSK), а магазин — по Europe/Moscow (date_default_timezone_set в config.php).
+   Границы периодов считаем в PHP и передаём параметрами — статистика честная в любой зоне. */
+$rangeCond = '';
+$rangeParams = [];
 if ($range === '1') {
-    $rangeCond = " AND date(o.created_at) = date('now','localtime')";
-} else {
-    $rangeCond = $range === 'all' ? '' : " AND o.created_at >= datetime('now','localtime','-" . (int)$range . " days')";
+    $rangeCond = ' AND date(o.created_at) = :today';
+    $rangeParams[':today'] = date('Y-m-d');
+} elseif ($range !== 'all') {
+    $rangeCond = ' AND o.created_at >= :range_start';
+    $rangeParams[':range_start'] = date('Y-m-d H:i:s', strtotime('-' . (int)$range . ' days'));
 }
 
-$revRow = $pdo->query("SELECT COALESCE(SUM(o.total),0), COUNT(*) FROM orders o
-    WHERE o.status IN $revenueStatuses$rangeCond")->fetch(PDO::FETCH_NUM);
+$revSt = $pdo->prepare("SELECT COALESCE(SUM(o.total),0), COUNT(*) FROM orders o
+    WHERE o.status IN $revenueStatuses$rangeCond");
+$revSt->execute($rangeParams);
+$revRow = $revSt->fetch(PDO::FETCH_NUM);
 $revenue = (int)$revRow[0];
 $paidCount = (int)$revRow[1];
 $avgCheck = $paidCount > 0 ? (int)round($revenue / $paidCount) : 0;
-$newCount = (int)$pdo->query("SELECT COUNT(*) FROM orders o WHERE o.status = 'new'$rangeCond")->fetchColumn();
-$allCount = (int)$pdo->query("SELECT COUNT(*) FROM orders o WHERE 1=1$rangeCond")->fetchColumn();
+$newSt = $pdo->prepare("SELECT COUNT(*) FROM orders o WHERE o.status = 'new'$rangeCond");
+$newSt->execute($rangeParams);
+$newCount = (int)$newSt->fetchColumn();
+$allSt = $pdo->prepare("SELECT COUNT(*) FROM orders o WHERE 1=1$rangeCond");
+$allSt->execute($rangeParams);
+$allCount = (int)$allSt->fetchColumn();
 /* W38: в режиме «Сегодня» — вчерашний результат для сравнения («больше или меньше обычного?») */
 $yRev = 0; $yCount = 0;
 if ($range === '1') {
-    $yr = $pdo->query("SELECT COALESCE(SUM(o.total),0), COUNT(*) FROM orders o WHERE o.status IN $revenueStatuses AND date(o.created_at) = date('now','localtime','-1 day')")->fetch(PDO::FETCH_NUM);
+    $yrSt = $pdo->prepare("SELECT COALESCE(SUM(o.total),0), COUNT(*) FROM orders o WHERE o.status IN $revenueStatuses AND date(o.created_at) = :yday");
+    $yrSt->execute([':yday' => date('Y-m-d', strtotime('-1 day'))]);
+    $yr = $yrSt->fetch(PDO::FETCH_NUM);
     $yRev = (int)$yr[0]; $yCount = (int)$yr[1];
 }
 
-$statusBreak = $pdo->query("SELECT status, COUNT(*) AS c FROM orders o WHERE 1=1$rangeCond GROUP BY status")->fetchAll();
+$sbSt = $pdo->prepare("SELECT status, COUNT(*) AS c FROM orders o WHERE 1=1$rangeCond GROUP BY status");
+$sbSt->execute($rangeParams);
+$statusBreak = $sbSt->fetchAll();
 $statusCounts = [];
 foreach ($statusBreak as $sb) {
     $statusCounts[$sb['status']] = (int)$sb['c'];
@@ -123,10 +171,12 @@ foreach ($statusBreak as $sb) {
 
 /* Sparkline: выручка по дням за период (для all — последние 90 дней, чтобы график не разрастался) */
 $sparkDays = $range === 'all' ? 90 : max(1, (int)$range);
-$sparkRows = $pdo->query("SELECT date(o.created_at) AS d, SUM(o.total) AS rev FROM orders o
+$spSt = $pdo->prepare("SELECT date(o.created_at) AS d, SUM(o.total) AS rev FROM orders o
     WHERE o.status IN $revenueStatuses
-      AND o.created_at >= datetime('now','localtime','-" . $sparkDays . " days')
-    GROUP BY date(o.created_at)")->fetchAll();
+      AND o.created_at >= :spark_start
+    GROUP BY date(o.created_at)");
+$spSt->execute([':spark_start' => date('Y-m-d H:i:s', strtotime('-' . $sparkDays . ' days'))]);
+$sparkRows = $spSt->fetchAll();
 $revByDay = [];
 foreach ($sparkRows as $sr) {
     $revByDay[$sr['d']] = (int)$sr['rev'];
@@ -138,16 +188,77 @@ for ($i = $sparkDays - 1; $i >= 0; $i--) {
 }
 $sparkMax = max($sparkData) === [] ? 0 : max(array_column($sparkData, 'rev'));
 
-$topProducts = $pdo->query("SELECT oi.product_id, oi.name, SUM(oi.qty) AS sold,
+$tpSt = $pdo->prepare("SELECT oi.product_id, oi.name, SUM(oi.qty) AS sold,
         p.image, p.slug
     FROM order_items oi
     JOIN orders o ON o.id = oi.order_id
     LEFT JOIN products p ON p.id = oi.product_id
     WHERE o.status IN $revenueStatuses$rangeCond
     GROUP BY oi.product_id, oi.name
-    ORDER BY sold DESC, oi.name LIMIT 5")->fetchAll();
+    ORDER BY sold DESC, oi.name LIMIT 5");
+$tpSt->execute($rangeParams);
+$topProducts = $tpSt->fetchAll();
 
 $itemsStmt = $pdo->prepare('SELECT name, price, qty FROM order_items WHERE order_id = :i');
+
+/* ---------- W98-fixD (D2): чек-лист запуска — динамика по settings/БД ---------- */
+$chkDemoPhone = '+7 (900) 000-00-00';
+$chkPhone = trim(setting('shop_phone', ''));
+$chkEmail = trim(setting('shop_email', ''));
+$chkLegalOk = trim(setting('legal_name', '')) !== '' && trim(setting('legal_inn', '')) !== '';
+/* email уведомлений: как в notify.php — setting notify_email, иначе владельцу (role=owner) */
+$chkNotifyTo = trim(setting('notify_email', ''));
+if ($chkNotifyTo === '') {
+    $chkOwner = $pdo->query("SELECT notify_email, email, login FROM admin_users WHERE role = 'owner' AND notify_enabled = 1 LIMIT 1")->fetch();
+    if ($chkOwner) {
+        $chkNotifyTo = trim((string)($chkOwner['notify_email'] ?: $chkOwner['email'] ?: $chkOwner['login']));
+    }
+}
+$chkZones = (int)$pdo->query('SELECT COUNT(*) FROM delivery_zones')->fetchColumn();
+$chkProducts = (int)$pdo->query('SELECT COUNT(*) FROM products WHERE is_active = 1')->fetchColumn();
+$chkPromos = (int)$pdo->query('SELECT COUNT(*) FROM promo_codes')->fetchColumn();
+$chkMetrika = trim(setting('metrika_counter_id', ''));
+/* демо-заказы: «тест» в имени (SQLite LIKE не регистронезависим для кириллицы — оба регистра)
+   или телефон с «900» (демо-номер вида +7 (900) …) */
+$chkDemoOrders = (int)$pdo->query("SELECT COUNT(*) FROM orders
+    WHERE customer_name LIKE '%тест%' OR customer_name LIKE '%Тест%'
+       OR customer_name LIKE '%ТЕСТ%' OR phone LIKE '%900%'")->fetchColumn();
+
+$chk = [
+    ['ok' => $chkPhone !== '' && $chkPhone !== $chkDemoPhone,
+     'label' => 'Телефон магазина — реальный, не демо',
+     'hint' => 'В настройках стоит демо-номер «' . $chkDemoPhone . '» — впишите настоящий в «Настройки → Общие».',
+     'url' => '/admin/settings.php#s-common'],
+    ['ok' => $chkEmail !== '',
+     'label' => 'Email магазина задан',
+     'hint' => 'Заполните «shop_email» в «Настройки → Общие» — с него покупатели пишут вам.',
+     'url' => '/admin/settings.php#s-common'],
+    ['ok' => $chkLegalOk,
+     'label' => 'Реквизиты заполнены (название и ИНН)',
+     'hint' => 'Покупатели не видят, кому платят: заполните ФИО/название и ИНН в «Настройки → Реквизиты».',
+     'url' => '/admin/settings.php#s-legal'],
+    ['ok' => $chkNotifyTo !== '' && $chkNotifyTo !== 'admin@example.com',
+     'label' => 'Email уведомлений — не демо admin@example.com',
+     'hint' => 'Укажите в «Профиль → Уведомления» адрес, куда слать письма о заказах (сейчас демо admin@example.com).',
+     'url' => '/admin/profile.php'],
+    ['ok' => $chkZones >= 4,
+     'label' => 'Зон доставки не меньше 4',
+     'hint' => 'Сейчас зон: ' . $chkZones . '. Для города хватит 4–6 районов — «Зоны доставки».',
+     'url' => '/admin/zones.php'],
+    ['ok' => $chkProducts >= 10,
+     'label' => 'Активных товаров не меньше 10',
+     'hint' => 'Сейчас показанных: ' . $chkProducts . '. Каталог из 3 букетов выглядит пусто — добавьте товары.',
+     'url' => '/admin/products.php'],
+    ['ok' => $chkPromos > 0,
+     'label' => 'Есть хотя бы один промокод',
+     'hint' => 'Промокоды подхватывают корзину и спасибо-страницу — создайте первый в «Промокоды».',
+     'url' => '/admin/promo.php'],
+    ['ok' => $chkDemoOrders === 0,
+     'label' => 'Демо-заказов нет',
+     'hint' => 'Найдено демо-заказов: ' . $chkDemoOrders . ' (имя с «тест» или телефон 900…) — удалите их из списка.',
+     'url' => '/admin/index.php'],
+];
+$chkDone = count(array_filter($chk, fn($c) => $c['ok']));
 
 adminHeader('Заказы', 'index');
 flash();
@@ -259,15 +370,73 @@ $dashqs = fn(string $r) => '/admin/index.php?' . e(http_build_query(array_merge(
 </div>
 </div>
 
+<?php /* W98-fixD (D2): чек-лист запуска — сворачивается, стили соседних карточек дашборда */ ?>
+<div class="card" id="launch-check">
+  <details open>
+    <summary style="cursor:pointer;display:flex;align-items:center;gap:12px;flex-wrap:wrap;list-style:none">
+      <span style="font-family:var(--font-display);font-size:1.25rem;font-weight:600">Чек-лист запуска</span>
+      <span class="status-badge <?= $chkDone === count($chk) ? 'done' : 'new' ?>"><?= $chkDone === count($chk) ? '✅ всё готово' : 'готово ' . $chkDone . ' из ' . count($chk) ?></span>
+      <span style="font-size:.78rem;color:var(--ink-soft);margin-left:auto">нажмите, чтобы свернуть/раскрыть</span>
+    </summary>
+    <ul style="list-style:none;margin-top:14px;display:grid;gap:7px;font-size:.9rem">
+      <?php foreach ($chk as $c): ?>
+      <li style="display:flex;gap:9px;align-items:flex-start">
+        <span aria-hidden="true" style="flex:0 0 auto;font-weight:700;<?= $c['ok'] ? 'color:var(--ok,#2f7a4a)' : 'color:var(--err,#C43A3A)' ?>"><?= $c['ok'] ? '✔' : '✘' ?></span>
+        <span><a href="<?= e($c['url']) ?>" style="text-decoration:underline"><?= e($c['label']) ?></a><?php if (!$c['ok']): ?><br><small style="color:var(--ink-soft)"><?= e($c['hint']) ?></small><?php endif; ?></span>
+      </li>
+      <?php endforeach; ?>
+      <?php /* Метрика — необязательная проверка */ ?>
+      <li style="display:flex;gap:9px;align-items:flex-start">
+        <span aria-hidden="true" style="flex:0 0 auto;font-weight:700;color:var(--ink-soft)"><?= $chkMetrika !== '' ? '✔' : '○' ?></span>
+        <span><a href="/admin/settings.php#s-legal" style="text-decoration:underline">Счётчик Яндекс.Метрики</a> — <small style="color:var(--ink-soft)"><?= $chkMetrika !== '' ? 'задан ✓' : 'необязательно: без счётчика сайт работает, но вы не увидите статистику' ?></small></span>
+      </li>
+    </ul>
+    <p style="font-size:.78rem;font-weight:600;color:var(--ink-soft);margin:14px 0 4px">Напоминания (отмечаются вручную):</p>
+    <ul style="list-style:none;display:grid;gap:7px;font-size:.9rem">
+      <li style="display:flex;gap:9px;align-items:flex-start">
+        <span aria-hidden="true" style="flex:0 0 auto;font-weight:700;color:var(--ink-soft)">○</span>
+        <span>Подать уведомление РКН об обработке персональных данных (152-ФЗ) — до запуска, на <a href="https://zpp.gov.ru" target="_blank" rel="noopener">zpp.gov.ru</a>.</span>
+      </li>
+      <li style="display:flex;gap:9px;align-items:flex-start">
+        <span aria-hidden="true" style="flex:0 0 auto;font-weight:700;color:var(--ink-soft)">○</span>
+        <span><a href="/admin/zones.php" style="text-decoration:underline">Заполнить зоны доставки</a>, <a href="/admin/settings.php#s-contacts" style="text-decoration:underline">часы работы и мессенджеры</a> (WhatsApp/Telegram/ВК).</span>
+      </li>
+      <li style="display:flex;gap:9px;align-items:flex-start">
+        <span aria-hidden="true" style="flex:0 0 auto;font-weight:700;color:var(--ink-soft)">○</span>
+        <span><a href="/admin/profile.php" style="text-decoration:underline">Сменить пароль</a> администратора — демо-пароль знали настройщики.</span>
+      </li>
+    </ul>
+  </details>
+</div>
+
 <div class="card">
+  <?php /* W98-fixD (D1): быстрые чипы планирования — по дате ДОСТАВКИ (не создания) */
+        $chipBase = array_filter($_GET, fn($v, $k) => $v !== '' && !in_array($k, ['page', 'dchip', 'delivery_from', 'delivery_to'], true), ARRAY_FILTER_USE_BOTH);
+        $chipUrl = static fn(string $c): string => '/admin/index.php?' . e(http_build_query(array_merge($chipBase, $c === '' ? [] : ['dchip' => $c])));
+        $chipDefs = [['today', 'Сегодня'], ['tomorrow', 'Завтра'], ['week', '7 дней'], ['nodate', 'Без даты']]; ?>
+  <div class="dash-ranges" style="margin-bottom:12px" aria-label="Быстрые фильтры по дате доставки">
+    <span class="dash-metric__label" style="align-self:center;white-space:nowrap">Доставка:</span>
+    <?php foreach ($chipDefs as [$ck, $cl]): ?>
+    <a href="<?= $chipUrl($ck) ?>" class="<?= $deliveryChip === $ck ? 'active' : '' ?>"><?= e($cl) ?></a>
+    <?php endforeach; ?>
+    <?php if ($deliveryChip !== ''): ?><a href="<?= $chipUrl('') ?>">× сбросить чип</a><?php endif; ?>
+  </div>
   <form method="get" class="filters-bar">
     <div>
-      <label class="f" for="f-from">С даты</label>
+      <label class="f" for="f-from">Создан с</label>
       <input class="input" id="f-from" type="date" name="date_from" value="<?= e($dateFrom) ?>" style="width:auto">
     </div>
     <div>
-      <label class="f" for="f-to">По дату</label>
+      <label class="f" for="f-to">Создан по</label>
       <input class="input" id="f-to" type="date" name="date_to" value="<?= e($dateTo) ?>" style="width:auto">
+    </div>
+    <div>
+      <label class="f" for="f-dfrom">Доставка с</label>
+      <input class="input" id="f-dfrom" type="date" name="delivery_from" value="<?= e($deliveryFrom) ?>" style="width:auto">
+    </div>
+    <div>
+      <label class="f" for="f-dto">Доставка по</label>
+      <input class="input" id="f-dto" type="date" name="delivery_to" value="<?= e($deliveryTo) ?>" style="width:auto">
     </div>
     <div>
       <label class="f" for="f-status">Статус</label>
@@ -278,9 +447,9 @@ $dashqs = fn(string $r) => '/admin/index.php?' . e(http_build_query(array_merge(
         <?php endforeach; ?>
       </select>
     </div>
-    <div style="display:flex;gap:10px;align-items:center;margin-top:19px">
+    <div style="display:flex;gap:10px;align-items:center;margin-top:19px;flex-wrap:wrap">
       <button class="btn" type="submit">Показать</button>
-      <?php if ($statusFilter !== '' || $dateFrom !== '' || $dateTo !== ''): ?>
+      <?php if ($statusFilter !== '' || $dateFrom !== '' || $dateTo !== '' || $deliveryFrom !== '' || $deliveryTo !== '' || $deliveryChip !== ''): ?>
         <a class="btn btn--ghost" href="/admin/index.php">Сбросить</a>
       <?php endif; ?>
       <a class="btn btn--ghost" href="/admin/export.php?<?= e(http_build_query(array_filter($_GET, fn($v) => $v !== ''))) ?>">Экспорт в CSV</a>
@@ -289,7 +458,7 @@ $dashqs = fn(string $r) => '/admin/index.php?' . e(http_build_query(array_merge(
 </div>
 
 <?php if (!$orders): ?>
-<div class="card"><div class="empty-state"><strong>Заказов пока нет</strong>Появятся после первого заказа с сайта.</div></div>
+<div class="card"><div class="empty-state"><strong><?= ($statusFilter !== '' || $dateFrom !== '' || $dateTo !== '' || $deliveryFrom !== '' || $deliveryTo !== '' || $deliveryChip !== '') ? 'По этим фильтрам заказов нет' : 'Заказов пока нет' ?></strong><?= ($statusFilter !== '' || $dateFrom !== '' || $dateTo !== '' || $deliveryFrom !== '' || $deliveryTo !== '' || $deliveryChip !== '') ? 'Попробуйте расширить диапазон или сбросить фильтры.' : 'Появятся после первого заказа с сайта.' ?></div></div>
 <?php else: foreach ($orders as $o): ?>
 <div class="card">
   <div class="table-scroll"><table>
@@ -304,6 +473,20 @@ $dashqs = fn(string $r) => '/admin/index.php?' . e(http_build_query(array_merge(
           · Оплата: <?= $o['payment_method'] === 'online' ? 'онлайн' : 'при получении' ?>
         </small>
         <?php if ($o['comment'] !== ''): ?><br><small>Комментарий: <?= e($o['comment']) ?></small><?php endif; ?>
+      </td>
+      <td style="width:130px">
+        <?php /* W98-fixD (D1): колонка планирования — дата + слот коротко («25.09, Утро») */
+        $dd = trim((string)($o['delivery_date'] ?? ''));
+        $ds = trim((string)($o['delivery_slot'] ?? ''));
+        if ($dd !== '') {
+            $ddShort = preg_match('/^\d{4}-\d{2}-\d{2}$/', $dd) ? date('d.m', strtotime($dd)) : mb_substr($dd, 0, 5);
+            if ($ds !== '' && preg_match('/^[\p{L}\p{Nd}]+/u', $ds, $m)) {
+                $ddShort .= ', ' . $m[0];
+            }
+            echo '<strong>' . e($ddShort) . '</strong>';
+        } else {
+            echo '<span title="Как можно скорее">—</span>';
+        } ?>
       </td>
       <td style="width:240px">
         <?php

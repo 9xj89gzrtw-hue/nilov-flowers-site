@@ -29,7 +29,7 @@ try {
 
 if (!$category) {
     http_response_code(404);
-    $pageTitle = 'Страница не найдена';
+    $pageTitle = 'Страница не найдена — ' . $shopName;
     require __DIR__ . '/partials/head.php';
     echo '<title>' . e($pageTitle) . '</title></head><body>';
     require __DIR__ . '/partials/header.php';
@@ -196,7 +196,7 @@ function render_product_card(array $p, array $ctx): void
                 <svg viewBox="0 0 80 94" style="width:30%;margin:auto;color:var(--blue)" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="40" cy="30" r="11"/><circle cx="26" cy="38" r="8"/><circle cx="54" cy="38" r="8"/><path d="M40 41v20M40 61c-8 6-14 14-16 25M40 61c8 6 14 14 16 25"/></svg>
               <?php endif; ?>
             </a>
-            <?php if ($isSale): $offPct = (int)$p['price'] > 0 ? (int)round((1 - $price / (int)$p['price']) * 100) : 0; ?><span class="product-card__badge product-card__badge--sale"><?= e(setting('badge_sale_text', 'Акционная цена')) ?><?php if ($offPct > 0): ?> −<?= $offPct ?>%<?php endif; ?></span><?php endif; ?>
+            <?php if ($isSale): $offPct = (int)$p['price'] > 0 ? (int)round((1 - $price / (int)$p['price']) * 100) : 0; ?><span class="product-card__badge product-card__badge--sale"><?= e(setting('badge_sale_text', 'Скидка')) ?><?php if ($offPct > 0): ?> <?= $offPct ?>%<?php endif; ?></span><?php endif; ?>
             <?php if ((int)($p['is_urgent'] ?? 0) === 1): ?><span class="product-card__badge product-card__badge--urgent"><?= e(setting('badge_urgent_text', 'Успеть сегодня')) ?></span><?php endif; ?>
             <?php if ($isHit): ?><span class="product-card__badge product-card__badge--hit"><?= e(setting('badge_hit_text', 'Хит')) ?></span><?php endif; ?>
             <?php if ($isPremium): ?><span class="product-card__badge product-card__badge--premium"><?= e(setting('badge_premium_text', 'Премиум')) ?></span><?php endif; ?>
@@ -230,11 +230,17 @@ function render_product_card(array $p, array $ctx): void
 
 /* ---- Мета-контент страницы ---- */
 
-/* Intro: description категории из БД (колонки пока нет — SELECT * подхватит в
-   будущем), иначе дефолт-шаблон setting('category_intro', …) с подстановкой {name} */
-$intro = trim((string)($category['description'] ?? ''));
+/* W98-fixE (E1): интро категории — setting('category_intro_{slug}') с ручным текстом
+   из БД (INSERT OR IGNORE в db.php); фолбэк — грамматически безопасный шаблон
+   с {name} (старый дефолт «Свежие {name} с утренней поставки» давал калеку
+   «Свежие В шляпной коробке с утренней поставки»). Колоночное описание категории
+   (если появится в будущих миграциях) — резервная ветка. */
+$intro = trim(str_replace('{name}', $catName, setting(
+    'category_intro_' . $slug,
+    '{name} с доставкой по Санкт-Петербургу — соберём под ваш повод и привезём в день заказа. Оплата при получении.'
+)));
 if ($intro === '') {
-    $intro = trim(str_replace('{name}', $catName, setting('category_intro', 'Свежие {name} с утренней поставки — соберём и доставим в день заказа по СПб. Оплата при получении.')));
+    $intro = trim((string)($category['description'] ?? ''));
 }
 if ($intro === '') {
     $intro = $catName . ' с доставкой по Санкт-Петербургу';

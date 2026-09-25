@@ -16,8 +16,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !csrf_check()) {
 
 $pdo = db();
 
+/* W98-fixD (D5): роли есть (admin_users.role: owner/staff — admin/users.php).
+   Платёжные ключи и каналы уведомлений — только владельцу; тексты и витрина
+   остаются доступными сотруднику (так решила владелица). */
+$me = currentAdmin();
+$isOwner = $me !== null && (string)($me['role'] ?? 'owner') === 'owner';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !isset($_POST['hist_action'])) {
-    $keys = ['shop_name','shop_phone','shop_address','pickup_address','hero_title','hero_subtitle',
+    $keys = ['shop_name','shop_phone','shop_address','site_url','pickup_address','hero_title','hero_subtitle',
         'hero_button_text','hero_button_link','hero_image_alt','steps_title','step_1','step_2','step_3',
         'guarantees_title','guarantee_1','guarantee_2','guarantee_3',
         'shop_email','shop_hours','shop_vk','shop_max_link','shop_instagram','header_phone','header_address',
@@ -77,7 +83,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
         'journal_2_title','journal_2_text','journal_2_link',
         'journal_3_title','journal_3_text','journal_3_link',
         /* W96-fix3: футер-описание, «доставим сегодня» на товаре, текст звонка на спасибо-странице */
-        'footer_about','product_today_text','thanks_call_text'];
+        'footer_about','product_today_text','thanks_call_text',
+        /* W98-fixE (E1/E18): интро категорий /category/{slug} — 6 посадочных */
+        'category_intro_rozy','category_intro_sbornye-bukety','category_intro_polevye-cvety',
+        'category_intro_avtorskie-bukety','category_intro_v-shlyapnoy-korobke','category_intro_sladkie-podarki',
+        /* W98-fixE (E8/E18): дата обновления политики ПД (юридический раздел) */
+        'policy_updated'];
     $values = [];
     /* КЛАСС-ЗАЩИТА (критик-2): ключ из allowlist, которого нет в отправленной форме,
        НЕ должен затираеться пустотой. Текстовые поля: пишем только если ключ реально пришёл
@@ -127,6 +138,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
     /* cart_mode — select с валидацией всех трёх режимов витрины (header.php: drawer|hybrid|page) */
     if (array_key_exists('cart_mode', $_POST)) {
         $values['cart_mode'] = in_array($_POST['cart_mode'] ?? '', ['drawer', 'hybrid', 'page'], true) ? $_POST['cart_mode'] : 'drawer';
+    }
+    /* W98-fixD (D5): сотруднику платёжные ключи и каналы уведомлений не сохраняются —
+       даже собранным руками POST (в форме этих полей у staff нет). Не затираем, а игнорируем. */
+    if (!$isOwner) {
+        foreach (['yk_enabled', 'yk_shop_id', 'yk_secret_key', 'vat_rate', 'notify_enabled'] as $ownerOnlyKey) {
+            unset($values[$ownerOnlyKey]);
+        }
     }
     /* снимок ДО записи — чтобы «Отменить» вернул точное предыдущее состояние (критерий 16) */
     settingsSnapshot('save');
@@ -191,6 +209,16 @@ flash();
 ?>
 <h1>Настройки магазина</h1>
 <style>.card[id]{scroll-margin-top:120px}</style>
+
+<?php /* W98-fixD (D8): поиск по настройкам — фильтрует строки полей (label/placeholder)
+       во всех разделах, чипы разделов и scrollspy не трогаем; пустой запрос = показать всё */ ?>
+<div class="card" style="padding:14px 18px;margin-bottom:16px">
+  <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+    <input class="input" id="settings-search" type="search" placeholder="Поиск по настройкам…" aria-label="Поиск по настройкам" autocomplete="off" style="max-width:420px;margin:0">
+    <span id="settings-search-count" style="font-size:.82rem;font-weight:600;color:var(--rose-cta,#AE4A71)" aria-live="polite"></span>
+  </div>
+  <p style="font-size:.78rem;color:var(--ink-soft);margin:6px 0 0">Ищет по подписям полей и серым подсказкам-примерам во всех разделах сразу. Пустой запрос — показать всё. Скрытые поиском поля всё равно сохраняются.</p>
+</div>
 
 <?php /* Оглавление настроек (критик-владелец: «9 секций на одной простыне — листать всё»).
        Якоря-чипы, прыжок в один клик, sticky — всегда под рукой. */ ?>
@@ -258,11 +286,15 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
   </script>
   <div class="card" id="s-common">
     <h2 style="font-family:var(--font-display);font-size:1.2rem;margin-bottom:8px">Общие</h2>
+    <?php if ($isOwner): ?>
     <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
       <input type="checkbox" name="notify_enabled" style="width:auto" <?= ($s['notify_enabled'] ?? '1') === '1' ? 'checked' : '' ?>>
       Уведомления о новых заказах (email + Telegram)
     </label>
     <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 10px 26px">Главный выключатель. Секретный код бота (его «токен») и ваш Telegram-чат настраиваются в разделе «Профиль».</p>
+    <?php else: /* W98-fixD (D5): каналы уведомлений — только владельцу */ ?>
+    <p style="font-size:.85rem;color:var(--ink-soft);margin:0 0 10px;padding:10px 12px;background:var(--bg-alt,#F1EAD9);border:1px dashed var(--ink-soft);border-radius:10px">🔒 Уведомления о новых заказах — <strong>доступно владельцу</strong>. Остальные настройки (тексты, витрина, контакты) вам открыты.</p>
+    <?php endif; ?>
     <div class="grid2">
       <div>
         <label class="f" for="s-name">Название магазина *</label>
@@ -271,6 +303,9 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
         <input class="input" id="s-phone" name="shop_phone" value="<?= sv('shop_phone', $s) ?>">
         <label class="f" for="s-addr">Адрес</label>
         <input class="input" id="s-addr" name="shop_address" value="<?= sv('shop_address', $s) ?>">
+        <label class="f" for="s-siteurl">Адрес сайта (для писем и ссылок)</label>
+        <input class="input" id="s-siteurl" name="site_url" value="<?= sv('site_url', $s) ?>" placeholder="https://flowers.interfood-catering.ru">
+        <p style="font-size:.75rem;color:var(--ink-soft);margin:2px 0 8px">Используется в письмах клиенту и ссылках восстановления пароля. Пусто — берётся домен по умолчанию.</p>
       </div>
       <div>
         <label class="f" for="s-logo" style="color:var(--rose-cta,#AE4A71);font-size:.95rem">🖼 Логотип в шапке сайта</label>
@@ -400,11 +435,11 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
         <div style="display:flex;gap:12px;margin-top:8px">
           <div style="flex:1">
             <label class="f" for="hp-btn">Кнопка на карточке</label>
-            <input class="input" id="hp-btn" name="hero_promo_btn_text" value="<?= sv('hero_promo_btn_text', $s) !== '' ? sv('hero_promo_btn_text', $s) : 'Подробнее' ?>" maxlength="30">
+            <input class="input" id="hp-btn" name="hero_promo_btn_text" value="<?= sv('hero_promo_btn_text', $s) !== '' ? sv('hero_promo_btn_text', $s) : 'Выбрать букет' ?>" maxlength="30">
           </div>
           <div style="flex:1">
             <label class="f" for="hp-link">Ссылка кнопки</label>
-            <input class="input" id="hp-link" name="hero_promo_link" value="<?= sv('hero_promo_link', $s) !== '' ? sv('hero_promo_link', $s) : '#order' ?>" maxlength="200" placeholder="#order или /occasion/…">
+            <input class="input" id="hp-link" name="hero_promo_link" value="<?= sv('hero_promo_link', $s) !== '' ? sv('hero_promo_link', $s) : '#catalog' ?>" maxlength="200" placeholder="#catalog или /occasion/…">
           </div>
         </div>
       </div>
@@ -496,6 +531,31 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
         <label class="f" for="ed-text" style="margin-top:10px">Текст editorial-строки между секциями каталога</label>
         <textarea class="input" id="ed-text" name="editorial_text" rows="2" maxlength="300"><?= sv('editorial_text', $s) !== '' ? sv('editorial_text', $s) : 'Соберём букет под ваш повод и бюджет — напишите пожелание в комментарии к заказу, флорист предложит варианты и фото до отправки' ?></textarea>
         <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Широкая строка-пауза после третьей товарной секции. Очистите поле — строка исчезнет с сайта.</p>
+      </div>
+    </div>
+
+    <?php /* W98-fixE (E1/E18): интро посадочных /category/{slug} — ручные тексты
+       редактируются здесь; пустое значение = витрина показывает грамматический
+       фолбэк «{Название} с доставкой по Санкт-Петербургу…» */ ?>
+    <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
+    <p style="font-size:.85rem;font-weight:600;margin:0 0 8px">Категории каталога — интро посадочных страниц</p>
+    <p style="font-size:.78rem;color:var(--ink-soft);margin:0 0 10px">Текст под заголовком на странице категории (/category/…) и её meta description. Пустое поле — витрина подставит нейтральный шаблон «Название с доставкой по Санкт-Петербургу…».</p>
+    <div class="grid2">
+      <div>
+        <label class="f" for="ci-rozy">Розы — /category/rozy</label>
+        <textarea class="input" id="ci-rozy" name="category_intro_rozy" rows="3" maxlength="400"><?= sv('category_intro_rozy', $s) ?></textarea>
+        <label class="f" for="ci-sbornye" style="margin-top:8px">Сборные букеты — /category/sbornye-bukety</label>
+        <textarea class="input" id="ci-sbornye" name="category_intro_sbornye-bukety" rows="3" maxlength="400"><?= sv('category_intro_sbornye-bukety', $s) ?></textarea>
+        <label class="f" for="ci-polevye" style="margin-top:8px">Полевые цветы — /category/polevye-cvety</label>
+        <textarea class="input" id="ci-polevye" name="category_intro_polevye-cvety" rows="3" maxlength="400"><?= sv('category_intro_polevye-cvety', $s) ?></textarea>
+      </div>
+      <div>
+        <label class="f" for="ci-avtorskie">Авторские букеты — /category/avtorskie-bukety</label>
+        <textarea class="input" id="ci-avtorskie" name="category_intro_avtorskie-bukety" rows="3" maxlength="400"><?= sv('category_intro_avtorskie-bukety', $s) ?></textarea>
+        <label class="f" for="ci-korobke" style="margin-top:8px">В шляпной коробке — /category/v-shlyapnoy-korobke</label>
+        <textarea class="input" id="ci-korobke" name="category_intro_v-shlyapnoy-korobke" rows="3" maxlength="400"><?= sv('category_intro_v-shlyapnoy-korobke', $s) ?></textarea>
+        <label class="f" for="ci-sladkie" style="margin-top:8px">Сладкие подарки — /category/sladkie-podarki</label>
+        <textarea class="input" id="ci-sladkie" name="category_intro_sladkie-podarki" rows="3" maxlength="400"><?= sv('category_intro_sladkie-podarki', $s) ?></textarea>
       </div>
     </div>
 
@@ -689,7 +749,7 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
         <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 0 26px">Включите, чтобы кнопка «Включить уведомления» внизу страницы настроек работала (нужны созданные ключи).</p>
         <div style="margin-left:26px;margin-top:6px">
           <label class="f" for="bd-sale">Бейдж со скидкой</label>
-          <input class="input" id="bd-sale" name="badge_sale_text" value="<?= sv('badge_sale_text', $s) !== '' ? sv('badge_sale_text', $s) : 'Акционная цена' ?>" maxlength="40">
+          <input class="input" id="bd-sale" name="badge_sale_text" value="<?= sv('badge_sale_text', $s) !== '' ? sv('badge_sale_text', $s) : 'Скидка' ?>" maxlength="40">
           <label class="f" for="bd-urg" style="margin-top:8px">Бейдж «успеть сегодня» (ограниченные букеты)</label>
           <input class="input" id="bd-urg" name="badge_urgent_text" value="<?= sv('badge_urgent_text', $s) !== '' ? sv('badge_urgent_text', $s) : 'Успеть сегодня' ?>" maxlength="40">
         </div>
@@ -1032,6 +1092,12 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
         <input class="input" id="l-addr" name="legal_address" value="<?= sv('legal_address', $s) ?>">
         <label class="f" for="l-mail">Email по вопросам ПДн</label>
         <input class="input" id="l-mail" name="legal_contact_email" value="<?= sv('legal_contact_email', $s) ?>">
+        <?php /* W98-fixE (E8/E18): дата последнего обновления политики ПД —
+           статичная строка в футе /policy (была <?= date() ?> — менялась
+           при каждом заходе). Ключ в БД не сидируется: пусто = дефолт из кода. */ ?>
+        <label class="f" for="l-polupd" style="margin-top:8px">Дата обновления политики ПД</label>
+        <input class="input" id="l-polupd" name="policy_updated" value="<?= sv('policy_updated', $s) !== '' ? sv('policy_updated', $s) : '01.09.2026' ?>" maxlength="10" placeholder="дд.мм.гггг">
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Отображается внизу страницы «Политика обработки персональных данных».</p>
       </div>
     </div>
     <?php /* SEO главной + Метрика (критерий 16, P1 аудита) */ ?>
@@ -1056,6 +1122,7 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
 
   <div class="card" id="s-pay">
     <h2 style="font-family:var(--font-display);font-size:1.2rem;margin-bottom:8px">Оплата: ЮKassa / при получении</h2>
+    <?php if ($isOwner): ?>
     <p style="font-size:.85rem;color:var(--ink-soft);margin:0 0 10px">Выключено — сайт принимает только оплату при получении. Включите и заполните ключи из личного кабинета ЮKassa (Интеграция → Ключи API), чтобы принимать карты и СБП онлайн.</p>
     <div class="grid2">
       <div>
@@ -1079,6 +1146,9 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
         <p style="font-size:.82rem;color:var(--ink-soft);margin-top:8px">Неверная ставка — риск вопросов от налоговой. «Без НДС» — стандарт для ИП на УСН.</p>
       </div>
     </div>
+    <?php else: /* W98-fixD (D5): платёжные ключи — только владельцу */ ?>
+    <p style="font-size:.85rem;color:var(--ink-soft);margin:0;padding:10px 12px;background:var(--bg-alt,#F1EAD9);border:1px dashed var(--ink-soft);border-radius:10px">🔒 Раздел «Оплата» (ключи ЮKassa, ставка НДС) — <strong>доступно владельцу</strong>. Сотруднику открыт остальной интерфейс настроек.</p>
+    <?php endif; ?>
   </div>
 
   <div class="card" id="s-guarantees">
@@ -1157,8 +1227,10 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
 require_once __DIR__ . '/../includes/vapid.php';
 $msgPush = '';
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['vapid_action'])) {
-    /* CSRF уже проверён глобальным гейтом в начале файла (строка ~10) */
-    if (($_POST['vapid_action'] ?? '') === 'gen') {
+    /* CSRF уже проверён глобальным гейтом в начале файла (~строка 12) */
+    if (!$isOwner) { /* W98-fixD (D5): push — канал уведомлений, только владельцу */
+        $msgPush = 'Push-уведомления настраивает владелец магазина.';
+    } elseif (($_POST['vapid_action'] ?? '') === 'gen') {
         $r = vapidGenerate();
         $msgPush = isset($r['error']) ? 'Не удалось: ' . $r['error'] : 'Ключи созданы ✅';
     } elseif (($_POST['vapid_action'] ?? '') === 'test') {
@@ -1173,6 +1245,9 @@ $hasKeys = vapidKeysExist();
 ?>
 <div class="card" id="s-push" style="margin-top:16px">
   <h2 style="font-family:var(--font-display);font-size:1.2rem;margin-bottom:8px">Push-уведомления на телефон (PWA)</h2>
+  <?php if (!$isOwner): /* W98-fixD (D5): канал уведомлений — только владельцу */ ?>
+  <p style="font-size:.85rem;color:var(--ink-soft);margin:0;padding:10px 12px;background:var(--bg-alt,#F1EAD9);border:1px dashed var(--ink-soft);border-radius:10px">🔒 Push-уведомления — <strong>доступно владельцу</strong>.</p>
+  <?php else: ?>
   <p style="font-size:.85rem;color:var(--ink-soft);margin:0 0 10px">Открываете сайт на телефоне → «В добавить на главный экран» → включаете уведомления здесь. Тогда о новых заказах телефон получит всплывающее сообщение даже с закрытым браузером. iOS: только из добавленного на экран приложения. Android/Chrome и Firefox: прямо с сайта после согласия.</p>
   <?php if ($msgPush !== ''): ?><p style="background:var(--bg-alt);border-radius:10px;padding:8px 12px;font-size:.85rem"><?= e($msgPush) ?></p><?php endif; ?>
   <p style="font-size:.85rem;margin:6px 0">Статус: ключи <b><?= $hasKeys ? 'созданы ✅' : 'не созданы ⚠️' ?></b> · подписок на устройствах: <b><?= (int)$pushCount ?></b></p>
@@ -1210,5 +1285,57 @@ $hasKeys = vapidKeysExist();
     </script>
     <?php endif; ?>
   </div>
+  <?php endif; /* W98-fixD (D5): конец owner-only блока push */ ?>
 </div>
+<script>
+/* W98-fixD (D8): поиск по настройкам — vanilla JS. Фильтрует строки полей по подписи label
+   и placeholder; запрос, совпавший с заголовком раздела, раскрывает раздел целиком.
+   Прячем через display:none — поля остаются в DOM и попадают в POST (сохранение после
+   поиска ничего не затирает). Чипы разделов и scrollspy не трогаем. */
+(function () {
+  var input = document.getElementById('settings-search');
+  var counter = document.getElementById('settings-search-count');
+  if (!input || !counter) return;
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.card[id^="s-"]'));
+  var rows = [];
+  cards.forEach(function (card) {
+    Array.prototype.forEach.call(card.querySelectorAll('label'), function (lb) {
+      var ctrl = null;
+      var forId = lb.getAttribute('for');
+      if (forId) { ctrl = document.getElementById(forId); }
+      if (!ctrl) { ctrl = lb.querySelector('input,select,textarea'); }
+      if (!ctrl) { ctrl = lb.nextElementSibling; }
+      if (!ctrl || !/^(INPUT|SELECT|TEXTAREA)$/.test(ctrl.tagName)) return;
+      var els = [lb];
+      if (ctrl !== lb && ctrl.parentNode !== lb) { els.push(ctrl); }
+      /* серая подсказка <p> сразу после поля — часть той же строки, прячем вместе */
+      var hint = ctrl.nextElementSibling;
+      if (hint && hint.tagName === 'P' && !hint.querySelector('input,select,textarea')) { els.push(hint); }
+      var hay = ((lb.textContent || '') + ' ' + (ctrl.getAttribute('placeholder') || '') + ' ' + (ctrl.getAttribute('title') || ''))
+        .toLowerCase().replace(/\s+/g, ' ').trim();
+      rows.push({ hay: hay, card: card, els: els });
+    });
+  });
+  function apply() {
+    var q = input.value.trim().toLowerCase();
+    var cardMatch = {};
+    cards.forEach(function (card) {
+      var h = card.querySelector('h2');
+      cardMatch[card.id] = q !== '' && !!h && h.textContent.toLowerCase().indexOf(q) !== -1;
+    });
+    var shown = 0;
+    rows.forEach(function (r) {
+      var on = q === '' || cardMatch[r.card.id] || r.hay.indexOf(q) !== -1;
+      if (on) { shown++; }
+      r.els.forEach(function (el) { el.style.display = on ? '' : 'none'; });
+    });
+    cards.forEach(function (card) {
+      var any = cardMatch[card.id] || rows.some(function (r) { return r.card === card && r.els[0].style.display !== 'none'; });
+      card.style.display = any ? '' : 'none';
+    });
+    counter.textContent = q === '' ? '' : (shown > 0 ? 'найдено ' + shown : 'ничего не найдено');
+  }
+  input.addEventListener('input', apply);
+})();
+</script>
 <?php adminFooter(); ?>

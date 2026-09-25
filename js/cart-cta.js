@@ -6,6 +6,14 @@
 (function () {
   if (!window.cart) return;
 
+  /* W98-fixF (F4): цель воронки Метрики — guarded (счётчик выключен или ещё
+     не загружен после согласия cookie → тихий пропуск; ПД в параметры не шлём). */
+  function nfGoal(name) {
+    if (window.ym && window.__nfYmId) {
+      try { ym(window.__nfYmId, 'reachGoal', name); } catch (e) { /* метрика не критична */ }
+    }
+  }
+
   /* W97-fixA (A8): пульс кнопки «+» гасится при prefers-reduced-motion.
      Проверяем matchMedia на каждом клике (динамично реагирует на смену
      системной настройки), плюс слушатель change отменяет уже летящую анимацию. */
@@ -26,6 +34,21 @@
         price: Number(productPriceRaw) || 0,
         image: productImage || '',
       });
+      /* W98-fixF (F4): успешное добавление → add_to_cart */
+      nfGoal('add_to_cart');
+      /* W98-fixF (F5): временное состояние кнопки «В корзине ✓» (~2.5с) — видно,
+         что добавление сработало. Исходную разметку сохраняем ОДИН раз (dataset):
+         повторный клик до возврата — просто продлеваем таймер, не ломаем состояние.
+         Карточные CTA — круглые 44px «+»: им только «✓» (длинный текст сломает кнопку). */
+      if (!('nfCtaOrig' in btn.dataset)) {
+        btn.dataset.nfCtaOrig = btn.innerHTML;
+        btn.dataset.nfCtaPlus = btn.textContent.trim() === '+' ? '1' : '';
+      }
+      btn.textContent = btn.dataset.nfCtaPlus === '1' ? '✓' : 'В корзине ✓';
+      clearTimeout(btn._nfCtaReset);
+      btn._nfCtaReset = setTimeout(function () {
+        btn.innerHTML = btn.dataset.nfCtaOrig;
+      }, 2500);
       /* Мягкая обратная связь без перекрытия: короткая анимация самой кнопки
          (skipped при prefers-reduced-motion — A8) */
       if (!reduceMQ || !reduceMQ.matches) {
@@ -52,7 +75,8 @@
       let c = 0; items.forEach(function (it) { c += (it.qty || 1); });
       /* Awwwards-usability -0.2: «1 товар(ов)» → русское склонение (совпадает с itemsWord в cart-ui) */
       var w = c % 10 === 1 && c % 100 !== 11 ? 'товар' : (c % 10 >= 2 && c % 10 <= 4 && (c % 100 < 12 || c % 100 > 14) ? 'товара' : 'товаров');
-      sr.textContent = (productName || 'Букет') + ' добавлен' + (c ? ', в корзине ' + c + ' ' + w : '');
+      /* W98-fixF (F5): родо-независимое «Добавлено в корзину: {имя}» (было «добавлен») */
+      sr.textContent = 'Добавлено в корзину: ' + (productName || 'Букет') + (c ? ', в корзине ' + c + ' ' + w : '');
       /* W67 (obvious-витрина NEW-6): на десктопе фидбек был только счётчик — sr-анонс невидим.
          Визуальный тост: pointer-events:none, над таббаром, под drawer; без открытия панели (FRICTION). */
       var tt = document.getElementById('cartToast');

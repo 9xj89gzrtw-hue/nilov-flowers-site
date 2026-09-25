@@ -43,13 +43,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         /* Личные чаты и email уведомлений (пусто → на email логина) */
         $tg = trim((string)($_POST['tg_chat_id'] ?? ''));
         $mx = trim((string)($_POST['max_chat_id'] ?? ''));
+        /* W98-fixD (D4): токен бота Telegram — его читает includes/notify.php
+           (setting('telegram_bot_token')), раньше поле в админке отсутствовало вовсе */
+        $tgToken = mb_substr(trim((string)($_POST['telegram_bot_token'] ?? '')), 0, 200);
         $notifyEmail = trim((string)($_POST['notify_email'] ?? ''));
         $notifyEnabled = isset($_POST['notify_enabled']) ? 1 : 0;
         if ($notifyEmail !== '' && !filter_var($notifyEmail, FILTER_VALIDATE_EMAIL)) {
             flash('Некорректный email для уведомлений', true);
         } else {
-            /* tg_chat_id/max_chat_id — глобальные ключи settings (db.php seed), а не колонки admin_users */
-            saveSettings(['tg_chat_id' => $tg, 'max_chat_id' => $mx]);
+            /* tg_chat_id/max_chat_id/telegram_bot_token — глобальные ключи settings (db.php seed), а не колонки admin_users */
+            saveSettings(['tg_chat_id' => $tg, 'max_chat_id' => $mx, 'telegram_bot_token' => $tgToken]);
             $pdo->prepare('UPDATE admin_users SET notify_email = :n, notify_enabled = :en WHERE id = :i')
                 ->execute([':n' => $notifyEmail, ':en' => $notifyEnabled, ':i' => (int)$admin['id']]);
             flash('Настройки уведомлений сохранены');
@@ -143,20 +146,25 @@ flash();
     </label>
     <div class="grid2" style="margin-top:12px">
       <div>
-        <label class="f" for="tg">ID чата в Telegram (цифры, один раз настроит программист)</label>
-        <input class="input" id="tg" name="tg_chat_id" value="<?= e(setting('tg_chat_id', '')) ?>" placeholder="123456789">
+        <label class="f" for="tgt">Токен бота Telegram</label>
+        <input class="input" id="tgt" name="telegram_bot_token" type="password" autocomplete="off" value="<?= e(setting('telegram_bot_token', '')) ?>" placeholder="1234567890:AAE...">
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Получите у <a href="https://t.me/BotFather" target="_blank" rel="noopener">@BotFather</a> (/newbot → скопируйте токен). Вместе с ID чата включает уведомления о заказах в Telegram.</p>
       </div>
       <div>
-        <label class="f" for="mx">ID чата в MAX</label>
-        <input class="input" id="mx" name="max_chat_id" value="<?= e(setting('max_chat_id', '')) ?>" placeholder="-100123456">
+        <label class="f" for="tg">ID чата в Telegram (цифры, один раз настроит программист)</label>
+        <input class="input" id="tg" name="tg_chat_id" value="<?= e(setting('tg_chat_id', '')) ?>" placeholder="123456789">
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">ID подскажет бот @userinfobot: напишите ему из своего Telegram и скопируйте число.</p>
       </div>
     </div>
+    <label class="f" for="mx">ID чата в MAX <small style="font-weight:400;color:var(--ink-soft)">(для MAX — пока не используется)</small></label>
+    <input class="input" id="mx" name="max_chat_id" value="<?= e(setting('max_chat_id', '')) ?>" placeholder="-100123456">
+    <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Мессенджер MAX ещё не подключён к отправке уведомлений — поле сохраняется на будущее.</p>
     <button class="btn btn--accent" type="submit" style="margin-top:16px">💾 Сохранить настройки уведомлений</button>
   </form>
 </div>
 <div class="card" style="max-width:560px">
   <h2 style="font-size:1.05rem;margin-bottom:8px">Звук при новом заказе</h2>
-  <p style="font-size:.85rem;color:var(--ink-soft);margin-bottom:8px">Пока открыта панель, раз в 20 секунд проверяются новые заказы — и подаётся короткий сигнал. Настройка действует только на этом устройстве и в этом браузере.</p>
+  <p style="font-size:.85rem;color:var(--ink-soft);margin-bottom:8px">Пока открыта панель, новые заказы проверяются каждые 10 секунд, пока вкладка активна (в фоне — раз в минуту), и подаётся короткий сигнал. Настройка действует только на этом устройстве и в этом браузере.</p>
   <label class="f" for="vol">Громкость</label>
   <input type="range" id="vol" min="0" max="100" step="10" style="width:100%;accent-color:var(--rose-deep,#E2799C)">
   <div style="display:flex;gap:10px;margin-top:10px">

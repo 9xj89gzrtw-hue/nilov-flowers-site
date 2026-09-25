@@ -7,6 +7,10 @@ $metrikaId = trim(setting('metrika_counter_id', ''));
 if ($metrikaId !== '' && ctype_digit($metrikaId)) : ?>
 <script>
 window.YM_COUNTER_ID = <?= (int)$metrikaId ?>;
+/* W98-fixF (F4): id счётчика для guarded reachGoal из cart-cta.js / cart-ui.js /
+   order-form.js (воронка add_to_cart → cart_open → begin_checkout → purchase).
+   Печатается только при включённой Метрике; без счётчика guard не пропустит вызов. */
+window.__nfYmId = <?= (int)$metrikaId ?>;
 function loadMetrica(){
   if (window.__ymLoaded) return; window.__ymLoaded = true;
   (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};

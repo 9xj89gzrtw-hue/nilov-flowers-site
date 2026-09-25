@@ -33,8 +33,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stQ = $pdo->prepare('SELECT status FROM orders WHERE id = :i');
         $stQ->execute([':i' => $id]);
         $curSt = (string)($stQ->fetchColumn() ?: '');
-        /* W70 (владелец NEW-2): валидация по тому же словарю, что и UI */
-        if (array_key_exists($status, statuses()) && $status !== 'done' && in_array($status, orderTransitions()[$curSt] ?? [], true)) {
+        /* W70 (владелец NEW-2): валидация по тому же словарю, что и UI.
+           W98-fixD (D9): «Подтверждён» → «Новые» — локальное исключение (кнопка «Вернуть
+           в новые» на карточке): в глобальный словарь includes/util.php не лезем. */
+        $allowedLocal = orderTransitions()[$curSt] ?? [];
+        if ($curSt === 'confirmed' && !in_array('new', $allowedLocal, true)) {
+            $allowedLocal[] = 'new';
+        }
+        if (array_key_exists($status, statuses()) && $status !== 'done' && in_array($status, $allowedLocal, true)) {
             $pdo->prepare('UPDATE orders SET status = :s WHERE id = :i')
                 ->execute([':s' => $status, ':i' => $id]);
             flash('Статус заказа обновлён');
@@ -174,19 +180,30 @@ flash();
 <?php elseif (in_array($order['status'], ['new', 'confirmed', 'in_progress'], true)): /* W70 (владелец NEW-1): «В работе» больше не тупик — вручение доступно */ ?>
 <div class="card">
   <h2 style="font-family:var(--font-display);font-size:1.05rem;margin-bottom:6px">Изменить статус</h2>
-  <form method="post" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
-    <?= csrf_field() ?>
-    <input type="hidden" name="action" value="status">
-    <select name="status" style="width:auto">
-      <?php /* W70 (владелец NEW-2): только легальные переходы — тот же словарь, что в ленте */
-             $allowed = orderTransitions()[$order['status']] ?? [];
-             $labels = statuses();
-             foreach ($allowed as $key): ?>
-        <option value="<?= e($key) ?>"><?= e($labels[$key] ?? $key) ?></option>
-      <?php endforeach; ?>
-    </select>
-    <button class="btn" type="submit">Применить</button>
-  </form>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+    <form method="post" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <?= csrf_field() ?>
+      <input type="hidden" name="action" value="status">
+      <select name="status" style="width:auto">
+        <?php /* W70 (владелец NEW-2): только легальные переходы — тот же словарь, что в ленте */
+               $allowed = orderTransitions()[$order['status']] ?? [];
+               $labels = statuses();
+               foreach ($allowed as $key): ?>
+          <option value="<?= e($key) ?>"><?= e($labels[$key] ?? $key) ?></option>
+        <?php endforeach; ?>
+      </select>
+      <button class="btn" type="submit">Применить</button>
+    </form>
+    <?php /* W98-fixD (D9): из «Подтверждён» — назад в «Новые» одним шагом, как соседние переходы */
+    if ($order['status'] === 'confirmed'): ?>
+    <form method="post" onsubmit="return confirm('Вернуть заказ №<?= (int)$id ?> в «Новые»? Он снова появится в ленте новых заказов.')">
+      <?= csrf_field() ?>
+      <input type="hidden" name="action" value="status">
+      <input type="hidden" name="status" value="new">
+      <button class="btn btn--ghost" type="submit">↩ Вернуть в «Новые»</button>
+    </form>
+    <?php endif; ?>
+  </div>
 
   <h2 style="font-family:var(--font-display);font-size:1.05rem;margin-bottom:2px">Выполнен (подтверждение вручения)</h2>
   <p style="font-size:.85rem;color:var(--ink-soft);margin-bottom:8px">Чтобы отметить заказ «Выполненным», приложите фото вручения (букет и ориентир: дом, подъезд) — или укажите причину, если фото нет.</p>

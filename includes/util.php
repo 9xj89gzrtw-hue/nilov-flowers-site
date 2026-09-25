@@ -63,7 +63,16 @@ function saveSettings(array $values): void
 
 function formatPrice(int $v): string
 {
-    return number_format($v, 0, ',', ' ') . ' ₽';
+    /* W98-fixE (E16): тысячи — через NBSP (U+00A0): «2 500 ₽» не рвётся по строкам
+       и не склеивается с ₽; совместимость шире узкого NNBSP (U+202F) */
+    return number_format($v, 0, ',', "\u{00A0}") . ' ₽';
+}
+
+/* W98-fixE (E16): «голое» число с тем же NBSP-разделителем — чипы цен, фильтр
+   каталога, сноски зон (формат единый с formatPrice на всей витрине) */
+function formatSum(int $v): string
+{
+    return number_format($v, 0, ',', "\u{00A0}");
 }
 
 function productPrice(array $p): int

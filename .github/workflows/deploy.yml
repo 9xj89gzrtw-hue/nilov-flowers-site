@@ -28,7 +28,9 @@ jobs:
           # каналом) — идемпотентный PASS, ред-флаг не вешаем.
           set -f
           SSH="sshpass -e ssh -o StrictHostKeyChecking=accept-new -p ${SSH_PORT:-22}"
-          EXC=(-x ".git" -x ".github" -x ".gitignore" -x "db" -x "state" -x "admin/state" -x "img/uploads" -x "img/products" -x ".DS_Store" -x "._*" -x ".worktrees")
+          # W98-fixF (F2): + worklog.md/AGENTS.md/ecosystem.config.js — процессные файлы
+          # (история волн/инструкция агентов/PM2-конфиг) не должны попадать на прод.
+          EXC=(-x ".git" -x ".github" -x ".gitignore" -x "db" -x "state" -x "admin/state" -x "img/uploads" -x "img/products" -x ".DS_Store" -x "._*" -x ".worktrees" -x "worklog.md" -x "AGENTS.md" -x "ecosystem.config.js")
           ok=0
           for attempt in 1 2 3; do
             echo "== deploy attempt $attempt =="
@@ -36,7 +38,7 @@ jobs:
               echo "rsync OK"; ok=1; break
             fi
             echo "--> rsync failed, trying tar-over-ssh"
-            TARX=(); for x in .git .github .gitignore db state admin/state img/uploads img/products .DS_Store '._*' .worktrees; do TARX+=(--exclude="$x"); done
+            TARX=(); for x in .git .github .gitignore db state admin/state img/uploads img/products .DS_Store '._*' .worktrees worklog.md AGENTS.md ecosystem.config.js; do TARX+=(--exclude="$x"); done
             if tar cf - "${TARX[@]}" . | $SSH "$SSH_USER@$SSH_HOST" "tar xf - -C ${REMOTE_DIR%/}"; then
               echo "tar-over-ssh OK"; ok=1; break
             fi

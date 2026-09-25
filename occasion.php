@@ -16,7 +16,7 @@ $shopName = setting('shop_name', 'Nilov Flowers');
 
 if (!$oc) {
     http_response_code(404);
-    $pageTitle = 'Страница не найдена';
+    $pageTitle = 'Страница не найдена — ' . $shopName;
     require __DIR__ . '/partials/head.php';
     echo '<title>' . e($pageTitle) . '</title></head><body>';
     require __DIR__ . '/partials/header.php';
@@ -30,7 +30,9 @@ if (!$oc) {
 }
 
 $canonicalUrl = 'https://flowers.interfood-catering.ru/occasion/' . rawurlencode($oc['slug']);
-$metaTitle = $oc['meta_title'] !== '' ? $oc['meta_title'] : ($oc['title'] . ' — ' . $shopName);
+/* W98-fixE (E17): title повода — всегда с брендом «— Nilov Flowers» (по образцу
+   product.php); meta_title из админки без бренда больше не оставляет «голый» title */
+$metaTitle = ($oc['meta_title'] !== '' ? $oc['meta_title'] : $oc['title']) . ' — ' . $shopName;
 $metaDesc = $oc['meta_description'] !== '' ? $oc['meta_description'] : mb_substr($oc['intro'], 0, 160);
 
 /* Подборка: только витринные товары с ценой и фото (без «0 ₽»-дыр). */
@@ -164,7 +166,7 @@ function render_occasion_card(array $p): void
                 <img class="product-card__img" src="<?= e($img) ?>" alt="<?= e($p['name']) ?>" loading="lazy" decoding="async">
               </picture>
             </a>
-            <?php if ($isSale): $offPct = (int)$p['price'] > 0 ? (int)round((1 - $price / (int)$p['price']) * 100) : 0; ?><span class="product-card__badge product-card__badge--sale"><?= e(setting('badge_sale_text', 'Акционная цена')) ?><?php if ($offPct > 0): ?> −<?= $offPct ?>%<?php endif; ?></span><?php endif; ?>
+            <?php if ($isSale): $offPct = (int)$p['price'] > 0 ? (int)round((1 - $price / (int)$p['price']) * 100) : 0; ?><span class="product-card__badge product-card__badge--sale"><?= e(setting('badge_sale_text', 'Скидка')) ?><?php if ($offPct > 0): ?> <?= $offPct ?>%<?php endif; ?></span><?php endif; ?>
             <?php if ($isUrgent): ?><span class="product-card__badge product-card__badge--urgent"><?= e(setting('badge_urgent_text', 'Успеть сегодня')) ?></span><?php endif; ?>
             <?php if ($isHit): ?><span class="product-card__badge product-card__badge--hit"><?= e(setting('badge_hit_text', 'Хит')) ?></span><?php endif; ?>
             <?php if ($isPremium): ?><span class="product-card__badge product-card__badge--premium"><?= e(setting('badge_premium_text', 'Премиум')) ?></span><?php endif; ?>

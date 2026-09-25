@@ -9,6 +9,14 @@
   const form = document.getElementById('orderForm');
   if (!form) return;
 
+  /* W98-fixF (F4): цель Метрики — guarded (счётчик выключен / не загружен
+     после cookie-согласия → тихий пропуск). В параметры — только суммы, без ПД. */
+  function nfGoal(name, params) {
+    if (window.ym && window.__nfYmId) {
+      try { ym(window.__nfYmId, 'reachGoal', name, params || undefined); } catch (e) { /* метрика не критична */ }
+    }
+  }
+
   const nameInput = document.getElementById('orderName');
   const phoneInput = document.getElementById('orderPhone');
   const emailInput = document.getElementById('orderEmail');
@@ -190,7 +198,8 @@
   const totalEl = document.getElementById('orderTotal');
 
   function formatRub(value) {
-    return String(Math.round(value)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    /* W98-fixF (F6): тысячи — неразрывным пробелом U+00A0 (как PHP formatPrice) */
+    return String(Math.round(value)).replace(/\B(?=(\d{3})+(?!\d))/g, '\u00A0');
   }
 
   /* W96-fix2 (F6): склонение минут для сообщения о паузе рейт-лимита
@@ -288,6 +297,20 @@
   submitBtn.textContent = defaultSubmitLabel();
   syncEmailRequirement();
 
+  /* W98-fixF (F4): begin_checkout — первое фокусирование формы (фокус любого
+     поля, включая автофокус #orderName из drawer «Оформить заказ»). Один раз
+     за сессию: флаг в sessionStorage (приват-режим → флаг в памяти страницы). */
+  var beginCheckoutDone = false;
+  try { beginCheckoutDone = sessionStorage.getItem('nfGoalBeginCheckout') === '1'; } catch (e) { /* sessionStorage недоступен */ }
+  if (!beginCheckoutDone) {
+    form.addEventListener('focusin', function () {
+      if (beginCheckoutDone) return;
+      beginCheckoutDone = true;
+      try { sessionStorage.setItem('nfGoalBeginCheckout', '1'); } catch (e) { /* приват-режим: только память */ }
+      nfGoal('begin_checkout');
+    });
+  }
+
   function buildItemsPayload() {
     if (!window.cart) return [];
     return window.cart.getItems().map(function (item) {
@@ -343,12 +366,15 @@
 
       if (res.ok) {
         const created = await res.json().catch(function () { return null; });
-        /* Цель Яндекс.Метрики: отправка заказа (после согласия в cookie-баннере) */
+        /* Цели Яндекс.Метрики: отправка заказа (после согласия в cookie-баннере).
+           ORDER_SUBMIT — историческая цель (сохранена); purchase — новая цель
+           воронки W98-fixF (F4). Считаем ДО cart.clear(); параметры — только сумма. */
+        const orderTotal = window.cart && typeof window.cart.getTotal === 'function'
+          ? (window.cart.getTotal() + (selectedDeliveryPrice())) : 0;
         if (window.ym && window.YM_COUNTER_ID) {
-          const orderTotal = window.cart && typeof window.cart.getTotal === 'function'
-            ? (window.cart.getTotal() + (selectedDeliveryPrice())) : 0;
           try { ym(window.YM_COUNTER_ID, 'reachGoal', 'ORDER_SUBMIT', { order_price: orderTotal, currency: 'RUB' }); } catch (err) { /* метрика не критична */ }
         }
+        nfGoal('purchase', { order_price: orderTotal, currency: 'RUB' });
         if (window.cart) window.cart.clear();
         /* Промокод одноразовый — после успешного заказа сбрасываем (server инкрементнул used) */
         if (window.PROMO_STATE) { window.PROMO_STATE.code = ''; window.PROMO_STATE.discount = 0; }

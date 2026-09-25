@@ -209,7 +209,7 @@ function render_product_card(array $p, array $ctx): void
                 <svg viewBox="0 0 80 94" style="width:30%;margin:auto;color:var(--blue)" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="40" cy="30" r="11"/><circle cx="26" cy="38" r="8"/><circle cx="54" cy="38" r="8"/><path d="M40 41v20M40 61c-8 6-14 14-16 25M40 61c8 6 14 14 16 25"/></svg>
               <?php endif; ?>
             </a>
-            <?php if ($isSale): $offPct = (int)$p['price'] > 0 ? (int)round((1 - $price / (int)$p['price']) * 100) : 0; ?><span class="product-card__badge product-card__badge--sale"><?= e(setting('badge_sale_text', 'Акционная цена')) ?><?php if ($offPct > 0): ?> −<?= $offPct ?>%<?php endif; ?></span><?php endif; ?>
+            <?php if ($isSale): $offPct = (int)$p['price'] > 0 ? (int)round((1 - $price / (int)$p['price']) * 100) : 0; ?><span class="product-card__badge product-card__badge--sale"><?= e(setting('badge_sale_text', 'Скидка')) ?><?php if ($offPct > 0): ?> <?= $offPct ?>%<?php endif; ?></span><?php endif; ?>
             <?php if ((int)($p['is_urgent'] ?? 0) === 1): ?><span class="product-card__badge product-card__badge--urgent"><?= e(setting('badge_urgent_text', 'Успеть сегодня')) ?></span><?php endif; ?>
             <?php /* Бейджи 5cv: «Хит» (amber) и «Премиум» (ink) — по флагам товара */ ?>
             <?php if ($isHit): ?><span class="product-card__badge product-card__badge--hit"><?= e(setting('badge_hit_text', 'Хит')) ?></span><?php endif; ?>
@@ -418,7 +418,7 @@ if (!$featJournal) {
 }
 
 /* ---- SEO-текст: sanitize_rich_text разрешает только <a>, абзацы — через \n\n ---- */
-$seoTextDefault = "Доставка цветов по Санкт-Петербургу — в день заказа. Работаем по всем районам города: в пределах КАД привозим букет за 1–2 часа, в пригороды — Пушкин, Павловск, Гатчина, Всеволожск — в согласованный интервал. Оформите заказ до 20:00, и цветы будут у получателя сегодня же.\n\nСвежесть — главное. Цветы приходят к нам с утренней поставки, а не лежат на складе: букет собираем непосредственно перед отправкой. Перед выездом курьера пришлём фото готовой композиции — вы увидите именно то, что получит адресат. Если какой-то цветок выглядит не идеально, заменим его до доставки.\n\nСпособ оплаты выберете при оформлении: наличными курьеру при получении или онлайн — если доступен в заказе. Поводы бывают разные: букет маме на день рождения, извиниться, поздравить коллегу или сказать «люблю» без повода — подскажем состав под бюджет и характер события. А если сомневаетесь — просто позвоните, соберём букет вместе по телефону.";
+$seoTextDefault = "Доставка цветов по Санкт-Петербургу — в день заказа. Работаем по районам Санкт-Петербурга: в пределах КАД привозим букет за 1–2 часа, в пригороды — Пушкин, Павловск, Гатчина, Всеволожск — в согласованный интервал. Оформите заказ до 20:00, и цветы будут у получателя сегодня же.\n\nСвежесть — главное. Цветы приходят к нам с утренней поставки, а не лежат на складе: букет собираем непосредственно перед отправкой. Перед выездом курьера пришлём фото готовой композиции — вы увидите именно то, что получит адресат. Если какой-то цветок выглядит не идеально, заменим его до доставки.\n\nСпособ оплаты выберете при оформлении: наличными курьеру при получении или онлайн — если доступен в заказе. Поводы бывают разные: букет маме на день рождения, извиниться, поздравить коллегу или сказать «люблю» без повода — подскажем состав под бюджет и характер события. А если сомневаетесь — просто позвоните, соберём букет вместе по телефону.";
 ?><!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -582,7 +582,7 @@ if ($__heroPre !== '') {
           <span class="fc-hero__promo-eyebrow"><?= e(setting('hero_promo_badge', 'Всегда')) ?></span>
           <h2 class="fc-hero__promo-title"><?= e(setting('hero_promo_title', 'Открытка в подарок')) ?></h2>
           <p class="fc-hero__promo-text"><?= e(setting('hero_promo_text', 'Напишем ваш текст от руки и вложим в букет — бесплатно, в каждом заказе')) ?></p>
-          <a class="fc-hero__promo-btn" href="<?= e(setting('hero_promo_link', '#order')) ?>"><?= e(setting('hero_promo_btn_text', 'Оформить заказ')) ?></a>
+          <a class="fc-hero__promo-btn" href="<?= e(setting('hero_promo_link', '#catalog')) ?>"><?= e(setting('hero_promo_btn_text', 'Выбрать букет')) ?></a>
         </div>
         <?php endif; ?>
         <?php /* Карточка доставки: сроки по городу (W96-fix1/F4 — без обещания «1–2 часа») */ ?>
@@ -616,9 +616,9 @@ if ($__heroPre !== '') {
   <div class="wrap">
     <div class="fc-chips" id="fcChips">
       <button type="button" class="fc-chip" data-chip="hit" aria-pressed="false">Хиты</button>
-      <button type="button" class="fc-chip" data-chip="low" data-max="<?= $chipsN ?>" aria-pressed="false">До <?= number_format($chipsN, 0, ',', ' ') ?> ₽</button>
-      <button type="button" class="fc-chip" data-chip="mid" data-min="<?= $chipsN ?>" data-max="<?= $chipsM ?>" aria-pressed="false"><?= number_format($chipsN, 0, ',', ' ') ?>–<?= number_format($chipsM, 0, ',', ' ') ?> ₽</button>
-      <button type="button" class="fc-chip" data-chip="high" data-min="<?= $chipsM ?>" aria-pressed="false">От <?= number_format($chipsM, 0, ',', ' ') ?> ₽</button>
+      <button type="button" class="fc-chip" data-chip="low" data-max="<?= $chipsN ?>" aria-pressed="false">До <?= formatSum($chipsN) ?> ₽</button>
+      <button type="button" class="fc-chip" data-chip="mid" data-min="<?= $chipsN ?>" data-max="<?= $chipsM ?>" aria-pressed="false"><?= formatSum($chipsN) ?>–<?= formatSum($chipsM) ?> ₽</button>
+      <button type="button" class="fc-chip" data-chip="high" data-min="<?= $chipsM ?>" aria-pressed="false">От <?= formatSum($chipsM) ?> ₽</button>
       <button type="button" class="fc-chip" data-chip="premium" aria-pressed="false">Премиум</button>
       <span class="fc-chips__count" aria-live="polite" style="flex:none;align-self:center;white-space:nowrap;font-size:.85rem;font-weight:600;color:var(--ink-muted)"></span>
     </div>
@@ -642,7 +642,7 @@ if ($__heroPre !== '') {
         setting('section_premium_sub', ''), $premiumProducts, $cardCtx, '', 'premium');
     endif; ?>
     <?php if ($featSectionBudget && $budgetProducts !== []): render_fc_row(
-        sprintf(setting('section_budget_title', 'До %s ₽'), number_format($chipsN, 0, ',', ' ')),
+        sprintf(setting('section_budget_title', 'До %s ₽'), formatSum($chipsN)),
         setting('section_budget_sub', ''), $budgetProducts, $cardCtx, '', 'low');
     endif; ?>
   <?php endif; ?>
@@ -686,9 +686,9 @@ if ($__heroPre !== '') {
           <label for="priceFilter" style="font-size:.85rem;font-weight:600;color:var(--ink-soft)">Цена:</label>
           <select id="priceFilter" class="pill">
             <option value="all" selected>Любая</option>
-            <option value="low" data-max="<?= $pfLow ?>">до <?= number_format($pfLow, 0, '', ' ') ?> ₽</option>
-            <option value="mid" data-min="<?= $pfLow ?>" data-max="<?= $pfHigh ?>"><?= number_format($pfLow, 0, '', ' ') ?>–<?= number_format($pfHigh, 0, '', ' ') ?> ₽</option>
-            <option value="high" data-min="<?= $pfHigh ?>">от <?= number_format($pfHigh, 0, '', ' ') ?> ₽</option>
+            <option value="low" data-max="<?= $pfLow ?>">до <?= formatSum($pfLow) ?> ₽</option>
+            <option value="mid" data-min="<?= $pfLow ?>" data-max="<?= $pfHigh ?>"><?= formatSum($pfLow) ?>–<?= formatSum($pfHigh) ?> ₽</option>
+            <option value="high" data-min="<?= $pfHigh ?>">от <?= formatSum($pfHigh) ?> ₽</option>
           </select>
           <span id="priceFilterCount" style="font-size:.85rem;color:var(--ink-soft)" aria-live="polite"></span>
         </span>
@@ -766,6 +766,13 @@ if ($__heroPre !== '') {
     <div class="wrap">
       <h2 class="section-title"><?= e(setting('order_title', 'Оформление заказа')) ?></h2>
       <p class="order__selected" id="orderSelected"></p>
+      <?php /* W98-fixE (E14): пустая корзина на #order — заглушка-подсказка. Скрыта
+         по умолчанию (display:none); показывает js-волна при пустой корзине. */ ?>
+      <div id="orderEmptyState" style="display:none;text-align:center;padding:44px 20px;border:1px dashed var(--line);border-radius:16px;margin-bottom:18px">
+        <p style="font-size:1.05rem;font-weight:600;margin-bottom:6px">Корзина пока пуста — выберите букет, и форма появится здесь</p>
+        <p style="color:var(--ink-soft);font-size:.9rem;margin-bottom:16px">В каталоге — свежие букеты с утренней поставки и ценами на любой бюджет</p>
+        <a class="btn btn--outline" href="#catalog">Перейти в каталог</a>
+      </div>
       <form class="order-form" id="orderForm" novalidate>
         <div class="order-form__field">
           <label for="orderName"><?= e(setting('form_name_label', 'Ваше имя *')) ?></label>
@@ -894,7 +901,9 @@ if ($__heroPre !== '') {
         <div class="hp-field" aria-hidden="true" inert><label for="orderCompanyWebsite">Сайт компании</label><input type="text" id="orderCompanyWebsite" name="company_website" tabindex="-1" autocomplete="off"></div>
         <label class="order-form__checkbox">
           <input type="checkbox" id="orderPdConsent" name="pd_consent" required>
-          <span>Я даю согласие на обработку персональных данных (ФИО, телефон, адрес) в целях оформления и доставки заказа, <em>включая возможную трансграничную передачу</em> (уведомление магазина через мессенджеры), на условиях <a href="/policy" target="_blank" rel="noopener">Политики конфиденциальности</a> и <a href="/offer" target="_blank" rel="noopener">Публичной оферты</a> *</span>
+          <?php /* W98-fixE (E12): точный перечень данных, без bold на «трансграничную»,
+             мессенджеры — одной фразой, точка в конце; имя ссылки = H1 политики */ ?>
+          <span>Я даю согласие на обработку персональных данных (имя, телефон, email, адрес доставки, имя и телефон получателя, текст открытки, IP-адрес) в целях оформления и доставки заказа, включая трансграничную передачу в мессенджеры при включённых уведомлениях, на условиях <a href="/policy" target="_blank" rel="noopener">Политики обработки персональных данных</a> и <a href="/offer" target="_blank" rel="noopener">Публичной оферты</a>.</span>
         </label>
         <span class="order-form__error" id="orderPdConsentError"></span>
         <p class="order-form__total" id="orderTotal"></p>
@@ -963,7 +972,7 @@ if ($__heroPre !== '') {
          сидированы старым текстом — значения обновит guard-миграция другой волны;
          здесь дефолты для витрин без записей в settings). */
       $faqAnswerDefaults = [
-          1 => 'Зависит от района: 300–400 ₽ по СПб, самовывоз — бесплатно. Точная сумма сразу видна при оформлении заказа',
+          1 => 'Зависит от района: 300–500 ₽ по СПб, самовывоз — бесплатно. Точная сумма сразу видна при оформлении заказа',
           4 => 'Наличными или картой курьеру при получении. Онлайн-оплата — сообщим, когда появится',
       ];
       for ($i = 1; $i <= 4; $i++) {

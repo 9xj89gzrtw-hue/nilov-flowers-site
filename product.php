@@ -215,6 +215,28 @@ if ($trust === []) {
     $trust = array_values(array_filter(array_map('trim', explode("\n", setting('guarantees')))));
 }
 
+/* W98-fixE (E9): «сладкие» товары (клубника/макаруны) — не цветы: строки-гарантии
+   «Свежие цветы…» и «Заменяем увядшие…» к ним не относятся и вводят в заблуждение.
+   «Фото букета перед отправкой» оставляем — актуально и для сладких дополнений.
+   Признак категории — слаг из имени (колонки slug нет); фолбэк — lookup по id. */
+$__catSlugEff = $catSlug;
+if ($__catSlugEff === '' && !empty($product['category_id'])) {
+    $__catStmt = db()->prepare('SELECT name FROM categories WHERE id = :i LIMIT 1');
+    $__catStmt->execute([':i' => (int)$product['category_id']]);
+    $__catName = (string)$__catStmt->fetchColumn();
+    $__catSlugEff = $__catName !== '' ? slugify($__catName) : '';
+}
+if ($__catSlugEff === 'sladkie-podarki') {
+    $trust = array_values(array_filter(
+        $trust,
+        static fn (string $t): bool => !in_array(
+            mb_strtolower(trim($t)),
+            ['свежие цветы с утренней поставки', 'заменяем увядшие в день доставки'],
+            true
+        )
+    ));
+}
+
 /* Мета-блок 5cv: доставка / самовывоз / оплата (тексты — из настроек) */
 $pickupAddr = trim(setting('pickup_address', '')) ?: trim(setting('shop_address', ''));
 $ykOn = setting('yk_enabled', '0') === '1' && trim(setting('yk_shop_id', '')) !== '' && trim(setting('yk_secret_key', '')) !== '';
@@ -279,7 +301,7 @@ function render_related_card(array $rp): void
                 <svg viewBox="0 0 80 94" style="width:30%;margin:auto;color:var(--blue)" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="40" cy="30" r="11"/><circle cx="26" cy="38" r="8"/><circle cx="54" cy="38" r="8"/><path d="M40 41v20M40 61c-8 6-14 14-16 25M40 61c8 6 14 14 16 25"/></svg>
               <?php endif; ?>
             </a>
-            <?php if ($rSale): $rPct = (int)$rp['price'] > 0 ? (int)round((1 - $rPrice / (int)$rp['price']) * 100) : 0; ?><span class="product-card__badge product-card__badge--sale"><?= e(setting('badge_sale_text', 'Акционная цена')) ?><?php if ($rPct > 0): ?> −<?= $rPct ?>%<?php endif; ?></span><?php endif; ?>
+            <?php if ($rSale): $rPct = (int)$rp['price'] > 0 ? (int)round((1 - $rPrice / (int)$rp['price']) * 100) : 0; ?><span class="product-card__badge product-card__badge--sale"><?= e(setting('badge_sale_text', 'Скидка')) ?><?php if ($rPct > 0): ?> <?= $rPct ?>%<?php endif; ?></span><?php endif; ?>
             <?php if ($rUrgent): ?><span class="product-card__badge product-card__badge--urgent"><?= e(setting('badge_urgent_text', 'Успеть сегодня')) ?></span><?php endif; ?>
             <?php if ($rHit): ?><span class="product-card__badge product-card__badge--hit"><?= e(setting('badge_hit_text', 'Хит')) ?></span><?php endif; ?>
             <?php if ($rPremium): ?><span class="product-card__badge product-card__badge--premium"><?= e(setting('badge_premium_text', 'Премиум')) ?></span><?php endif; ?>
@@ -456,7 +478,7 @@ $breadcrumbItems[] = ['@type' => 'ListItem', 'position' => count($breadcrumbItem
           <?php /* Бейджи 5cv в инфо-колонке: те же классы, что на витрине (position:static — пилюли в ряд) */ ?>
           <?php if ($isHit || $isPremium || $isUrgent || $isSale): ?>
           <p style="display:flex;gap:8px;flex-wrap:wrap;margin:0">
-            <?php if ($isSale): ?><span class="product-card__badge product-card__badge--sale" style="position:static"><?= e(setting('badge_sale_text', 'Акционная цена')) ?><?php if ($offPct > 0): ?> −<?= $offPct ?>%<?php endif; ?></span><?php endif; ?>
+            <?php if ($isSale): ?><span class="product-card__badge product-card__badge--sale" style="position:static"><?= e(setting('badge_sale_text', 'Скидка')) ?><?php if ($offPct > 0): ?> <?= $offPct ?>%<?php endif; ?></span><?php endif; ?>
             <?php if ($isHit): ?><span class="product-card__badge product-card__badge--hit" style="position:static"><?= e(setting('badge_hit_text', 'Хит')) ?></span><?php endif; ?>
             <?php if ($isPremium): ?><span class="product-card__badge product-card__badge--premium" style="position:static"><?= e(setting('badge_premium_text', 'Премиум')) ?></span><?php endif; ?>
             <?php if ($isUrgent): ?><span class="product-card__badge product-card__badge--urgent" style="position:static"><?= e(setting('badge_urgent_text', 'Успеть сегодня')) ?></span><?php endif; ?>

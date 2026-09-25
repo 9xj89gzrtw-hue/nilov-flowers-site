@@ -131,7 +131,7 @@ $__nfIsProduct = (bool)preg_match('#^/product(/|$)#', $__nfPath)
     <?php if ($legalName !== '' && $legalNum !== ''): ?>
     <p class="fc-footer__legal"><?= e($legalName) ?><?= $legalInn !== '' ? ' · ИНН ' . e($legalInn) : '' ?> · <?= e($legalType === 'ip' ?  'ОГРНИП' : 'ОГРН') ?> <?= e($legalNum) ?><?= $legalAddr !== '' ? ' · ' . e($legalAddr) : '' ?></p>
     <?php endif; ?>
-    <span>© <?= date('Y') ?> <?= e($siteName) ?><?= setting('feature_track_link','1')==='1' ? ' · <a href="/track">Где мой заказ?</a>' : '' ?> · <a href="/policy">Конфиденциальность</a> · <a href="/offer">Оферта</a> · <a href="#" onclick="if(window.cookieSettings){window.cookieSettings();}return false">Настройки cookie</a></span>
+    <span>© <?= date('Y') ?> <?= e($siteName) ?><?= setting('feature_track_link','1')==='1' ? ' · <a href="/track">Где мой заказ?</a>' : '' ?> · <a href="/policy">Политика обработки ПД</a> · <a href="/offer">Оферта</a> · <a href="#" onclick="if(window.cookieSettings){window.cookieSettings();}return false">Настройки cookie</a></span>
   </div>
 </footer>
 
@@ -179,7 +179,7 @@ $__nfIsProduct = (bool)preg_match('#^/product(/|$)#', $__nfPath)
           $znMin = (int)($zr['mn'] ?? 0); $znMax = (int)($zr['mx'] ?? 0);
         } catch (Throwable $e) { $znMin = 0; $znMax = 0; }
         $totalNoteDefault = ($znMax > 0)
-          ? sprintf('Доставка по вашему району — от %s до %s ₽, точную стоимость покажем в заказе.', $znMin === 0 ? '0' : number_format($znMin, 0, ',', ' '), number_format($znMax, 0, ',', ' '))
+          ? sprintf('Доставка по вашему району — от %s до %s ₽, точную стоимость покажем в заказе.', $znMin === 0 ? '0' : formatSum($znMin), formatSum($znMax))
           : '';
         $totalNote = setting('cart_total_note', '__DEFAULT__');
         if ($totalNote === '__DEFAULT__') $totalNote = $totalNoteDefault;
