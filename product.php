@@ -314,6 +314,9 @@ function render_related_card(array $rp): void
             <?php if ($todayText !== ''): ?>
             <li><span class="fc-product__meta-icon"><?= $metaIcons['clock'] ?></span><span><?= e($todayText) ?></span></li>
             <?php endif; ?>
+            <?php /* W96-fix4 (финальный критик): открытка видна покупателю ещё на товаре,
+               а не только в форме — доверие к «Открытка в подарок» из hero */ ?>
+            <li><span class="fc-product__meta-icon"><?= $metaIcons['flower'] ?></span><span>Открытка с вашим текстом — напишем от руки, бесплатно</span></li>
             <li><span class="fc-product__meta-icon"><?= $metaIcons['truck'] ?></span><span><?= e(setting('delivery_badge_text', 'Доставка по Санкт-Петербургу')) ?></span></li>
             <?php if ($pickupAddr !== ''): ?><li><span class="fc-product__meta-icon"><?= $metaIcons['map'] ?></span><span>Самовывоз: <?= e($pickupAddr) ?></span></li><?php endif; ?>
             <li><span class="fc-product__meta-icon"><?= $metaIcons['card'] ?></span><span><?= $ykOn ? 'Оплата — картой, СБП или при получении. На защищённой странице платёжного провайдера.' : 'Оплата — курьеру при получении заказа.' ?></span></li>

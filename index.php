@@ -783,7 +783,8 @@ if ($__heroPre !== '') {
           <legend>Когда доставить (необязательно)</legend>
           <div class="order-form__field">
             <label for="orderDeliveryDate">Дата</label>
-            <input type="date" id="orderDeliveryDate" name="delivery_date">
+            <?php /* W96-fix4: min=today — не даём выбрать прошлое до отправки (сервер валидирует повторно) */ ?>
+            <input type="date" id="orderDeliveryDate" name="delivery_date" min="<?= date('Y-m-d') ?>">
             <span class="order-form__error" id="orderDeliveryDateError"></span>
           </div>
           <div class="order-form__field">

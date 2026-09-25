@@ -26,6 +26,18 @@ $phone = setting('shop_phone', '');
 $phoneDigits = preg_replace('/\D/', '', $phone) ?: '';
 $pickupAddr = trim(setting('shop_address', ''));
 
+/* W96-fix4 (финальный критик-покупатель, major): страница безусловно писала «Самовывоз: …»,
+   даже когда заказ оформлен ДОСТАВКОЙ в район. Честная строка: смотрим зону заказа. */
+$__zoneStmt = db()->prepare('SELECT z.name FROM orders o LEFT JOIN delivery_zones z ON z.id = o.delivery_zone_id WHERE o.id = :i LIMIT 1');
+$__zoneStmt->execute([':i' => $orderId]);
+$__zoneName = (string)$__zoneStmt->fetchColumn();
+$deliveryLine = '';
+if ($__zoneName !== '') {
+    $deliveryLine = 'Доставка: район «' . $__zoneName . '» — время и адрес подтвердим по телефону.';
+} elseif ($pickupAddr !== '') {
+    $deliveryLine = 'Самовывоз: ' . $pickupAddr . ' — предупредим, когда букет будет готов.';
+}
+
 $canonicalUrl = 'https://flowers.interfood-catering.ru/order-thanks';
 $pageTitle = 'Заказ №' . $orderId . ' принят — ' . $siteName;
 ?><!DOCTYPE html>
@@ -54,7 +66,7 @@ $pageTitle = 'Заказ №' . $orderId . ' принят — ' . $siteName;
       <?php endif; ?>
       <p class="section-sub" style="margin:12px auto 24px">
         Букет соберём из цветов утренней поставки, а фото пришлём вам перед отправкой.
-        <?php if ($pickupAddr !== ''): ?><br>Самовывоз: <?= e($pickupAddr) ?> — предупредим, когда букет будет готов.<?php endif; ?>
+        <?php if ($deliveryLine !== ''): ?><br><?= e($deliveryLine) ?><?php endif; ?>
       </p>
       <?php /* W96-fix3b (D8): «Что дальше» — 3 шага в стилистике карточки заказа */ ?>
       <div class="fc-thanks__steps">
