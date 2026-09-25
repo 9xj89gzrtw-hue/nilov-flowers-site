@@ -23,6 +23,13 @@ if (is_file(__DIR__ . $path)) {
     return false; // физический файл — отдать как есть
 }
 
+/* W103: паритет с DirectoryIndex Apache — /admin/ (каталог с index.php) на проде
+   отдаёт индекс, локальный php -S отдавал 404. Только для каталогов с index.php. */
+if ($path !== '/' && is_dir(__DIR__ . $path) && is_file(__DIR__ . rtrim($path, '/') . '/index.php')) {
+    require __DIR__ . rtrim($path, '/') . '/index.php';
+    return true;
+}
+
 /* W97-fixB1 (B1-4b): канонизация дублей витринных URL — 301 на нижний регистр без
    хвостового слэша (/product/slug/ и /PRODUCT/SLUG раньше отдавали 404 вместо 301;
    /product/slug/ на проде уже редиректится .htaccess — здесь паритет).

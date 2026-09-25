@@ -258,6 +258,9 @@ $pageDescription = $metaDesc;
 
 /* og:image — hero-фото витрины (как у главной) */
 $heroImg = setting('hero_image', '');
+/* W103/F2: стили тулбара фильтров/сортировки — отдельный файл, подключается
+   ниже отдельным <link> после five.css (версия — md5-хэш, паттерн head.php T4) */
+$categoryCssV = substr((string)@md5_file(__DIR__ . '/css/category.css'), 0, 8);
 ?><!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -275,6 +278,9 @@ $heroImg = setting('hero_image', '');
 <?php endif; ?>
 <?php endif; ?>
 <?php require __DIR__ . '/partials/head.php'; ?>
+<?php /* W103/F2: тулбар категорий — ПОСЛЕ five.css (токены var(--pink)/var(--ink)
+       из five.css доступны на этой же странице; @import не нужен — CSP) */ ?>
+<link rel="stylesheet" href="/css/category.css?v=<?= e($categoryCssV) ?>">
 <?php /* BreadcrumbList — ОТДЕЛЬНЫЙ top-level JSON-LD (Главная → Каталог → категория),
    в SERP — хлебные крошки; noindex НЕ ставим */ ?>
 <script type="application/ld+json">
@@ -318,12 +324,56 @@ $heroImg = setting('hero_image', '');
       </div>
 
       <?php if ($products !== []): ?>
-      <?php /* Без id="catalogGrid": catalog-filter.js грузится только на главной —
-             five.js с catalogGrid ушёл бы в режим живого поиска без реального
-             фильтра (NfCatalogApply не определён). Вторичный режим: поиск из шапки
-             уводит на /?q=…#catalog — то же поведение, что у occasion/product. */ ?>
-      <div class="catalog__grid">
+      <?php /* W103/F2 (P0 двух критиков: «на /category нет ни фильтров, ни сортировки»):
+             тулбар под H1 — чипы цены (пороги = чипы главной: chips_price_low/high)
+             + сегмент-контрол сортировки + счётчик + сброс. Фильтрация/сортировка —
+             js/category.js по data-price (фактическая цена с учётом sale_price) и
+             data-hit карточек; URL-синхронизация ?price=…&sort=… (replaceState). */ ?>
+      <?php
+        $catFeatChips = setting('feature_chips', '1') === '1';
+        $catLow = (int)setting('chips_price_low', '3500');
+        $catHigh = (int)setting('chips_price_high', '7000');
+      ?>
+      <div class="cat-toolbar" id="catToolbar">
+        <div class="cat-toolbar__controls">
+          <?php if ($catFeatChips): ?>
+          <div class="cat-chips" role="group" aria-label="Фильтр букетов по цене">
+            <button type="button" class="cat-chip is-active" data-chip="all" aria-pressed="true">Все</button>
+            <button type="button" class="cat-chip" data-chip="low" data-max="<?= $catLow ?>" aria-pressed="false">До <?= formatSum($catLow) ?> ₽</button>
+            <button type="button" class="cat-chip" data-chip="mid" data-min="<?= $catLow ?>" data-max="<?= $catHigh ?>" aria-pressed="false"><?= formatSum($catLow) ?>–<?= formatSum($catHigh) ?> ₽</button>
+            <button type="button" class="cat-chip" data-chip="high" data-min="<?= $catHigh ?>" aria-pressed="false">От <?= formatSum($catHigh) ?> ₽</button>
+          </div>
+          <?php endif; ?>
+          <div class="cat-sort" role="group" aria-label="Сортировка букетов">
+            <span class="cat-sort__label" aria-hidden="true">Сортировка:</span>
+            <span class="cat-sort__group">
+              <button type="button" class="cat-sort__btn is-active" data-sort="pop" aria-pressed="true">Сначала популярные</button>
+              <button type="button" class="cat-sort__btn" data-sort="asc" aria-pressed="false">Дешевле</button>
+              <button type="button" class="cat-sort__btn" data-sort="desc" aria-pressed="false">Дороже</button>
+            </span>
+          </div>
+        </div>
+        <div class="cat-toolbar__meta">
+          <span class="cat-count" id="catCount" role="status" aria-live="polite"></span>
+          <button type="button" class="cat-reset" id="catReset" hidden>Сбросить</button>
+        </div>
+      </div>
+      <?php endif; ?>
+
+      <?php if ($products !== []): ?>
+      <?php /* id="catGrid" (НЕ catalogGrid): catalog-filter.js/five.js главной ищут
+             #catalogGrid — на этой странице их нет (footer.php грузит их только на
+             главной), а уникальный id подхватывает js/category.js. Вторичный режим:
+             поиск из шапки уводит на /?q=…#catalog — как у occasion/product. */ ?>
+      <div class="catalog__grid" id="catGrid">
         <?php foreach ($products as $p) { render_product_card($p, $cardCtx); } ?>
+      </div>
+      <?php /* W103/F2: пустое состояние фильтра — 0 карточек в диапазоне (тексты —
+             settings с дефолтами, паттерн catalog_empty_* главной) */ ?>
+      <div class="cat-empty" id="catEmpty" hidden>
+        <p class="cat-empty__title"><?= e(setting('category_filter_empty_title', 'В этой ценовой категории пока пусто')) ?></p>
+        <p class="cat-empty__hint"><?= e(setting('category_filter_empty_hint', 'Попробуйте другой диапазон или посмотрите все букеты категории')) ?></p>
+        <button type="button" class="btn btn--outline" id="catEmptyReset">Сбросить фильтры</button>
       </div>
       <?php else: ?>
       <?php /* Пустая категория — честная заглушка со ссылкой на общий каталог */ ?>
@@ -346,5 +396,8 @@ $heroImg = setting('hero_image', '');
   </section>
 </main>
 <?php require __DIR__ . '/partials/footer.php'; ?>
+<?php /* W103/F2: фильтры/сортировка категории — только на этой странице (версия
+       ?v= — md5-хэш, паттерн footer.php A9; defer — после построения DOM) */ ?>
+<script src="/js/category.js?v=<?= e(substr((string)@md5_file(__DIR__ . '/js/category.js'), 0, 8)) ?>" defer></script>
 </body>
 </html>

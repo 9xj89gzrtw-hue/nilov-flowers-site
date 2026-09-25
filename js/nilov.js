@@ -141,7 +141,38 @@
       }
     }
     /* (д) cookie-баннер на экране → подсказку не показываем вовсе;
-       повторяем попытку после решения (nf:cookie-done от cookie-banner.js). */
+       повторяем попытку после решения (nf:cookie-done от cookie-banner.js).
+       W103 (F4, критик-3 P0-2): подсказка не должна занимать зону кнопки
+       «Отправить заказ» — (1) не показываем вовсе на /#order или с непустой
+       корзиной (ключ localStorage 'flowerCart' — формат cart.js: JSON-массив);
+       (2) если зона заказа (секция #order, только главная) оказывается в
+       вьюпорте ПОСЛЕ показа — убираем подсказку БЕЗ пометки dismissed
+       (жест не означал отказ; на других страницах она ещё пригодится).
+       F4b: меряем СЕКЦИЮ #order, а не #orderForm — при пустой корзине
+       cart-ui.js ставит форме display:none (нулевой rect: проверка
+       «пересекает вьюпорт» всегда false, а IO по скрытому элементу
+       не срабатывает вовсе — оба гарда молча пропускали конфликт
+       с заглушкой «Корзина пока пуста»). Секция всегда в потоке
+       и содержит и заглушку, и форму — покрывает оба состояния. */
+    function cartBusy() {
+      try {
+        var raw = localStorage.getItem('flowerCart');
+        if (!raw) return false;
+        var items = JSON.parse(raw);
+        return Array.isArray(items) && items.length > 0;
+      } catch (e) { return false; }
+    }
+    function orderZone() {
+      return document.getElementById('order') /* секция на главной */
+          || document.getElementById('orderForm'); /* страховка */
+    }
+    function orderZoneIntersects() {
+      var z = orderZone();
+      if (!z) return false;
+      var r = z.getBoundingClientRect();
+      /* нулевой rect (скрытый элемент) пересечением не считаем */
+      return r.height > 0 && r.top < window.innerHeight && r.bottom > 0;
+    }
     var shown = false;
     function tryShow() {
       if (shown) return;
@@ -149,13 +180,28 @@
         document.addEventListener('nf:cookie-done', tryShow, { once: true });
         return;
       }
+      /* F4: якорь заказа открыт / корзина не пуста — подсказка не нужна */
+      if (window.location.hash === '#order' || cartBusy()) return;
       shown = true;
       setTimeout(function () {
+        /* F4: пользователь мог доскроллить к заказу за эти 2.5 секунды */
+        if (orderZoneIntersects()) return;
         document.body.appendChild(el);
         positionHint();
       }, 2500);
     }
     tryShow();
+    /* F4: живое скрытие — секция заказа вошла в вьюпорт (в т.ч. по клику
+       «Заказать» в таббаре: скролл к #order) — подсказку убираем */
+    (function () {
+      var zone = orderZone();
+      if (!zone || !('IntersectionObserver' in window)) return;
+      new IntersectionObserver(function (entries, io) {
+        for (var i = 0; i < entries.length; i++) {
+          if (entries[i].isIntersecting) { el.remove(); io.disconnect(); }
+        }
+      }, { threshold: 0 }).observe(zone);
+    })();
   })();
 
   /* 2. Title-badge корзины — ВЫКЛЮЧЕН на витрине (владельцу не нравится «(1)» во вкладке).

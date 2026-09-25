@@ -78,6 +78,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
         /* W99-fixG2 (H14): вторая/третья editorial-строки — читаются витриной
            (index.php: после 6-й секции и перед FAQ) с дефолтами из кода */
         'editorial_text_2','editorial_text_3',
+        /* W103 (F1, редизайн главной): имиджевые блоки — marquee-лента, manifesto,
+           премиум-разворот, ghost-CTA hero, тэглайн футера, eyebrow-метки секций */
+        'manifesto_kicker','manifesto_text',
+        'premium_title','premium_sub','premium_price_label','premium_cta_text',
+        'footer_tagline','hero_ghost_text','hero_ghost_link',
+        'section_hits_eyebrow','section_budget_eyebrow',
         'occasions_title','stores_title','stores_sub',
         'stores_1_title','stores_1_text','stores_2_title','stores_2_text','stores_3_title','stores_3_text',
         'seo_text_title','seo_text_body',
@@ -134,6 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
               /* W96 (редизайн 5cv): новые блоки витрины — город, hero-промо, чипы, карусели,
                  секции каталога, поводы, магазины, SEO-текст, журнал */
               'feature_citybar', 'hero_promo_enabled', 'hero_delivery_card_enabled',
+              'feature_marquee',
               'feature_chips', 'feature_carousels',
               'feature_section_hits', 'feature_section_premium', 'feature_section_budget', 'feature_section_addons',
               'feature_occasions', 'feature_stores', 'feature_seotext', 'feature_journal'] as $cb) {
@@ -155,7 +162,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
        для них достаточно «без схем/пробелов/разметки» (javascript:, data:, vbscript:, //host — невозможно).
        Недопустимое значение НЕ сохраняется, владелец получает flash-предупреждение. */
     $linkRejected = [];
-    foreach (['hero_button_link','hero_promo_link','journal_1_link','journal_2_link','journal_3_link',
+    foreach (['hero_button_link','hero_promo_link','hero_ghost_link','journal_1_link','journal_2_link','journal_3_link',
                   'shop_max_link','shop_instagram'] as $lk) {
         if (isset($values[$lk]) && !safe_url_ok((string)$values[$lk])) {
             $linkRejected[] = $lk;
@@ -267,6 +274,7 @@ flash();
   <a href="#s-common">Общие</a>
   <a href="#s-main">Главная</a>
   <a href="#s-5cv">Витрина 5cv</a>
+  <a href="#s-w103">Имиджевые блоки</a>
   <a href="#s-look">Вид</a>
   <a href="#s-features">Функции</a>
   <a href="#s-steps">Этапы</a>
@@ -536,14 +544,11 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
         </div>
         <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500;margin-top:10px">
           <input type="checkbox" name="feature_section_premium" style="width:auto" <?= sv('feature_section_premium', $s) !== '0' ? 'checked' : '' ?>>
-          Секция «Премиум»
+          Секция «Премиум» — тёмный разворот
         </label>
-        <div style="margin-left:26px">
-          <label class="f" for="pm-t">Заголовок</label>
-          <input class="input" id="pm-t" name="section_premium_title" value="<?= sv('section_premium_title', $s) !== '' ? sv('section_premium_title', $s) : 'Премиум — для особого случая' ?>" maxlength="60">
-          <label class="f" for="pm-s" style="margin-top:8px">Подпись</label>
-          <input class="input" id="pm-s" name="section_premium_sub" value="<?= sv('section_premium_sub', $s) !== '' ? sv('section_premium_sub', $s) : 'Крупные композиции для торжественных поводов' ?>" maxlength="120">
-        </div>
+        <?php /* W103 (F1): премиум — теперь разворот, тексты переехали в карточку
+               «Имиджевые блоки (W103)» (ключи premium_*) */ ?>
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 0 26px">Заголовок, подпись и цену-от разворота редактируйте в карточке «Имиджевые блоки (W103)» ниже.</p>
       </div>
       <div>
         <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
@@ -569,16 +574,16 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
         <p style="font-size:.78rem;color:var(--ink-soft);margin:8px 0 0">Товары попадают в секции галочками «Хит продаж» и «Премиум» в разделе «Товары».</p>
         <?php /* W97-fixB3a (B3a-3): editorial-строка — ключ читается витриной с дефолтом из кода
            (index.php), здесь нужен только для редактирования владельцем. */ ?>
-        <label class="f" for="ed-text" style="margin-top:10px">Текст editorial-строки между секциями каталога</label>
-        <textarea class="input" id="ed-text" name="editorial_text" rows="2" maxlength="300"><?= sv('editorial_text', $s) !== '' ? sv('editorial_text', $s) : 'Соберём букет под ваш повод и бюджет — напишите пожелание в комментарии к заказу, флорист предложит варианты и фото до отправки' ?></textarea>
-        <?php /* W99-fixG2 (H14): editorial №2 (после 6-й товарной секции) и №3 (перед FAQ) —
-               ключи читает index.php (render_fc_editorial), дефолты те же, что в коде
-               витрины; пустое значение скрывает соответствующую врезку. */ ?>
-        <label class="f" for="ed-text2" style="margin-top:8px">Вторая editorial-строка (после 6-й товарной секции)</label>
-        <textarea class="input" id="ed-text2" name="editorial_text_2" rows="2" maxlength="300"><?= sv('editorial_text_2', $s) !== '' ? sv('editorial_text_2', $s) : 'Не нашли нужный букет? Опишите пожелание в комментарии к заказу — флорист соберёт авторскую композицию и пришлёт фото до отправки' ?></textarea>
-        <label class="f" for="ed-text3" style="margin-top:8px">Третья editorial-строка (перед разделом FAQ)</label>
-        <textarea class="input" id="ed-text3" name="editorial_text_3" rows="2" maxlength="300"><?= sv('editorial_text_3', $s) !== '' ? sv('editorial_text_3', $s) : 'Доставляем ежедневно: утром соберём — вечером уже у адресата' ?></textarea>
-        <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Три широкие строки-паузы: после 3-й и 6-й товарных секций и перед FAQ. Очистите поле — строка исчезнет с сайта.</p>
+        <label class="f" for="ed-text" style="margin-top:10px">Первая editorial-цитата (между «До N ₽» и «Дополните букет»)</label>
+        <textarea class="input" id="ed-text" name="editorial_text" rows="2" maxlength="300"><?= sv('editorial_text', $s) !== '' ? sv('editorial_text', $s) : 'Каждое утро начинается с поставки: цветы не ждут склада — они ждут получателя' ?></textarea>
+        <?php /* W99-fixG2 (H14): editorial №2 и №3 — ключи читает index.php
+               (render_fc_editorial), дефолты те же, что в коде витрины;
+               пустое значение скрывает соответствующую врезку. */ ?>
+        <label class="f" for="ed-text2" style="margin-top:8px">Вторая editorial-цитата (после каталога)</label>
+        <textarea class="input" id="ed-text2" name="editorial_text_2" rows="2" maxlength="300"><?= sv('editorial_text_2', $s) !== '' ? sv('editorial_text_2', $s) : 'Не нашли нужный букет? Соберём авторский — под ваш повод, палитру и бюджет' ?></textarea>
+        <label class="f" for="ed-text3" style="margin-top:8px">Третья editorial-цитата (перед разделом FAQ)</label>
+        <textarea class="input" id="ed-text3" name="editorial_text_3" rows="2" maxlength="300"><?= sv('editorial_text_3', $s) !== '' ? sv('editorial_text_3', $s) : 'Курьер выезжает после того, как вы одобрили фото готового букета' ?></textarea>
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Три pull-цитаты (Playfair-курсив с янтарной линией): после «До N ₽», после каталога и перед FAQ. Очистите поле — цитата исчезнет с сайта.</p>
       </div>
     </div>
 
@@ -702,6 +707,98 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
     </div>
     <?php endfor; ?>
     <p style="font-size:.78rem;color:var(--ink-soft);margin:8px 0 0">Пустые статьи не показываются — заполните только нужные. Новая обложка заменяет старую.</p>
+  </div>
+
+  <?php /* W103 (F1, редизайн главной): имиджевые блоки — marquee, manifesto,
+     премиум-разворот, ghost-CTA, тэглайн футера, eyebrow-метки секций */ ?>
+  <div class="card" id="s-w103">
+    <h2 style="font-family:var(--font-display);font-size:1.2rem;margin-bottom:8px">Имиджевые блоки (W103)</h2>
+    <p style="font-size:.85rem;color:var(--ink-soft);margin:0 0 14px">Новые блоки главной страницы: бегущая лента, фотополоса-манифест, тёмный премиум-разворот, тихая ссылка в hero и крупная подпись футера. Пустые тексты = значения по умолчанию из кода.</p>
+
+    <p style="font-size:.85rem;font-weight:600;margin:0 0 8px">Бегущая лента под hero</p>
+    <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+      <input type="checkbox" name="feature_marquee" style="width:auto" <?= sv('feature_marquee', $s) !== '0' ? 'checked' : '' ?>>
+      Тёмная лента-«бегущая строка» под первым экраном
+    </label>
+    <div class="grid2" style="margin-top:8px">
+      <div>
+        <?php for ($mq = 1; $mq <= 2; $mq++): ?>
+        <label class="f" for="mq-<?= $mq ?>"<?= $mq === 2 ? ' style="margin-top:8px"' : '' ?>>Строка ленты <?= $mq ?></label>
+        <input class="input" id="mq-<?= $mq ?>" name="marquee_<?= $mq ?>" value="<?= sv("marquee_{$mq}", $s) !== '' ? sv("marquee_{$mq}", $s) : ['Доставка по Санкт-Петербургу в день заказа', 'Собираем и доставляем в день заказа'][$mq - 1] ?>" maxlength="90">
+        <?php endfor; ?>
+      </div>
+      <div>
+        <?php for ($mq = 3; $mq <= 4; $mq++): ?>
+        <label class="f" for="mq-<?= $mq ?>"<?= $mq === 3 ? '' : ' style="margin-top:8px"' ?>>Строка ленты <?= $mq ?></label>
+        <input class="input" id="mq-<?= $mq ?>" name="marquee_<?= $mq ?>" value="<?= sv("marquee_{$mq}", $s) !== '' ? sv("marquee_{$mq}", $s) : ['Фото букета перед отправкой', 'Заменяем увядшие в день доставки'][$mq - 3] ?>" maxlength="90">
+        <?php endfor; ?>
+      </div>
+    </div>
+    <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Пустая строка пропускается; совсем пусто — лента скроется.</p>
+
+    <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
+    <p style="font-size:.85rem;font-weight:600;margin:0 0 8px">Фотополоса-манифест (между каруселями и премиумом)</p>
+    <div class="grid2">
+      <div>
+        <label class="f" for="mf-k">Надпись-«кикер» над цитатой</label>
+        <input class="input" id="mf-k" name="manifesto_kicker" value="<?= sv('manifesto_kicker', $s) !== '' ? sv('manifesto_kicker', $s) : 'Наши принципы' ?>" maxlength="40">
+      </div>
+      <div>
+        <label class="f" for="mf-t">Текст манифеста (Playfair-курсив)</label>
+        <input class="input" id="mf-t" name="manifesto_text" value="<?= sv('manifesto_text', $s) !== '' ? sv('manifesto_text', $s) : 'Собираем букеты утром — и везём вам сегодня' ?>" maxlength="120">
+      </div>
+    </div>
+
+    <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
+    <p style="font-size:.85rem;font-weight:600;margin:0 0 8px">Премиум-разворот (тёмная секция)</p>
+    <div class="grid2">
+      <div>
+        <label class="f" for="pm-w103-t">Заголовок (Playfair)</label>
+        <input class="input" id="pm-w103-t" name="premium_title" value="<?= sv('premium_title', $s) !== '' ? sv('premium_title', $s) : 'Для особых случаев' ?>" maxlength="60">
+        <label class="f" for="pm-w103-s" style="margin-top:8px">Подпись</label>
+        <textarea class="input" id="pm-w103-s" name="premium_sub" rows="2" maxlength="200"><?= sv('premium_sub', $s) !== '' ? sv('premium_sub', $s) : 'Крупные композиции из гортензий, пионов и орхидей — когда впечатление важнее бюджета' ?></textarea>
+      </div>
+      <div>
+        <div style="display:flex;gap:12px">
+          <div style="flex:1">
+            <label class="f" for="pm-w103-pl">Подпись у крупной цены</label>
+            <input class="input" id="pm-w103-pl" name="premium_price_label" value="<?= sv('premium_price_label', $s) !== '' ? sv('premium_price_label', $s) : 'Букеты от' ?>" maxlength="30">
+          </div>
+          <div style="flex:1.4">
+            <label class="f" for="pm-w103-cta">Кнопка разворота</label>
+            <input class="input" id="pm-w103-cta" name="premium_cta_text" value="<?= sv('premium_cta_text', $s) !== '' ? sv('premium_cta_text', $s) : 'Смотреть премиум' ?>" maxlength="40">
+          </div>
+        </div>
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:8px 0 0">Сама «цена-от» считается автоматически — минимум среди премиум-товаров. Тумблер секции — в карточке «Витрина 5cv» выше.</p>
+      </div>
+    </div>
+
+    <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
+    <p style="font-size:.85rem;font-weight:600;margin:0 0 8px">Hero, секции и футер</p>
+    <div class="grid2">
+      <div>
+        <div style="display:flex;gap:12px">
+          <div style="flex:1.2">
+            <label class="f" for="hg-t">Тихая ссылка в hero (текст)</label>
+            <input class="input" id="hg-t" name="hero_ghost_text" value="<?= sv('hero_ghost_text', $s) !== '' ? sv('hero_ghost_text', $s) : 'Цветы по поводам' ?>" maxlength="40">
+          </div>
+          <div style="flex:1">
+            <label class="f" for="hg-l">Ссылка</label>
+            <input class="input" id="hg-l" name="hero_ghost_link" value="<?= sv('hero_ghost_link', $s) !== '' ? sv('hero_ghost_link', $s) : '#occasions' ?>" maxlength="200" placeholder="#occasions или /occasion/…">
+          </div>
+        </div>
+        <label class="f" for="eb-hits" style="margin-top:8px">Eyebrow секции «Хиты»</label>
+        <input class="input" id="eb-hits" name="section_hits_eyebrow" value="<?= sv('section_hits_eyebrow', $s) !== '' ? sv('section_hits_eyebrow', $s) : 'Выбор|покупателей' ?>" maxlength="60">
+        <label class="f" for="eb-budget" style="margin-top:8px">Eyebrow секции «До N ₽»</label>
+        <input class="input" id="eb-budget" name="section_budget_eyebrow" value="<?= sv('section_budget_eyebrow', $s) !== '' ? sv('section_budget_eyebrow', $s) : 'Выгодно|каждый день' ?>" maxlength="60">
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Формат eyebrow: «капс|курсив» — до <code>|</code> заглавными буквами, после — курсивным серифом. Пустое поле скрывает надпись.</p>
+      </div>
+      <div>
+        <label class="f" for="ft-tagline">Крупная подпись футера (Playfair-курсив)</label>
+        <input class="input" id="ft-tagline" name="footer_tagline" value="<?= sv('footer_tagline', $s) !== '' ? sv('footer_tagline', $s) : 'Свежие цветы — с утра к вашей двери' ?>" maxlength="90">
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Показывается на главной над колонками футера; очистите — блок исчезнет.</p>
+      </div>
+    </div>
   </div>
 
   <div class="card" id="s-look">

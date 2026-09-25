@@ -1,0 +1,145 @@
+/* ================================================================
+   CATEGORY.CSS — тулбар фильтров и сортировки страниц категорий
+   (W103 / F2: P0 двух критиков — «на /category нет ни фильтров, ни
+   сортировки — для магазина роз это провал утилитарности»).
+
+   Подключается ТОЛЬКО в category.php отдельным <link> ПОСЛЕ five.css:
+   токены (var(--pink), var(--ink), …) живут в :root five.css и на этой
+   же странице — @import не нужен (CSP-самодостаточность, как у соседей).
+   Фолбэк-значения продублированы литералами на случай будущих правок
+   five.css. Классы .cat-* не конфликтуют с .fc-* главной: five.js
+   слушает делегированно только a[data-tab]/a[data-chip] (ссылки),
+   наши контролы — <button>.
+
+   Паттерны скопированы значением из five.css:
+   • чипы        — .fc-chip (капсула 999px, 44px, surface-subtle,
+                   активный: белый фон + рамка --pink + текст --pink-deep,
+                   #cc2f7a на #fff = 4.94:1 — как чипы цен главной);
+   • сортировка  — сегмент-контрол в обводке --line, активный сегмент
+                   ink-фон/белый текст (кнопки .card-btn главной);
+   • focus-visible — розовое кольцо (--pink-dark глобально из five.css,
+                   внутри сегмента — внутреннее, чтобы не резалось
+                   overflow:hidden трека).
+   ================================================================ */
+
+/* ---------- Тулбар под H1/интро категории ---------- */
+.cat-toolbar{
+  margin:6px 0 24px;
+  display:flex;flex-direction:column;gap:12px;
+}
+.cat-toolbar__controls{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px 24px;flex-wrap:wrap;
+}
+
+/* ---------- Чипы цены (стиль .fc-chip главной) ---------- */
+.cat-chips{
+  display:flex;gap:10px;flex-wrap:wrap;
+}
+.cat-chip{
+  flex:none;display:inline-flex;align-items:center;white-space:nowrap;
+  min-height:44px;padding:0 20px;border-radius:999px;
+  background:var(--surface-subtle,#f6f6f8);color:var(--ink,#1c1a1e);
+  border:1.5px solid transparent;
+  font:600 .92rem var(--font-ui,sans-serif);cursor:pointer;
+  transition:background .15s,color .15s,border-color .15s,transform .1s;
+}
+.cat-chip:hover{background:#eceaf0;border-color:var(--ink,#1c1a1e)}
+.cat-chip:active{transform:scale(.97)}
+/* Активный — как у чипов цен главной: розовая рамка + глубокий розовый
+   текст на белом (#cc2f7a на #fff = 4.94:1; рамка #ff4ea2 ≥3 для UI). */
+.cat-chip[aria-pressed="true"],.cat-chip.is-active{
+  background:#fff;color:var(--pink-deep,#cc2f7a);border-color:var(--pink,#ff4ea2);
+}
+.cat-chip[aria-pressed="true"]:hover,.cat-chip.is-active:hover{
+  background:#fff;color:var(--pink-deep,#cc2f7a);border-color:var(--pink,#ff4ea2);
+}
+.cat-chip:focus-visible{outline:3px solid var(--pink,#ff4ea2);outline-offset:2px}
+
+/* ---------- Сортировка: сегмент-контрол ---------- */
+.cat-sort{display:inline-flex;align-items:center;gap:12px;min-width:0}
+.cat-sort__label{
+  font-size:.85rem;font-weight:600;color:var(--ink-muted,#6e6a72);white-space:nowrap;
+}
+.cat-sort__group{
+  display:inline-flex;max-width:100%;overflow-x:auto;scrollbar-width:none;
+  border:1.5px solid var(--line,#e7e5ea);border-radius:999px;background:#fff;
+  -webkit-overflow-scrolling:touch;
+}
+.cat-sort__group::-webkit-scrollbar{display:none}
+.cat-sort__btn{
+  flex:none;display:inline-flex;align-items:center;justify-content:center;
+  white-space:nowrap;min-height:44px;padding:0 18px;border:0;
+  background:transparent;color:var(--ink-muted,#6e6a72);
+  font:600 .88rem var(--font-ui,sans-serif);cursor:pointer;
+  transition:background .15s,color .15s;
+}
+.cat-sort__btn:hover{background:var(--surface-subtle,#f6f6f8);color:var(--ink,#1c1a1e)}
+/* Активный сегмент — ink-фон/белый текст (как кнопки .card-btn витрины) */
+.cat-sort__btn[aria-pressed="true"],.cat-sort__btn.is-active{
+  background:var(--ink,#1c1a1e);color:#fff;
+}
+.cat-sort__btn[aria-pressed="true"]:hover,.cat-sort__btn.is-active:hover{
+  background:var(--ink,#1c1a1e);color:#fff;
+}
+/* Разделители сегментов — не касаются активного (ink) блока */
+.cat-sort__btn + .cat-sort__btn{border-left:1px solid var(--line,#e7e5ea)}
+.cat-sort__btn[aria-pressed="true"] + .cat-sort__btn,
+.cat-sort__btn[aria-pressed="true"]{border-left-color:transparent}
+/* Фокус-кольцо внутрь: наружное смещение резалось бы overflow трека */
+.cat-sort__btn:focus-visible{outline:3px solid var(--pink,#ff4ea2);outline-offset:-3px}
+
+/* ---------- Счётчик + сброс ---------- */
+.cat-toolbar__meta{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;min-height:26px;
+}
+.cat-count{
+  font-size:.85rem;font-weight:600;color:var(--ink-muted,#6e6a72);
+}
+.cat-reset{
+  flex:none;display:inline-flex;align-items:center;white-space:nowrap;
+  min-height:44px;padding:0 18px;border-radius:999px;
+  border:1.5px solid var(--line,#e7e5ea);background:#fff;
+  color:var(--ink,#1c1a1e);font:600 .85rem var(--font-ui,sans-serif);cursor:pointer;
+  transition:border-color .15s,color .15s;
+}
+.cat-reset:hover{border-color:var(--pink,#ff4ea2);color:var(--pink-deep,#cc2f7a)}
+.cat-reset:focus-visible{outline:3px solid var(--pink,#ff4ea2);outline-offset:2px}
+/* display:flex у .cat-reset перебивает [hidden] — гасим явно */
+.cat-reset[hidden]{display:none}
+
+/* ---------- Пустое состояние фильтра ---------- */
+.cat-empty{
+  text-align:center;padding:44px 20px;margin-top:14px;
+  border:1.5px dashed var(--line,#e7e5ea);border-radius:16px;background:#fff;
+}
+.cat-empty[hidden]{display:none}
+.cat-empty__title{
+  font-size:1.05rem;font-weight:700;color:var(--ink,#1c1a1e);margin:0 0 6px;
+}
+.cat-empty__hint{
+  font-size:.9rem;color:var(--ink-muted,#6e6a72);margin:0 0 16px;
+}
+
+/* ---------- Мобильный (≤899px): чипы и сортировка по ряду ---------- */
+@media(max-width:899px){
+  .cat-toolbar__controls{flex-direction:column;align-items:stretch;gap:10px}
+  /* Чипы — горизонтальный скролл как .fc-chips главной (свайп, без wrap):
+     отрицательный margin компенсирует padding .wrap 20px */
+  .cat-chips{
+    flex-wrap:nowrap;overflow-x:auto;
+    margin:0 -20px;padding:6px 20px;
+    scrollbar-width:none;-webkit-overflow-scrolling:touch;
+  }
+  .cat-chips::-webkit-scrollbar{display:none}
+  /* Видимую подпись прячем (роль/aria-label остаются на группе) —
+     «Сначала популярные / Дешевле / Дороже» и так влезают в 390px */
+  .cat-sort__label{display:none}
+  .cat-sort{justify-content:flex-start}
+  .cat-sort__btn{padding:0 14px;font-size:.82rem}
+}
+
+/* prefers-reduced-motion: переходы контролам не нужны */
+@media (prefers-reduced-motion: reduce){
+  .cat-chip,.cat-sort__btn,.cat-reset{transition:none}
+}

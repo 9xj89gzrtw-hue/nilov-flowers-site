@@ -12,3 +12,4 @@ img/uploads/*
 .DS_Store
 includes/flowers.state/
 includes/flowers.state/
+db/*.txt

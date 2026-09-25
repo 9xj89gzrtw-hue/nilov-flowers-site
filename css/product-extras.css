@@ -1,0 +1,108 @@
+/* ================================================================
+   PRODUCT-EXTRAS.CSS — апгрейд карточки товара (W103 / F3)
+   Подключается ТОЛЬКО в product.php — ПОСЛЕ css/five.css и
+   css/fonts.css (их печатает partials/head.php), поэтому правила
+   той же специфичности перекрывают дизайн-систему точечно.
+   Скоуп строго PDP: .fc-product*, .product-gallery*,
+   .product-page__media, .pdp-* — витрина/каталог не затрагиваются.
+   ================================================================ */
+
+/* ============ 1. ТИПОГРАФИКА PDP ============ */
+/* H1 товара — display-serif вместо всеобщего Montserrat (критик:
+   «product H1 всего 32px», типографика одним гротеском).
+   Playfair Display лежит в /fonts (variable, ось wght 400–900,
+   fonts.css). five.css прижимает токен --font-display к Montserrat
+   на html:root — переопределяем его ЛОКАЛЬНО внутри заголовка. */
+.fc-product__title{
+  --font-display:'Playfair Display','Playfair Fallback',Georgia,'Times New Roman',serif;
+  font-family:var(--font-display);
+  font-weight:600;
+  font-size:clamp(1.9rem,3.4vw,2.5rem);   /* было 32px: 1.9–2.5rem */
+  line-height:1.12;
+  letter-spacing:-.01em;
+  text-wrap:balance;
+}
+
+/* Цена — якорь иерархии сразу после H1: 1.75rem/800, tabular-nums
+   (унаследованы из five.css); sale: старая — muted 1.1rem, новая —
+   pink-deep 1.75rem/800 */
+.fc-product__price{font-size:1.75rem}
+.fc-product__price--old{font-size:1.1rem;font-weight:600}
+.fc-product__price--discount{font-size:1.75rem;font-weight:800;color:var(--pink-deep,#cc2f7a)}
+
+/* Категория-крошка над заголовком: 11.2 → 12.5px (читаемая, не кричащая) */
+.fc-product__info .product-card__cat{font-size:12.5px}
+
+/* Описание: комфортное чтение — 16px/1.65, строка ≤ 62ch */
+.fc-product .prose{font-size:1rem;line-height:1.65;max-width:62ch}
+
+/* ============ 2. СПЕК-ЧИПЫ (размер / свежесть / повод / состав) ============
+   Ряд капсул над описанием (HTML — product.php, парсинг описания).
+   Иконки — inline SVG lucide-стиля, 16px, stroke ink-soft. */
+.pdp-specs{
+  display:flex;flex-wrap:wrap;gap:8px;
+  list-style:none;margin:14px 0 16px;padding:0;
+}
+.pdp-specs__chip{
+  display:inline-flex;align-items:center;gap:7px;
+  border:1px solid var(--line);border-radius:999px;
+  padding:7px 13px 7px 11px;
+  font-size:13px;font-weight:600;line-height:1.25;color:var(--ink);
+  background:var(--surface,#fff);
+}
+.pdp-specs__icon{display:inline-flex;color:var(--ink-soft,#6e6a72);flex:none}
+.pdp-specs__icon svg{width:16px;height:16px;display:block}
+
+/* ============ 3. ТРАСТ-ШТАМП «ФОТО ПЕРЕД ОТПРАВКОЙ ✓» ============
+   Круглая печать поверх фото (top-right): SVG с текстом по дуге 270°,
+   галочка в центре. Бейджи на PDP — в инфо-колонке, стрелки галереи —
+   по середине боков, счётчика нет → угол свободен. */
+.pdp-stamp{
+  position:absolute;top:14px;right:14px;z-index:6;
+  width:84px;height:84px;
+  transform:rotate(8deg);opacity:.92;
+  filter:drop-shadow(0 2px 8px rgba(28,26,30,.25));
+  transition:transform .3s ease;
+}
+.pdp-stamp:hover{transform:rotate(0deg)}
+.pdp-stamp svg{width:100%;height:100%;display:block}
+.pdp-stamp__ring{fill:rgba(255,255,255,.9);stroke:var(--pink,#ff4ea2);stroke-width:2}
+.pdp-stamp__ring--inner{fill:none;stroke:var(--pink,#ff4ea2);stroke-width:1;opacity:.55}
+.pdp-stamp__text{
+  font-family:var(--font-ui);font-size:10.2px;font-weight:700;
+  letter-spacing:.6px;fill:var(--ink,#1c1a1e);
+}
+.pdp-stamp__dot{fill:var(--pink,#ff4ea2)}
+.pdp-stamp__check{
+  fill:none;stroke:var(--pink,#ff4ea2);stroke-width:3.2;
+  stroke-linecap:round;stroke-linejoin:round;
+}
+@media(max-width:480px){
+  .pdp-stamp{width:68px;height:68px;top:10px;right:10px}
+}
+
+/* ============ 4. ГАЛЕРЕЯ: zoom-аффорданс + аккуратная высота ============ */
+/* Клик/тап по слайду открывает lightbox (data-lightbox-trigger в product.php);
+   курсор и лёгкий hover-zoom сообщают об увеличении */
+.product-gallery__slide{cursor:zoom-in}
+.product-gallery__slide img{transition:transform .5s ease}
+@media(hover:hover){
+  .product-gallery__slide:hover img{transform:scale(1.05)}
+  .product-page__media:hover .product-gallery__img{transform:scale(1.05)}
+}
+/* Desktop: фото не выше 660px — H1/цена/CTA попадают в первый экран
+   (object-fit:cover у img уже есть — обрезка незаметна) */
+@media(min-width:960px){
+  .product-gallery__slide img{max-height:660px}
+  .product-gallery__zoom{max-height:660px}
+}
+/* Стрелки галереи — SVG-шевроны (были текстовые ‹ ›); тап-зона 44px — five.css */
+.product-gallery__nav svg{width:20px;height:20px;display:block}
+
+/* ============ 5. ДОСТУПНОСТЬ: prefers-reduced-motion ============ */
+@media(prefers-reduced-motion:reduce){
+  .pdp-stamp{transition:none}
+  .product-gallery__slide img{transition:none}
+  .product-gallery__slide:hover img,
+  .product-page__media:hover .product-gallery__img{transform:none}
+}

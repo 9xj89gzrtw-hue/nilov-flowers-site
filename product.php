@@ -293,16 +293,125 @@ $ykOn = setting('yk_enabled', '0') === '1' && trim(setting('yk_shop_id', '')) !=
 
 /* Иконки мета-блока (inline SVG в стиле витрины; размер/цвет задаёт .fc-product__meta-icon) */
 $metaIcons = [
-    'truck' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 6h11v11H2z"/><path d="M13 9h4l3 3v5h-3"/><circle cx="5.5" cy="17.5" r="2"/><circle cx="16.5" cy="17.5" r="2"/></svg>',
-    'clock' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>',
-    'map' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="2.6"/></svg>',
-    'card' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>',
-    'camera' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
+    'truck' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 6h11v11H2z"/><path d="M13 9h4l3 3v5h-3"/><circle cx="5.5" cy="17.5" r="2"/><circle cx="16.5" cy="17.5" r="2"/></svg>',
+    'clock' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>',
+    'map' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="2.6"/></svg>',
+    'card' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>',
+    'camera' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
     'flower' => '<svg viewBox="0 0 32 32" aria-hidden="true"><ellipse cx="16" cy="9.5" rx="4.6" ry="7.2" fill="currentColor"/><ellipse cx="16" cy="9.5" rx="4.6" ry="7.2" fill="currentColor" transform="rotate(72 16 16)"/><ellipse cx="16" cy="9.5" rx="4.6" ry="7.2" fill="currentColor" transform="rotate(144 16 16)"/><ellipse cx="16" cy="9.5" rx="4.6" ry="7.2" fill="currentColor" transform="rotate(216 16 16)"/><ellipse cx="16" cy="9.5" rx="4.6" ry="7.2" fill="currentColor" transform="rotate(288 16 16)"/></svg>',
-    'shield' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+    'shield' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
 ];
 /* Гарантии: фото → камера, свежесть → цветок, остальное → щит */
 $trustIconKeys = ['camera', 'flower', 'shield'];
+
+/* W103/F3: иконки спек-чипов — lucide-стиль, stroke 2, currentColor (без emoji:
+   «бонусы оформлены emoji — дёшево» из ревью). Размер/цвет — .pdp-specs__icon. */
+$specIcons = [
+    'ruler' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.3 8.7 15.3 2.7a1.1 1.1 0 0 0-1.9-.4L3 12.6a1.1 1.1 0 0 0 .3 1.8l6 3a1.1 1.1 0 0 0 1.4-.3l10-6.4a1.1 1.1 0 0 0 .6-1.9z"/><path d="m7.5 10.5 2 2"/><path d="m10.5 7.5 2 2"/><path d="m13.5 4.5 2 2"/><path d="m4.5 13.5 2 2"/></svg>',
+    'clock' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>',
+    'tag' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></svg>',
+    'sprout' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/></svg>',
+];
+
+/* W103/F3 (апгрейд PDP): спек-чипы из описания — «состав спрятан в тексте —
+   вынести в чипы» (ревью). Парсинг консервативный: нет устойчивой фразы — нет
+   чипа, никаких заглушек. Диапазон — первая группа «N–M» после ключевого
+   слова; свежесть — «стоит/живёт/цветёт/свежесть N–M дней» (+ «в вазе», если
+   фраза в том же предложении); повод — «Повод: …» (иначе «Подходит для …»,
+   пункты в родительном → чип «Для …»), первые 3 пункта; состав — «Состав: …»,
+   первые 2 пункта (скобочные уточнения срезаем). */
+function pdp_range_norm(string $r): string
+{
+    /* «7 - 10» / «7 — 10» → «7–10» (en-dash, без пробелов) */
+    return trim((string)preg_replace('/\s*([—–-])\s*/u', '–', trim($r)));
+}
+
+function pdp_list_items(string $raw, bool $splitAnd, int $max, int $maxLen, string $prefix = ''): array
+{
+    $out = [];
+    $parts = $splitAnd
+        ? (array)preg_split('/\s*,\s*|\s+и\s+/u', $raw)
+        : (array)preg_split('/\s*,\s*/u', $raw);
+    foreach ($parts as $p) {
+        $p = trim((string)$p);
+        if ($p === '') {
+            continue;
+        }
+        $label = $prefix === ''
+            ? mb_strtoupper(mb_substr($p, 0, 1)) . mb_substr($p, 1)
+            : $prefix . $p; /* «Для свидания» — заглавная только в префиксе */
+        if (mb_strlen($label) > $maxLen) {
+            continue; /* капсула не резиновая — длинный пункт пропускаем */
+        }
+        $out[] = $label;
+        if (count($out) >= $max) {
+            break;
+        }
+    }
+    return $out;
+}
+
+function pdp_spec_chips(string $desc): array
+{
+    $chips = [];
+    $desc = trim((string)preg_replace('/[ \t]+/u', ' ', $desc));
+    if ($desc === '') {
+        return $chips;
+    }
+
+    /* Размер — первый диапазон N–M с единицей длины в фразе «Размер — …» */
+    if (preg_match('/Размер\s*[—–-][^.\n]*?(\d+(?:[.,]\d+)?\s*[—–-]\s*\d+(?:[.,]\d+)?)\s*(см|мм|м)\b/ui', $desc, $m) === 1) {
+        $chips[] = ['ruler', pdp_range_norm($m[1]) . ' ' . mb_strtolower($m[2])];
+    }
+
+    /* Свежесть — по предложениям: «в вазе» рядом с диапазоном → «7–10 дней в вазе» */
+    $freshRe = '/(?:стоит|живёт|живет|цветёт|цветет|цветут|свежесть)[^.\n]*?(\d+(?:[.,]\d+)?\s*[—–-]\s*\d+(?:[.,]\d+)?)\s*(день|дня|дней|сутки|суток)\b/ui';
+    foreach ((array)preg_split('/(?<=[.!?])\s+|\n/u', $desc) as $sent) {
+        if (preg_match($freshRe, (string)$sent, $m) === 1) {
+            $label = pdp_range_norm($m[1]) . ' ' . mb_strtolower($m[2]);
+            if (mb_stripos((string)$sent, 'в вазе') !== false) {
+                $label .= ' в вазе';
+            }
+            $chips[] = ['clock', $label];
+            break;
+        }
+    }
+
+    /* Повод: «Повод: …», иначе «Подходит для …» (родительный → чип «Для …») */
+    $occ = [];
+    if (preg_match('/Повод\s*:\s*([^.\n!?]+)/ui', $desc, $m) === 1) {
+        $occ = pdp_list_items($m[1], true, 3, 26);
+    } elseif (preg_match('/Подходит\s+для\s+([^.\n!?]+)/ui', $desc, $m) === 1) {
+        $occ = pdp_list_items($m[1], true, 3, 26, 'Для ');
+    }
+    foreach ($occ as $o) {
+        $chips[] = ['tag', $o];
+    }
+
+    /* Состав (сладкие дополнения): «Состав: …» — первые 2 пункта, без скобок */
+    if (preg_match('/Состав\s*:\s*([^.\n!?]+)/ui', $desc, $m) === 1) {
+        $clean = trim((string)preg_replace('/\([^)]*\)/u', '', $m[1]));
+        foreach (pdp_list_items($clean, false, 2, 26) as $c) {
+            $chips[] = ['sprout', $c];
+        }
+    }
+
+    return $chips;
+}
+
+/* W103/F3: траст-штамп «Фото перед отправкой ✓» — круглая печать поверх фото
+   (SVG: текст по дуге 270°, r=33; центр — галочка; вращение/hover — CSS
+   .pdp-stamp). Позиция top-right: бейджи на PDP — в инфо-колонке, стрелки
+   галереи — по середине боков, счётчика нет — угол свободен. */
+$stampSvg = '<div class="pdp-stamp" aria-hidden="true">'
+    . '<svg viewBox="0 0 88 88" focusable="false">'
+    . '<defs><path id="pdpStampArc" d="M20.7 67.3A33 33 0 1 1 67.3 67.3" fill="none"/></defs>'
+    . '<circle class="pdp-stamp__ring" cx="44" cy="44" r="41.5"/>'
+    . '<circle class="pdp-stamp__ring pdp-stamp__ring--inner" cx="44" cy="44" r="24.5"/>'
+    . '<text class="pdp-stamp__text"><textPath href="#pdpStampArc" startOffset="50%" text-anchor="middle">ФОТО ПЕРЕД ОТПРАВКОЙ</textPath></text>'
+    . '<circle class="pdp-stamp__dot" cx="44" cy="77" r="1.7"/>'
+    . '<path class="pdp-stamp__check" d="M37 44.5 42 49.5 51.5 38.5"/>'
+    . '</svg></div>';
 
 /* Компактная карточка «С этим берут» — как на витрине (бейджи + «+» в корзину).
    W97-fixB3b (B3b-2d): srcset с thumbs-400 (как в каталоге витрины) + B3b-4:
@@ -404,6 +513,12 @@ function render_related_card(array $rp): void
 <?php endif; ?>
 <meta name="description" content="<?= e($metaDesc) ?>">
 <?php require __DIR__ . '/partials/head.php'; ?>
+<?php /* W103/F3: PDP-надстройка — ПОСЛЕ five.css/fonts.css из head.php
+   (версионирование ?v= — тот же md5-паттерн, кэш инвалидируется с файлом) */ ?>
+<?php /* H1 товара — Playfair Display (display-serif): preload cyrillic-подмножества
+   (21КБ) — заголовок выше фолда, FOUT-мигание на Georgia-фолбэке недопустимо */ ?>
+<link rel="preload" href="/fonts/PlayfairDisplay-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/css/product-extras.css?v=<?= e(substr((string)@md5_file(__DIR__ . '/css/product-extras.css'), 0, 8)) ?>">
 <?php /* JSON-LD Product+Offer — canonical 2026 (ecorn.agency structured-data-ecommerce).
    W97-fixB3b (B3b-2а/g): BreadcrumbList ВЫНЕСЕН в отдельный top-level скрипт ниже
    (property breadcrumb у Product невалиден в schema.org); availability-тернарник
@@ -477,6 +592,9 @@ $breadcrumbItems[] = ['@type' => 'ListItem', 'position' => count($breadcrumbItem
 
       <div class="fc-product">
         <div class="fc-product__gallery product-gallery">
+          <?php /* W103/F3: траст-штамп поверх фото (top-right, вне скролл-контейнера
+                     галереи — не уезжает вместе со слайдами); только при реальном фото */ ?>
+          <?php if ($img !== ''): ?><?= $stampSvg ?><?php endif; ?>
           <?php /* Design-критик W47: честная multi-view галерея из ОДНОГО реального фото —
                      слайд 2 = крупный план того же снимка (CSS-zoom), не выдуманный ракурс.
                      Вторые настоящие фото — данные клиента (feature_gallery выключает всё). */ ?>
@@ -490,7 +608,7 @@ $breadcrumbItems[] = ['@type' => 'ListItem', 'position' => count($breadcrumbItem
                      Появятся реальные вторые фото — вернуть оба блока. */ ?>
           <div class="product-gallery__viewport" id="productGalleryTrack">
             <div class="product-gallery__track">
-              <figure class="product-gallery__slide">
+              <figure class="product-gallery__slide" data-lightbox-trigger data-lightbox-src="<?= e($imgWebpOk ? $imgWebp : $img) ?>" data-lightbox-alt="<?= e($product['name']) ?>">
                 <picture>
                   <?php /* W97-fixB3b (B3b-2e): srcset 600w/900w/оригинал — рассчитан на
                      слот ~560px (sizes), на 390/DPR1 выбирается 600w; eager+high — LCP */ ?>
@@ -499,7 +617,7 @@ $breadcrumbItems[] = ['@type' => 'ListItem', 'position' => count($breadcrumbItem
                 </picture>
                 <figcaption class="product-gallery__cap">Общий вид</figcaption>
               </figure>
-              <figure class="product-gallery__slide">
+              <figure class="product-gallery__slide" data-lightbox-trigger data-lightbox-src="<?= e($zoomSrc) ?>" data-lightbox-alt="<?= e($product['name']) ?> — крупный план">
                 <?php /* W97-fixB3b (B3b-2f): background-image убран из инлайн-стиля —
                            .jpg-дубль грузился сразу вместе с LCP; webp-URL подставит
                            js/product-gallery.js лениво при активации этого слайда */ ?>
@@ -507,11 +625,12 @@ $breadcrumbItems[] = ['@type' => 'ListItem', 'position' => count($breadcrumbItem
                 <figcaption class="product-gallery__cap">Крупный план</figcaption>
               </figure>
             </div>
-            <button type="button" class="product-gallery__nav product-gallery__nav--l" data-gnav="-1" aria-label="Предыдущий вид">‹</button>
-            <button type="button" class="product-gallery__nav product-gallery__nav--r" data-gnav="1" aria-label="Следующий вид">›</button>
+            <button type="button" class="product-gallery__nav product-gallery__nav--l" data-gnav="-1" aria-label="Предыдущий вид"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
+            <button type="button" class="product-gallery__nav product-gallery__nav--r" data-gnav="1" aria-label="Следующий вид"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
           </div>
           <?php else: ?>
           <div class="fc-product__media product-page__media" data-lightbox-trigger data-lightbox-src="<?= e($img) ?>" data-lightbox-alt="<?= e($product['name']) ?>">
+            <?php if ($img !== ''): ?><?= $stampSvg ?><?php endif; ?>
             <?php if ($img !== ''): ?>
               <picture>
                 <?php /* W97-fixB3b (B3b-2e): тот же srcset-набор и в варианте без
@@ -550,6 +669,16 @@ $breadcrumbItems[] = ['@type' => 'ListItem', 'position' => count($breadcrumbItem
             <?php endif; ?>
           </p>
           <?php if ($isUrgent): ?><p class="product-card__urgent-note">Соберём и доставим в течение дня — количество ограничено</p><?php endif; ?>
+          <?php /* W103/F3: спек-чипы (размер/свежесть/повод/состав) — над описанием;
+                     парсинг без совпадений → блока нет целиком (никаких заглушек) */ ?>
+          <?php $specChips = pdp_spec_chips((string)$product['description']); ?>
+          <?php if ($specChips !== []): ?>
+          <ul class="pdp-specs" aria-label="Ключевые характеристики">
+            <?php foreach ($specChips as [$chipIcon, $chipLabel]): ?>
+            <li class="pdp-specs__chip"><span class="pdp-specs__icon"><?= $specIcons[$chipIcon] ?></span><span><?= e($chipLabel) ?></span></li>
+            <?php endforeach; ?>
+          </ul>
+          <?php endif; ?>
           <?php if ($product['description'] !== ''): ?><div class="prose"><?= nl2br(e($product['description'])) ?></div><?php endif; ?>
           <?php /* W97-fixB3b (B3b-4): сердечко избранного рядом с CTA — тот же
              localStorage-стор, что у каталога (js/nilov.js по [data-fav-toggle]);

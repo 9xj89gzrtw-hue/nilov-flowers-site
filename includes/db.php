@@ -17,14 +17,19 @@ function db(): PDO
            SQLSTATE[HY000] General error 5 (database is locked) с телом фатала в HTTP 200. */
         $pdo->exec('PRAGMA busy_timeout = 30000'); /* W87 stress: 5s мало для 20x write-шторма (было 11 HTTP 500 locked) -> 30s; WAL читаетей не блокирует */
         if ($new) {
-            seedDatabase($pdo);
+            createBaseTables($pdo);
         }
         migrateSchema($pdo);
+        /* W103 (фикшен сишего сида): сид-INSERT использует колонки is_hit/is_premium/
+           show_in_upsell, которые добавляет migrateSchema — сначала схема, потом данные. */
+        if ($new) {
+            seedDemoData($pdo);
+        }
     }
     return $pdo;
 }
 
-function seedDatabase(PDO $pdo): void
+function createBaseTables(PDO $pdo): void
 {
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS categories (
@@ -89,7 +94,12 @@ function seedDatabase(PDO $pdo): void
         CREATE INDEX IF NOT EXISTS idx_orders_created ON orders(created_at DESC);
         CREATE INDEX IF NOT EXISTS idx_items_order ON order_items(order_id);
     ");
+}
 
+/* Демо-данные для свежих БД: каталог, настройки, зоны. Выполняется ПОСЛЕ
+   migrateSchema (INSERT-ы используют колонки, добавляемые миграцией). */
+function seedDemoData(PDO $pdo): void
+{
     /* Демо-каталог W96 (дизайн 5cv): категории под секции-карусели витрины.
        Владелец заменит товары через админку — сид только для свежих БД. */
     $pdo->exec("INSERT INTO categories (name, sort) VALUES
@@ -123,7 +133,8 @@ function seedDatabase(PDO $pdo): void
         (5, 'Орхидеи и розы в квадратной коробке', 'orhidei-rozy-kvadrat-korobka', 7900, NULL, 'Белые орхидеи с розами в квадратной коробке — статусная композиция для делового подарка. Сторона коробки — около 30 см. Повод: поздравление партнёра, открытие офиса, юбилей руководителя. Свежесть 10–14 дней: орхидеи стойкие, доливайте воду во флористическую губку.', 'gen19.jpg', 0, 1, 0, 220),
         (6, 'Клубника и макаруны в розовой коробке', 'klubnika-makarony-korobka', 1490, NULL, 'Клубника в шоколаде и макаруны в розовой коробке — сладкое дополнение к букету. Порция на двоих. Повод: свидание, день рождения, сюрприз ребёнку. Храните в холодильнике не более суток: макаруны чувствительны к теплу, ягоды — ко времени.', 'gen20.jpg', 0, 0, 1, 230)");
 
-    $pdo->exec("INSERT INTO settings (key, value) VALUES
+    /* OR IGNORE: часть ключей мог вставить migrateSchema (он теперь идёт раньше) */
+    $pdo->exec("INSERT OR IGNORE INTO settings (key, value) VALUES
         ('shop_name', 'Nilov Flowers'),
         ('shop_phone', '+7 (900) 000-00-00'),
         ('shop_address', 'г. Санкт-Петербург, Полевая Сабировская ул., 47, корп. 1'),

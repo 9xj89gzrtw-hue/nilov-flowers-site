@@ -37,30 +37,33 @@
     var cfg = window.COOKIE_BANNER_CONFIG || {};
     var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
     var text = cfg.text || 'Сайт использует cookie и Яндекс.Метрику для работы и анализа трафика. Подробнее — в <a href="/policy" target="_blank" rel="noopener">Политике обработки персональных данных</a>.';
+    /* W103 (F4, критик-3 P0-1): компактная белая карточка — ОДНА главная кнопка
+       «Принять» (розовая, стили .cookie-banner__btn в five.css) + тихие
+       текст-ссылки «Настроить» (granular-флоу не изменился) и «Отклонить»
+       (однотапный отказ — не сложнее согласия, 152-ФЗ). Было: три равные
+       кнопки-плитки в тёмной плите. */
     banner.innerHTML =
       '<p class="cookie-banner__text">' + text + '</p>' +
       '<span class="cookie-banner__actions">' +
       '<button type="button" class="btn cookie-banner__btn">' + esc(cfg.accept || 'Принять') + '</button>' +
-      '<button type="button" class="btn cookie-banner__btn cookie-banner__btn--secondary">' + esc(cfg.reject || 'Только необходимые') + '</button>' +
-      '<button type="button" class="btn cookie-banner__btn cookie-banner__btn--ghost" id="cookieSettingsBtn">Настройки</button>' +
+      '<button type="button" class="cookie-banner__link" id="cookieSettingsBtn">Настройки</button>' +
+      '<button type="button" class="cookie-banner__link cookie-banner__link--reject">' + esc(cfg.reject || 'Только необходимые') + '</button>' +
       '</span>';
 
     document.body.appendChild(banner);
     /* баг 8 (критик-мобайл): запас снизу, чтобы кнопка «Отправить» не лежала под баннером.
        W99-fixG2 (H1б): nf-cookie-open — маркер для CSS-подъёма sticky-CTA товара
-       над компактным мобильным баннером (≤899px), снимается в dismissBanner(). */
+       над компактной мобильной карточкой (≤899px), снимается в dismissBanner(). */
     document.body.classList.add('cookie-visible');
     document.body.classList.add('nf-cookie-open');
 
-    var buttons = banner.querySelectorAll('.cookie-banner__btn');
-    var accept = buttons[0];
-    var reject = buttons[1];
+    var accept = banner.querySelector('.cookie-banner__btn');
+    var reject = banner.querySelector('.cookie-banner__link--reject');
     var settingsBtn = document.getElementById('cookieSettingsBtn');
 
-    /* W99-fixG2 (H1а): компактная мобильная версия (≤899px) — кнопки идут одним
-       рядом «Принять · Настройки · Отклонить»: длинную дефолтную подпись отказа
-       «Только необходимые» на мобиле укорачиваем до «Отклонить» (кастомный текст
-       владелька не трогаем — CSS ограничит переполнение многоточием). */
+    /* W99-fixG2 (H1а) → W103 (F4): на мобиле рядом с кнопкой мало места —
+       дефолтную длинную подпись отказа «Только необходимые» укорачиваем
+       до «Отклонить» (кастомный текст владелька не трогаем). */
     if (window.matchMedia && window.matchMedia('(max-width:899px)').matches
         && reject && (cfg.reject || 'Только необходимые') === 'Только необходимые') {
       reject.textContent = 'Отклонить';
