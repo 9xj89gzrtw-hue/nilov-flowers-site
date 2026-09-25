@@ -319,7 +319,11 @@ function render_related_card(array $rp): void
     $rThumb = $rImg !== '' ? product_img_size($rp, 400) : '';
     $rOrigW = $rImg !== '' ? product_img_width($rp) : 0;
     if ($rThumb !== '' && $rWebp !== '' && $rOrigW > 0) {
-        $rSrcset = $rThumb . ' 400w, ' . $rWebp . ' ' . $rOrigW . 'w';
+        $r600 = preg_replace('/-400(\.webp)$/', '-600$1', $rThumb); /* W101 (perf): 600w для DPR2-3 (файлы -600 в кэше GD) */
+
+        $rSrcset = $rThumb . ' 400w'
+            . ($r600 !== null && $r600 !== $rThumb && is_file(BASE_PATH . parse_url($r600, PHP_URL_PATH)) ? ', ' . $r600 . ' 600w' : '')
+            . ', ' . $rWebp . ' ' . $rOrigW . 'w';
         $rSizes = '(max-width:899px) 45vw, (min-width:900px) 300px';
     } elseif ($rThumb !== '') {
         $rSrcset = $rThumb . ' 400w';

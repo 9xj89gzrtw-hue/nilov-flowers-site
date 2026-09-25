@@ -86,6 +86,9 @@ function trackStep(string $status): int {
 .track-steps{display:flex;gap:4px;margin-top:14px}
 .track-steps span{flex:1;height:6px;border-radius:3px;background:var(--line)}
 .track-steps span.on{background:var(--pink)}
+/* K8 (W101): видимая подпись шага — «Шаг N из 3 · Статус» (раньше «Шаг N из 3»
+   жила только в visually-hidden — глаз видел безымянные точки) */
+.track-steps__label{margin:7px 0 0;font-size:.8rem;font-weight:600;color:var(--ink-muted)}
 /* W99-fixG (G12): визуально-скрытый текст для скринридера (класс sr-only в css/ нет) */
 .visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .track-empty{padding:36px 20px;text-align:center;color:var(--ink-muted);border:1.5px dashed var(--line);border-radius:16px;margin-top:16px}
@@ -137,14 +140,16 @@ function trackStep(string $status): int {
               <?php endif; ?>
             </p>
             <?php if ($step > 0): ?>
-            <?php /* W99-fixG (G12): точки-прогресс — декоративны (aria-hidden),
-                   состояние озвучивает «Шаг N из 3» рядом */ ?>
+            <?php /* W99-fixG (G12): точки-прогресс — декоративны (aria-hidden).
+                   K8 (W101): видимый текст «Шаг N из 3 · {Статус}» под точками —
+                   статус с названием (фактические статусы из кода: Новый →
+                   Подтверждён → Выполнен), SR читает ту же строку. */ ?>
             <div class="track-steps" aria-hidden="true">
               <span class="<?= $step >= 1 ? 'on' : '' ?>"></span>
               <span class="<?= $step >= 2 ? 'on' : '' ?>"></span>
               <span class="<?= $step >= 3 ? 'on' : '' ?>"></span>
             </div>
-            <p class="visually-hidden">Шаг <?= (int)$step ?> из 3</p>
+            <p class="track-steps__label">Шаг <?= (int)$step ?> из 3 · <?= e($statusText[$o['status']] ?? $o['status']) ?></p>
             <?php endif; ?>
           </div>
           <?php endforeach; ?>

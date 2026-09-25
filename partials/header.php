@@ -54,7 +54,7 @@ $cartMode = in_array(setting('cart_mode', 'drawer'), ['drawer', 'hybrid', 'page'
        живьём (морфология: «розы» → «роз»), со вторичных страниц — редирект /?q=…#catalog */ ?>
     <form class="fc-search" role="search" action="/" method="get">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-      <input type="search" id="fcSearch" name="q" placeholder="<?= e(setting('search_placeholder', 'Розы, пионы, букет маме…')) ?>" aria-label="Поиск по букетам">
+      <input type="search" id="fcSearch" name="q" placeholder="<?= e(setting('search_placeholder', 'Розы, пионы, тюльпаны…')) ?>" aria-label="Поиск по букетам">
     </form>
     <span class="fc-header__city">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="2.6"/></svg>

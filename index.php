@@ -253,7 +253,11 @@ function render_product_card(array $p, array $ctx): void
     $thumb = product_img_thumb($p);
     $origW = product_img_width($p);
     if ($thumb !== '' && $imgWebp !== '' && $origW > 0) {
-        $srcset = $thumb . ' 400w, ' . $imgWebp . ' ' . $origW . 'w';
+        $t600 = preg_replace('/-400(\.webp)$/', '-600$1', $thumb); /* W101 (perf): 600w для DPR2-3 (файлы -600 в кэше GD) */
+
+        $srcset = $thumb . ' 400w'
+            . ($t600 !== null && $t600 !== $thumb && is_file(BASE_PATH . parse_url($t600, PHP_URL_PATH)) ? ', ' . $t600 . ' 600w' : '')
+            . ', ' . $imgWebp . ' ' . $origW . 'w';
     } elseif ($thumb !== '') {
         $srcset = $thumb . ' 400w';
     } elseif ($imgWebp !== '') {
@@ -269,10 +273,15 @@ function render_product_card(array $p, array $ctx): void
        36.5КБ лишнего HTML; поиск живёт только в #catalogGrid). */
     $isCarousel = !empty($ctx['carousel']);
     $searchIndex = $isCarousel ? '' : mb_strtolower(trim($p['name'] . ' ' . ($p['category_name'] ?? '') . ' ' . ($p['description'] ?? '')));
+    /* K10 (W101): data-upsell="1" (show_in_upsell) — приоритетный источник апсейла
+       корзины (js/cart-ui.js): сладкие допы вместо «первых попавшихся букетов».
+       Как и остальные фильтрационные атрибуты — только на каталог-карточке
+       (карусельные копии без них, паттерн G2). */
+    $upsellAttr = (!$isCarousel && (int)($p['show_in_upsell'] ?? 0) === 1) ? ' data-upsell="1"' : '';
     ?>
         <article class="product-card reveal"<?= $isCarousel
             ? ''
-            : ' data-category-id="' . (int)($p['category_id'] ?? 0) . '" data-price="' . (int)$price . '" data-hit="' . (int)($p['is_hit'] ?? 0) . '" data-premium="' . (int)($p['is_premium'] ?? 0) . '" data-search="' . e($searchIndex) . '"' ?>>
+            : ' data-category-id="' . (int)($p['category_id'] ?? 0) . '" data-price="' . (int)$price . '" data-hit="' . (int)($p['is_hit'] ?? 0) . '" data-premium="' . (int)($p['is_premium'] ?? 0) . '" data-search="' . e($searchIndex) . '"' . $upsellAttr ?>>
           <div class="product-card__media">
           <?php /* W99-fixG (G11): img-ссылка дублирует title-ссылку — прячем от
              скринридера и Tab-фокуса (href сохранён: клик мышью работает) */ ?>
@@ -709,7 +718,7 @@ echo json_encode([
         <div class="fc-hero__content">
         <?php if ($heroTextEnabled): ?>
         <p class="fc-hero__eyebrow"><?= e(setting('hero_eyebrow', 'Санкт-Петербург · доставка в день заказа')) ?></p>
-        <h1 class="fc-hero__title"><?= e($heroH1) ?></h1>
+        <h1 class="fc-hero__title"><?= e(preg_replace('/ по /u', ' по ', $heroH1, 1)) ?></h1>
         <p class="fc-hero__sub"><?= e(setting('hero_subtitle', 'Соберём и доставим букет в течение дня — к празднику или просто так')) ?></p>
         <?php endif; ?>
         <?php if ($heroBtn): ?>

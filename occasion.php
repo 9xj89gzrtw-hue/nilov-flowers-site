@@ -147,7 +147,11 @@ function render_occasion_card(array $p): void
     $thumb = $img !== '' ? product_img_thumb_local($p) : '';
     $origW = $img !== '' ? product_img_width_local($p) : 0;
     if ($thumb !== '' && $webp !== '' && $origW > 0) {
-        $srcset = $thumb . ' 400w, ' . $webp . ' ' . $origW . 'w';
+        $t600 = preg_replace('/-400(\.webp)$/', '-600$1', $thumb); /* W101 (perf): 600w для DPR2-3 (файлы -600 в кэше GD) */
+
+        $srcset = $thumb . ' 400w'
+            . ($t600 !== null && $t600 !== $thumb && is_file(BASE_PATH . parse_url($t600, PHP_URL_PATH)) ? ', ' . $t600 . ' 600w' : '')
+            . ', ' . $webp . ' ' . $origW . 'w';
         $sizes = '(max-width:899px) 45vw, (min-width:900px) 300px';
     } elseif ($thumb !== '') {
         $srcset = $thumb . ' 400w';

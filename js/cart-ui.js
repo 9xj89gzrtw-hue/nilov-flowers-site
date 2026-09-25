@@ -258,27 +258,65 @@
        (#orderEmptyState уже в DOM, скрыта инлайном) и прячем саму форму:
        заголовок секции и «В заказе: …» остаются. Инлайн-display (не [hidden]):
        CSS задаёт .order-form{display:grid} и перебил бы атрибут. Добавили товар /
-       вернули из корзины — форма возвращается. */
-    var orderEmptyEl = document.getElementById('orderEmptyState');
-    if (orderEmptyEl) {
-      var orderFormEl = document.getElementById('orderForm');
-      orderEmptyEl.style.display = items.length === 0 ? 'block' : 'none';
-      if (orderFormEl) orderFormEl.style.display = items.length === 0 ? 'none' : '';
-    }
+       вернули из корзины — форма возвращается.
+       K6 (W101): та же проверка — отдельная функция: вызывается не только из
+       render() по 'cart:change', но и при инициализации (DOMContentLoaded) и на
+       pageshow — возврат «Назад» из bfcache (после заказа корзина уже пуста,
+       а DOM восстановлен со видимой формой) раньше ждал первого события
+       корзины. */
+    syncOrderEmptyState();
   }
 
+  function syncOrderEmptyState() {
+    var orderEmptyEl = document.getElementById('orderEmptyState');
+    if (!orderEmptyEl) return;
+    var itemsNow = window.cart ? window.cart.getItems() : [];
+    var orderFormEl = document.getElementById('orderForm');
+    orderEmptyEl.style.display = itemsNow.length === 0 ? 'block' : 'none';
+    if (orderFormEl) orderFormEl.style.display = itemsNow.length === 0 ? 'none' : '';
+  }
+
+  /* K6 (W101): пустая корзина видна на #order сразу при загрузке страницы
+     (и после bfcache-возврата) — не только после первого события корзины. */
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', syncOrderEmptyState);
+  } else {
+    syncOrderEmptyState();
+  }
+  window.addEventListener('pageshow', syncOrderEmptyState);
+
   /* Апсейл в корзине: допродаём активные товары, которых ещё нет в корзине
-     (в демо-режиме каталог уже в DOM — читаем карточки витрины, без сервера). */
+     (в демо-режиме каталог уже в DOM — читаем карточки витрины, без сервера).
+     K10 (W101): ПРЕДПОЧИТАЕМ товары с data-upsell="1" (show_in_upsell из БД —
+     печатает index.php на каталог-карточках; это сладкие допы: клубника в
+     шоколаде, макаруны…). Раньше брались первые попавшиеся карточки в DOM —
+     на главной это хиты-карусель («ещё 3 букета»), на странице товара — случайные
+     related-букеты. Теперь:
+       • есть flagged-товары → показываем их первыми (остаток лимита — прочими);
+       • flagged нет и это страница с полным каталогом (#catalogGrid) — прежний
+         фолбэк (владелец мог не отметить ни один товар);
+       • flagged нет и страница вторичная (товар/повод/категория — без каталога) —
+         блок «Возможно, пригодится» прячем целиком: случайные букеты — не апсейл.
+     Дубли карточек (карусель + каталог одного товара) — дедуп по id. */
   const upsellEl = document.getElementById('cartUpsell');
   const upsellItemsEl = document.getElementById('cartUpsellItems');
 
   function renderUpsell() {
     if (!upsellEl || !upsellItemsEl) return;
+    if (window.UPSELL_ENABLED === 0) {
+      upsellEl.hidden = true;
+      upsellItemsEl.innerHTML = '';
+      return;
+    }
     const inCart = new Set(window.cart.getItems().map((i) => i.product_id));
     /* Категории-источники апсейла (критерий 16): window.UPSELL_CATEGORIES из настроек;
        пусто = все активные товары. Товар карты несёт data-category-id. */
     const allowedCats = Array.isArray(window.UPSELL_CATEGORIES) ? window.UPSELL_CATEGORIES.map(String) : [];
-    const candidates = [];
+    const preferred = []; /* data-upsell="1" — сладкие допы (show_in_upsell) */
+    const others = []; /* прочие товары страницы (фолбэк при незаполненных флагах) */
+    const byId = new Map(); /* id → {flagged, item}: у товара может быть ДВЕ копии
+       карточки в DOM (карусель секции без data-атрибутов + каталог-карточка с
+       data-upsell) — флаг собираем со ВСЕХ копий, данные берём из первой */
     document.querySelectorAll('.product-card').forEach(function (card) {
       const cta = card.querySelector('[data-order-cta]');
       if (!cta) return;
@@ -288,14 +326,31 @@
         const catId = card.getAttribute('data-category-id') || '';
         if (!allowedCats.includes(catId)) return;
       }
-      candidates.push({
-        id: id,
-        name: cta.dataset.productName || '',
-        price: Number(cta.dataset.productPriceRaw) || 0,
-        image: cta.dataset.productImage || '',
-      });
+      const flagged = card.getAttribute('data-upsell') === '1';
+      if (!byId.has(id)) {
+        byId.set(id, {
+          flagged: flagged,
+          item: {
+            id: id,
+            name: cta.dataset.productName || '',
+            price: Number(cta.dataset.productPriceRaw) || 0,
+            image: cta.dataset.productImage || '',
+          },
+        });
+      } else if (flagged) {
+        /* карусельная копия шла первой без флага — каталог-копия подтверждает show_in_upsell */
+        byId.get(id).flagged = true;
+      }
     });
-    if (candidates.length === 0 || window.UPSELL_ENABLED === 0) {
+    byId.forEach(function (entry) {
+      (entry.flagged ? preferred : others).push(entry.item);
+    });
+    const hasCatalog = !!document.getElementById('catalogGrid');
+    let candidates;
+    if (preferred.length > 0) candidates = preferred.concat(others);
+    else if (hasCatalog) candidates = others;
+    else candidates = [];
+    if (candidates.length === 0) {
       upsellEl.hidden = true;
       upsellItemsEl.innerHTML = '';
       return;

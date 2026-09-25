@@ -172,7 +172,10 @@ function render_product_card(array $p, array $ctx): void
     $thumb = product_img_thumb($p);
     $origW = product_img_width($p);
     if ($thumb !== '' && $imgWebp !== '' && $origW > 0) {
-        $srcset = $thumb . ' 400w, ' . $imgWebp . ' ' . $origW . 'w';
+        $t600 = preg_replace('/-400(\.webp)$/', '-600$1', $thumb); /* W101 (perf): 600w для DPR2-3 */
+        $srcset = $thumb . ' 400w'
+            . ($t600 !== null && $t600 !== $thumb && is_file(BASE_PATH . parse_url($t600, PHP_URL_PATH)) ? ', ' . $t600 . ' 600w' : '')
+            . ', ' . $imgWebp . ' ' . $origW . 'w';
     } elseif ($thumb !== '') {
         $srcset = $thumb . ' 400w';
     } elseif ($imgWebp !== '') {

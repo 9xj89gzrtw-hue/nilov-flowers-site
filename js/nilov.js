@@ -88,21 +88,28 @@
     /* axe region-fix: плавающий баннер вне landmark'ов → делаем его явной region-областью */
     el.setAttribute('role', 'region');
     el.setAttribute('aria-label', 'Установка приложения');
+    var hintText = null; /* K11 (W101): span с текстом подсказки — фраза про кнопку
+       «Установить справа» вставляется ТОЛЬКО по событию beforeinstallprompt
+       (в Firefox события нет — текст не обещает несуществующую кнопку). */
     el.innerHTML = '<span style="flex:1">' + (isIOS
       ? 'Добавьте «Nilov Flowers» на главный экран — откройте меню «Поделиться» и выберите «На экран Домой».'
-      : 'Установите «Nilov Flowers» как приложение — кнопка «Установить» справа.') + '</span>'
+      : 'Установите «Nilov Flowers» как приложение — быстрый доступ к букетам с главного экрана.') + '</span>'
       + '<button type="button" data-hint-action style="border:none;background:var(--rose-deep,#E2799C);color:#fff;border-radius:999px;padding:8px 14px;font:600 .8rem sans-serif;cursor:pointer;flex:none">Понятно</button>'
       + '<button type="button" data-hint-close aria-label="Закрыть подсказку" title="Закрыть подсказку" style="border:none;background:transparent;color:#6e6a72;border-radius:999px;padding:8px 6px;font:600 1.05rem/1 sans-serif;cursor:pointer;flex:none;align-self:flex-start">×</button>';
     function dismiss() {
       try { localStorage.setItem('pwaHintDismissed', '1'); } catch (e) {}
       el.remove();
     }
+    hintText = el.querySelector('span');
     el.querySelector('[data-hint-close]').addEventListener('click', dismiss);
     var actionBtn = el.querySelector('[data-hint-action]');
     actionBtn.addEventListener('click', dismiss);
     if (!isIOS && 'onbeforeinstallprompt' in window) {
       window.addEventListener('beforeinstallprompt', function (e) {
         e.preventDefault();
+        /* K11 (W101): событие пришло — кнопка «Установить» реально появится,
+          упоминаем её в тексте (до этого текст про кнопку не обещал ничего). */
+        if (hintText) hintText.textContent = 'Установите «Nilov Flowers» как приложение — кнопка «Установить» справа.';
         actionBtn.textContent = 'Установить';
         actionBtn.onclick = function () { e.prompt(); dismiss(); };
       });
@@ -304,19 +311,33 @@
     if (!nv) return null;
     /* Логика-критик: чистые цифры («3», «500») матчились с текстами опций → ложные попадания;
        «петродворец» ⊄ «петродворцовый» → fallback при существующей зоне.
-       Теперь: только буквы, ищем максимум по длине совпавшего префикса (раньше побеждал последний). */
-    if (!/[а-яa-z]{3,}/i.test(nv)) return null;
+       Теперь: только буквы (K1: минимум 2 — «юж» → Южный), ищем максимум
+       по длине совпавшего префикса (раньше побеждал последний). */
+    if (!/[а-яa-z]{2,}/i.test(nv)) return null;
     var best = null, bestLen = 0;
     opts.forEach(function (o) {
       var t = norm(o.textContent);
       var m = t.match(/[а-яa-z]{3,}/i);
       if (!m) return;
-      var word = m[0]; // «центральный», «петродворцовый»…
+      var word = m[0]; // «центральный», «петроградский»…
       var L = 0;
-      for (var i = Math.min(nv.length, word.length); i >= 3; i--) {
+      for (var i = Math.min(nv.length, word.length); i >= 2; i--) {
         if (nv.slice(0, i) === word.slice(0, i)) { L = i; break; }
       }
-      if (L > bestLen) { best = o; bestLen = L; }
+      /* K1 (W101): короткий общий префикс давал ложные попадания — «петро» (5)
+         матчило «Петроградский» и молча подставляло его в чекаут. Засчитываем
+         совпадение, только если префикс покрывает хотя бы «полслова зоны без
+         последней буквы» — порог floor((len-1)/2) (все вводы из ТЗ сходятся
+         именно на нём), минимум 2 символа: «петро»(5) < 6 → честный fallback
+         «район не найден»; «центр»(5) ≥ 5 → Центральный; «юж»(2) ≥ 2 → Южный
+         (единственная зона с порогом <3 — более короткие вводы «ю»/«юг» не
+         проходят); «север»(5) ≥ 3 → Северный; «моск»(4) ≥ 4 → Московский;
+         «примор»(6) ≥ 4 → Приморский. Полное название — точное попадание,
+         «петродвор»(L=5 < 6) — fallback, как и было задумано. Пороги остальных
+         зон (центральный 5, северный 3, петроградский 6, василеостровский 7,
+         московский 4, невский 3, приморский 4) ≥3 — 2-буквенный ввод им не
+         матчится в принципе. */
+      if (L >= Math.max(2, Math.floor((word.length - 1) / 2)) && L > bestLen) { best = o; bestLen = L; }
     });
     return best;
   }

@@ -28,10 +28,11 @@ $pickupAddr = trim(setting('shop_address', ''));
 
 /* Security-критик W40 MEDIUM: без проверки страница рисовала «Заказ №N принят» для ЛЮБОГО N
    (подтверждение существования/несуществования заказов). Теперь — только реальный заказ.
-   W99-fixG (G15): одним запросом тянем и сам заказ (email/дата/интервал/оплата/сумма),
-   и зону доставки (LEFT JOIN, как было). */
+   W99-fixG (G15): одним запросом тянем и сам заказ (email/дата/интервал/оплата/
+   сумма/текст открытки — K7/W101), и зону доставки (LEFT JOIN, как было). */
 $__orderStmt = db()->prepare('SELECT o.id, o.email, o.delivery_date, o.delivery_slot,
-    o.delivery_zone_id, o.payment_method, o.total, o.payment_token, z.name AS zone
+    o.delivery_zone_id, o.payment_method, o.total, o.payment_token, o.card_text,
+    z.name AS zone
     FROM orders o LEFT JOIN delivery_zones z ON z.id = o.delivery_zone_id WHERE o.id = :i LIMIT 1');
 $__orderStmt->execute([':i' => $orderId]);
 $__order = $__orderStmt->fetch();
@@ -62,6 +63,16 @@ if ($__zoneName !== '') {
 /* W99-fixG (G15): строка про письмо — только если у заказа есть email
    (транзакционное письмо клиенту отправляет notifyNewOrder, W98-fixF F3) */
 $__orderEmail = trim((string)($__order['email'] ?? ''));
+
+/* K7 (W101): самовывоз — у заказа нет зоны (delivery_zone_id NULL). Ветка
+   «Что дальше» для него не обещает доставку и фото (оферта §5: фото букета —
+   только кроме самовывоза), вместо этого — адрес выдачи. */
+$__isPickup = ($__order['delivery_zone_id'] ?? null) === null;
+
+/* K7 (W101): текст открытки — в сводку заказа (гейт непустого, обрезка 80 симв.) */
+$__cardText = trim((string)($__order['card_text'] ?? ''));
+$__cardShort = mb_substr($__cardText, 0, 80);
+if (mb_strlen($__cardText) > 80) $__cardShort .= '…';
 
 $canonicalUrl = 'https://flowers.interfood-catering.ru/order-thanks';
 $pageTitle = 'Заказ № ' . $orderId . ' принят — ' . $siteName;
@@ -94,7 +105,11 @@ $pageTitle = 'Заказ № ' . $orderId . ' принят — ' . $siteName;
       <p style="margin:8px 0 0;color:var(--ink-soft,#6e6a72);font-size:.92rem">Мы отправили письмо с деталями на <?= e($__orderEmail) ?></p>
       <?php endif; ?>
       <p class="section-sub" style="margin:12px auto 24px">
-        Букет соберём из цветов утренней поставки, а фото пришлём вам перед отправкой.
+        <?php if ($__isPickup): ?>
+          Букет соберём из цветов утренней поставки и предупредим, когда будет готов.
+        <?php else: ?>
+          Букет соберём из цветов утренней поставки, а фото пришлём вам перед отправкой.
+        <?php endif; ?>
         <?php if ($deliveryLine !== ''): ?><br><?= e($deliveryLine) ?><?php endif; ?>
       </p>
       <?php /* W99-fixG (G15б): сводка заказа — состав × количество, дата+интервал
@@ -111,14 +126,39 @@ $pageTitle = 'Заказ № ' . $orderId . ' принят — ' . $siteName;
         <p style="margin:0 0 4px;font-size:.88rem;color:var(--ink-soft,#6e6a72)">
           <?php if ($__zoneName !== ''): ?>Доставка: <?= e($__zoneName) ?><?php else: ?>Самовывоз<?php endif; ?><?= trim((string)$__order['delivery_date']) !== '' ? ' · ' . e($__order['delivery_date']) : '' ?><?= trim((string)$__order['delivery_slot']) !== '' ? ' · ' . e($__order['delivery_slot']) : '' ?>
         </p>
+        <?php /* K7 (W101): текст открытки — строкой в сводке (непустой гейт, 80 симв.) */ ?>
+        <?php if ($__cardShort !== ''): ?>
+        <p style="margin:0 0 4px;font-size:.88rem;color:var(--ink-soft,#6e6a72)">Открытка: «<?= e($__cardShort) ?>»</p>
+        <?php endif; ?>
         <p style="margin:0;font-size:.95rem;font-weight:700">
           <?= ($__order['payment_method'] ?? 'cash') === 'cash' ? 'К оплате при получении: ' : 'Итого: ' ?><?= formatPrice((int)$__order['total']) ?>
         </p>
       </div>
       <?php endif; ?>
-      <?php /* W96-fix3b (D8): «Что дальше» — 3 шага в стилистике карточки заказа */ ?>
+      <?php /* W96-fix3b (D8): «Что дальше» — 3 шага в стилистике карточки заказа.
+         K7 (W101): ветка самовывоза (зоны нет) — без «привезём» и без фото-шага
+         (оферта §5: фото перед отправкой — только для доставки); вместо адреса
+         доставки — адрес выдачи. Доставка — как было. */ ?>
       <div class="fc-thanks__steps">
         <p class="fc-thanks__title">Что дальше</p>
+        <?php if ($__isPickup): ?>
+        <ol class="fc-thanks__list">
+          <li>
+            <span class="fc-thanks__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
+            <span><strong>Подтвердим заказ по телефону</strong> — уточним букет и время</span>
+          </li>
+          <li>
+            <span class="fc-thanks__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v10H4V12"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg></span>
+            <span><strong>Соберём букет и предупредим</strong> — позвоним, когда он будет готов</span>
+          </li>
+          <li>
+            <span class="fc-thanks__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="2.6"/></svg></span>
+            <?php /* Адрес выдачи: pickup_address (как в форме заказа) с фолбэком на
+                  shop_address; совсем пусто — честная фраза без выдуманного адреса */ ?>
+            <span><strong>Ждём вас по адресу:</strong> <?= e(trim(setting('pickup_address', '')) !== '' ? trim(setting('pickup_address', '')) : ($pickupAddr !== '' ? $pickupAddr : 'уточним его по телефону при подтверждении')) ?></span>
+          </li>
+        </ol>
+        <?php else: ?>
         <ol class="fc-thanks__list">
           <li>
             <span class="fc-thanks__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
@@ -133,6 +173,7 @@ $pageTitle = 'Заказ № ' . $orderId . ' принят — ' . $siteName;
             <span><strong>Привезём</strong> — вручим лично или оставим у двери, как скажете</span>
           </li>
         </ol>
+        <?php endif; ?>
       </div>
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:24px">
         <a class="btn btn--accent" href="/#catalog">Выбрать ещё букеты</a>

@@ -50,6 +50,28 @@
     if (targetTab) targetTab.click();
   }
 
+  /* K5 (W101): deep-link /?chip=hit|premium|low|mid|high#catalog — «Хиты продаж»
+     (и прочие data-chip-ссылки) с вторичных страниц ведут на главную с включённым
+     чипом (five.js rowLinks строит эту ссылку; аналог ?category= выше).
+     Клик откладываем до DOMContentLoaded+microtask: чип-обработчик вешает
+     five.js на своём ready — прямой .click() при парсинге сработал бы вхолостую.
+     Найденный чип кликаем как руками: is-active + aria-pressed + общий
+     re-apply + скролл к #catalog (плюс H9-синхронизация чип↔селект цены). */
+  const chipParam = new URLSearchParams(window.location.search).get('chip');
+  if (chipParam) {
+    const activateChipParam = function () {
+      const targetChip = Array.from(document.querySelectorAll('.fc-chip')).find(function (c) {
+        return c.getAttribute('data-chip') === chipParam;
+      });
+      if (targetChip && !targetChip.classList.contains('is-active')) targetChip.click();
+    };
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function () { setTimeout(activateChipParam, 0); });
+    } else {
+      setTimeout(activateChipParam, 0);
+    }
+  }
+
   /* ---------- ЕДИНЫЙ apply(): цена + чип + поиск + избранное + вкладка ---------- */
 
   const priceSel = document.getElementById('priceFilter');
@@ -116,6 +138,10 @@
       min = opt.hasAttribute('data-min') ? parseInt(opt.getAttribute('data-min'), 10) : null;
       max = opt.hasAttribute('data-max') ? parseInt(opt.getAttribute('data-max'), 10) : null;
     }
+    /* K3 (W101): активен ли ЦЕНОВОЙ фильтр (чип с диапазоном ИЛИ селект) —
+       для честного empty-текста «не нашлось в выбранном диапазоне цен». */
+    var priceChipActive = !!(chip && (chip.hasAttribute('data-min') || chip.hasAttribute('data-max')));
+    var priceActive = priceChipActive || min !== null || max !== null;
     var favOn = !!(favToggle && favToggle.getAttribute('aria-pressed') === 'true');
     var rawQ = searchInp ? (searchInp.value || '') : '';
     var q = rawQ.trim().toLowerCase();
@@ -180,6 +206,9 @@
     /* Empty-state: 0 видимых → подсказка + сброс. Заголовок честный:
        «Избранное» совсем без лайков — про избранное (A2); лайки есть, но их
        вырезал другой фильтр (цена/вкладка/поиск) — про фильтры, не «пусто»;
+       K3 (W101): поиск × активная цена — причина в тексте («в выбранном
+       диапазоне цен») + отдельная кнопка «Сбросить цену» (снимает ТОЛЬКО цену,
+       запрос/категорию/избранное не трогает);
        поиск без совпадений — про запрос (W96-fix3b); иначе — исходный текст. */
     if (emptyBox) {
       emptyBox.hidden = visible > 0;
@@ -191,11 +220,42 @@
             ? 'В избранном нет букетов по этим фильтрам — попробуйте вернуть цену или категорию'
             : 'В избранном пока пусто — нажмите ♡ на букете в каталоге';
         } else if (q !== '' && visible === 0) {
-          emptyTitle.textContent = 'По запросу «' + rawQ.trim() + '» не нашлось';
+          emptyTitle.textContent = priceActive
+            ? 'По запросу «' + rawQ.trim() + '» в выбранном диапазоне цен не нашлось'
+            : 'По запросу «' + rawQ.trim() + '» не нашлось';
         } else {
           emptyTitle.textContent = emptyTitle.dataset.origTitle;
         }
       }
+      /* K3 (W101): кнопка «Сбросить цену» — создаётся один раз, показывается
+         только в сценарии поиск × цена (иначе hidden). */
+      var resetPriceBtn = document.getElementById('catalogEmptyResetPrice');
+      var showResetPrice = visible === 0 && q !== '' && priceActive;
+      if (showResetPrice && !resetPriceBtn) {
+        resetPriceBtn = document.createElement('button');
+        resetPriceBtn.type = 'button';
+        resetPriceBtn.id = 'catalogEmptyResetPrice';
+        resetPriceBtn.className = 'btn btn--outline';
+        resetPriceBtn.style.marginRight = '10px';
+        resetPriceBtn.textContent = 'Сбросить цену';
+        resetPriceBtn.addEventListener('click', function () {
+          if (priceSel && priceSel.value !== 'all') priceSel.value = 'all';
+          /* снимаем только ценовые чипы (data-min/data-max); hit/premium,
+             запрос, категорию и избранное не трогаем */
+          document.querySelectorAll('.fc-chip.is-active').forEach(function (c) {
+            if (c.hasAttribute('data-min') || c.hasAttribute('data-max')) {
+              c.classList.remove('is-active');
+              c.setAttribute('aria-pressed', 'false');
+            }
+          });
+          apply();
+        });
+        var mainResetBtn = document.getElementById('catalogEmptyReset');
+        if (mainResetBtn && mainResetBtn.parentNode) {
+          mainResetBtn.parentNode.insertBefore(resetPriceBtn, mainResetBtn);
+        }
+      }
+      if (resetPriceBtn) resetPriceBtn.hidden = !showResetPrice;
     }
 
     /* Совместимость: событие «фильтры применились» (число видимых) — как делал

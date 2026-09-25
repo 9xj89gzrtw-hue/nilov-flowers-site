@@ -365,8 +365,11 @@ html{scrollbar-width:thin;scrollbar-color:var(--line) transparent}
   border-radius:16px;overflow:hidden;
 }
 .product-card__media::after{content:none}
+/* W101 (дизайн-критик): леттербокс фото — <picture> не растягивался (display:inline,
+   высота авто) → img с интринсиком 300px не заполнял рамку 3/4. Растягиваем picture. */
+.product-card__media picture{display:block;width:100%;height:100%;margin:0}
 .product-card__img,.product-card__media img{
-  width:100%;height:100%;object-fit:cover;
+  width:100%;height:100%;object-fit:cover;aspect-ratio:auto;
   transition:transform .5s cubic-bezier(.22,1,.36,1);
 }
 .product-card:hover .product-card__img,
@@ -986,8 +989,8 @@ body > div[role="region"][aria-label="Установка приложения"] 
    этот ниже по коду при равной специфичности. */
 .fc-hero__main::after{
   background:
-    linear-gradient(90deg,rgba(28,26,30,.52) 0%,rgba(28,26,30,.34) 55%,rgba(28,26,30,.24) 78%,rgba(28,26,30,.07) 92%,rgba(28,26,30,0) 100%),
-    linear-gradient(180deg,rgba(28,26,30,.05) 20%,rgba(28,26,30,.36) 44%,rgba(28,26,30,.85) 100%);
+    linear-gradient(90deg,rgba(28,26,30,.58) 0%,rgba(28,26,30,.42) 55%,rgba(28,26,30,.30) 78%,rgba(28,26,30,.12) 92%,rgba(28,26,30,0) 100%),
+    linear-gradient(180deg,rgba(28,26,30,.08) 16%,rgba(28,26,30,.50) 40%,rgba(28,26,30,.95) 100%);
 }
 
 /* --- C2: чередование товарных секций — каждая вторая тёплая
@@ -1148,20 +1151,24 @@ html{scroll-padding-top:96px}
     padding:8px 10px;
     font-size:.76rem;
   }
+  /* W101 (дизайн+UX-критики): юридический текст должен ЧИТАТЬСЯ —
+     2 строки с line-clamp вместо nowrap+ellipsis; высота баннера ~96px. */
   .cookie-banner__text{
     flex:none;margin:0;min-width:0;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-    line-height:1.35;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+    overflow:hidden;line-height:1.35;
   }
   /* W70 делал ссылку политики 44px-целью — в одну строку с ellipsis
      цель недоступна визуально; полная версия остаётся на десктопе,
      «Настройки» на мобиле открывает granular-диалог с пояснением. */
   .cookie-banner__text a{display:inline;min-height:0;line-height:inherit}
-  .cookie-banner__actions{display:flex;gap:6px;flex:none}
+  /* W101 (UX-критик): ряд шире вьюпорта («Отклонить» за экраном) —
+     сетка 1fr×3 строго по ширине баннера. */
+  .cookie-banner__actions{display:grid!important;grid-template-columns:repeat(3,1fr);gap:6px;flex:none;width:100%;flex-wrap:nowrap}
   .cookie-banner__btn{
-    flex:1 1 auto;min-width:0;min-height:40px;
-    padding:9px 8px;font-size:.78rem;font-weight:600;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    min-width:0;min-height:40px;width:100%;
+    padding:9px 4px;font-size:.76rem;font-weight:600;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;
   }
   /* Порядок на мобиле: Принять → Настройки → Отклонить */
   .cookie-banner__actions .cookie-banner__btn{order:1}
@@ -1251,5 +1258,19 @@ html{scroll-padding-top:96px}
 @media (max-width: 899px) {
   .fc-citybar .wrap{flex-wrap:nowrap;gap:8px;padding-top:6px;padding-bottom:6px}
   .fc-citybar__text{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.8rem;line-height:1.35;flex:1 1 auto}
-  .fc-citybar .wrap > *{flex:0 0 auto}
+  /* W101: > * бил flex:1 текста (специфичность) — точечно зажимаем только контролы */
+  .fc-citybar__yes,.fc-citybar__no{flex:0 0 auto;padding:7px 12px;font-size:.8rem;white-space:nowrap}
+  .fc-citybar__close{flex:0 0 auto;width:34px;height:34px;line-height:1}
+}
+
+
+/* ============ W101 (оркестратор): финальная полировка ============ */
+/* Крошки: текущая страница отличается от ссылки (дизайн-критик W101) */
+.breadcrumbs [aria-current="page"]{color:var(--ink,#1c1a1e);font-weight:600}
+.breadcrumbs span[aria-current="page"]{color:var(--ink,#1c1a1e);font-weight:600}
+/* Hero-CTA: единый радиус системы 16 (pill остаётся только у чипов) */
+.fc-hero__cta--pink{border-radius:16px}
+/* Вкладки каталога на мобиле: аффорданс горизонтального скролла (UX-критик W101) */
+@media(max-width:899px){
+  .catalog-tabs,.fc-catalog__tabs{mask-image:linear-gradient(90deg,transparent 0,#000 18px,#000 calc(100% - 18px),transparent 100%);-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 18px,#000 calc(100% - 18px),transparent 100%)}
 }

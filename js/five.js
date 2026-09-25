@@ -82,6 +82,30 @@
       if (next) next.addEventListener('click', function () { step(1); });
       track.addEventListener('scroll', sync, { passive: true });
       window.addEventListener('resize', sync);
+      /* K4 (W101): карусель — role=region + tabindex=0, но клавиатурой не
+         листалась (только стрелки-кнопки мышью). Теперь сфокусированный track
+         листается ArrowLeft/ArrowRight на ширину карточки (pitch = разница
+         offsetLeft соседних карточек — включает flex-gap); preventDefault —
+         только для этих двух клавиш, остальные (Tab/Home/…) не трогаем. */
+      track.addEventListener('keydown', function (e) {
+        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+        e.preventDefault();
+        var kcards = track.querySelectorAll('.product-card');
+        var pitch = 0;
+        if (kcards.length >= 2) {
+          pitch = kcards[1].offsetLeft - kcards[0].offsetLeft;
+        } else if (kcards.length === 1) {
+          pitch = kcards[0].offsetWidth;
+        }
+        if (!pitch || pitch < 10) pitch = track.clientWidth * 0.8;
+        var kleft = Math.max(0, Math.min(track.scrollWidth - track.clientWidth,
+          track.scrollLeft + pitch * (e.key === 'ArrowRight' ? 1 : -1)));
+        if (typeof track.scrollTo === 'function') {
+          track.scrollTo({ left: kleft, behavior: reducedMotion() ? 'auto' : 'smooth' });
+        } else {
+          track.scrollLeft = kleft;
+        }
+      });
       /* Стартовое состояние (карточки ленивые — перепроверяем после раскладки) */
       sync();
       setTimeout(sync, 300);
@@ -253,7 +277,10 @@
      с data-tab/data-chip (карусели витрины И колонки футера). На вторичных
      страницах каталога нет: data-tab уводит на глубокую ссылку
      /?category=N#catalog (её подхватит catalog-filter.js), data-chip —
-     просто к каталогу (нативный переход по href). */
+     просто к каталогу (нативный переход по href).
+     K5 (W101): data-chip с вторичной страницы — тоже глубокая ссылка
+     /?chip=hit#catalog (раньше — ранний return на /#catalog без чипа);
+     её подхватывает catalog-filter.js (аналог ?category=). */
   function rowLinks() {
     document.addEventListener('click', function (e) {
       if (e.button !== 0 || e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
@@ -274,7 +301,14 @@
       }
       if (chipId) {
         var chip = document.querySelector('.fc-chip[data-chip="' + chipId + '"]');
-        if (!chip || chip.classList.contains('is-active')) return;
+        if (!chip) {
+          /* K5 (W101): вторичная страница — чипа нет в DOM, нативный href /#catalog
+             включил бы каталог без фильтра. Уводим на глубокую ссылку с чипом. */
+          e.preventDefault();
+          location.href = '/?chip=' + encodeURIComponent(chipId) + '#catalog';
+          return;
+        }
+        if (chip.classList.contains('is-active')) return;
         chip.click();
       }
     });
