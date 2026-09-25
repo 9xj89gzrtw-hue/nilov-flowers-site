@@ -129,7 +129,12 @@ function trackStep(string $status): int {
           ?>
           <div class="track-card">
             <div class="track-card__top">
-              <span class="track-card__id">Заказ № <?= (int)$o['id'] ?> · <?= e($o['created_at']) ?></span>
+              <span class="track-card__id">Заказ № <?= (int)$o['id'] ?> · <?= e((static function (string $iso): string {
+            /* W101 (редактор): сырая SQL-дата — не для покупателя */
+            $m = [1=>'января',2=>'февраля',3=>'марта',4=>'апреля',5=>'мая',6=>'июня',7=>'июля',8=>'августа',9=>'сентября',10=>'октября',11=>'ноября',12=>'декабря'];
+            $t = strtotime($iso);
+            return $t === false ? $iso : sprintf('%d %s, %s', (int)date('j', $t), $m[(int)date('n', $t)], date('H:i', $t));
+        })((string)$o['created_at'])) ?></span>
               <span class="track-card__status <?= e($o['status']) ?>"><?= e($statusText[$o['status']] ?? $o['status']) ?></span>
             </div>
             <p class="track-card__meta">

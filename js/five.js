@@ -170,6 +170,12 @@
         /* .fc-search уже position:relative (five.css) — пилюля висит под полем */
         (form || document.body).appendChild(pill);
       }
+      /* W101 (редактор): при 0 совпадений пилюля «посмотреть ↓» звала в пустой
+         каталог — скрываем (empty-state в каталоге объясняет причину). */
+      if (visible === 0) {
+        pill.style.display = 'none';
+        return;
+      }
       pill.style.display = 'inline-flex';
       /* H5 (W99-fixG2): правильный род — «Нашёлся 1/21/31 букет»,
          «Нашлось 3 букета/11 букетов». */

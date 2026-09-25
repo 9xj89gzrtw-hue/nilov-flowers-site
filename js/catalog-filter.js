@@ -222,7 +222,7 @@
         } else if (q !== '' && visible === 0) {
           emptyTitle.textContent = priceActive
             ? 'По запросу «' + rawQ.trim() + '» в выбранном диапазоне цен не нашлось'
-            : 'По запросу «' + rawQ.trim() + '» не нашлось';
+            : 'По запросу «' + rawQ.trim() + '» не нашлось букетов';
         } else {
           emptyTitle.textContent = emptyTitle.dataset.origTitle;
         }
