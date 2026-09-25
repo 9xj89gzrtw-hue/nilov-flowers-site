@@ -270,7 +270,18 @@
   /* Публичный re-apply: его зовут five.js (чип/поиск/сброс) и nilov.js (сердечки) */
   window.NfCatalogApply = apply;
 
-  if (priceSel) priceSel.addEventListener('change', apply);
+  if (priceSel) priceSel.addEventListener('change', function () {
+    /* W102 (UX-критик): двусторонний sync — смена селекта переключает ценовой чип
+       (раньше чип оставался is-active → пустое пересечение и «не нашлось»). */
+    var v = priceSel.value;
+    document.querySelectorAll('.fc-chips [data-chip]').forEach(function (chip) {
+      if (!chip.hasAttribute('data-min') && !chip.hasAttribute('data-max')) return; /* «Хиты» и пр. не трогаем */
+      var match = v !== 'any' && (chip.getAttribute('data-chip') || '') === v;
+      chip.classList.toggle('is-active', match);
+      chip.setAttribute('aria-pressed', match ? 'true' : 'false');
+    });
+    apply();
+  });
 
   /* H9 (W99-fixG2): клик по ценовому чипу синхронизирует select «Цена:» —
      «До 3 500 ₽» ставит селект в ту же опцию (match по data-min/data-max —

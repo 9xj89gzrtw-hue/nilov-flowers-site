@@ -750,7 +750,7 @@ echo json_encode([
            в подарок» (подписки в магазине нет, открытка — правда есть) */ ?>
         <?php if ($heroPromoOn): ?>
         <div class="fc-hero__promo">
-          <span class="fc-hero__promo-eyebrow"><?= e(setting('hero_promo_badge', 'Всегда')) ?></span>
+          <span class="fc-hero__promo-eyebrow"><?= e(setting('hero_promo_badge', 'Всегда бесплатно')) ?></span>
           <h2 class="fc-hero__promo-title"><?= e(setting('hero_promo_title', 'Открытка в подарок')) ?></h2>
           <p class="fc-hero__promo-text"><?= e(setting('hero_promo_text', 'Напишем ваш текст от руки и вложим в букет — бесплатно, в каждом заказе')) ?></p>
           <a class="fc-hero__promo-btn" href="<?= e(safe_url(setting('hero_promo_link', '#catalog'))) ?>"><?= e(setting('hero_promo_btn_text', 'Выбрать букет')) ?></a>
@@ -879,7 +879,7 @@ echo json_encode([
         <span class="zone-check" style="display:inline-flex;align-items:center;gap:6px;margin-left:auto">
           <label for="zoneCheckInput" style="font-size:.85rem;font-weight:600;color:var(--ink-soft)">Район:</label>
           <input type="search" id="zoneCheckInput" placeholder="<?= e(setting('zone_check_placeholder', 'Например: Центральный')) ?>" aria-label="Узнать стоимость доставки в ваш район"
-                 data-fallback="<?= e(setting('zone_check_fallback', 'район не найден — уточним по телефону')) ?>"
+                 data-fallback="<?= e(setting('zone_check_fallback', 'Район не найден — уточним по телефону')) ?>"
                  style="width:clamp(150px,46vw,240px);min-width:0" class="pill"
                  list="zoneCheckList">
           <datalist id="zoneCheckList">
@@ -922,7 +922,21 @@ echo json_encode([
             <?php /* W96-fix3a (T6) → W97-fixB2 (B2-6): alt="" — имя плитки несёт ссылка
                    (текст дублировался для скринридера); длинное имя — в title не нужно,
                    фото внутри ссылки целиком */ ?>
-            <img class="fc-occasion__img" src="<?= e($t['photo']) ?>" alt="" loading="lazy" decoding="async">
+            <?php /* W102 (perf): плитки грузили JPG-оригиналы (~589КБ) — включаем
+                   тот же webp-конвейер, что у карточек (thumbs 400/600 + оригинал) */
+            $__ocImg = (string)$t['photo'];
+            $__ocThumb = preg_replace('/\.(jpe?g|png)$/i', '', $__ocImg);
+            $__ocThumb400 = '/img/products/thumbs/' . rawurlencode($__ocThumb) . '-400.webp';
+            $__ocThumb600 = '/img/products/thumbs/' . rawurlencode($__ocThumb) . '-600.webp';
+            $__ocHas400 = is_file(BASE_PATH . parse_url($__ocThumb400, PHP_URL_PATH));
+            $__ocHas600 = is_file(BASE_PATH . parse_url($__ocThumb600, PHP_URL_PATH));
+            ?>
+            <picture>
+              <?php if ($__ocHas400 || $__ocHas600): ?>
+              <source type="image/webp" srcset="<?= e(($__ocHas400 ? $__ocThumb400 . ' 400w' : '') . ($__ocHas400 && $__ocHas600 ? ', ' : '') . ($__ocHas600 ? $__ocThumb600 . ' 600w' : '')) ?>" sizes="(max-width:899px) 44vw, 260px">
+              <?php endif; ?>
+              <img class="fc-occasion__img" src="<?= e($__ocImg) ?>" alt="" loading="lazy" decoding="async">
+            </picture>
           <?php else: ?>
             <?php /* Пастельная плитка без фото: декоративный прозрачный цветок (размер фиксируем инлайном — CSS-агент его не стилизует) */ ?>
             <svg class="fc-occasion__flower" width="44" height="44" viewBox="0 0 32 32" style="position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);color:var(--pink);opacity:.5" aria-hidden="true">
@@ -1020,12 +1034,12 @@ echo json_encode([
           ?>
           <?php if ($ykLive): ?>
           <label class="order-form__radio"><input type="radio" name="payment_method" value="online" checked><span><?= e(setting('pay_online_label', 'Картой или через СБП — сразу онлайн')) ?></span></label>
-          <label class="order-form__radio"><input type="radio" name="payment_method" value="cash"><span><?= e(setting('pay_cash_label', 'При получении')) ?></span></label>
+          <label class="order-form__radio"><input type="radio" name="payment_method" value="cash"><span><?= e(setting('pay_cash_label', 'Наличными или картой при получении')) ?></span></label>
           <p class="order-form__hint">Оплата проходит на защищённой странице ЮKassa. Данные карты магазину не передаются.</p>
           <?php else: ?>
           <?php /* Покупатель-критик W46: radio «При получении» уже даёт payment_method —
                     hidden-дубль с тем же именем создавал двойное значение в FormData. */ ?>
-          <label class="order-form__radio"><input type="radio" name="payment_method" value="cash" checked><span><?= e(setting('pay_cash_label', 'При получении')) ?></span></label>
+          <label class="order-form__radio"><input type="radio" name="payment_method" value="cash" checked><span><?= e(setting('pay_cash_label', 'Наличными или картой при получении')) ?></span></label>
           <p class="order-form__hint">Оплата — курьеру при получении заказа.</p>
           <?php endif; ?>
         </fieldset>
@@ -1046,7 +1060,7 @@ echo json_encode([
             <label for="orderRecipientPhone">Телефон получателя</label>
             <input type="tel" id="orderRecipientPhone" name="recipient_phone" autocomplete="off" placeholder="+7 (___) ___-__-__">
             <span class="order-form__error" id="orderRecipientPhoneError"></span>
-            <p class="order-form__hint">Курьер позвонит ему, а не вам</p>
+            <p class="order-form__hint">Курьер позвонит получателю, а не вам</p>
           </div>
           <div class="order-form__field">
             <label for="orderCardText">Текст открытки</label>

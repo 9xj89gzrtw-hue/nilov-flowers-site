@@ -1274,3 +1274,16 @@ html{scroll-padding-top:96px}
 @media(max-width:899px){
   .catalog-tabs,.fc-catalog__tabs{mask-image:linear-gradient(90deg,transparent 0,#000 18px,#000 calc(100% - 18px),transparent 100%);-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 18px,#000 calc(100% - 18px),transparent 100%)}
 }
+
+
+/* ============ W102 (оркестратор): финальные тач-таргеты и мелочи ============ */
+.fc-citybar__close{width:44px;height:44px;line-height:1}
+@media(max-width:899px){
+  .cookie-banner__btn{min-height:44px}
+  .fc-citybar__yes,.fc-citybar__no{min-height:44px;display:inline-flex;align-items:center}
+  .product-card__fav{width:44px;height:44px}
+  .product-card__cat{font-size:12.5px}
+}
+/* Стрелки каруселей не нужны, когда трек не скроллится (критик W102: «Премиум» 2 карточки) */
+.fc-carousel__arrow[disabled]{opacity:0;pointer-events:none;transition:opacity .25s}
+.fc-carousel__arrow[disabled]:focus-visible{opacity:.5}
