@@ -168,8 +168,11 @@ $hello = $newCount > 0
   <?php if ($newCount > 0): /* W73 (obvious мелочь-3): CTA по контексту — при новых заказах ведёт к ним, не на витрину */ ?>
   <a class="btn btn--accent" style="margin-left:auto" href="/admin/index.php?status=new" /* W85 (стресс-критик): обработчик читает $_GET['status'] — f_status был битой ссылкой */>Открыть новые</a>
   <a class="btn btn--ghost" href="/" target="_blank">Посмотреть сайт</a>
+  <?php /* W97-fixB3a (B3a-2): быстрая ссылка на инструкцию — переехала под /admin/help.php */ ?>
+  <a class="btn btn--ghost" href="/admin/help.php">Инструкция сайта</a>
   <?php else: ?>
   <a class="btn btn--accent" style="margin-left:auto" href="/" target="_blank">Посмотреть сайт</a>
+  <a class="btn btn--ghost" href="/admin/help.php">Инструкция сайта</a>
   <?php endif; ?>
 </div>
 

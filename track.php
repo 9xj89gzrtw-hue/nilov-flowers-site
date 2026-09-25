@@ -13,26 +13,35 @@ require_once __DIR__ . '/includes/util.php';
 $phone = trim($_GET['phone'] ?? '');
 $orders = [];
 $rlLimited = false;
+$rlWaitMin = 1;
 $normalized = preg_replace('/\D+/', '', $phone);
 /* Legal/security-критик W40: поиск по 10-значному «хвосту» LIKE '%tail' был оракулом —
    перебором хвостов можно было смотреть чужие заказы. Теперь: полная длина (10-11 цифр)
    и точное совпадение нормализованного номера (8↔7 эквивалентны), плюс rate-limit. */
-if (!rl_check('track', 10, 600)) {
-    $rlLimited = true;
-    http_response_code(429);
-    header('Retry-After: ' . max(60, rl_retry_after('track', 600)));
-} elseif (strlen($normalized) === 10 || strlen($normalized) === 11) {
-    $d11 = strlen($normalized) === 10 ? '7' . $normalized : preg_replace('/^8/', '7', $normalized);
-    $rows = db()->prepare(
-        "SELECT o.id, o.created_at, o.status, o.total, o.delivery_zone_id,
-                z.name AS zone
-         FROM orders o LEFT JOIN delivery_zones z ON z.id = o.delivery_zone_id
-         WHERE REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(o.phone, ' ', ''), '+', ''), '(', ''), ')', ''), '-', '') = :n
-            OR REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(o.phone, ' ', ''), '+', ''), '(', ''), ')', ''), '-', '') = :n8
-         ORDER BY o.id DESC LIMIT 5"
-    );
-    $rows->execute([':n' => $d11, ':n8' => preg_replace('/^7/', '8', $d11)]);
-    $orders = $rows->fetchAll();
+/* W97-fixB1 (B1-2): квота rate-limit тратится ТОЛЬКО на реальный поиск (телефон задан и
+   валиден по длине) — простой просмотр страницы бакет не сжигает (паттерн api/orders:
+   невалидные попытки квоту не инкрементируют). Сообщение честное: N минут из Retry-After
+   (rl_retry_after возвращает секунды, кратные минуте), а не «подождите минуту». */
+if (strlen($normalized) === 10 || strlen($normalized) === 11) {
+    if (!rl_check('track', 10, 600)) {
+        $rlLimited = true;
+        $rlWaitSec = max(60, rl_retry_after('track', 600));
+        $rlWaitMin = max(1, (int)ceil($rlWaitSec / 60));
+        http_response_code(429);
+        header('Retry-After: ' . $rlWaitSec);
+    } else {
+        $d11 = strlen($normalized) === 10 ? '7' . $normalized : preg_replace('/^8/', '7', $normalized);
+        $rows = db()->prepare(
+            "SELECT o.id, o.created_at, o.status, o.total, o.delivery_zone_id,
+                    z.name AS zone
+             FROM orders o LEFT JOIN delivery_zones z ON z.id = o.delivery_zone_id
+             WHERE REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(o.phone, ' ', ''), '+', ''), '(', ''), ')', ''), '-', '') = :n
+                OR REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(o.phone, ' ', ''), '+', ''), '(', ''), ')', ''), '-', '') = :n8
+             ORDER BY o.id DESC LIMIT 5"
+        );
+        $rows->execute([':n' => $d11, ':n8' => preg_replace('/^7/', '8', $d11)]);
+        $orders = $rows->fetchAll();
+    }
 }
 
 $shopPhone = setting('shop_phone', '');
@@ -98,7 +107,7 @@ function trackStep(string $status): int {
       </form>
 
       <?php if ($rlLimited): ?>
-        <div class="track-empty">Слишком много проверок подряд — подождите минуту и попробуйте снова. Если срочно — позвоните: <a href="tel:<?= e($shopPhone) ?>"><?= e($shopPhone) ?></a></div>
+        <div class="track-empty">Слишком много проверок подряд — подождите <?= (int)$rlWaitMin ?> мин. и попробуйте снова. Если срочно — позвоните: <a href="tel:<?= e($shopPhone) ?>"><?= e($shopPhone) ?></a></div>
       <?php elseif ($normalized !== ''): ?>
         <?php if ($orders === []): ?>
           <div class="track-empty">По этому телефону заказов не найдено.<br>Проверьте номер или позвоните нам: <a href="tel:<?= e($shopPhone) ?>"><?= e($shopPhone) ?></a></div>

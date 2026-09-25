@@ -45,12 +45,36 @@
     updateSy();
   }
 
-  /* 1d. PWA-подсказка установки (fix R2: «нет подсказки установить приложение»).
+  /* 1d. PWA-подсказка установки (fix R2 → W97-fixA A1).
          iOS: честный текст-хинт на мобиле; Android: beforeinstallprompt → кнопка.
-         Один показ на устройство (localStorage), закрыт — больше не показываем. */
+         W97-fixA (A1), по валидированным дефектам критиков:
+           (б) показываем ТОЛЬКО со второй сессии — при первом визите лишь ставим
+               localStorage 'pwaHintVisited' (sessionStorage не переживает
+               перезагрузку вкладки/«Назад», поэтому именно localStorage);
+           (а) закрытие — «×» (aria-label «Закрыть подсказку») или «Понятно»;
+           (в) dismissal запоминается навсегда — 'nfInstallHintClosed'
+               (ключ отдельный от pwaHintVisited);
+           (г) на страницах с фиксированной нижней CTA товара
+               (.product-page__cta--sticky, mobile ≤820px) баннер ставится
+               ВЫШЕ кнопки «В корзину» (bottom = ctaTop + 10px), не перекрывая;
+               иначе — над таббаром, как раньше;
+           (д) пока на экране cookie-баннер — подсказку не показываем вовсе
+               (ждём решения: cookie-banner.js снимает .cookie-visible
+               и шлёт 'nf:cookie-done'). */
   (function installHint() {
     if (window.matchMedia('(display-mode: standalone)').matches) return;
-    if (localStorage.getItem('nfInstallHintClosed') === '1') return;
+    try {
+      /* (в) dismissal навсегда: ключ 'pwaHintDismissed' (по ТЗ W97-fixA);
+         'nfInstallHintClosed' — легаси-ключ прошлых волн: кто уже закрыл подсказку,
+         ту её больше не увидит. */
+      if (localStorage.getItem('pwaHintDismissed') === '1'
+          || localStorage.getItem('nfInstallHintClosed') === '1') return;
+      if (localStorage.getItem('pwaHintVisited') !== '1') {
+        /* первая сессия: запоминаем визит, подсказку НЕ показываем */
+        localStorage.setItem('pwaHintVisited', '1');
+        return;
+      }
+    } catch (e) { return; /* приват-режим без localStorage — без подсказки */ }
     var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
     var isMobile = window.matchMedia('(max-width: 820px)').matches;
     if (!isMobile && !isIOS) return;
@@ -62,28 +86,64 @@
     el.innerHTML = '<span style="flex:1">' + (isIOS
       ? 'Добавьте «Nilov Flowers» на главный экран — откройте меню «Поделиться» и выберите «На экран Домой».'
       : 'Установите «Nilov Flowers» как приложение — кнопка «Установить» справа.') + '</span>'
-      + '<button type="button" style="border:none;background:var(--rose-deep,#E2799C);color:#fff;border-radius:999px;padding:8px 14px;font:600 .8rem sans-serif;cursor:pointer">Понятно</button>';
-    el.querySelector('button').addEventListener('click', function () {
-      localStorage.setItem('nfInstallHintClosed', '1');
+      + '<button type="button" data-hint-action style="border:none;background:var(--rose-deep,#E2799C);color:#fff;border-radius:999px;padding:8px 14px;font:600 .8rem sans-serif;cursor:pointer;flex:none">Понятно</button>'
+      + '<button type="button" data-hint-close aria-label="Закрыть подсказку" title="Закрыть подсказку" style="border:none;background:transparent;color:#6e6a72;border-radius:999px;padding:8px 6px;font:600 1.05rem/1 sans-serif;cursor:pointer;flex:none;align-self:flex-start">×</button>';
+    function dismiss() {
+      try { localStorage.setItem('pwaHintDismissed', '1'); } catch (e) {}
       el.remove();
-    });
+    }
+    el.querySelector('[data-hint-close]').addEventListener('click', dismiss);
+    var actionBtn = el.querySelector('[data-hint-action]');
+    actionBtn.addEventListener('click', dismiss);
     if (!isIOS && 'onbeforeinstallprompt' in window) {
       window.addEventListener('beforeinstallprompt', function (e) {
         e.preventDefault();
-        var b = el.querySelector('button');
-        b.textContent = 'Установить';
-        b.onclick = function () { e.prompt(); localStorage.setItem('nfInstallHintClosed', '1'); el.remove(); };
+        actionBtn.textContent = 'Установить';
+        actionBtn.onclick = function () { e.prompt(); dismiss(); };
       });
     }
-    /* Критик layout W35: install-hint перекрывал cookie-баннер и блокировал тап «Принять»
-       → хинт ждёт согласия (cookie-banner снимает .cookie-visible + вешает событие) */
-    var shown = false;
-    document.addEventListener('nf:cookie-done', showInstallHint, { once: true });
-    if (!document.body.classList.contains('cookie-visible')) showInstallHint();
-    function showInstallHint() {
-      if (shown) return; shown = true;
-      setTimeout(function () { document.body.appendChild(el); }, 2500);
+    /* (г) позиция: ВЫШЕ фиксированной нижней CTA товара, если она есть;
+       перерасчёт при resize и при скрытии/показе CTA (IntersectionObserver
+       product.php тогглит .product-page__cta--hidden у футера). */
+    function positionHint() {
+      var bottom = 64; /* по умолчанию — над таббаром (mnav ≈ 61px + зазор) */
+      var cta = document.querySelector('.product-page__cta--sticky');
+      if (cta) {
+        var st = getComputedStyle(cta);
+        if (st.position === 'fixed' && st.display !== 'none'
+            && !cta.classList.contains('product-page__cta--hidden')) {
+          var r = cta.getBoundingClientRect();
+          if (r.height > 0) {
+            /* верх CTA от низа вьюпорта + отступ 10px */
+            bottom = Math.max(bottom, Math.round(window.innerHeight - r.top + 10));
+          }
+        }
+      }
+      el.style.bottom = bottom + 'px';
     }
+    window.addEventListener('resize', positionHint);
+    if (window.MutationObserver) {
+      var ctaEl = document.querySelector('.product-page__cta--sticky');
+      if (ctaEl) {
+        new MutationObserver(positionHint).observe(ctaEl, { attributes: true, attributeFilter: ['class'] });
+      }
+    }
+    /* (д) cookie-баннер на экране → подсказку не показываем вовсе;
+       повторяем попытку после решения (nf:cookie-done от cookie-banner.js). */
+    var shown = false;
+    function tryShow() {
+      if (shown) return;
+      if (document.body.classList.contains('cookie-visible')) {
+        document.addEventListener('nf:cookie-done', tryShow, { once: true });
+        return;
+      }
+      shown = true;
+      setTimeout(function () {
+        document.body.appendChild(el);
+        positionHint();
+      }, 2500);
+    }
+    tryShow();
   })();
 
   /* 2. Title-badge корзины — ВЫКЛЮЧЕН на витрине (владельцу не нравится «(1)» во вкладке).
@@ -139,11 +199,25 @@
   setInterval(tick, 30000); /* минута — достаточная точность без секундных перерисовок */
 })();
 
-/* 4. Избранное (критерий 13, Русский Букет-паттерн): сердечки + localStorage + фильтр «только избранное». */
+/* 4. Избранное (критерий 13, Русский Букет-паттерн): сердечки + localStorage.
+     W97-fixA (A2): скрытие карточек БОЛЬШЕ не живёт здесь — единственный источник
+     истины видимости каталога window.NfCatalogApply() в catalog-filter.js (учитывает
+     вкладку/чип/цену/поиск/избранное разом). Сердечко здесь только: обновляет
+     localStorage, выставляет карточке data-fav и зовёт общий re-apply — раньше
+     style.display от fav-фильтра затирался ценовым apply() и «Избранное» ломалось.
+     W97-fixB3b (B3b-4): тот же стор работает и на вторичных страницах — клики
+     по сердечкам related-карточек /occasion и /product ловятся той же делегацией,
+     а кнопка рядом с CTA товара ([data-fav-toggle]) синхронизирует состояние
+     (aria-pressed/♥/♡/aria-label); на страницах без каталог-грида refilter — noop,
+     но localStorage общий с главной — лайк на товаре активирует сердечко в /#catalog. */
 (function () {
   var KEY = 'nilov_favs';
   function get() { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; } }
   function set(a) { try { localStorage.setItem(KEY, JSON.stringify(a)); } catch (e) {} }
+  /* общий re-apply фильтров каталога (catalog-filter.js; на страницах без каталога — noop) */
+  function refilter() {
+    if (typeof window.NfCatalogApply === 'function') window.NfCatalogApply();
+  }
   function sync() {
     var favs = get();
     document.querySelectorAll('.product-card__fav').forEach(function (b) {
@@ -152,6 +226,26 @@
       b.textContent = on ? '♥' : '♡';
       /* a11y-критик S3: сердечко — тумблер, состояние должно озвучиваться */
       b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      /* A2: data-fav на карточке — маркер для фильтра «Избранное» (NfCatalogApply) */
+      var card = b.closest('.product-card');
+      if (card) {
+        if (on) card.setAttribute('data-fav', '1');
+        else card.removeAttribute('data-fav');
+      }
+    });
+    /* B3b-4: кнопка-иконка рядом с CTA на странице товара — состояние + визуал
+       (класса в CSS для неё нет — волна не трогает css/, красим инлайном) */
+    document.querySelectorAll('[data-fav-toggle]').forEach(function (b) {
+      var on = favs.indexOf(b.getAttribute('data-fav-id')) !== -1;
+      b.classList.toggle('is-active', on);
+      b.textContent = on ? '♥' : '♡';
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      b.setAttribute('aria-label', on ? 'Убрать из избранного' : 'В избранное');
+      if (b.hasAttribute('data-fav-inline')) {
+        var pink = 'var(--pink,#ff4ea2)';
+        b.style.color = on ? pink : 'var(--ink,#1c1a1e)';
+        b.style.borderColor = on ? pink : 'var(--ink,#1c1a1e)';
+      }
     });
     var t = document.getElementById('favToggle');
     if (t) {
@@ -160,36 +254,27 @@
     }
   }
   document.addEventListener('click', function (e) {
-    var b = e.target.closest('.product-card__fav');
+    var b = e.target.closest('.product-card__fav,[data-fav-toggle]');
     if (b) {
       var id = b.getAttribute('data-fav-id');
       var favs = get();
       var i = favs.indexOf(id);
       if (i === -1) favs.push(id); else favs.splice(i, 1);
-      set(favs); sync();
+      set(favs); sync(); refilter();
       e.preventDefault(); e.stopPropagation();
     }
     var t = e.target.closest('#favToggle');
     if (t) {
+      /* визуальное состояние тумблера; карточки фильтрует NfCatalogApply
+         (читает aria-pressed + data-fav) — смена цены больше не ломает фильтр */
       t.classList.toggle('is-on');
       t.setAttribute('aria-pressed', t.classList.contains('is-on') ? 'true' : 'false');
-      var on = t.classList.contains('is-on');
-      var favs2 = get();
-      document.querySelectorAll('.product-card').forEach(function (c) {
-        var id = (c.querySelector('.product-card__fav') || {}).getAttribute ? c.querySelector('.product-card__fav').getAttribute('data-fav-id') : null;
-        if (id === null) return;
-        if (on && favs2.indexOf(id) === -1) c.style.display = 'none';
-        else if (on) c.style.display = '';
-      });
-      if (!on) {
-        document.querySelectorAll('.product-card').forEach(function (c) { c.style.display = ''; });
-        var evt = new Event('change', { bubbles: true });
-        var sel = document.getElementById('priceFilter');
-        if (sel) sel.dispatchEvent(evt);
-      }
+      refilter();
     }
   });
   sync();
+  /* сердечки из localStorage восстановлены — пересчитываем каталог/счётчики */
+  refilter();
 })();
 
 /* 5. Проверка зоны доставки (критерий 13, Семицветик-паттерн): живой мэтч по вводу.
@@ -222,18 +307,26 @@
     });
     return best;
   }
+  var lastMatched = undefined;
   function apply() {
     var v = inp.value;
-    if (!v.trim()) { out.textContent = ''; return; }
+    if (!v.trim()) { out.textContent = ''; lastMatched = undefined; return; }
     var m = match(v);
     if (m) {
       var price = parseInt(m.getAttribute('data-price'), 10) || 0;
       out.style.color = 'var(--ink)';
       out.textContent = price === 0 ? '✓ 0 ₽' : price + ' ₽';
       if (sel) sel.value = m.value; // подстановка в чекаут
+      lastMatched = m.value;
     } else {
       out.style.color = '#b3261e';
       out.textContent = inp.getAttribute('data-fallback') || 'не нашли — уточним по телефону';
+      /* W97 (UX-критик): при нераспознанном районе селект чекаута молча держал прежнюю зону —
+         честно анонсируем это (SR + понятность состояния), когда до этого был успешный мэтч. */
+      if (lastMatched !== undefined && sel && window.nfAnnounce) {
+        window.nfAnnounce('Район не распознан — зона доставки в заказе не изменилась. Выберите район из списка.');
+      }
+      lastMatched = null;
     }
   }
   inp.addEventListener('input', apply);

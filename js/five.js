@@ -1,19 +1,15 @@
 /* five.js — витринная логика редизайна 5cv (W96 / T2-b).
    1) Город-бар: «Да, верно»/крестик → localStorage + скрытие.
    2) Карусели .fc-carousel: стрелки + disabled-состояния по скроллу.
-   3) Чипы цен + поиск #fcSearch: фильтрация каталога ПОВЕРХ catalog-filter.js.
-   Vanilla JS, без зависимостей. НЕ дублирует catalog-filter.js (вкладки категорий
-   и select цены) — работает поверх него: скрытие через атрибут
-   data-fc-filtered + CSS-правило [data-fc-filtered]{display:none!important},
-   поэтому фильтрации комбинируются (категория И цена И чип И поиск) и не воюют
-   за style.display. */
+   3) Чипы цен + поиск #fcSearch: W97-fixA (A2/A3) — здесь ТОЛЬКО DOM-состояние
+      (is-active у чипов, значение поля поиска) + вызов общего фильтра
+      window.NfCatalogApply() из catalog-filter.js (единый источник истины:
+      вкладка И цена И чип И поиск И избранное). Плюс пилюля «Нашлось N —
+      посмотреть ↓» под строкой поиска (A3), автоскролл по ?q= и
+      ре-применение фильтров на pageshow (bfcache/возврат «Назад»).
+   Vanilla JS, без зависимостей. */
 (function () {
   'use strict';
-
-  /* Инжектим CSS-хук видимости (css/* трогать нельзя — это зона T2-a) */
-  var css = document.createElement('style');
-  css.textContent = '[data-fc-filtered="1"]{display:none!important}';
-  document.head.appendChild(css);
 
   function ready(fn) {
     if (document.readyState !== 'loading') fn();
@@ -89,30 +85,11 @@
     });
   }
 
-  /* ---------- 3. Чипы цен + поиск: комбинированный фильтр каталога ---------- */
-
-  /* W96-fix1 (F3): базовый стемминг русского запроса — отрезаем типичные
-     окончания, чтобы «розы» находило «Букет из роз», «пионы» — «пион»,
-     «маме» — «мам». После среза оставляем ≥3 символов (коротко-агрессивный
-     срез вида «ды»→«д» не нужен: закончим на бессмысленных хвостах).
-     Примеры из ТЗ: розы→роз, пионы→пион, маме→мам. */
-  function stemRu(word) {
-    var w = word.toLowerCase();
-    var m = w.match(/^(.+?)(?:ами|ого|ому|ыми|ая|ые|ов|ей|ий|ый|ом|ем|ам|ах|иях|ях|ии|ие|ия|ью|ья|а|я|ы|и|у|ю|е|о)$/);
-    return (m && m[1].length >= 3) ? m[1] : w;
-  }
-
-  /* Слова запроса → стеммы (пустые токены отбрасываем). Матч: каждый стемм
-     входит подстрокой в нормализованный data-search карточки (имя + категория +
-     описание, PHP уже привёл к нижнему регистру) — AND по всем словам. */
-  function queryStems(q) {
-    return q.toLowerCase().trim().split(/\s+/).filter(Boolean).map(stemRu);
-  }
+  /* ---------- 3. Чипы цен + поиск: состояние + общий re-apply + пилюля ---------- */
 
   function catalogFilters() {
     var grid = document.getElementById('catalogGrid');
     var form = document.querySelector('.fc-search');
-    var chipsBox = document.querySelector('.fc-chips');
     var inp = document.getElementById('fcSearch');
     if (!grid) {
       /* Вторичные страницы: каталога нет — поиск уводит на главную с запросом
@@ -127,88 +104,57 @@
       }
       return;
     }
+    var chipsBox = document.querySelector('.fc-chips');
     var chips = chipsBox ? Array.prototype.slice.call(chipsBox.querySelectorAll('.fc-chip')) : [];
-    var countEl = chipsBox ? chipsBox.querySelector('.fc-chips__count') : null;
-    var emptyBox = document.getElementById('catalogEmpty');
-    var emptyTitle = emptyBox ? emptyBox.querySelector('p') : null; /* первый <p> — заголовок empty */
-    var state = { chip: null, query: '' };
 
-    /* Чип задаёт диапазон: data-min — исключительно («от M»), data-max — включительно («до N»).
-       kind=hit/premium — по флагам карточки (data-hit / data-premium). */
-    function chipMatch(card, chip) {
-      var kind = chip.getAttribute('data-chip');
-      if (kind === 'hit') return card.getAttribute('data-hit') === '1';
-      if (kind === 'premium') return card.getAttribute('data-premium') === '1';
-      var price = parseInt(card.getAttribute('data-price'), 10) || 0;
-      var min = chip.hasAttribute('data-min') ? parseInt(chip.getAttribute('data-min'), 10) : null;
-      var max = chip.hasAttribute('data-max') ? parseInt(chip.getAttribute('data-max'), 10) : null;
-      return (min === null || price > min) && (max === null || price <= max);
+    /* A3: пилюля под строкой поиска на главной — «Нашлось N букетов — посмотреть ↓».
+       Появляется при непустом запросе, прячется при очистке; клик — плавный скролл
+       к #catalog (каталог ниже первого экрана, живой фильтр его не видно). */
+    var pill = null;
+    function pillUpdate(visible) {
+      var q = inp ? (inp.value || '').trim() : '';
+      if (!q) {
+        if (pill) pill.style.display = 'none';
+        return;
+      }
+      if (visible == null) {
+        /* страховка, если catalog-filter.js не загрузился: считаем видимые сами */
+        visible = 0;
+        grid.querySelectorAll('.product-card').forEach(function (c) {
+          if (getComputedStyle(c).display !== 'none' && !c.classList.contains('is-hidden')) visible++;
+        });
+      }
+      if (!pill) {
+        pill = document.createElement('button');
+        pill.type = 'button';
+        pill.id = 'fcSearchPill';
+        pill.style.cssText = 'position:absolute;top:calc(100% + 8px);left:0;z-index:70'
+          + ';display:inline-flex;align-items:center;gap:4px;border:none;border-radius:999px'
+          + ';padding:9px 16px;min-height:36px;background:var(--ink,#1c1a1e);color:#fff'
+          + ';font-family:var(--font-ui,Montserrat,sans-serif);font-weight:600;font-size:.8rem'
+          + ';cursor:pointer;box-shadow:0 12px 30px -12px rgba(28,26,30,.5);white-space:nowrap';
+        pill.addEventListener('click', function () {
+          var cat = document.getElementById('catalog');
+          if (cat && cat.scrollIntoView) {
+            cat.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth' });
+          }
+        });
+        /* .fc-search уже position:relative (five.css) — пилюля висит под полем */
+        (form || document.body).appendChild(pill);
+      }
+      pill.style.display = 'inline-flex';
+      pill.textContent = 'Нашлось ' + visible + ' ' + pluralBuket(visible) + ' — посмотреть ↓';
+      pill.setAttribute('aria-label', 'Нашлось ' + visible + ' ' + pluralBuket(visible) + ' — перейти к каталогу букетов');
     }
 
-    /* Итоговая видимость карточки с учётом ВСЕХ фильтров страницы
-       (категория is-hidden от catalog-filter.js, цена-select, чип, поиск, избранное). */
-    function visibleCount() {
-      var n = 0;
-      grid.querySelectorAll('.product-card').forEach(function (c) {
-        if (!c.hasAttribute('data-fc-filtered') && !c.classList.contains('is-hidden')
-            && getComputedStyle(c).display !== 'none') n++;
-      });
-      return n;
-    }
-
-    function apply(scroll) {
-      var q = state.query.trim().toLowerCase();
-      var stems = q ? queryStems(q) : [];
-      grid.querySelectorAll('.product-card').forEach(function (card) {
-        var ok = true;
-        if (state.chip) {
-          ok = chipMatch(card, state.chip);
-        }
-        if (ok && stems.length) {
-          /* W96-fix1 (F3): морфология — стемм запроса входит в data-search
-             (имя+категория+описание); фолбэк на имя карточки для старого кэша */
-          var nameEl = card.querySelector('.product-card__name');
-          var hay = (card.getAttribute('data-search') || (nameEl ? nameEl.textContent : '')).toLowerCase();
-          ok = stems.every(function (w) { return hay.indexOf(w) !== -1; });
-        }
-        if (ok) card.removeAttribute('data-fc-filtered');
-        else card.setAttribute('data-fc-filtered', '1');
-      });
-      var total = visibleCount();
-      /* Empty-state: 0 видимых карточек → подсказка + сброс */
-      if (emptyBox) emptyBox.hidden = total > 0;
-      /* «По запросу … не нашлось»: временная подмена заголовка, оригинал — в data-атрибуте */
-      if (emptyTitle) {
-        if (!emptyTitle.dataset.origTitle) emptyTitle.dataset.origTitle = emptyTitle.textContent;
-        if (q && total === 0) {
-          emptyTitle.textContent = 'По запросу «' + state.query.trim() + '» не нашлось';
-        } else {
-          emptyTitle.textContent = emptyTitle.dataset.origTitle;
-        }
+    /* Единый re-apply: карточки/счётчики/empty-state пересчитывает catalog-filter.js;
+      здесь обновляем только пилюлю (число видимых) и, при надобности, скроллим. */
+    function refilter(scroll) {
+      var visible = null;
+      if (typeof window.NfCatalogApply === 'function') {
+        visible = window.NfCatalogApply();
       }
-      /* Счётчик у чипов. W96-fix2 (F8): раньше считал ТОЛЬКО по чипу и молчал при
-         поиске. Теперь единая логика: чип → «N букетов»; поиск → «по запросу
-         «…» — N букетов» (live и по Enter — apply() общий); чип+поиск →
-         результат AND-фильтра (= total, всё, что реально видно на экране
-         с учётом вкладки/цены/избранного от catalog-filter.js); без фильтров
-         и при очистке поиска — пусто. */
-      if (countEl) {
-        var qTrim = state.query.trim();
-        if (state.chip) {
-          countEl.textContent = total + ' ' + pluralBuket(total);
-        } else if (qTrim !== '') {
-          countEl.textContent = 'по запросу «' + qTrim + '» — ' + total + ' ' + pluralBuket(total);
-        } else {
-          countEl.textContent = '';
-        }
-      }
-      /* W96-fix3b (D9): оповещаем счётчик цены (catalog-filter.js слушает
-         'fc:filter' и пересчитывает видимые) — ОБА счётчика страницы всегда
-         показывают одно число: чип «5 букетов» = счётчик цены «5 букетов». */
-      try {
-        window.dispatchEvent(new CustomEvent('fc:filter', { detail: { visible: total } }));
-      } catch (err) { /* старые браузеры без CustomEvent-конструктора — молча */ }
-      /* Плавный скролл к каталогу — только когда фильтруют чипом/поиском, не по сбросу */
+      pillUpdate(visible);
       if (scroll) {
         var cat = document.getElementById('catalog');
         if (cat && cat.scrollIntoView) {
@@ -217,7 +163,8 @@
       }
     }
 
-    /* Чипы: единственный активный; повторный клик — снять */
+    /* Чипы: единственный активный; повторный клик — снять. Сами карточки
+       фильтрует NfCatalogApply (читает .fc-chip.is-active). */
     chips.forEach(function (chip) {
       chip.addEventListener('click', function () {
         var wasActive = chip.classList.contains('is-active');
@@ -225,63 +172,57 @@
           c.classList.remove('is-active');
           c.setAttribute('aria-pressed', 'false');
         });
-        if (wasActive) {
-          state.chip = null;
-        } else {
+        if (!wasActive) {
           chip.classList.add('is-active');
           chip.setAttribute('aria-pressed', 'true');
-          state.chip = chip;
         }
-        apply(true);
+        refilter(true);
       });
     });
 
-    /* Поиск (W96-fix1/F3): живая фильтрация с debounce 250мс — карточки фильтруются
-       по мере ввода, без Enter; Enter — применяет сразу и скроллит к каталогу;
-       пустой запрос (в т.ч. крестик type=search) — снимает фильтр. */
+    /* Поиск (W96-fix1/F3 → W97-fixA A3): живая фильтрация с debounce 250мс —
+       по мере ввода (пилюля с числом), Enter — применяет сразу и скроллит
+       к каталогу; пустой запрос (в т.ч. крестик type=search) — снимает фильтр. */
     var debounceTimer = null;
-    function applySoon() {
-      if (debounceTimer) clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(function () {
-        debounceTimer = null;
-        state.query = inp.value || '';
-        apply(false);
-      }, 250);
-    }
     if (form && inp) {
       form.addEventListener('submit', function (e) {
         e.preventDefault();
         if (debounceTimer) { clearTimeout(debounceTimer); debounceTimer = null; }
-        state.query = inp.value || '';
-        apply(true);
+        refilter(true);
       });
-      inp.addEventListener('input', applySoon);
+      inp.addEventListener('input', function () {
+        if (debounceTimer) clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(function () {
+          debounceTimer = null;
+          refilter(false);
+        }, 250);
+      });
     }
 
-    /* W96-fix1 (F3): перенос запроса со вторичных страниц — /?q=розы#catalog:
-       заполняем поле и применяем фильтр сразу (скролл делает hash #catalog) */
+    /* W96-fix1 (F3) → A3(б): перенос запроса со вторичных страниц — /?q=розы#catalog:
+       заполняем поле и применяем фильтр сразу; ОДИН автоскролл к #catalog после
+       инициализации (нативный hash-прыжок срабатывает до раскладки; smooth-скролл
+       через 400мс гарантирует, что покупатель попал к отфильтрованному каталогу). */
     var qParam = new URLSearchParams(window.location.search).get('q');
     if (qParam && inp) {
       inp.value = qParam;
-      state.query = qParam;
-      apply(false);
+      refilter(false);
+      setTimeout(function () {
+        var cat = document.getElementById('catalog');
+        if (cat && cat.scrollIntoView) {
+          cat.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth' });
+        }
+      }, 400);
     }
 
-    /* Сброс фильтров (кнопка в empty-state): снимаем чип и поиск тоже
-       (price/tabs/избранное сбрасывает catalog-filter.js своим обработчиком) */
-    var reset = document.getElementById('catalogEmptyReset');
-    if (reset) {
-      reset.addEventListener('click', function () {
-        state.chip = null;
-        state.query = '';
-        chips.forEach(function (c) {
-          c.classList.remove('is-active');
-          c.setAttribute('aria-pressed', 'false');
-        });
-        if (inp) inp.value = '';
-        apply(false);
-      });
-    }
+    /* A3(в): desync «Назад» — браузер восстанавливает текст в поле поиска,
+       а JS-фильтры сброшены (страница перегенерирована) → «роз» в поле, но 23
+       карточки. pageshow (bfcache ИЛИ обычный показ) — пере-применяем фильтры
+       из АКТУАЛЬНОГО значения поля. */
+    window.addEventListener('pageshow', function () {
+      if (debounceTimer) { clearTimeout(debounceTimer); debounceTimer = null; }
+      refilter(false);
+    });
   }
 
   /* ---------- 4. «Смотреть все» + ссылки каталога в футере ----------

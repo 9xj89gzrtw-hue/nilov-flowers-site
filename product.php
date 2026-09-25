@@ -54,11 +54,154 @@ $img = '/img/products/' . rawurlencode(productImageFile($product));
 $imgWebp = preg_replace('/\.(jpe?g|png)$/i', '.webp', urldecode($img));
 $imgWebpOk = $imgWebp !== $img && is_file(BASE_PATH . $imgWebp);
 
+/* W97-fixB3b (B3b-1g): категория товара — слаг на лету из name (колонки slug
+   в таблице categories нет): хлебные крошки и «Смотреть все» related ведут на
+   посадочную /category/{slug} вместо глубокой ссылки /?category=ID#catalog */
+$catSlug = !empty($product['category_name']) ? slugify((string)$product['category_name']) : '';
+
+/* W97-fixB3b (B3b-2h): размеры og:image (@-guard: файл недоступен — не печатаем) */
+$ogDim = @getimagesize(IMG_PRODUCTS_DIR . '/' . productImageFile($product));
+$origW = $ogDim !== false ? (int)$ogDim[0] : 0;
+
+/* W97-fixB3b (B3b-2d/e): локальные GD-превью — копия подхода product_img_thumb
+   из index.php (W96-fix3a T2): img/products/thumbs/{имя без ext}-{W}.webp (q78),
+   ленивая генерация + tmp+rename против гонок, PNG-альфа, оригинал ≤W / сбой
+   GD → '' (деградация до прежнего вида). 400 — related-карточки, 600/900 —
+   LCP-слайды галереи. */
+function product_img_size(array $p, int $targetW): string
+{
+    static $cache = [];
+    if (($p['image'] ?? '') === '') return '';
+    $file = (string)$p['image'];
+    $ck = $file . '@' . $targetW;
+    if (isset($cache[$ck])) return $cache[$ck];
+
+    $fail = static function () use (&$cache, $ck): string {
+        $cache[$ck] = '';
+        return '';
+    };
+    $src = IMG_PRODUCTS_DIR . '/' . $file;
+    if (!is_file($src)) return $fail();
+    $dim = @getimagesize($src);
+    if ($dim === false) return $fail();
+    [$srcW, $srcH, $type] = [(int)$dim[0], (int)$dim[1], (int)$dim[2]];
+    /* Компактный/равный оригинал — превью не даёт экономии, не апскейлим */
+    if ($srcW <= $targetW) return $fail();
+
+    $base = preg_replace('/\.[^.]+$/', '', $file) ?? $file;
+    $thumbsDir = IMG_PRODUCTS_DIR . '/thumbs';
+    $dst = $thumbsDir . '/' . $base . '-' . $targetW . '.webp';
+    $url = '/img/products/thumbs/' . rawurlencode($base . '-' . $targetW . '.webp');
+    if (is_file($dst)) return $url;
+
+    if (!is_dir($thumbsDir) && !@mkdir($thumbsDir, 0755, true)) return $fail();
+    $srcIm = match ($type) {
+        IMAGETYPE_JPEG => @imagecreatefromjpeg($src),
+        IMAGETYPE_PNG => @imagecreatefrompng($src),
+        IMAGETYPE_WEBP => function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($src) : false,
+        default => false,
+    };
+    if ($srcIm === false) return $fail();
+
+    $w = $targetW;
+    $h = max(1, (int)round($srcH * $w / $srcW));
+    $dstIm = imagecreatetruecolor($w, $h);
+    if ($type === IMAGETYPE_PNG) {
+        /* PNG может нести альфу — сохраняем прозрачность (webp её умеет) */
+        imagealphablending($dstIm, false);
+        imagesavealpha($dstIm, true);
+        imagefill($dstIm, 0, 0, imagecolorallocatealpha($dstIm, 0, 0, 0, 127));
+    }
+    $copied = imagecopyresampled($dstIm, $srcIm, 0, 0, 0, 0, $w, $h, $srcW, $srcH);
+    imagedestroy($srcIm);
+    if (!$copied) {
+        imagedestroy($dstIm);
+        return $fail();
+    }
+    $tmp = $dst . '.tmp' . getmypid();
+    $written = @imagewebp($dstIm, $tmp, 78);
+    imagedestroy($dstIm);
+    if (!$written || !@rename($tmp, $dst)) {
+        if (is_file($tmp)) @unlink($tmp);
+        return $fail();
+    }
+    return $url;
+}
+
+/* Фактическая ширина оригинала — честный {w}-дескриптор srcset (копия index.php) */
+function product_img_width(array $p): int
+{
+    static $cache = [];
+    if (($p['image'] ?? '') === '') return 0;
+    $file = (string)$p['image'];
+    if (!isset($cache[$file])) {
+        $dim = @getimagesize(IMG_PRODUCTS_DIR . '/' . $file);
+        $cache[$file] = $dim === false ? 0 : (int)$dim[0];
+    }
+    return $cache[$file];
+}
+
+/* Обрезка по границе слова + снятие висячей пунктуации (для meta description) */
+function meta_cut(string $s, int $max): string
+{
+    $s = trim((string)preg_replace('/\s+/u', ' ', $s));
+    if ($s === '' || mb_strlen($s) <= $max) return $s;
+    $cut = mb_substr($s, 0, $max);
+    $sp = mb_strrpos($cut, ' ');
+    if ($sp !== false && $sp > 0) {
+        $cut = mb_substr($cut, 0, $sp);
+    }
+    return trim((string)preg_replace('/[\s.,;:!?\-–—]+$/u', '', $cut));
+}
+
+/* B3b-2e: srcset LCP-фото — webp-превью 600w/900w + webp-оригинал {w}w.
+   Слот галереи: .fc-product grid 1fr 1fr (css/five.css) при wrap 1200/gap 40/
+   padding 20 → ~560px → sizes «(max-width:820px) 100vw, 560px»: на 390/DPR1
+   браузер выбирает 600w, ретина — 900w/оригинал. Превью не апскейлятся
+   (оригиналы 582–900px: у ≤600px остаётся только оригинал, как раньше). */
+$thumb600 = product_img_size($product, 600);
+$thumb900 = product_img_size($product, 900);
+$galSrcset = [];
+if ($thumb600 !== '') {
+    $galSrcset[] = $thumb600 . ' 600w';
+}
+if ($thumb900 !== '') {
+    $galSrcset[] = $thumb900 . ' 900w';
+}
+if ($imgWebpOk && $origW > 0) {
+    $galSrcset[] = $imgWebp . ' ' . $origW . 'w';
+}
+$galSrcsetStr = implode(', ', $galSrcset);
+$galSizes = '(max-width:820px) 100vw, 560px';
+
+/* B3b-2f: zoom-слайд — фон больше не в инлайн-стиле HTML (.jpg грузился сразу
+   вторым дублем); js/product-gallery.js подставит его лениво по активации
+   слайда. URL — webp (полноформатный twin, иначе 900-превью, иначе оригинал). */
+$zoomSrc = $imgWebpOk ? $imgWebp : ($thumb900 !== '' ? $thumb900 : $img);
+
+/* B3b-2b: title «{name} — с доставкой по СПб | бренд» — ~54 симв., окно 60-70 */
+$pageTitle = $product['name'] . ' — с доставкой по СПб | ' . setting('shop_name', 'Nilov Flowers');
+
+/* B3b-2c: meta description — первые ~130 симв. описания (теперь 200–400 симв.)
+   + хвост « Доставка по СПб в день заказа, оплата при получении.» (53 симв.).
+   Приоритет — итог ~160: описание режем до 160−53=107 по границе слова
+   (короткие описания — целиком); срез без точки добиваем точкой. */
+$metaDescTail = ' Доставка по СПб в день заказа, оплата при получении.';
+$metaDescBase = meta_cut($product['description'] !== '' ? $product['description'] : $product['name'], 107);
+if ($metaDescBase !== '' && !preg_match('/[.!?…]$/u', $metaDescBase)) {
+    $metaDescBase .= '.';
+}
+$metaDesc = $metaDescBase . $metaDescTail;
+
 /* Бейджи 5cv (is_hit/is_premium может не быть в старой БД — читаем через ?? 0) */
 $isHit = (int)($product['is_hit'] ?? 0) === 1;
 $isPremium = (int)($product['is_premium'] ?? 0) === 1;
 $isUrgent = (int)($product['is_urgent'] ?? 0) === 1;
 $offPct = $isSale && (int)$product['price'] > 0 ? (int)round((1 - $price / (int)$product['price']) * 100) : 0;
+
+/* Тумблер избранного — тот же, что у каталога витрины (критерий 16):
+   сердечко у CTA (B3b-4) и в related-карточках */
+$featFavorites = setting('feature_favorites', '1') === '1';
 
 /* Trust list на странице товара — те же гарантии */
 $trust = [];
@@ -89,7 +232,9 @@ $metaIcons = [
 /* Гарантии: фото → камера, свежесть → цветок, остальное → щит */
 $trustIconKeys = ['camera', 'flower', 'shield'];
 
-/* Компактная карточка «С этим берут» — как на витрине (бейджи + «+» в корзину) */
+/* Компактная карточка «С этим берут» — как на витрине (бейджи + «+» в корзину).
+   W97-fixB3b (B3b-2d): srcset с thumbs-400 (как в каталоге витрины) + B3b-4:
+   сердечко избранного (та же разметка/классы, что на главной). */
 function render_related_card(array $rp): void
 {
     $rPrice = productPrice($rp);
@@ -104,6 +249,19 @@ function render_related_card(array $rp): void
         $w = preg_replace('/\.(jpe?g|png)$/i', '.webp', urldecode($rImg));
         $rWebp = $w !== $rImg && is_file(BASE_PATH . $w) ? $w : '';
     }
+    /* B3b-2d: превью 400w + честный {w}-дескриптор оригинала (локальный GD-хелпер) */
+    $rThumb = $rImg !== '' ? product_img_size($rp, 400) : '';
+    $rOrigW = $rImg !== '' ? product_img_width($rp) : 0;
+    if ($rThumb !== '' && $rWebp !== '' && $rOrigW > 0) {
+        $rSrcset = $rThumb . ' 400w, ' . $rWebp . ' ' . $rOrigW . 'w';
+        $rSizes = '(max-width:899px) 45vw, (min-width:900px) 300px';
+    } elseif ($rThumb !== '') {
+        $rSrcset = $rThumb . ' 400w';
+        $rSizes = '(max-width:899px) 45vw, (min-width:900px) 300px';
+    } else {
+        $rSrcset = $rWebp;
+        $rSizes = '';
+    }
     $rLink = '/product/' . rawurlencode($rp['slug']);
     /* W96-fix1 (F3): поисковый индекс карточки — как на витрине (имя + категория +
        описание, нижний регистр); категория приходит из SELECT * как NULL — ?? '' */
@@ -114,7 +272,7 @@ function render_related_card(array $rp): void
             <a class="product-card__media-link" href="<?= e($rLink) ?>" aria-label="<?= e($rp['name']) ?>">
               <?php if ($rImg !== ''): ?>
                 <picture>
-                  <?php if ($rWebp !== ''): ?><source type="image/webp" srcset="<?= e($rWebp) ?>"><?php endif; ?>
+                  <?php if ($rSrcset !== ''): ?><source type="image/webp" srcset="<?= e($rSrcset) ?>"<?= $rSizes !== '' ? ' sizes="' . e($rSizes) . '"' : '' ?>><?php endif; ?>
                   <img class="product-card__img" src="<?= e($rImg) ?>" alt="<?= e($rp['name']) ?>" loading="lazy" decoding="async">
                 </picture>
               <?php else: ?>
@@ -131,6 +289,7 @@ function render_related_card(array $rp): void
               data-product-price-raw="<?= $rPrice ?>"
               data-product-image="<?= e($rImg) ?>"
               aria-label="Добавить в корзину: <?= e($rp['name']) ?>" title="В корзину">+</button>
+            <?php if (setting('feature_favorites', '1') === '1'): ?><button type="button" class="product-card__fav" data-fav-id="<?= (int)$rp['id'] ?>" data-fav-name="<?= e($rp['name']) ?>" aria-label="В избранное: <?= e($rp['name']) ?>" title="В избранное">♡</button><?php endif; ?>
           </div>
           <div class="product-card__body">
             <a class="product-card__name" href="<?= e($rLink) ?>"><?= e($rp['name']) ?></a>
@@ -149,17 +308,28 @@ function render_related_card(array $rp): void
 ?><!DOCTYPE html>
 <html lang="ru">
 <head>
-<?php /* SEO-критик W86: og:type=product (уникальный) + twitter:title = имя товара, не бренд */ ?>
-<?php $pageTitle = $product['name'] . ' — ' . setting('shop_name', 'Nilov Flowers'); $ogType = 'product'; ?>
+<?php /* SEO-критик W86: og:type=product (уникальный) + twitter:title = имя товара, не бренд.
+   W97-fixB3b (B3b-2b/c/h): title с доставкой, description из описания+хвост,
+   og:image:width/height (@getimagesize выше — $ogDim) */ ?>
+<?php $ogType = 'product'; ?>
 <title><?= e($pageTitle) ?></title>
 <meta property="og:title" content="<?= e($product['name']) ?> — <?= e(setting('shop_name', 'Nilov Flowers')) ?>">
 <meta property="og:description" content="<?= e(mb_substr($product['description'] !== '' ? $product['description'] : $product['name'], 0, 200)) ?>">
 <meta property="og:url" content="https://flowers.interfood-catering.ru/product/<?= e($product['slug']) ?>">
 <meta property="og:type" content="product">
-<?= $img !== '' ? '<meta property="og:image" content="https://flowers.interfood-catering.ru' . e($img) . '">' : '' ?>
-<meta name="description" content="<?= e(mb_substr($product['description'] !== '' ? $product['description'] : $product['name'], 0, 160)) ?>">
+<?php if ($img !== ''): ?>
+<meta property="og:image" content="https://flowers.interfood-catering.ru<?= e($img) ?>">
+<?php if ($ogDim !== false): ?>
+<meta property="og:image:width" content="<?= (int)$ogDim[0] ?>">
+<meta property="og:image:height" content="<?= (int)$ogDim[1] ?>">
+<?php endif; ?>
+<?php endif; ?>
+<meta name="description" content="<?= e($metaDesc) ?>">
 <?php require __DIR__ . '/partials/head.php'; ?>
-<?php /* JSON-LD Product+Offer — canonical 2026 (ecorn.agency structured-data-ecommerce) */ ?>
+<?php /* JSON-LD Product+Offer — canonical 2026 (ecorn.agency structured-data-ecommerce).
+   W97-fixB3b (B3b-2а/g): BreadcrumbList ВЫНЕСЕН в отдельный top-level скрипт ниже
+   (property breadcrumb у Product невалиден в schema.org); availability-тернарник
+   с одинаковыми ветками упрощен. */ ?>
 <script type="application/ld+json">
 <?= json_encode([
     '@context' => 'https://schema.org',
@@ -174,7 +344,7 @@ function render_related_card(array $rp): void
         'url' => 'https://flowers.interfood-catering.ru/product/' . rawurlencode($product['slug']),
         'price' => $price,
         'priceCurrency' => 'RUB',
-        'availability' => $product['is_urgent'] == 1 ? 'https://schema.org/InStock' : 'https://schema.org/InStock',
+        'availability' => 'https://schema.org/InStock',
     ],
     /* SEO-критик W40: brand + shippingDetails + return — merchant-listing rich-результаты Google.
        Ставка доставки — честный минимум из таблицы зон (минимальная тарифная зона). */
@@ -192,13 +362,27 @@ function render_related_card(array $rp): void
         'returnFees' => 'https://schema.org/FreeReturn',
     ],
     'category' => $product['category_name'] ?? 'Букеты',
-    /* SEO-критик W86: BreadcrumbList — SERP-фичер хлебных крошек */
-    'breadcrumb' => ['@type' => 'BreadcrumbList', 'itemListElement' => [
-        ['@type' => 'ListItem', 'position' => 1, 'name' => 'Главная', 'item' => 'https://flowers.interfood-catering.ru/'],
-        ['@type' => 'ListItem', 'position' => 2, 'name' => 'Каталог', 'item' => 'https://flowers.interfood-catering.ru/#catalog'],
-        ['@type' => 'ListItem', 'position' => 3, 'name' => $product['name'], 'item' => 'https://flowers.interfood-catering.ru/product/' . rawurlencode($product['slug'])],
-    ]],
 ] + ($product['sale_price'] !== null ? ['basePrice' => (int)$product['price']] : []), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>
+</script>
+<?php /* W97-fixB3b (B3b-2а): BreadcrumbList — ОТДЕЛЬНЫЙ top-level JSON-LD
+   (SERP-фичер хлебных крошек); уровни синхронны с видимыми крошками:
+   Главная → Каталог → категория (/category/{slug}, B3b-1g) → товар */ ?>
+<?php
+$breadcrumbItems = [
+    ['@type' => 'ListItem', 'position' => 1, 'name' => 'Главная', 'item' => 'https://flowers.interfood-catering.ru/'],
+    ['@type' => 'ListItem', 'position' => 2, 'name' => 'Каталог', 'item' => 'https://flowers.interfood-catering.ru/#catalog'],
+];
+if ($catSlug !== '') {
+    $breadcrumbItems[] = ['@type' => 'ListItem', 'position' => 3, 'name' => $product['category_name'], 'item' => 'https://flowers.interfood-catering.ru/category/' . rawurlencode($catSlug)];
+}
+$breadcrumbItems[] = ['@type' => 'ListItem', 'position' => count($breadcrumbItems) + 1, 'name' => $product['name'], 'item' => $canonicalUrl];
+?>
+<script type="application/ld+json">
+<?= json_encode([
+    '@context' => 'https://schema.org',
+    '@type' => 'BreadcrumbList',
+    'itemListElement' => $breadcrumbItems,
+], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>
 </script>
 </head>
 <body>
@@ -208,7 +392,9 @@ function render_related_card(array $rp): void
   <section class="fc-section">
     <div class="wrap">
       <nav class="breadcrumbs" aria-label="Хлебные крошки">
-        <a href="/">Главная</a> / <a href="/#catalog">Каталог</a><?php if (!empty($product['category_name'])): ?> / <a href="/?category=<?= (int)$product['category_id'] ?>#catalog"><?= e($product['category_name']) ?></a><?php endif; ?> / <span aria-current="page"><?= e($product['name']) ?></span>
+        <?php /* W97-fixB3b (B3b-1g): категория — посадочная /category/{slug}
+               (была глубокая ссылка /?category=ID#catalog) */ ?>
+        <a href="/">Главная</a> / <a href="/#catalog">Каталог</a><?php if ($catSlug !== ''): ?> / <a href="/category/<?= e($catSlug) ?>"><?= e($product['category_name']) ?></a><?php endif; ?> / <span aria-current="page"><?= e($product['name']) ?></span>
       </nav>
 
       <div class="fc-product">
@@ -228,16 +414,18 @@ function render_related_card(array $rp): void
             <div class="product-gallery__track">
               <figure class="product-gallery__slide">
                 <picture>
-                  <?php if ($imgWebpOk): ?><source type="image/webp" srcset="<?= e($imgWebp) ?>"><?php endif; ?>
-                  <?php /* W96-fix3a (T2b): LCP-снимок — явный eager + высокий приоритет
-                     загрузки (loading-атрибута не было — работало eager по умолчанию,
-                     но без приоритета браузер мог тянуть фото после стилей/скриптов) */ ?>
-                  <img class="product-gallery__img" src="<?= e($img) ?>" alt="<?= e($product['name']) ?>" loading="eager" fetchpriority="high"<?= ($gDim = @getimagesize(IMG_PRODUCTS_DIR . '/' . productImageFile($product))) ? ' width="' . (int)$gDim[0] . '" height="' . (int)$gDim[1] . '"' : '' ?>>
+                  <?php /* W97-fixB3b (B3b-2e): srcset 600w/900w/оригинал — рассчитан на
+                     слот ~560px (sizes), на 390/DPR1 выбирается 600w; eager+high — LCP */ ?>
+                  <?php if ($galSrcsetStr !== ''): ?><source type="image/webp" srcset="<?= e($galSrcsetStr) ?>" sizes="<?= e($galSizes) ?>"><?php elseif ($imgWebpOk): ?><source type="image/webp" srcset="<?= e($imgWebp) ?>"><?php endif; ?>
+                  <img class="product-gallery__img" src="<?= e($img) ?>" alt="<?= e($product['name']) ?>" loading="eager" fetchpriority="high"<?= $ogDim !== false ? ' width="' . (int)$ogDim[0] . '" height="' . (int)$ogDim[1] . '"' : '' ?>>
                 </picture>
                 <figcaption class="product-gallery__cap">Общий план букета</figcaption>
               </figure>
               <figure class="product-gallery__slide">
-                <div class="product-gallery__zoom" style="background-image:url('<?= e($img) ?>')" role="img" aria-label="<?= e($product['name']) ?> — крупный план"></div>
+                <?php /* W97-fixB3b (B3b-2f): background-image убран из инлайн-стиля —
+                           .jpg-дубль грузился сразу вместе с LCP; webp-URL подставит
+                           js/product-gallery.js лениво при активации этого слайда */ ?>
+                <div class="product-gallery__zoom" data-gallery-zoom="<?= e($zoomSrc) ?>" role="img" aria-label="<?= e($product['name']) ?> — крупный план"></div>
                 <figcaption class="product-gallery__cap">Приближение этого же фото</figcaption>
               </figure>
             </div>
@@ -248,9 +436,11 @@ function render_related_card(array $rp): void
           <div class="fc-product__media product-page__media" data-lightbox-trigger data-lightbox-src="<?= e($img) ?>" data-lightbox-alt="<?= e($product['name']) ?>">
             <?php if ($img !== ''): ?>
               <picture>
-                <?php if ($imgWebpOk): ?><source type="image/webp" srcset="<?= e($imgWebp) ?>"><?php endif; ?>
+                <?php /* W97-fixB3b (B3b-2e): тот же srcset-набор и в варианте без
+                   галереи — этот снимок и есть LCP страницы */ ?>
+                <?php if ($galSrcsetStr !== ''): ?><source type="image/webp" srcset="<?= e($galSrcsetStr) ?>" sizes="<?= e($galSizes) ?>"><?php elseif ($imgWebpOk): ?><source type="image/webp" srcset="<?= e($imgWebp) ?>"><?php endif; ?>
                 <?php /* W96-fix3a (T2b): LCP-снимок (вариант без галереи) — eager + приоритет */ ?>
-                <img class="product-gallery__img" src="<?= e($img) ?>" alt="<?= e($product['name']) ?>" loading="eager" fetchpriority="high">
+                <img class="product-gallery__img" src="<?= e($img) ?>" alt="<?= e($product['name']) ?>" loading="eager" fetchpriority="high"<?= $ogDim !== false ? ' width="' . (int)$ogDim[0] . '" height="' . (int)$ogDim[1] . '"' : '' ?>>
               </picture>
             <?php else: ?>
               <div class="product-gallery__slide--placeholder">
@@ -283,14 +473,24 @@ function render_related_card(array $rp): void
           </p>
           <?php if ($isUrgent): ?><p class="product-card__urgent-note">Соберём и доставим в течение дня — количество ограничено</p><?php endif; ?>
           <?php if ($product['description'] !== ''): ?><div class="prose"><?= nl2br(e($product['description'])) ?></div><?php endif; ?>
-          <button type="button" class="btn btn--accent fc-product__cta product-page__cta product-page__cta--sticky" data-order-cta
-            data-product-id="<?= (int)$product['id'] ?>"
-            data-product-name="<?= e($product['name']) ?>"
-            data-product-price-raw="<?= $price ?>"
-            data-product-image="<?= e($img) ?>"
-            aria-label="Добавить в корзину: <?= e($product['name']) ?>">
-            Добавить в корзину · <?= formatPrice($price) ?>
-          </button>
+          <?php /* W97-fixB3b (B3b-4): сердечко избранного рядом с CTA — тот же
+             localStorage-стор, что у каталога (js/nilov.js по [data-fav-toggle]);
+             состояние синхронно с /#catalog и фильтром «Избранное». Вид — класс
+             .fc-fav-inline (css/five.css, W97-fixC): круг под высоту .fc-product__cta
+             (52px), active — розовое заполнение (nilov.js + CSS) */ ?>
+          <div style="display:flex;gap:12px;align-items:stretch;flex-wrap:wrap">
+            <button type="button" class="btn btn--accent fc-product__cta product-page__cta product-page__cta--sticky" data-order-cta
+              data-product-id="<?= (int)$product['id'] ?>"
+              data-product-name="<?= e($product['name']) ?>"
+              data-product-price-raw="<?= $price ?>"
+              data-product-image="<?= e($img) ?>"
+              aria-label="Добавить в корзину: <?= e($product['name']) ?>">
+              Добавить в корзину · <?= formatPrice($price) ?>
+            </button>
+            <?php if ($featFavorites): ?>
+            <button type="button" class="product-page__fav fc-fav-inline" data-fav-toggle data-fav-inline data-fav-id="<?= (int)$product['id'] ?>" data-fav-name="<?= e($product['name']) ?>" aria-pressed="false" aria-label="В избранное" title="В избранное">♡</button>
+            <?php endif; ?>
+          </div>
           <span class="product-page__cta-spacer" aria-hidden="true"></span>
           <script>
           /* W62 (obvious-критик NEW-2): fixed-CTA на мобиле ложилась на legal-ссылки футера
@@ -342,8 +542,9 @@ function render_related_card(array $rp): void
         <div class="fc-row__head">
           <h2 class="fc-related__title"><?= e(setting('related_title', '') ?: 'С этим берут') ?></h2>
           <?php /* W96-fix2 (F3): «Смотреть все» в шапке related-блока — как у каруселей
-                 витрины (класс/подчёркивание те же); со страницы товара — в каталог */ ?>
-          <a class="fc-row__link" href="/#catalog">Смотреть все</a>
+                 витрины (класс/подчёркивание те же). W97-fixB3b (B3b-1g): ведёт на
+                 посадочную категории товара (/category/{slug}), без категории — каталог */ ?>
+          <a class="fc-row__link" href="<?= $catSlug !== '' ? '/category/' . e($catSlug) : '/#catalog' ?>">Смотреть все</a>
           <div class="fc-row__arrows">
             <button class="fc-row__arrow" type="button" aria-label="Назад"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
             <button class="fc-row__arrow fc-row__arrow--next" type="button" aria-label="Вперёд"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>

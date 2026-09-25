@@ -64,6 +64,32 @@
     return 'позиций';
   }
 
+  /* ============ W97-fixA (A7): live-регион для молчаливых сумм ============
+     #cartTotal / #orderSelected (и #orderTotal в order-form.js) менялись
+     без анонса — скринридер молчал. Один общий визуально-скрытый div
+     #nfSrLive (aria-live=polite, создаётся здесь при первом анонсе).
+     Пишем ТОЛЬКО по факту изменения значения (кэш по ключу в data-атрибуте),
+     чтобы не спамить на каждую перерисовку. */
+  let liveEl = null;
+  function announce(key, text) {
+    if (!text) return;
+    if (!liveEl || !liveEl.isConnected) {
+      liveEl = document.getElementById('nfSrLive');
+      if (!liveEl) {
+        liveEl = document.createElement('div');
+        liveEl.id = 'nfSrLive';
+        liveEl.setAttribute('role', 'status');
+        liveEl.setAttribute('aria-live', 'polite');
+        liveEl.style.cssText = 'position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap';
+        document.body.appendChild(liveEl);
+      }
+    }
+    if (liveEl.getAttribute('data-' + key) === text) return; /* значение не менялось */
+    liveEl.setAttribute('data-' + key, text);
+    liveEl.textContent = text;
+  }
+  window.nfAnnounce = announce; /* им же пользуется order-form.js (#orderTotal) */
+
   /* ============ ПРОМОКОД (критик functional top#3) ============
      Клиент хранит только код; скидку считает и проверяет сервер (/api/promo,
      повторный пересчёт в /api/orders). promoState читает order-form.js при сабмите. */
@@ -144,6 +170,8 @@
     itemsEl.hidden = items.length === 0;
 
     totalEl.textContent = formatPrice(window.cart.getTotal()) + ' ₽';
+    /* A7: анонс итога — по факту изменения (учитывает промо-скидку ниже) */
+    let payable = window.cart.getTotal();
     /* W81 (владелец OPEN_NEW-1): пустая корзина — блок промо и его сообщения глушим
        целиком: «действует от 5 000 ₽» на экране «Корзина пуста» выглядит залипшим. */
     var promoWrap = document.getElementById('cartPromo');
@@ -178,7 +206,9 @@
     }
     if (promoState.code && promoState.discount > 0) {
       totalEl.innerHTML = '<s style="opacity:.55;margin-right:6px">' + formatPrice(window.cart.getTotal()) + ' ₽</s>' + formatPrice(Math.max(0, window.cart.getTotal() - promoState.discount)) + ' ₽';
+      payable = Math.max(0, window.cart.getTotal() - promoState.discount);
     }
+    announce('cartTotal', 'Итого: ' + formatPrice(payable) + ' ₽');
     checkoutBtn.disabled = items.length === 0;
 
     if (orderSelected) {
@@ -187,6 +217,9 @@
           ? 'В заказе: ' + items.length + ' ' + itemsWord(items.length) + ' на ' + formatPrice(window.cart.getTotal()) + ' ₽'
           : '';
     }
+    announce('orderSelected', items.length > 0
+      ? 'В заказе: ' + items.length + ' ' + itemsWord(items.length)
+      : '');
 
     /* Панель открыта — обновляем апсейл при каждой мутации корзины,
        чтобы добавленный товар сразу исчезал из предложений. */
@@ -266,11 +299,41 @@
     document.body.classList.add('no-scroll');
     /* a11y-критик S2: body.overflow не блокирует window-scroll на iOS/Safari — вешаем на html */
     document.documentElement.classList.add('no-scroll');
-    /* a11y-критик S1: Tab убегал за drawer (2/6 циклов). Фон — inert, пока корзина открыта.
-       Панель корзины — fixed sibling вне этих контейнеров, фокус не теряется. */
-    const inertEls = document.querySelectorAll('header.site-header, footer.site-footer, main, nav.mnav, .cookie-banner');
+    /* a11y-критик S1 → W97-fixA (A5): Tab убегал за drawer (inert висел на
+       устаревшем header.site-header — шапка давно header.fc-header, плюс есть
+       #fcCitybar). Инертим ВСЁ вне drawer: шапку (оба варианта класса — на
+       случай легаси-страниц), город-бар, skip-link, main, футер, таббар,
+       cookie-баннер/настройки и PWA-подсказку nilov.js. Панель корзины —
+       fixed sibling вне этих контейнеров, фокус остаётся внутри. */
+    const inertEls = document.querySelectorAll('header.fc-header, header.site-header, #fcCitybar, a.skip-link, main, footer.site-footer, nav.mnav, .cookie-banner, .cookie-settings, div[role="region"][aria-label="Установка приложения"]');
     inertEls.forEach(function (el) { el.inert = true; });
     panel._inertEls = inertEls;
+    /* A5: Tab-ловушка поверх inert — на последнем элементе drawer Chrome может
+       транзитом выкинуть фокус на <body>; перехватываем Tab и держим цикл
+       внутри панели (first↔last), фокус никогда не покидает корзину. */
+    panel._trapTab = function (e) {
+      if (e.key !== 'Tab' || panel.hidden) return;
+      const drawer = panel.querySelector('.cart-panel__drawer');
+      if (!drawer) return;
+      const nodes = drawer.querySelectorAll('button, input, select, textarea, a[href], [tabindex]:not([tabindex="-1"])');
+      const list = Array.prototype.filter.call(nodes, function (n) {
+        return !n.disabled && (n.offsetParent !== null || n === document.activeElement);
+      });
+      if (!list.length) return;
+      const first = list[0], last = list[list.length - 1];
+      const active = document.activeElement;
+      if (!drawer.contains(active)) {
+        e.preventDefault();
+        (e.shiftKey ? last : first).focus();
+      } else if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', panel._trapTab);
     toggle.setAttribute('aria-expanded', 'true');
     renderUpsell();
     if (closeBtn) closeBtn.focus();
@@ -282,6 +345,10 @@
     document.documentElement.classList.remove('no-scroll');
     (panel._inertEls || []).forEach(function (el) { el.inert = false; });
     panel._inertEls = null;
+    if (panel._trapTab) {
+      document.removeEventListener('keydown', panel._trapTab);
+      panel._trapTab = null;
+    }
     toggle.setAttribute('aria-expanded', 'false');
     toggle.focus();
   }

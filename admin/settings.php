@@ -18,7 +18,7 @@ $pdo = db();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !isset($_POST['hist_action'])) {
     $keys = ['shop_name','shop_phone','shop_address','pickup_address','hero_title','hero_subtitle',
-        'hero_button_text','hero_button_link','steps_title','step_1','step_2','step_3',
+        'hero_button_text','hero_button_link','hero_image_alt','steps_title','step_1','step_2','step_3',
         'guarantees_title','guarantee_1','guarantee_2','guarantee_3',
         'shop_email','shop_hours','shop_vk','shop_max_link','shop_instagram','header_phone','header_address',
         'shop_whatsapp','shop_telegram',
@@ -68,6 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
         'chips_price_low','chips_price_high',
         'section_hits_title','section_hits_sub','section_premium_title','section_premium_sub',
         'section_budget_title','section_addons_title','badge_hit_text','badge_premium_text',
+        'editorial_text',
         'occasions_title','stores_title','stores_sub',
         'stores_1_title','stores_1_text','stores_2_title','stores_2_text','stores_3_title','stores_3_text',
         'seo_text_title','seo_text_body',
@@ -320,6 +321,11 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
         <?php if (($s['hero_image'] ?? '') !== ''): ?>
           <img class="thumb" style="margin-top:8px;width:120px;height:80px" src="/img/uploads/<?= e($s['hero_image']) ?>" alt="">
         <?php endif; ?>
+        <?php /* W97-fixB3a (B3a-3): alt hero-фото — ключ читается витриной с дефолтом из кода
+           (index.php), здесь нужен только для редактирования владельцем. */ ?>
+        <label class="f" for="h-img-alt" style="margin-top:8px">Описание фото (alt — для поисковиков и скринридеров)</label>
+        <input class="input" id="h-img-alt" name="hero_image_alt" value="<?= sv('hero_image_alt', $s) !== '' ? sv('hero_image_alt', $s) : 'Свежий букет из сезонных цветов — витрина магазина' ?>" maxlength="160">
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Пишется в alt большого фото на главной — по нему фото находят в поиске по картинкам и читает скринридер.</p>
       </div>
     </div>
     <?php /* Бегущая лента (критерий 16): тексты редактируются, пустые не показываются */ ?>
@@ -398,7 +404,7 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
           </div>
           <div style="flex:1">
             <label class="f" for="hp-link">Ссылка кнопки</label>
-            <input class="input" id="hp-link" name="hero_promo_link" value="<?= sv('hero_promo_link', $s) !== '' ? sv('hero_promo_link', $s) : '#order' ?>" maxlength="200" placeholder="#order или /help">
+            <input class="input" id="hp-link" name="hero_promo_link" value="<?= sv('hero_promo_link', $s) !== '' ? sv('hero_promo_link', $s) : '#order' ?>" maxlength="200" placeholder="#order или /occasion/…">
           </div>
         </div>
       </div>
@@ -485,6 +491,11 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
         <label class="f" for="bd-prem" style="margin-top:8px">Текст бейджа «Премиум» на карточке</label>
         <input class="input" id="bd-prem" name="badge_premium_text" value="<?= sv('badge_premium_text', $s) !== '' ? sv('badge_premium_text', $s) : 'Премиум' ?>" maxlength="20">
         <p style="font-size:.78rem;color:var(--ink-soft);margin:8px 0 0">Товары попадают в секции галочками «Хит продаж» и «Премиум» в разделе «Товары».</p>
+        <?php /* W97-fixB3a (B3a-3): editorial-строка — ключ читается витриной с дефолтом из кода
+           (index.php), здесь нужен только для редактирования владельцем. */ ?>
+        <label class="f" for="ed-text" style="margin-top:10px">Текст editorial-строки между секциями каталога</label>
+        <textarea class="input" id="ed-text" name="editorial_text" rows="2" maxlength="300"><?= sv('editorial_text', $s) !== '' ? sv('editorial_text', $s) : 'Соберём букет под ваш повод и бюджет — напишите пожелание в комментарии к заказу, флорист предложит варианты и фото до отправки' ?></textarea>
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Широкая строка-пауза после третьей товарной секции. Очистите поле — строка исчезнет с сайта.</p>
       </div>
     </div>
 
@@ -529,7 +540,7 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
     <input class="input" id="seo-5cv-t" name="seo_text_title" value="<?= sv('seo_text_title', $s) !== '' ? sv('seo_text_title', $s) : 'Доставка цветов в Санкт-Петербурге' ?>" maxlength="120">
     <label class="f" for="seo-5cv-b" style="margin-top:8px">Текст (абзацы — через пустую строку)</label>
     <textarea class="input" id="seo-5cv-b" name="seo_text_body" rows="8"><?= sv('seo_text_body', $s) ?></textarea>
-    <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Честный текст про зоны, сроки, свежесть и оплату помогает поисковикам. Разрешены ссылки вида <code>&lt;a href="/help"&gt;…&lt;/a&gt;</code> — как в тексте cookie-окна.</p>
+    <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Честный текст про зоны, сроки, свежесть и оплату помогает поисковикам. Разрешены ссылки вида <code>&lt;a href="/track"&gt;…&lt;/a&gt;</code> — как в тексте cookie-окна.</p>
     <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
     <p style="font-size:.85rem;font-weight:600;margin:0 0 8px">Футер, товар и спасибо-страница</p>
     <div class="grid2">
@@ -567,7 +578,7 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
       </div>
       <div>
         <label class="f" for="jr<?= $jr ?>-l">Статья <?= $jr ?> — ссылка</label>
-        <input class="input" id="jr<?= $jr ?>-l" name="journal_<?= $jr ?>_link" value="<?= sv("journal_{$jr}_link", $s) ?>" maxlength="200" placeholder="/help или https://…">
+        <input class="input" id="jr<?= $jr ?>-l" name="journal_<?= $jr ?>_link" value="<?= sv("journal_{$jr}_link", $s) ?>" maxlength="200" placeholder="/track или https://…">
         <label class="f" for="jr<?= $jr ?>-img" style="margin-top:8px">Статья <?= $jr ?> — обложка</label>
         <input class="input" id="jr<?= $jr ?>-img" name="journal_<?= $jr ?>_image" type="file" accept="image/*">
         <?php if (($s["journal_{$jr}_image"] ?? '') !== ''): ?>

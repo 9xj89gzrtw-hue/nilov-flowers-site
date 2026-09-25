@@ -6,6 +6,17 @@
 (function () {
   if (!window.cart) return;
 
+  /* W97-fixA (A8): пульс кнопки «+» гасится при prefers-reduced-motion.
+     Проверяем matchMedia на каждом клике (динамично реагирует на смену
+     системной настройки), плюс слушатель change отменяет уже летящую анимацию. */
+  var reduceMQ = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+  var pulse = null;
+  if (reduceMQ && typeof reduceMQ.addEventListener === 'function') {
+    reduceMQ.addEventListener('change', function (ev) {
+      if (ev.matches && pulse) { pulse.cancel(); pulse = null; }
+    });
+  }
+
   document.querySelectorAll('[data-order-cta]').forEach(function (btn) {
     btn.addEventListener('click', function () {
       const { productId, productName, productPriceRaw, productImage } = btn.dataset;
@@ -15,15 +26,18 @@
         price: Number(productPriceRaw) || 0,
         image: productImage || '',
       });
-      /* Мягкая обратная связь без перекрытия: короткая анимация самой кнопки */
-      btn.animate(
-        [
-          { transform: 'scale(1)', background: '' },
-          { transform: 'scale(1.18)', offset: 0.4 },
-          { transform: 'scale(1)' },
-        ],
-        { duration: 320, easing: 'cubic-bezier(.22,1,.36,1)' }
-      );
+      /* Мягкая обратная связь без перекрытия: короткая анимация самой кнопки
+         (skipped при prefers-reduced-motion — A8) */
+      if (!reduceMQ || !reduceMQ.matches) {
+        pulse = btn.animate(
+          [
+            { transform: 'scale(1)', background: '' },
+            { transform: 'scale(1.18)', offset: 0.4 },
+            { transform: 'scale(1)' },
+          ],
+          { duration: 320, easing: 'cubic-bezier(.22,1,.36,1)' }
+        );
+      }
       /* Awwwards-usability: SR-анонс добавления (drawer закрыт — qty-aria-live не виден) */
       let sr = document.getElementById('cartSrAnnounce');
       if (!sr) {

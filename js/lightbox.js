@@ -5,7 +5,6 @@
 (function () {
   const triggers = document.querySelectorAll('[data-lightbox-trigger]');
   if (!triggers.length) return;
-
   const lightbox = document.createElement('div');
   lightbox.className = 'lightbox';
   lightbox.hidden = true;
@@ -53,9 +52,35 @@
   }
 
   triggers.forEach(function (trigger) {
+    /* W97-fixA (A4): триггеры — div'ы (недостижимы с клавиатуры). Делаем их
+       фокусируемыми «кнопками»: tabindex=0 + role=button + говорящий aria-label
+       (по data-lightbox-alt, если своего нет). */
+    trigger.setAttribute('tabindex', '0');
+    trigger.setAttribute('role', 'button');
+    if (!trigger.getAttribute('aria-label')) {
+      trigger.setAttribute('aria-label', trigger.dataset.lightboxAlt
+        ? 'Увеличить фото: ' + trigger.dataset.lightboxAlt
+        : 'Увеличить фото');
+    }
     trigger.addEventListener('click', function () {
       open(trigger);
     });
+  });
+
+  /* W97-fixA (A4): делегированный keydown по документу — Enter/Space на
+     сфокусированном [data-lightbox-trigger] открывает лайтбокс.
+     Оба гасим preventDefault: Space — чтобы не прокручивать страницу, Enter —
+     чтобы браузер НЕ дошлёт синтетический click уже новой цели фокуса:
+     open() переводит фокус на .lightbox__close, и без preventDefault «клик»
+     Enter прилетает кнопке «Закрыть» — лайтбокс захлопывается в тот же такт
+     (клавиатурный Enter «ничего не делал»; поймано при прогоне agent-browser). */
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+    const active = document.activeElement;
+    const t = active && active.closest ? active.closest('[data-lightbox-trigger]') : null;
+    if (!t || !lightbox.hidden) return;
+    e.preventDefault();
+    open(t);
   });
 
   lightbox.addEventListener('click', function (e) {

@@ -1,11 +1,23 @@
 <?php
 /* Инструкция для владельца магазина: как управлять сайтом через админку.
    Статичный справочник — обновляется вместе с панелью.
-   Редизайн 5cv (W96/T2-d): каркас сайта (partials) + page-hero + карточки .fc-store. */
+   Редизайн 5cv (W96/T2-d): каркас сайта (partials) + page-hero + карточки .fc-store.
+   W97-fixB3a (B3a-2): страница перенесена из корня (/help) в /admin/help.php —
+   инструкция владельца не должна жить на витрине; кука админ-сессии имеет
+   path=/admin, поэтому вне /admin страницу и не было открыть под логином
+   (хвост B1). Старый /help — 301-редирект (router.php + .htaccess). */
 declare(strict_types=1);
-require_once __DIR__ . '/includes/config.php';
-require_once __DIR__ . '/includes/db.php';
-require_once __DIR__ . '/includes/util.php';
+require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/util.php';
+require_once __DIR__ . '/../includes/auth.php';
+
+/* W97-fixB1 (B1-3): /help — ВНУТРЕННЯЯ инструкция владельца (разделы про админ-панель,
+   ссылки на /admin) — не публичный контент. Доступ только администратору, иначе
+   редирект на /admin/login.php (паттерн admin/settings.php: ensureAdminUser + requireAdmin).
+   Публичных ссылок на /help на витрине нет (rg '/help' — только роутер и .htaccess). */
+ensureAdminUser();
+requireAdmin();
 
 $pageTitle = 'Инструкция — Админ-панель';
 ?><!DOCTYPE html>
@@ -13,7 +25,7 @@ $pageTitle = 'Инструкция — Админ-панель';
 <head>
 <title>Инструкция — Админ-панель</title>
 <meta name="robots" content="noindex">
-<?php require __DIR__ . '/partials/head.php'; ?>
+<?php require __DIR__ . '/../partials/head.php'; ?>
 <style>
 /* Локальные стили справки: kbd/таблица/тег — в five.css аналогов нет, красим токенами 5cv */
 .help-text p{margin:6px 0}
@@ -27,7 +39,7 @@ kbd{background:var(--surface-warm);border:1px solid var(--line);border-radius:6p
 </style>
 </head>
 <body>
-<?php require __DIR__ . '/partials/header.php'; ?>
+<?php require __DIR__ . '/../partials/header.php'; ?>
 
 <main id="main" tabindex="-1">
   <section class="fc-section">
@@ -145,6 +157,6 @@ kbd{background:var(--surface-warm);border:1px solid var(--line);border-radius:6p
   </section>
 </main>
 
-<?php require __DIR__ . '/partials/footer.php'; ?>
+<?php require __DIR__ . '/../partials/footer.php'; ?>
 </body>
 </html>

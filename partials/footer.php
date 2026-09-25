@@ -32,6 +32,25 @@ try {
 }
 $shopHours = setting('shop_hours', '');
 $shopEmail = setting('shop_email', '');
+
+/* ---------- W97-fixA (A9): версионирование JS + условная загрузка ----------
+   1) .htaccess отдаёт .js с Cache-Control immutable на год — БЕЗ версий в URL
+      вернувшиеся посетители месяцами сидят на старом JS. Каждой script-ссылке —
+      ?v={md5_file 8 символов} (тот же паттерн, что head.php/T4 для CSS; считаем
+      один раз здесь, @-guard: пропавший файл → пустая версия, страница живёт).
+   2) Условная загрузка по типу страницы (REQUEST_URI + переменная страницы
+      в скоупе require): каталог-фильтры и форма заказа — только главная
+      (#catalogGrid/#orderForm рендерит index.php); галерея/лайтбокс — только
+      страница товара (product.php; [data-lightbox-trigger] живёт там).
+      five.js/nilov.js/cart.js, cart-ui.js, cart-cta.js и cookie-banner нужны на всех страницах
+      (js-ready, drawer, редирект поиска с вторичных страниц) — без условий. */
+$__vjs = static function (string $name): string {
+    return substr((string)@md5_file(__DIR__ . '/../js/' . $name), 0, 8);
+};
+$__nfPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+$__nfIsHome = ($__nfPath === '/' || $__nfPath === '/index.php');
+$__nfIsProduct = (bool)preg_match('#^/product(/|$)#', $__nfPath)
+    || (isset($product) && is_array($product));
 ?>
 <footer class="site-footer" id="contacts">
   <?php /* W96-fix3b (D2): 4 колонки — бренд / каталог / поводы / контакты.
@@ -71,8 +90,11 @@ $shopEmail = setting('shop_email', '');
     <nav class="fc-footer__col" aria-label="Каталог">
       <p class="fc-footer__heading">Каталог</p>
       <ul class="fc-footer__links">
+        <?php /* W97-fixB3b (B3b-1e): категории — на посадочные /category/{slug}
+               (SEO: собственный URL вместо вкладки без индексации; data-tab убран —
+               это больше не JS-переключатель). «Хиты продаж» — как было, data-chip. */ ?>
         <?php foreach ($__footerCats as $__fc): ?>
-        <li><a href="/#catalog" data-tab="<?= (int)$__fc['id'] ?>"><?= e($__fc['name']) ?></a></li>
+        <li><a href="/category/<?= e(rawurlencode(slugify((string)$__fc['name']))) ?>"><?= e($__fc['name']) ?></a></li>
         <?php endforeach; ?>
         <li><a href="/#catalog" data-chip="hit"><?= e(setting('section_hits_title', 'Хиты продаж')) ?></a></li>
       </ul>
@@ -126,7 +148,10 @@ $shopEmail = setting('shop_email', '');
   <div class="cart-panel__backdrop" id="cartBackdrop"></div>
   <aside class="cart-panel__drawer" role="dialog" aria-modal="true" aria-label="Корзина">
     <div class="cart-panel__head">
-      <h2 class="cart-panel__title"><?= e(setting('cart_title', 'Корзина')) ?></h2>
+      <?php /* W97-fixB3b (B3b-5г): заголовок корзины — вне H-контура (в drawer он
+             рядом с h1/h2 страницы и портит иерархию заголовков; селекторы CSS —
+             только по классу .cart-panel__title, тег безопасно сменён) */ ?>
+      <div class="cart-panel__title"><?= e(setting('cart_title', 'Корзина')) ?></div>
       <button type="button" class="cart-panel__close" id="cartClose" aria-label="Закрыть корзину">&times;</button>
     </div>
     <div class="cart-panel__items" id="cartItems"></div>
@@ -166,23 +191,33 @@ $shopEmail = setting('shop_email', '');
   </aside>
 </div>
 
-<script src="/js/cart.js"></script>
+<script src="/js/cart.js?v=<?= e($__vjs('cart.js')) ?>"></script>
 <script>window.UPSELL_LIMIT = <?= max(1, min(6, (int) setting('upsell_limit', '3'))) ?>; window.UPSELL_ENABLED = <?= setting('upsell_enabled', '1') === '1' ? 1 : 0 ?>; window.UPSELL_CATEGORIES = <?= json_encode(array_filter(array_map('trim', explode(',', setting('upsell_categories', ''))))) ?>;</script>
-<script src="/js/cart-ui.js"></script>
-<?php if (setting('feature_favicon_badge', '1') === '1'): ?><script src="/js/favicon-badge.js"></script><?php endif; ?>
-<script src="/js/cart-cta.js"></script>
-<script src="/js/order-form.js"></script>
-<script src="/js/catalog-filter.js"></script>
+<script src="/js/cart-ui.js?v=<?= e($__vjs('cart-ui.js')) ?>"></script>
+<?php if (setting('feature_favicon_badge', '1') === '1'): ?><script src="/js/favicon-badge.js?v=<?= e($__vjs('favicon-badge.js')) ?>"></script><?php endif; ?>
+<script src="/js/cart-cta.js?v=<?= e($__vjs('cart-cta.js')) ?>"></script>
+<?php /* A9: #orderForm и #catalogGrid/#catalogTabs есть только на главной (index.php) —
+         на вторичных страницах скрипты self-guard'ом возвращались сразу, теперь
+         их просто не грузим. */ ?>
+<?php if ($__nfIsHome): ?>
+<script src="/js/order-form.js?v=<?= e($__vjs('order-form.js')) ?>"></script>
+<script src="/js/catalog-filter.js?v=<?= e($__vjs('catalog-filter.js')) ?>"></script>
+<?php endif; ?>
 <?php /* W96 (5cv): город-бар, карусели, чипы цен, поиск — поверх catalog-filter.js */ ?>
-<script src="/js/five.js"></script>
-<script src="/js/product-gallery.js"></script>
-<script src="/js/lightbox.js"></script>
-<script src="/js/lazy-images.js"></script>
-<script src="/js/reveal.js"></script>
-<script src="/js/nilov.js" defer></script>
+<script src="/js/five.js?v=<?= e($__vjs('five.js')) ?>"></script>
+<?php /* A9: галерея/лайтбокс — только страница товара (разметку рендерит product.php) */ ?>
+<?php if ($__nfIsProduct): ?>
+<script src="/js/product-gallery.js?v=<?= e($__vjs('product-gallery.js')) ?>"></script>
+<script src="/js/lightbox.js?v=<?= e($__vjs('lightbox.js')) ?>"></script>
+<?php endif; ?>
+<?php /* W97-fixA (A9): js/lazy-images.js — dead code (ищет img[data-src], которых
+         нет нигде в репо — проверено rg "data-src" перед удалением); подключение
+         убрано, файл в /js оставлен без изменений. */ ?>
+<script src="/js/reveal.js?v=<?= e($__vjs('reveal.js')) ?>"></script>
+<script src="/js/nilov.js?v=<?= e($__vjs('nilov.js')) ?>" defer></script>
 <script>window.COOKIE_BANNER_CONFIG = {
   text: <?= json_encode(sanitize_rich_text(setting('cookie_banner_text', 'Сайт использует cookie и Яндекс.Метрику для работы и анализа трафика. Подробнее — в <a href="/policy" target="_blank" rel="noopener">Политике обработки персональных данных</a>.'), 260), JSON_UNESCAPED_UNICODE) ?>,
   accept: <?= json_encode(setting('cookie_accept_text', 'Принять'), JSON_UNESCAPED_UNICODE) ?>,
   reject: <?= json_encode(setting('cookie_reject_text', 'Только необходимые'), JSON_UNESCAPED_UNICODE) ?>
 };</script>
-<script src="/js/cookie-banner.js"></script>
+<script src="/js/cookie-banner.js?v=<?= e($__vjs('cookie-banner.js')) ?>"></script>

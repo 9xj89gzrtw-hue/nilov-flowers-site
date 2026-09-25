@@ -49,7 +49,88 @@ foreach ([['faq_q1', 'faq_a1'], ['faq_q2', 'faq_a2']] as [$qk, $ak]) {
     if ($q !== '' && $a !== '') { $faq[] = ['q' => $q, 'a' => $a]; }
 }
 
-/* Карточка подборки — как на витрине (бейджи «Хит/Премиум/Скидка» + «+» в корзину) */
+/* Карточка подборки — как на витрине (бейджи «Хит/Премиум/Скидка» + «+» в корзину).
+   W97-fixB3b: srcset с thumbs-400 как в каталоге (B3b-3) + сердечко избранного
+   с той же разметкой/классами, что на главной (B3b-4). */
+function product_img_webp_local(array $p): string
+{
+    if (($p['image'] ?? '') === '') return '';
+    $webp = '/img/products/' . rawurlencode(preg_replace('/\.(jpe?g|png|webp)$/i', '.webp', $p['image']));
+    return is_file(BASE_PATH . urldecode($webp)) ? $webp : '';
+}
+
+/* GD-превью /img/products/thumbs/{имя без ext}-400.webp — копия подхода
+   product_img_thumb из index.php (W96-fix3a T2): ленивая генерация, tmp+rename,
+   PNG-альфа, оригинал ≤400px / сбой GD → '' (деградация до прежнего вида) */
+function product_img_thumb_local(array $p): string
+{
+    static $cache = [];
+    if (($p['image'] ?? '') === '') return '';
+    $file = (string)$p['image'];
+    if (isset($cache[$file])) return $cache[$file];
+
+    $fail = static function () use (&$cache, $file): string {
+        $cache[$file] = '';
+        return '';
+    };
+    $src = IMG_PRODUCTS_DIR . '/' . $file;
+    if (!is_file($src)) return $fail();
+    $dim = @getimagesize($src);
+    if ($dim === false) return $fail();
+    [$srcW, $srcH, $type] = [(int)$dim[0], (int)$dim[1], (int)$dim[2]];
+    if ($srcW <= 400) return $fail();
+
+    $base = preg_replace('/\.[^.]+$/', '', $file) ?? $file;
+    $thumbsDir = IMG_PRODUCTS_DIR . '/thumbs';
+    $dst = $thumbsDir . '/' . $base . '-400.webp';
+    $url = '/img/products/thumbs/' . rawurlencode($base . '-400.webp');
+    if (is_file($dst)) return $url;
+
+    if (!is_dir($thumbsDir) && !@mkdir($thumbsDir, 0755, true)) return $fail();
+    $srcIm = match ($type) {
+        IMAGETYPE_JPEG => @imagecreatefromjpeg($src),
+        IMAGETYPE_PNG => @imagecreatefrompng($src),
+        IMAGETYPE_WEBP => function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($src) : false,
+        default => false,
+    };
+    if ($srcIm === false) return $fail();
+
+    $w = 400;
+    $h = max(1, (int)round($srcH * $w / $srcW));
+    $dstIm = imagecreatetruecolor($w, $h);
+    if ($type === IMAGETYPE_PNG) {
+        imagealphablending($dstIm, false);
+        imagesavealpha($dstIm, true);
+        imagefill($dstIm, 0, 0, imagecolorallocatealpha($dstIm, 0, 0, 0, 127));
+    }
+    $copied = imagecopyresampled($dstIm, $srcIm, 0, 0, 0, 0, $w, $h, $srcW, $srcH);
+    imagedestroy($srcIm);
+    if (!$copied) {
+        imagedestroy($dstIm);
+        return $fail();
+    }
+    $tmp = $dst . '.tmp' . getmypid();
+    $written = @imagewebp($dstIm, $tmp, 78);
+    imagedestroy($dstIm);
+    if (!$written || !@rename($tmp, $dst)) {
+        if (is_file($tmp)) @unlink($tmp);
+        return $fail();
+    }
+    return $url;
+}
+
+function product_img_width_local(array $p): int
+{
+    static $cache = [];
+    if (($p['image'] ?? '') === '') return 0;
+    $file = (string)$p['image'];
+    if (!isset($cache[$file])) {
+        $dim = @getimagesize(IMG_PRODUCTS_DIR . '/' . $file);
+        $cache[$file] = $dim === false ? 0 : (int)$dim[0];
+    }
+    return $cache[$file];
+}
+
 function render_occasion_card(array $p): void
 {
     $price = productPrice($p);
@@ -59,10 +140,19 @@ function render_occasion_card(array $p): void
     $isUrgent = (int)($p['is_urgent'] ?? 0) === 1;
     $file = productImageFile($p);
     $img = $file !== '' ? '/img/products/' . rawurlencode($file) : '';
-    $webp = '';
-    if ($img !== '') {
-        $w = preg_replace('/\.(jpe?g|png)$/i', '.webp', urldecode($img));
-        $webp = $w !== $img && is_file(BASE_PATH . $w) ? $w : '';
+    $webp = product_img_webp_local($p);
+    /* W97-fixB3b (B3b-3): srcset — webp-превью 400w + webp-оригинал {w}w (как каталог) */
+    $thumb = $img !== '' ? product_img_thumb_local($p) : '';
+    $origW = $img !== '' ? product_img_width_local($p) : 0;
+    if ($thumb !== '' && $webp !== '' && $origW > 0) {
+        $srcset = $thumb . ' 400w, ' . $webp . ' ' . $origW . 'w';
+        $sizes = '(max-width:899px) 45vw, (min-width:900px) 300px';
+    } elseif ($thumb !== '') {
+        $srcset = $thumb . ' 400w';
+        $sizes = '(max-width:899px) 45vw, (min-width:900px) 300px';
+    } else {
+        $srcset = $webp;
+        $sizes = '';
     }
     $link = '/product/' . rawurlencode($p['slug']);
     ?>
@@ -70,7 +160,7 @@ function render_occasion_card(array $p): void
           <div class="product-card__media">
             <a class="product-card__media-link" href="<?= e($link) ?>" aria-label="<?= e($p['name']) ?>">
               <picture>
-                <?php if ($webp !== ''): ?><source type="image/webp" srcset="<?= e($webp) ?>"><?php endif; ?>
+                <?php if ($srcset !== ''): ?><source type="image/webp" srcset="<?= e($srcset) ?>"<?= $sizes !== '' ? ' sizes="' . e($sizes) . '"' : '' ?>><?php endif; ?>
                 <img class="product-card__img" src="<?= e($img) ?>" alt="<?= e($p['name']) ?>" loading="lazy" decoding="async">
               </picture>
             </a>
@@ -84,6 +174,9 @@ function render_occasion_card(array $p): void
               data-product-price-raw="<?= $price ?>"
               data-product-image="<?= e($img) ?>"
               aria-label="Добавить в корзину: <?= e($p['name']) ?>" title="В корзину">+</button>
+            <?php /* W97-fixB3b (B3b-4): сердечко — та же разметка/классы, что на главной
+                   (js/nilov.js ловит клики делегированно на любой странице) */ ?>
+            <?php if (setting('feature_favorites', '1') === '1'): ?><button type="button" class="product-card__fav" data-fav-id="<?= (int)$p['id'] ?>" data-fav-name="<?= e($p['name']) ?>" aria-label="В избранное: <?= e($p['name']) ?>" title="В избранное">♡</button><?php endif; ?>
           </div>
           <div class="product-card__body">
             <a class="product-card__name" href="<?= e($link) ?>"><?= e($p['name']) ?></a>
@@ -111,6 +204,9 @@ $pageTitle = $metaTitle;
 <?php $ocImg = $products !== [] ? '/img/products/' . rawurlencode(productImageFile($products[0])) : ''; ?>
 <?= $ocImg !== '' ? '<meta property="og:image" content="https://flowers.interfood-catering.ru' . e($ocImg) . '">' : '' ?>
 <?php require __DIR__ . '/partials/head.php'; ?>
+<?php /* W97-fixB3b (B3b-3): CollectionPage БЕЗ mainEntity-вопросов (FAQ как
+   mainEntity у CollectionPage невалиден) — FAQ вынесен в отдельный top-level
+   FAQPage ниже; CollectionPage оставлен: name/description/url/isPartOf */ ?>
 <script type="application/ld+json">
 <?= json_encode([
     '@context' => 'https://schema.org',
@@ -119,11 +215,21 @@ $pageTitle = $metaTitle;
     'description' => $metaDesc,
     'url' => $canonicalUrl,
     'isPartOf' => ['@type' => 'WebSite', 'name' => $shopName, 'url' => 'https://flowers.interfood-catering.ru/'],
-] + ($faq !== [] ? ['mainEntity' => array_map(static fn($f) => [
-    '@type' => 'Question', 'name' => $f['q'],
-    'acceptedAnswer' => ['@type' => 'Answer', 'text' => $f['a']],
-], $faq)] : []), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>
+], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>
 </script>
+<?php if ($faq !== []): ?>
+<script type="application/ld+json">
+<?= json_encode([
+    '@context' => 'https://schema.org',
+    '@type' => 'FAQPage',
+    'mainEntity' => array_map(static fn(array $f): array => [
+        '@type' => 'Question',
+        'name' => $f['q'],
+        'acceptedAnswer' => ['@type' => 'Answer', 'text' => $f['a']],
+    ], $faq),
+], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>
+</script>
+<?php endif; ?>
 </head>
 <body>
 <?php require __DIR__ . '/partials/header.php'; ?>

@@ -7,18 +7,25 @@ require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/util.php';
 
 $siteName = setting('shop_name', 'Nilov Flowers');
-$phone = setting('shop_phone', '');
+/* W97-fixB1 (B1-1): имя ЛОКАЛЬНОЙ переменной шапки не должно быть $phone — track.php
+   читает $phone из GET ДО require шапки, а шапка затирала его телефоном магазина
+   (поле «Телефон из заказа» на /track всегда было предзаполнено номером магазина). */
+$headerShopPhone = setting('shop_phone', '');
 /* C2: короткий телефон для шапки (пусто → полный shop_phone; совсем пусто → скрыть) */
-$headerPhone = setting('header_phone', '') !== '' ? setting('header_phone', '') : $phone;
+$headerPhone = setting('header_phone', '') !== '' ? setting('header_phone', '') : $headerShopPhone;
 /* Режим корзины (settings → cart_mode): drawer | hybrid | page.
    drawer — панель открывается сама при добавлении и по клику на иконку;
    hybrid — только по клику на иконку; page — иконка ведёт к форме заказа. */
 $cartMode = in_array(setting('cart_mode', 'drawer'), ['drawer', 'hybrid', 'page'], true)
     ? setting('cart_mode', 'drawer') : 'drawer';
 ?>
-<?php /* a11y-критик re-check: skip-link в общем header.php — есть на каждой витрина-странице
-   (home, product, offer, policy, track), а не только на главной */ ?>
+<?php /* a11y-критик re-check: skip-link в общем header.php — есть на каждой витрина-страница
+   (home, product, offer, policy, track), а не только на главной.
+   W97-fixB3a (B3a-5): на ГЛАВНОЙ index.php печатает skip-link сам — до город-бара,
+   первым элементом DOM (первый фокус с Tab); флаг $skipLinkRendered не даёт продублировать. */ ?>
+<?php if (empty($skipLinkRendered)): ?>
 <a class="skip-link" href="#main">Перейти к содержимому</a>
+<?php endif; ?>
 <header class="fc-header">
   <div class="wrap fc-header__inner">
     <a href="/" class="fc-header__logo">

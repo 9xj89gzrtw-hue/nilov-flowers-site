@@ -53,6 +53,10 @@ RewriteRule ^api/ api/404.php [L]
 # Occasion-лендинги (SEO-критик: intent-трафик свадьбы/др/траур)
 RewriteRule ^occasion/([a-z0-9\-]+)$ occasion.php?slug=$1 [L,QSA]
 
+# W97-fixB3b (B3b-1c): посадочные страницы категорий /category/{slug}
+# (SEO-major: категории получают собственные URL вместо вкладки без индексации)
+RewriteRule ^category/([a-z0-9\-]+)/?$ category.php?slug=$1 [L,QSA]
+
 # Карточка товара
 RewriteRule ^product/([a-z0-9\-]+)/$ https://flowers.interfood-catering.ru/product/$1 [R=301,L]
 RewriteRule ^product/([a-z0-9\-]+)$ product.php?slug=$1 [L,QSA]
@@ -62,8 +66,11 @@ RewriteRule ^offer$ offer_new.php [L,QSA]
 RewriteRule ^policy$ policy_new.php [L,QSA]
 RewriteRule ^track$ track.php [L,QSA]
 
-# Помощь (W96: красивый URL вместо /help.php)
-RewriteRule ^help$ help.php [L,QSA]
+# Помощь (W96: красивый URL вместо /help.php). W97-fixB3a: инструкция владельца
+# переехала под админку (/admin/help.php — кука сессии живёт только в path=/admin),
+# старый публичный /help — 301. Абсолютный https: Apache за nginx видит http и
+# иначе льёт http-Location (как с index.php).
+RewriteRule ^help$ https://flowers.interfood-catering.ru/admin/help.php [R=301,L,QSA]
 
 # Страница благодарности
 RewriteRule ^order-thanks$ order-thanks.php [L,QSA]
@@ -123,6 +130,8 @@ Header set Cache-Control "public, max-age=31536000, immutable"
   AddOutputFilterByType DEFLATE text/css
   AddOutputFilterByType DEFLATE application/javascript
   AddOutputFilterByType DEFLATE application/json
+# W97-fixB1 (B1-6): manifest PWA-иконок/имён — текстовый тип, сжимаем вместе с прочими
+  AddOutputFilterByType DEFLATE application/manifest+json
   AddOutputFilterByType DEFLATE image/svg+xml
   AddOutputFilterByType DEFLATE text/xml application/xml application/xhtml+xml
 </IfModule>

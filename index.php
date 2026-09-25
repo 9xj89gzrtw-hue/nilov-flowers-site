@@ -15,7 +15,7 @@ $zones = $pdo->query('SELECT id, name, price FROM delivery_zones ORDER BY sort, 
 
 /* Внешний вид: hero-текст можно отключить тумблером */
 $heroTextEnabled = setting('hero_text_enabled', '1') === '1';
-$heroH1 = setting('seo_h1', setting('hero_title', 'Доставка цветов в Санкт-Петербурге'));
+$heroH1 = setting('seo_h1', setting('hero_title', 'Доставка цветов по Санкт-Петербургу'));
 $heroBtnText = trim(setting('hero_button_text', 'Выбрать букет'));
 $heroBtnLink = trim(setting('hero_button_link', '#catalog'));
 $heroBtn = $heroTextEnabled && $heroBtnText !== '' && $heroBtnLink !== '';
@@ -191,7 +191,7 @@ function render_product_card(array $p, array $ctx): void
     } else {
         $srcset = '';
     }
-    $sizes = '(max-width:899px) 45vw, (min-width:900px) 300px, 280px';
+    $sizes = '(max-width:899px) 45vw, (min-width:900px) 300px';
     $link = '/product/' . rawurlencode($p['slug']);
     /* W96-fix1 (F3): поисковый индекс карточки — имя + категория + описание
        (нижний регистр; js/five.js матчит по стемму запроса как подстроке) */
@@ -246,29 +246,70 @@ function render_product_card(array $p, array $ctx): void
 
 /* Секция-карусель 5cv: заголовок + подпись + «Смотреть все» + стрелки + лента карточек.
    W96-fix1 (F7): $chip — «Смотреть все» у Хитов/Премиума/До N применяет чип каталога
-   (js/five.js по data-chip), у категорийных секций — вкладку (data-tab, как раньше). */
-function render_fc_row(string $title, string $sub, array $items, array $ctx, string $tabId = '', string $chip = ''): void
+   (js/five.js по data-chip), у категорийных секций — вкладку (data-tab, как раньше).
+   W97-fixB3b (B3b-1f): $catSlug — у категорийных каруселей «Смотреть все» ведёт на
+   посадочную /category/{slug} (SEO: у категории появился собственный URL),
+   data-tab больше не печатается. */
+function render_fc_row(string $title, string $sub, array $items, array $ctx, string $tabId = '', string $chip = '', string $catSlug = ''): void
 {
+    global $fcProdSeq;
     if ($items === []) return;
+    $fcProdSeq++;
+    /* W97-fixB2 (B2-5а): чередование фонов товарных секций — каждая вторая tint
+       (стили придёт волной CSS; здесь только классы) */
+    $tint = ($fcProdSeq % 2 === 0) ? ' fc-section--tint' : '';
     ?>
-    <section class="fc-section"><div class="wrap">
+    <section class="fc-section<?= $tint ?>"><div class="wrap">
       <div class="fc-row"><div class="fc-row__head">
         <h2 class="fc-row__title"><?= e($title) ?></h2>
         <?php if ($sub !== ''): ?><p class="fc-row__sub"><?= e($sub) ?></p><?php endif; ?>
+        <?php if ($catSlug !== ''): ?>
+        <a class="fc-row__link" href="/category/<?= e($catSlug) ?>">Смотреть все</a>
+        <?php else: ?>
         <a class="fc-row__link" href="#catalog"<?= $tabId !== '' ? ' data-tab="' . e($tabId) . '"' : '' ?><?= $chip !== '' ? ' data-chip="' . e($chip) . '"' : '' ?>>Смотреть все</a>
+        <?php endif; ?>
         <div class="fc-row__arrows">
-          <button class="fc-row__arrow" type="button" aria-label="Назад"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
-          <button class="fc-row__arrow fc-row__arrow--next" type="button" aria-label="Вперёд"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+          <?php /* W97-fixB2 (B2-4): стрелки называют свою секцию — пары «Назад»/«Вперёд»
+                 были одинаковыми у всех каруселей; классы/структуру не трогаем (js/five.js вешает по классам) */ ?>
+          <button class="fc-row__arrow" type="button" aria-label="<?= e($title) ?>: назад"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
+          <button class="fc-row__arrow fc-row__arrow--next" type="button" aria-label="<?= e($title) ?>: вперёд"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
         </div>
       </div>
-      <div class="fc-carousel">
+      <?php /* W97-fixB2 (B2-4): карусель — именованный клавиатурно-доступный region
+             (безымянные скролл-области молчали для скринридера) */ ?>
+      <div class="fc-carousel" role="region" aria-label="<?= e($title) ?>" tabindex="0">
         <?php foreach ($items as $item) { render_product_card($item, $ctx); } ?>
       </div></div>
     </div></section>
     <?php
+    /* W97-fixB2 (B2-5б): ОДНА editorial-пауза после 3-й товарной секции */
+    if ($fcProdSeq === 3) {
+        render_fc_editorial();
+    }
+}
+
+/* W97-fixB2 (B2-5б): editorial-пауза — широкий баннер-строка между товарными секциями.
+   Текст из setting('editorial_text', …); trim()===''  (пустое значение в БД) скрывает
+   блок. Ключа в БД нет → дефолт. Рендерим однажды (guard по счётчику секций). */
+function render_fc_editorial(): void
+{
+    global $fcEditorialDone;
+    if ($fcEditorialDone) return;
+    $fcEditorialDone = true;
+    $editorialText = trim(setting('editorial_text', 'Соберём букет под ваш повод и бюджет — напишите пожелание в комментарии к заказу, флорист предложит варианты и фото до отправки'));
+    if ($editorialText === '') return;
+    ?>
+    <section class="fc-editorial" aria-label="О сборке букета"><p><?= e($editorialText) ?></p></section>
+    <?php
 }
 
 $cardCtx = ['featDeliveryBadge' => $featDeliveryBadge, 'featFavorites' => $featFavorites];
+
+/* W97-fixB2 (B2-5): счётчик товарных секций — общий для каруселей и каталога:
+   им чередуем фон (каждая вторая — tint) и находим позицию editorial-паузы (после 3-й).
+   Топ-левел index.php = global scope, render_fc_row() читает его через global. */
+$fcProdSeq = 0;
+$fcEditorialDone = false;
 
 /* ---- Карусели (5cv): хиты / по категориям / премиум / до N ₽ ---- */
 
@@ -288,7 +329,8 @@ $categoryRows = [];
 foreach ($categories as $c) {
     $cid = (int)$c['id'];
     if (isset($productsByCat[$cid]) && count($productsByCat[$cid]) >= 2) {
-        $categoryRows[] = ['id' => $cid, 'name' => (string)$c['name'], 'items' => array_slice($productsByCat[$cid], 0, 12)];
+        /* W97-fixB3b (B3b-1f): слаг категории — на лету из name (колонки slug в БД нет) */
+        $categoryRows[] = ['id' => $cid, 'name' => (string)$c['name'], 'slug' => slugify((string)$c['name']), 'items' => array_slice($productsByCat[$cid], 0, 12)];
     }
 }
 
@@ -385,7 +427,16 @@ $seoTextDefault = "Доставка цветов по Санкт-Петербу�
 <meta property="og:title" content="<?= e(setting('seo_title', 'Доставка цветов в СПб — ' . setting('shop_name', 'Nilov Flowers') . ' | Свежие букеты с доставкой сегодня')) ?>">
 <meta property="og:description" content="Букеты с доставкой в день заказа по Санкт-Петербургу. Фото перед отправкой, свежие цветы с утренней поставки.">
 <meta property="og:url" content="https://flowers.interfood-catering.ru/">
-<?= setting('hero_image') !== '' ? '<meta property="og:image" content="https://flowers.interfood-catering.ru/img/uploads/' . e(rawurlencode(setting('hero_image'))) . '">' : '' ?>
+<?php /* W97-fixB2 (B2-7): og:image:width/height — соцсети резервируют превью без
+       повторной загрузки; @-guard: файла нет — размеры не печатаем */ ?>
+<?php if (setting('hero_image') !== ''): ?>
+<meta property="og:image" content="https://flowers.interfood-catering.ru/img/uploads/<?= e(rawurlencode(setting('hero_image'))) ?>">
+<?php $ogDim = @getimagesize(IMG_UPLOADS_DIR . '/' . setting('hero_image')); ?>
+<?php if ($ogDim !== false): ?>
+<meta property="og:image:width" content="<?= (int)$ogDim[0] ?>">
+<meta property="og:image:height" content="<?= (int)$ogDim[1] ?>">
+<?php endif; ?>
+<?php endif; ?>
 <?php /* W96-fix3a (T5d): $pageDescription → twitter:description в partials/head.php
    (парно к og:description; значение — редактируемый из админки seo_description) */ ?>
 <?php $pageDescription = setting('seo_description', 'Доставка букетов по Санкт-Петербургу в день заказа. Свежие цветы с утренней поставки, фото перед отправкой. Заказы до 20:00 — доставим сегодня.'); ?>
@@ -431,8 +482,34 @@ if ($__heroPre !== '') {
     'image' => setting('hero_image', '') !== '' ? 'https://flowers.interfood-catering.ru/img/uploads/' . rawurlencode(setting('hero_image')) : '',
 ] + (setting('yandex_reviews_id') !== '' ? ['sameAs' => ['https://yandex.ru/maps/org/' . setting('yandex_reviews_id')]] : []), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>
 </script>
+<?php /* W97-fixB3b (B3b-5а): WebSite + SearchAction — sitelinks searchbox Google:
+   запрос уходит на /?q={search_term_string} (тот же ?q=, что живой поиск five.js
+   и нативный submit формы шапки; парность источников = без расхождений) */ ?>
+<script type="application/ld+json">
+<?= json_encode([
+    '@context' => 'https://schema.org',
+    '@type' => 'WebSite',
+    'name' => setting('shop_name', 'Nilov Flowers'),
+    'url' => 'https://flowers.interfood-catering.ru/',
+    'potentialAction' => [
+        '@type' => 'SearchAction',
+        'target' => [
+            '@type' => 'EntryPoint',
+            'urlTemplate' => 'https://flowers.interfood-catering.ru/?q={search_term_string}',
+        ],
+        'query-input' => 'required name=search_term_string',
+    ],
+], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>
+</script>
 </head>
 <body>
+<?php /* W97-fixB3a (B3a-5, a11y): skip-link — ПЕРВЫЙ элемент в DOM: первое нажатие Tab
+   попадает в него, а не в кнопки город-бара (было: город-бар → ссылка/кнопки → skip-link).
+   .skip-link position:fixed;top:-48px (css/style.css) — вне потока, вынос до город-бара
+   НЕ меняет визуал. Флаг $skipLinkRendered — header.php не дублирует ссылку
+   (на остальных витринных страницах её печатает сам header.php). */ ?>
+<?php $skipLinkRendered = true; ?>
+<a class="skip-link" href="#main">Перейти к содержимому</a>
 <?php /* Город-бар (5cv): подтверждение города, JS five.js прячет по localStorage 'fc-city-ok' */ ?>
 <?php if ($featCitybar): ?>
 <div class="fc-citybar" id="fcCitybar">
@@ -462,7 +539,9 @@ if ($__heroPre !== '') {
         <?php if ($heroImg !== ''): ?>
         <picture>
           <?php if ($heroWebpOk): ?><source type="image/webp" srcset="/img/uploads/<?= e(rawurlencode($heroWebp)) ?>"><?php endif; ?>
-          <img class="fc-hero__img" src="/img/uploads/<?= e($heroImg) ?>" alt="<?= e($heroH1) ?>" fetchpriority="high"<?= $heroDim ? ' width="' . (int)$heroDim[0] . '" height="' . (int)$heroDim[1] . '"' : '' ?>>
+          <?php /* W97-fixB2 (B2-6): описательный alt (было alt=H1 — дублировал видимый
+                 заголовок для скринридера); текст редактируется как hero_image_alt */ ?>
+          <img class="fc-hero__img" src="/img/uploads/<?= e($heroImg) ?>" alt="<?= e(setting('hero_image_alt', 'Свежий букет из сезонных цветов — витрина магазина')) ?>" fetchpriority="high"<?= $heroDim ? ' width="' . (int)$heroDim[0] . '" height="' . (int)$heroDim[1] . '"' : '' ?>>
         </picture>
         <?php endif; ?>
         <div class="fc-hero__content">
@@ -472,7 +551,9 @@ if ($__heroPre !== '') {
         <p class="fc-hero__sub"><?= e(setting('hero_subtitle', 'Соберём и доставим букет в течение дня — к празднику или просто так')) ?></p>
         <?php endif; ?>
         <?php if ($heroBtn): ?>
-        <a class="fc-hero__cta" href="<?= e($heroBtnLink) ?>">
+        <?php /* W97-fixB2 (B2-5в): розовая версия главной CTA — модификатор + база fc-btn
+                (стили придёт волной CSS; текст/ссылку не меняем) */ ?>
+        <a class="fc-btn fc-hero__cta fc-hero__cta--pink" href="<?= e($heroBtnLink) ?>">
           <?= e($heroBtnText) ?>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </a>
@@ -554,7 +635,7 @@ if ($__heroPre !== '') {
         $hitProducts, $cardCtx, '', 'hit');
     endif; ?>
     <?php foreach ($categoryRows as $cr): render_fc_row(
-        $cr['name'], '', $cr['items'], $cardCtx, (string)$cr['id']);
+        $cr['name'], '', $cr['items'], $cardCtx, '', '', $cr['slug']);
     endforeach; ?>
     <?php if ($featSectionPremium): render_fc_row(
         setting('section_premium_title', 'Премиум — для особого случая'),
@@ -575,7 +656,9 @@ if ($__heroPre !== '') {
   endif; ?>
 
   <!-- КАТАЛОГ -->
-  <section class="fc-section" id="catalog">
+  <?php /* W97-fixB2 (B2-5а): каталог — тоже товарная секция, продолжает чередование фонов */ ?>
+  <?php $fcProdSeq++; ?>
+  <section class="fc-section<?= ($fcProdSeq % 2 === 0) ? ' fc-section--tint' : '' ?>" id="catalog">
     <div class="wrap">
       <div class="fc-row__head">
         <h2 class="fc-row__title"><?= e(setting('catalog_title', 'Каталог')) ?></h2>
@@ -639,6 +722,9 @@ if ($__heroPre !== '') {
       </div>
     </div>
   </section>
+  <?php /* W97-fixB2 (B2-5б): крайний случай короткой витрины — каталог сам оказался 3-й
+         товарной секцией → editorial-пауза после него (guard не даст задвоить) */ ?>
+  <?php if ($fcProdSeq === 3) render_fc_editorial(); ?>
 
   <?php /* W96 (5cv): секция how-it-works убрана — шаги остаются в настройках, но не выводятся. */ ?>
 
@@ -653,9 +739,10 @@ if ($__heroPre !== '') {
         <?php foreach ($occTiles as $t): ?>
         <a class="fc-occasion<?= $t['photo'] !== '' ? ' fc-occasion--photo' : ' fc-occasion--pastel' ?>" href="/occasion/<?= e(rawurlencode($t['slug'])) ?>">
           <?php if ($t['photo'] !== ''): ?>
-            <?php /* W96-fix3a (T6): осмысленный alt из заголовка повода (было alt="" —
-               скринридер молчал на плитке с фото) */ ?>
-            <img class="fc-occasion__img" src="<?= e($t['photo']) ?>" alt="<?= e('Букеты: ' . $t['title']) ?>" loading="lazy" decoding="async">
+            <?php /* W96-fix3a (T6) → W97-fixB2 (B2-6): alt="" — имя плитки несёт ссылка
+                   (текст дублировался для скринридера); длинное имя — в title не нужно,
+                   фото внутри ссылки целиком */ ?>
+            <img class="fc-occasion__img" src="<?= e($t['photo']) ?>" alt="" loading="lazy" decoding="async">
           <?php else: ?>
             <?php /* Пастельная плитка без фото: декоративный прозрачный цветок (размер фиксируем инлайном — CSS-агент его не стилизует) */ ?>
             <svg class="fc-occasion__flower" width="44" height="44" viewBox="0 0 32 32" style="position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);color:var(--pink);opacity:.5" aria-hidden="true">
@@ -717,7 +804,11 @@ if ($__heroPre !== '') {
                      $zShort = trim(str_replace([' район ', ' район'], [' р-н ', ' р-н'], $zFull));
                      $zShort = trim((string)preg_replace('/\s*\([^)]*\)/u', '', $zShort));
                      ?>
-                <option value="<?= (int)$z['id'] ?>" data-price="<?= (int)$z['price'] ?>" title="<?= e($zFull) ?> · <?= (int)$z['price'] ?> ₽"><?= e($zShort) ?></option>
+                <?php /* W97-fixB2 (B2-1): цена зоны в тексте опции — как у «Самовывоз · 0 ₽»
+                       (formatPrice — тысячи через пробел); value/data-price НЕ трогаем:
+                       js/order-form.js берёт data-price, value=id зоны. Имена зон короткие,
+                       W70-сокращение (р-н) сохранено. */ ?>
+                <option value="<?= (int)$z['id'] ?>" data-price="<?= (int)$z['price'] ?>" title="<?= e($zFull) ?> · <?= (int)$z['price'] ?> ₽"><?= e($zShort . ' · ' . formatPrice((int)$z['price'])) ?></option>
               <?php endforeach; ?>
             </select>
             <?php if ($pickupAddr !== ''): ?>
@@ -783,8 +874,9 @@ if ($__heroPre !== '') {
           <legend>Когда доставить (необязательно)</legend>
           <div class="order-form__field">
             <label for="orderDeliveryDate">Дата</label>
-            <?php /* W96-fix4: min=today — не даём выбрать прошлое до отправки (сервер валидирует повторно) */ ?>
-            <input type="date" id="orderDeliveryDate" name="delivery_date" min="<?= date('Y-m-d') ?>">
+            <?php /* W96-fix4: min=today — не даём выбрать прошлое до отправки (сервер валидирует повторно).
+                   W97-fixB2 (B2-2): max=today+60 — нативный календарь не предлагает бесконечное будущее. */ ?>
+            <input type="date" id="orderDeliveryDate" name="delivery_date" min="<?= date('Y-m-d') ?>" max="<?= date('Y-m-d', strtotime('+60 days')) ?>">
             <span class="order-form__error" id="orderDeliveryDateError"></span>
           </div>
           <div class="order-form__field">
@@ -867,9 +959,16 @@ if ($__heroPre !== '') {
       /* FAQ редактируется из админки (критерий 16): 4 пары вопрос-ответ.
          Непустые пары рендерятся; JSON-LD строится из тех же полей — синхрон с видимым текстом. */
       $faqItems = [];
+      /* W97-fixB2 (B2-9): честные дефолты ответов о доставке/оплате (в БД ключи уже
+         сидированы старым текстом — значения обновит guard-миграция другой волны;
+         здесь дефолты для витрин без записей в settings). */
+      $faqAnswerDefaults = [
+          1 => 'Зависит от района: 300–400 ₽ по СПб, самовывоз — бесплатно. Точная сумма сразу видна при оформлении заказа',
+          4 => 'Наличными или картой курьеру при получении. Онлайн-оплата — сообщим, когда появится',
+      ];
       for ($i = 1; $i <= 4; $i++) {
           $q = trim(setting("faq_q{$i}", ''));
-          $a = trim(setting("faq_a{$i}", ''));
+          $a = trim(setting("faq_a{$i}", $faqAnswerDefaults[$i] ?? ''));
           if ($q !== '' && $a !== '') { $faqItems[] = ['q' => $q, 'a' => $a]; }
       }
       ?>

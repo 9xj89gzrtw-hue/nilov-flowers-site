@@ -241,6 +241,12 @@
     totalEl.textContent = delivery
       ? 'К оплате: ' + formatRub(items + delivery) + ' ₽ (букеты ' + formatRub(items) + ' ₽ + доставка ' + formatRub(delivery) + ' ₽)'
       : 'К оплате: ' + formatRub(items) + ' ₽' + (byThreshold ? ' — доставка бесплатная 🎉' : '');
+    /* W97-fixA (A7): анонс «К оплате» в общий live-регион #nfSrLive
+       (создаёт cart-ui.js; здесь — короткая версия без разбивки).
+       Пишем только при изменении суммы — не спамим. */
+    if (typeof window.nfAnnounce === 'function') {
+      window.nfAnnounce('orderTotal', 'К оплате: ' + formatRub(items + delivery) + ' ₽');
+    }
   }
 
   if (totalEl) {

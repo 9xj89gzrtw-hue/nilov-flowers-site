@@ -964,3 +964,169 @@ body > div[role="region"][aria-label="Установка приложения"] 
 /* D11: «Смотреть все» в шапках секций — по центру строки (было на
    baseline заголовка 1.5rem → ссылка провисала на 3px ниже). */
 .fc-row__link{align-self:center}
+
+/* ================================================================
+   W97-fixC: дизайн/дизайн-токены + a11y-фиксы волны критиков C (C1–C12)
+   ================================================================ */
+
+/* Токен --pink-deep: глубокий розовый — AA-пара для белого текста.
+   Брендовый --pink #ff4ea2 с белым = 3.06:1 (проходит только как
+   крупный текст ≥3:1 / графика); #d63384 = 4.50:1 (на грани),
+   #cc2f7a = 4.94:1 — выбран с запасом. Инверсная пара ink-on-pink
+   (бейдж скидки) = 5.64:1. */
+:root{--pink-deep:#cc2f7a}
+:root{--pink-deep-hover:#bb2a67}
+
+/* --- C1: hero-скрим — H1 «Доставка цветов по Санкт-Петербургу»
+   доходил до ~78% ширины тайла, а горизонтальный градиент гас
+   на 62% → на светлых участках фото контраст белого заголовка
+   падал до 2.26:1 (canvas-замер под rect H1). Продлеваем боковой
+   градиент до ~80%+ ширины и поднимаем вертикальный в зоне текста
+   (H1 начинается с ~39% высоты тайла). Перекрывает блок D3 —
+   этот ниже по коду при равной специфичности. */
+.fc-hero__main::after{
+  background:
+    linear-gradient(90deg,rgba(28,26,30,.52) 0%,rgba(28,26,30,.34) 55%,rgba(28,26,30,.24) 78%,rgba(28,26,30,.07) 92%,rgba(28,26,30,0) 100%),
+    linear-gradient(180deg,rgba(28,26,30,.05) 20%,rgba(28,26,30,.36) 44%,rgba(28,26,30,.85) 100%);
+}
+
+/* --- C2: чередование товарных секций — каждая вторая тёплая
+   (классы расставил index.php волной fixB2). Фон на самой секции —
+   фулл-ширина; вертикальный ритм держит паддинг .fc-section 56px
+   (40px мобайл) — с белыми соседями не слипается. */
+.fc-section--tint{background:var(--surface-warm)}
+
+/* --- C3: editorial-пауза — широкая лента-врезка после 3-й товарной
+   секции (разметка: section.fc-editorial > p, без .wrap — контейнер
+   делаем сами). Нежно-розовая (#fff0f7) карточка-лента с орнаментом
+   «— ◆ —» сверху (hairline + ромб, чистый CSS), текст ink по центру.
+   Вертикальный отступ секции даёт белые поля сверху/снизу карточки —
+   фон не сливается с tint-соседями (#fff0f7 vs #fbf5f8 близки по тону),
+   скруглённые углы читаются как «плавающая» врезка. */
+.fc-editorial{padding:20px}
+.fc-editorial p{
+  background:#fff0f7;
+  border-radius:24px;
+  max-width:880px;
+  margin:0 auto;
+  padding:44px 32px;
+  font:600 1.4rem/1.5 var(--font-ui);
+  color:var(--ink);
+  text-align:center;
+}
+.fc-editorial p::before{
+  content:"";
+  display:block;
+  width:min(240px,56%);
+  height:2px;
+  margin:0 auto 26px;
+  background:linear-gradient(90deg,rgba(255,78,162,0),rgba(255,78,162,.55) 30%,rgba(255,78,162,.55) 70%,rgba(255,78,162,0));
+}
+.fc-editorial p::after{
+  content:"";
+  display:block;
+  width:12px;height:12px;
+  margin:-33px auto 26px;
+  background:var(--pink);
+  border-radius:3px;
+  transform:rotate(45deg);
+}
+@media(max-width:899px){
+  .fc-editorial{padding:16px 12px}
+  .fc-editorial p{padding:28px 16px;font-size:1.15rem}
+  .fc-editorial p::before{width:min(180px,60%);margin-bottom:22px}
+  .fc-editorial p::after{width:10px;height:10px;margin:-28px auto 22px}
+}
+
+/* --- C4: розовая сигнатура первого экрана. --pink с белым = 3.06:1
+   при кегле ~1rem/700 (< 18.66px bold ⇒ обычный текст, нужно ≥4.5) —
+   берём --pink-deep (4.94:1). Hover — затемнение (#bb2a67, белый 5.77:1),
+   focus-visible — белое кольцо (читается на розовом поверх фото). */
+.fc-hero__cta--pink{background:var(--pink-deep);color:#fff;transition:transform .2s,box-shadow .2s,background .2s}
+.fc-hero__cta--pink:hover{background:var(--pink-deep-hover)}
+.fc-hero__cta--pink:focus-visible{outline:3px solid #fff;outline-offset:3px}
+/* Чипы цен: активное состояние — розовая рамка + глубокий розовый текст
+   на белом (#cc2f7a на #fff = 4.94:1; рамка #ff4ea2 = 3.06:1 ≥3 для UI). */
+.fc-chip[aria-pressed="true"],.fc-chip.is-active{background:#fff;color:var(--pink-deep);border-color:var(--pink)}
+.fc-chip[aria-pressed="true"]:hover,.fc-chip.is-active:hover{background:#fff;color:var(--pink-deep);border-color:var(--pink)}
+
+/* --- C5: имя карточки крупнее/контрастнее (было .92rem/500/muted 5.29:1;
+   #45414b на белом = 9.95:1). Замер показал «волну»: у 2-строчных имён
+   2×20.925px + padding 4px = 45.85px > старого min-height 44px ⇒ блок
+   рос и цена уезжала на 2px. Поднимаем min-height до 46px (фикс ≥ двух
+   строк) — priceY соседних карточек ряда совпадают, line-clamp:2 уже был. */
+.product-card__name{font-size:15.5px;font-weight:600;color:#45414b;min-height:46px}
+
+/* --- C6: промо-кнопка жёлтой карточки — радиус к токену 16. */
+.fc-hero__promo-btn{border-radius:16px}
+
+/* --- C7 (a11y, контрасты AA):
+   а) бейдж скидки «Акционная цена −N%» (12px/700): белый на pink
+      3.06:1 → инверсная пара ink на pink = 5.64:1 (в одном ключе с
+      amber-бейджем «Хит»: яркий фон + тёмный текст);
+   б) розовая цена со скидкой 17.6px/800 — это обычный текст по WCAG
+      (< 18.66px bold): pink на белом 3.06:1 → --pink-deep 4.94:1
+      (все три варианта класса — каталог, товар 5cv, товар legacy);
+   в) счётчик корзины ~11px/700 белый на pink 3.06:1 → фон --pink-deep. */
+.product-card__badge--sale{background:var(--pink);color:var(--ink)}
+.product-card__price--discount,
+.fc-product__price--discount,
+.product-page__price--discount{color:var(--pink-deep)}
+.cart-toggle__count{background:var(--pink-deep)}
+
+/* --- C8 (a11y): якоря #catalog/#order/#occasions/#faq больше не
+   прячутся под липкой шапкой. Десктоп-шапка ~73px → 96px с запасом;
+   мобайл — 2 ряда (~95px после C10) → 170px запас (по ТЗ). */
+html{scroll-padding-top:96px}
+@media(max-width:899px){html{scroll-padding-top:170px}}
+
+/* --- C9 (a11y): карусели — фокусируемые регионы (tabindex=0 от fixB2):
+   фокус должен быть виден. 3px розовое кольцо (перекрывает 2px-правило
+   из базовой секции 7 — этот блок ниже). */
+.fc-carousel:focus-visible{outline:3px solid var(--pink);outline-offset:4px}
+
+/* --- C10: мобильная шапка — была 153px из-за переноса иконок в 3-й ряд
+   (лого 159 + каталог 44 + иконки 132 + гэпы > 350px доступных).
+   Компактим: мельче лого-текст/цветок, гэп 8/10, поиск 42px →
+   иконки помещаются в первый ряд, шапка ~95px (замер). Ничего не спрятано
+   (трубка/избранное/корзина/каталог/лого — все на месте). */
+@media(max-width:899px){
+  .fc-header__inner{min-height:52px;gap:8px 10px}
+  .fc-header__logo{font-size:.95rem}
+  .fc-header__logo svg{width:24px;height:24px}
+  .fc-search input,.fc-search__input{min-height:42px;padding:9px 14px 9px 42px}
+  .fc-search svg{left:12px}
+}
+/* ≤480: страховка от 3-го ряда на узких (375/360) — чуть мельче иконки/лого */
+@media(max-width:480px){
+  .fc-header__inner{gap:8px}
+  .fc-header__logo{font-size:.9rem}
+  .fc-header__icon{width:38px;height:38px}
+  .fc-header__icon svg{width:19px;height:19px}
+  .fc-catalog-btn{min-height:40px;padding:9px 11px}
+}
+
+/* --- C11 (a11y): чекбоксы/радио — 24px тап-цель (было 22px).
+   Радио — align-items:center (центр не сместился); у чекбокса
+   (flex-start) компенсируем margin-top 2→1px — базлайн label на месте. */
+.order-form__radio input,.order-form__checkbox input,.cookie-settings__row input{width:24px;height:24px}
+.order-form__checkbox input{margin-top:1px}
+
+/* --- C12: кнопка ♥ рядом с CTA товара — класс вместо инлайн-стилей
+   (product.php теперь печатает .fc-fav-inline). Круг 52px под высоту
+   CTA, бордер line, active — розовое заполнение. nilov.js синхронно
+   красит её инлайном (color/borderColor — файл вне списка волны),
+   поэтому color/border-color с !important: класс — единственный
+   источник истины вида. */
+.fc-fav-inline{
+  flex:none;width:52px;min-height:52px;border-radius:999px;
+  border:1.5px solid var(--line)!important;
+  background:#fff;color:var(--ink)!important;
+  font-size:1.15rem;line-height:1;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;
+  transition:color .18s ease,border-color .18s ease,background .18s ease;
+}
+.fc-fav-inline:hover{border-color:var(--pink)!important;color:var(--pink-deep)!important}
+.fc-fav-inline:active{transform:scale(.94)}
+.fc-fav-inline:focus-visible{outline:3px solid var(--pink);outline-offset:2px}
+.fc-fav-inline.is-active{background:var(--pink-deep);border-color:var(--pink-deep)!important;color:#fff!important}

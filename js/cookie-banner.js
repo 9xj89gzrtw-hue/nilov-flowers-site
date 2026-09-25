@@ -79,17 +79,49 @@
           '<div class="cookie-settings__panel">' +
           '<h3 style="margin:0 0 8px;font-size:1rem">Настройки cookie</h3>' +
           '<p style="margin:0 0 10px;font-size:.85rem;color:inherit;opacity:.8">Технические cookie (корзина, согласие) работают всегда — без них сайт не может. Аналитика включается только с вашего согласия.</p>' +
-          '<label class="cookie-settings__row"><input type="checkbox" id="ckAnalytics"> Яндекс.Метрика /* W85 (a11y-критик): opt-in без галочки по умолчанию */ (аналитика посещений)</label>' +
+          '<label class="cookie-settings__row"><input type="checkbox" id="ckAnalytics"> Яндекс.Метрика (аналитика посещений)</label>' +
           '<div class="cookie-settings__btns">' +
           '<button type="button" class="btn cookie-banner__btn" id="ckSave">Сохранить</button>' +
           '<button type="button" class="btn cookie-banner__btn cookie-banner__btn--secondary" id="ckClose">Закрыть</button>' +
           '</div></div>';
         document.body.appendChild(modal);
-        /* W85 (a11y-критик polish-2): фокус-менеджмент role=dialog — перенос фокуса,
-           возврат на триггер, Escape. */
+        /* W85 (a11y-критик polish-2) → W97-fixA (A5): фокус-менеджмент role=dialog —
+           перенос фокуса, возврат на триггер, Escape; фон — inert (Tab не выходит
+           за пределы диалога: шапка/витрина/футер/таббар недоступны, пока открыты
+           настройки; сам диалог — body-child вне списка). */
         var opener = document.activeElement;
+        var inerted = [];
+        Array.prototype.forEach.call(document.body.children, function (ch) {
+          if (ch !== modal && !ch.inert) { ch.inert = true; inerted.push(ch); }
+        });
+        /* A5: полноценная Tab-ловушка. inert глушит фон, но Chrome на последнем
+           элементе диалога может выкинуть фокус на <body> (транзит) — перехватываем
+           Tab на уровне документа и возвращаем фокус внутрь диалога (цикл first↔last). */
+        var trapTab = function (ev) {
+          if (ev.key !== 'Tab') return;
+          var nodes = modal.querySelectorAll('button, input, select, textarea, a[href], [tabindex]:not([tabindex="-1"])');
+          var list = Array.prototype.filter.call(nodes, function (n) {
+            return !n.disabled && (n.offsetParent !== null || n === document.activeElement);
+          });
+          if (!list.length) return;
+          var first = list[0], last = list[list.length - 1];
+          var active = document.activeElement;
+          if (!modal.contains(active)) {
+            ev.preventDefault();
+            (ev.shiftKey ? last : first).focus();
+          } else if (ev.shiftKey && active === first) {
+            ev.preventDefault();
+            last.focus();
+          } else if (!ev.shiftKey && active === last) {
+            ev.preventDefault();
+            first.focus();
+          }
+        };
+        document.addEventListener('keydown', trapTab);
         var closeSettings = function () {
           document.removeEventListener('keydown', onKey);
+          document.removeEventListener('keydown', trapTab);
+          inerted.forEach(function (ch) { ch.inert = false; });
           modal.remove();
           if (opener && opener.focus) opener.focus();
         };

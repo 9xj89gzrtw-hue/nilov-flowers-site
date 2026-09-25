@@ -1,5 +1,9 @@
 /* Галерея на странице товара: переключение по свайпу (нативный
-   scroll-snap) и по клику на миниатюру. Без автоплея. */
+   scroll-snap) и по клику на миниатюру. Без автоплея.
+   W97-fixB3b (B3b-2f): zoom-слайд не несёт background-image в HTML — .jpg
+   грузился сразу вторым дублем вместе с LCP-фото. Фон (webp-URL из
+   data-gallery-zoom, печатает product.php) подставляем лениво — только
+   когда этот слайд стал активным (стрелки/свайп/миниатюра). */
 (function () {
   const track = document.getElementById('productGalleryTrack');
   if (!track) return;
@@ -11,12 +15,20 @@
   const counter = document.getElementById('productGalleryCounter');
   if (slides.length < 1) return;
 
+  function activateZoomBg(slide) {
+    var zoom = slide ? slide.querySelector('.product-gallery__zoom') : null;
+    if (!zoom || zoom.style.backgroundImage) return;
+    var src = zoom.getAttribute('data-gallery-zoom');
+    if (src) zoom.style.backgroundImage = 'url("' + src + '")';
+  }
+
   function setActive(index) {
     if (counter) counter.textContent = index + 1 + ' / ' + slides.length;
     thumbs.forEach(function (thumb, i) {
       if (i === index) thumb.setAttribute('aria-current', 'true');
       else thumb.removeAttribute('aria-current');
     });
+    activateZoomBg(slides[index]);
   }
 
   function currentIndexFromScroll() {

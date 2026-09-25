@@ -41,12 +41,34 @@ try {
     }
 } catch (Throwable $e) { /* старая БД без таблицы — не роняем sitemap */ }
 
+/* W97-fixB3b (B3b-1d): посадочные страницы категорий /category/{slug} — все категории,
+   у которых есть хотя бы один активный товар (пустая категория = thin page для
+   поисковика). lastmod — не выдумываем: дата свежего товара категории (MAX
+   updated_at), нет данных — без lastmod вовсе. Слаг — на лету из name (в таблице
+   колонки slug нет, паттерн slugify как у товаров). */
+try {
+    $catStmt = db()->query('SELECT c.name, MAX(p.updated_at) AS lastmod
+        FROM categories c JOIN products p ON p.category_id = c.id AND p.is_active = 1
+        GROUP BY c.id ORDER BY MIN(c.sort), c.id');
+    foreach ($catStmt->fetchAll() as $c) {
+        $urls[] = [
+            'loc' => $base . '/category/' . rawurlencode(slugify((string)$c['name'])),
+            'priority' => '0.7',
+            'changefreq' => 'weekly',
+            'lastmod' => $c['lastmod'] !== null ? date('Y-m-d', strtotime($c['lastmod'])) : null,
+        ];
+    }
+} catch (Throwable $e) { /* старая БД без колонок/таблиц — не роняем sitemap */ }
+
 echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
 echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
 foreach ($urls as $u) {
     echo '  <url>' . "\n";
     echo '    <loc>' . e($u['loc']) . '</loc>' . "\n";
-    echo '    <lastmod>' . $u['lastmod'] . '</lastmod>' . "\n";
+    /* lastmod опционален (категории без свежих товаров — без даты, не выдумываем) */
+    if (!empty($u['lastmod'])) {
+        echo '    <lastmod>' . $u['lastmod'] . '</lastmod>' . "\n";
+    }
     echo '    <changefreq>' . $u['changefreq'] . '</changefreq>' . "\n";
     echo '    <priority>' . $u['priority'] . '</priority>' . "\n";
     echo '  </url>' . "\n";

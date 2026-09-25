@@ -1,17 +1,15 @@
 /* Service worker — Nilov Flowers. VERSION менять при каждом деплое. */
-const VERSION = 'w5d';
+const VERSION = 'w5e';
 const STATIC_CACHE = `static-${VERSION}`;
 const PAGE_CACHE = `pages-${VERSION}`;
 const OFFLINE_URL = '/offline.html';
 
 const STATIC_ASSETS = [
   OFFLINE_URL,
-  '/css/style.css',
-  '/css/five.css',
-  '/css/fonts.css',
-  '/fonts/GolosText-cyrillic.woff2',
-  // W96-fix3a (T1): Playfair убран из precache — дизайн 5cv не использует его
-  // (файлы шрифтов остаются в /fonts для legacy-страниц админки).
+  // W97 (perf-критик): CSS убран из прекэша — витрина запрашивает /css/*.css?v={md5}
+  // (контент-адресные ключи), ключи без ?v= никогда не совпадали → двойная загрузка
+  // и ~99КБ мёртвого прелоада. CSS корректно кэшируется cache-first в рантайме по ?v=.
+  // Golos убран: SW не обслуживает /admin/* (строка ниже), для витрины шрифт мёртвый.
   '/fonts/MontserratVariable-cyrillic.woff2',
   '/fonts/MontserratVariable-latin.woff2',
   '/img/favicon.svg',
