@@ -31,6 +31,45 @@ function sanitize_rich_text(string $v, int $max = 500): string
     return mb_substr(trim($v), 0, $max);
 }
 
+/**
+ * W100-fixH2 (J4): ссылочные настройки — защитный фильтр схем.
+ * Допустимы: пусто, «#якорь», «/путь» (не «//»), «https://…», «http://…», «tel:…», «mailto:…».
+ * Всё остальное (javascript:, data:, vbscript:, протокол-относительные «//», пробелы/угловые
+ * скобки) — недопустимо. Используется на входе (админка) и на выводе (safe_url).
+ */
+function safe_url_ok(string $url): bool
+{
+    $u = trim($url);
+    if ($u === '') { return true; }                                  /* пусто */
+    if (preg_match('~^#[^\s<>"\']*$~', $u)) { return true; }          /* #якорь */
+    if (preg_match('~^/(?!/)[^\s<>"\']*$~', $u)) { return true; }     /* /путь, не //host */
+    if (preg_match('~^https?://[^\s<>"\']+$~i', $u)) { return true; } /* http(s)://… */
+    if (preg_match('~^(?:tel|mailto):[^\s<>"\']+$~i', $u)) { return true; }
+    return false;
+}
+
+/** W100-fixH2 (J4): defensive-фильтр на выводе — недопустимая схема заменяется на «#».
+ *  Значение не экранируется: оборачивать в e() при выводе в href. */
+function safe_url(string $url): string
+{
+    return safe_url_ok($url) ? trim($url) : '#';
+}
+
+/**
+ * W100-fixH2 (J4): идентификатор мессенджера/каталога (номер WhatsApp, имя канала Telegram,
+ * VK-хэндл, ID организации на Яндекс Картах) — витрина вклеивает его в свой URL
+ * (wa.me/{цифры}, t.me/{имя}, vk.com/{имя}, yandex.ru/maps/org/{id}), поэтому полное
+ * «href»-значение тут не нужно: достаточно отсутствия схем, пробелов и разметки
+ * (двоеточие/слэши запрещены — javascript: и протокол-относительные ссылки невозможны).
+ */
+function safe_url_identifier_ok(string $v): bool
+{
+    $v = trim($v);
+    if ($v === '') { return true; }
+    return preg_match('~^[A-Za-z0-9_@.\-+()\s]{1,128}$~', $v) === 1
+        && !preg_match('~[:/]~', $v);
+}
+
 function setting(string $key, string $default = ''): string
 {
     static $cache = null;

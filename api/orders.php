@@ -235,8 +235,8 @@ try {
         ':z' => $zone !== null ? (int)$zone['id'] : null,
         ':a' => $address, ':c' => $comment, ':pm' => $paymentMethod,
         ':t' => $total, ':st' => 'new', ':pt' => $paymentToken,
-        ':cl' => sprintf('consent given %s, ip %s', date('Y-m-d H:i:s'),
-            $_SERVER['REMOTE_ADDR'] ?? 'unknown'),
+        ':cl' => sprintf('consent given %s, ip %s, policy %s', date('Y-m-d H:i:s'),
+            $_SERVER['REMOTE_ADDR'] ?? 'unknown', setting('policy_updated', '01.09.2026')),
         ':rn' => $recipientName, ':rp' => $recipientPhone, ':ct' => $cardText,
         ':dd' => $deliveryDate, ':ds' => $deliverySlot, ':pc' => $promoCode,
     ]);

@@ -120,6 +120,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
     foreach (['yk_enabled', 'upsell_enabled', 'hero_text_enabled', 'yandex_reviews_enabled',
               'wa_enabled', 'tg_enabled', 'vk_enabled', 'ig_enabled', 'email_enabled', 'max_enabled',
               'notify_enabled', 'logo_enabled',
+              /* W100-fixH1 (I14): Вебвизор Метрики — запись сессий, по умолчанию ВЫКЛ */
+              'metrika_webvisor',
               /* Витринные фичи (критерий 16): каждая отключаема из админки */
               'feature_delivery_badge', 'feature_faq', 'feature_countdown', 'feature_price_filter',
               'feature_favorites', 'feature_zone_check', 'feature_track_link', 'feature_favicon_badge', 'feature_webpush',
@@ -141,6 +143,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
     /* cart_mode — select с валидацией всех трёх режимов витрины (header.php: drawer|hybrid|page) */
     if (array_key_exists('cart_mode', $_POST)) {
         $values['cart_mode'] = in_array($_POST['cart_mode'] ?? '', ['drawer', 'hybrid', 'page'], true) ? $_POST['cart_mode'] : 'drawer';
+    }
+    /* W100-fixH2 (J2): секретный ключ ЮKassa — паттерн «пароль не отдавать»:
+       значения в HTML больше нет, поэтому пустая отправка = «не трогать», непусто = записать */
+    if (array_key_exists('yk_secret_key', $values) && trim((string)$values['yk_secret_key']) === '') {
+        unset($values['yk_secret_key']);
+    }
+    /* W100-fixH2 (J4): ссылочные настройки — whitelist схем ПРИ СОХРАНЕНИИ.
+       Прямые href (hero/промо/журнал/MAX/Instagram): пусто, #якорь, /путь, https://, http://, tel:, mailto:.
+       Идентификаторы (VK/WhatsApp/Telegram/ID на Яндекс Картах) витрина вклеивает в свой URL —
+       для них достаточно «без схем/пробелов/разметки» (javascript:, data:, vbscript:, //host — невозможно).
+       Недопустимое значение НЕ сохраняется, владелец получает flash-предупреждение. */
+    $linkRejected = [];
+    foreach (['hero_button_link','hero_promo_link','journal_1_link','journal_2_link','journal_3_link',
+                  'shop_max_link','shop_instagram'] as $lk) {
+        if (isset($values[$lk]) && !safe_url_ok((string)$values[$lk])) {
+            $linkRejected[] = $lk;
+            unset($values[$lk]);
+        }
+    }
+    foreach (['shop_vk','shop_whatsapp','shop_telegram','yandex_reviews_id'] as $lk) {
+        if (!isset($values[$lk])) { continue; }
+        $lv = trim((string)$values[$lk]);
+        $okIdent = safe_url_ok($lv)
+            || safe_url_identifier_ok($lv)
+            || ($lk === 'yandex_reviews_id' && preg_match('/^\d{1,32}$/', $lv) === 1);
+        if (!$okIdent) {
+            $linkRejected[] = $lk;
+            unset($values[$lk]);
+        }
     }
     /* W98-fixD (D5): сотруднику платёжные ключи и каналы уведомлений не сохраняются —
        даже собранным руками POST (в форме этих полей у staff нет). Не затираем, а игнорируем. */
@@ -182,7 +213,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
         }
     }
     saveSettings($values);
-    flash('Настройки сохранены');
+    if ($linkRejected !== []) {
+        /* W100-fixH2 (J4): отклонённые ссылки — предупреждение, остальное сохранено */
+        flash('Настройки сохранены. ' . implode(' ', array_map(
+            static fn(string $k): string => 'Ссылка "' . $k . '" отклонена: недопустимый формат (значение не сохранено).',
+            $linkRejected)), true);
+    } else {
+        flash('Настройки сохранены');
+    }
     header('Location: /admin/settings.php');
     exit;
 }
@@ -574,11 +612,11 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
     <p style="font-size:.85rem;font-weight:600;margin:0 0 8px">Поводы, магазины, SEO-текст</p>
     <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
       <input type="checkbox" name="feature_occasions" style="width:auto" <?= sv('feature_occasions', $s) !== '0' ? 'checked' : '' ?>>
-      Плитки «Цветы по поводу»
+      Плитки «Цветы по поводам»
     </label>
     <div style="margin-left:26px">
       <label class="f" for="oc-t">Заголовок блока поводов</label>
-      <input class="input" id="oc-t" name="occasions_title" value="<?= sv('occasions_title', $s) !== '' ? sv('occasions_title', $s) : 'Цветы по поводу' ?>" maxlength="60">
+      <input class="input" id="oc-t" name="occasions_title" value="<?= sv('occasions_title', $s) !== '' ? sv('occasions_title', $s) : 'Цветы по поводам' ?>" maxlength="60">
       <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Сами плитки-поводы и их лендинги настраиваются в разделе «Поводы».</p>
     </div>
     <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500;margin-top:10px">
@@ -929,8 +967,8 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
         <label class="f" for="ct-n" style="margin-top:8px">Кнопка «продолжить покупки»</label>
         <input class="input" id="ct-n" name="cart_continue_text" value="<?= sv('cart_continue_text', $s) !== '' ? sv('cart_continue_text', $s) : 'Продолжить покупки' ?>" maxlength="30">
         <label class="f" for="ct-note" style="margin-top:8px">Сноска под итогом корзины (про доставку)</label>
-        <input class="input" id="ct-note" name="cart_total_note" value="<?= sv('cart_total_note', $s) ?>" maxlength="140" placeholder="Пусто = скрыть сноску">
-        <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Поясняет, что «Итого» в корзине — это только букеты: доставка добавится в форме. Оставьте пустым, чтобы скрыть.</p>
+        <input class="input" id="ct-note" name="cart_total_note" value="<?= sv('cart_total_note', $s) ?>" maxlength="140" placeholder="Пусто = автотекст из зон доставки">
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Поясняет, что «Итого» в корзине — только букеты: доставка добавится в форме. Оставьте пустым — сайт сам подставит вилку тарифов по районам («от … до … ₽»); впишите свой текст, чтобы заменить его.</p>
       </div>
     </div>
     <?php /* Лейблы полей формы заказа (критерий 16, аудит-хардкоды) */ ?>
@@ -1114,12 +1152,19 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
     <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
     <p style="font-size:.85rem;font-weight:600;margin:0 0 8px">Продвижение: заголовок и описание для поисковиков</p>
     <label class="f" for="seo-t">Title (виден во вкладке и в Яндексе)</label>
-    <input class="input" id="seo-t" name="seo_title" value="<?= sv('seo_title', $s) !== '' ? sv('seo_title', $s) : 'Доставка цветов в СПб — ' . sv('shop_name', $s) . ' | Свежие букеты с доставкой сегодня' ?>" maxlength="80">
+    <input class="input" id="seo-t" name="seo_title" value="<?= sv('seo_title', $s) !== '' ? sv('seo_title', $s) : 'Доставка цветов по СПб — ' . sv('shop_name', $s) ?>" maxlength="80">
     <label class="f" for="seo-d" style="margin-top:8px">Description (описание в результатах поиска)</label>
     <input class="input" id="seo-d" name="seo_description" value="<?= sv('seo_description', $s) !== '' ? sv('seo_description', $s) : 'Доставка букетов по Санкт-Петербургу в день заказа. Свежие цветы с утренней поставки, фото перед отправкой. Заказы до 20:00 — доставим сегодня.' ?>" maxlength="200">
     <label class="f" for="mk-id" style="margin-top:8px">Счётчик Яндекс.Метрики (номер)</label>
     <input class="input" id="mk-id" name="metrika_counter_id" value="<?= sv('metrika_counter_id', $s) ?>" placeholder="12345678" inputmode="numeric" maxlength="12">
     <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Метрика грузится только после согласия на cookie. Номер — из личного кабинета Метрики. Пусто = счётчик не ставится.</p>
+    <?php /* W100-fixH1 (I14): Вебвизор — отдельный тумблер рядом со счётчиком
+           (аналитика); по умолчанию ВЫКЛ — запись сессий чувствительна к приватности */ ?>
+    <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500;margin-top:10px">
+      <input type="checkbox" name="metrika_webvisor" style="width:auto" <?= sv('metrika_webvisor', $s) === '1' ? 'checked' : '' ?>>
+      Вебвизор (запись сессий)
+    </label>
+    <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Запись действий посетителей на сайте (движения мыши, прокрутка, клики). Выключен по умолчанию ради приватности — включайте осознанно; работает только при заполненном номере счётчика и согласии на cookie.</p>
     <details style="margin-top:10px" <?= trim(sv('yandex_verification', $s)) !== '' || trim(sv('google_site_verification', $s)) !== '' ? 'open' : '' ?>>
       <summary style="font-size:.82rem;font-weight:600;cursor:pointer">Подтверждение прав для Яндекса и Google (вебмастер)</summary>
       <p style="font-size:.78rem;color:var(--ink-soft);margin:6px 0 4px">Когда подключаете сайт в Яндекс.Вебмастере или Search Console — система покажет «метатег». Скопируйте оттуда длинный код в поле ниже и сохраните. Ничего устанавливать на сервер не нужно, сайт сам подтвердит права.</p>
@@ -1143,7 +1188,9 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
         <label class="f" for="yk-id">Идентификатор магазина ЮKassa (shopId, из письма от ЮKassa)</label>
         <input class="input" id="yk-id" name="yk_shop_id" value="<?= sv('yk_shop_id', $s) ?>">
         <label class="f" for="yk-key">Секретный ключ</label>
-        <input class="input" id="yk-key" name="yk_secret_key" type="password" value="<?= sv('yk_secret_key', $s) ?>">
+        <?php /* W100-fixH2 (J2): значение НЕ отдаётся в DOM — пусто = секрет не изменится */ ?>
+        <input class="input" id="yk-key" name="yk_secret_key" type="password" autocomplete="new-password" value="" placeholder="оставьте пустым — секрет не изменится"<?= trim((string)($s['yk_secret_key'] ?? '')) !== '' ? ' data-secret-set="1"' : '' ?>>
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0"><?= trim((string)($s['yk_secret_key'] ?? '')) !== '' ? 'Секретный ключ задан — поле пустое, чтобы не показывать его в HTML. Введите новый, чтобы заменить.' : 'Из личного кабинета ЮKassa (Интеграция → Ключи API). Введите ключ — он сохранится, но больше не показывается в форме.' ?></p>
       </div>
       <div>
         <label class="f" for="vat">Ставка НДС в чеке</label>
@@ -1226,8 +1273,11 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
 <?php if (count($hist = settingsHistoryList(5)) > 0): ?>
 <details style="margin-top:10px"><summary style="font-size:.82rem;color:var(--ink-soft);cursor:pointer">Последние изменения (<?= count($hist) ?>)</summary>
 <ol style="font-size:.78rem;color:var(--ink-soft);margin:6px 0 0 18px">
-  <?php foreach ($hist as $hh): ?>
-  <li><?= e($hh['ts']) ?> — <?= e(['save' => 'сохранение', 'undo' => 'отмена', 'defaults' => 'сброс к „по умолчанию“', 'defaults-save' => 'эталон обновлён текущим', 'defaults-reset' => 'сброс к „по умолчанию“'][$hh['source']] ?? $hh['source']) ?></li>
+  <?php foreach ($hist as $hh):
+      /* W100-fixH2 (J8): имена изменённых ключей — «12:31 — feature_faq, hero_title (сохранение)» */
+      $hhKeys = (array)($hh['changed'] ?? []);
+      $hhKeysStr = $hhKeys === [] ? '' : e(implode(', ', array_slice($hhKeys, 0, 8))) . (count($hhKeys) > 8 ? ' …' : ''); ?>
+  <li><?= e($hh['ts']) ?> — <?= $hhKeysStr !== '' ? $hhKeysStr . ' (' : '' ?><?= e(['save' => 'сохранение', 'undo' => 'отмена', 'defaults' => 'сброс к „по умолчанию“', 'defaults-save' => 'эталон обновлён текущим', 'defaults-reset' => 'сброс к „по умолчанию“'][$hh['source']] ?? $hh['source']) ?><?= $hhKeysStr !== '' ? ')' : '' ?></li>
   <?php endforeach; ?>
 </ol></details>
 <?php endif; ?>

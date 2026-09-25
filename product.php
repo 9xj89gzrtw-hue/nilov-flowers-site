@@ -475,7 +475,7 @@ $breadcrumbItems[] = ['@type' => 'ListItem', 'position' => count($breadcrumbItem
                      миниатюр-превью (#productGalleryThumbs) не рендерим: две
                      маленьких копии одного файла выглядели как «несколько фото» —
                      обманка по отчёту дизайн-критика. Свайп/стрелки на честный
-                     «Приближение этого же фото» остаются. js/product-gallery.js
+                     «Крупный план» остаются. js/product-gallery.js
                      корректно живёт без thumbs/counter (пустой NodeList + if(counter)).
                      Появятся реальные вторые фото — вернуть оба блока. */ ?>
           <div class="product-gallery__viewport" id="productGalleryTrack">
@@ -487,14 +487,14 @@ $breadcrumbItems[] = ['@type' => 'ListItem', 'position' => count($breadcrumbItem
                   <?php if ($galSrcsetStr !== ''): ?><source type="image/webp" srcset="<?= e($galSrcsetStr) ?>" sizes="<?= e($galSizes) ?>"><?php elseif ($imgWebpOk): ?><source type="image/webp" srcset="<?= e($imgWebp) ?>"><?php endif; ?>
                   <img class="product-gallery__img" src="<?= e($img) ?>" alt="<?= e($product['name']) ?>" loading="eager" fetchpriority="high"<?= $ogDim !== false ? ' width="' . (int)$ogDim[0] . '" height="' . (int)$ogDim[1] . '"' : '' ?>>
                 </picture>
-                <figcaption class="product-gallery__cap">Общий план букета</figcaption>
+                <figcaption class="product-gallery__cap">Общий вид</figcaption>
               </figure>
               <figure class="product-gallery__slide">
                 <?php /* W97-fixB3b (B3b-2f): background-image убран из инлайн-стиля —
                            .jpg-дубль грузился сразу вместе с LCP; webp-URL подставит
                            js/product-gallery.js лениво при активации этого слайда */ ?>
                 <div class="product-gallery__zoom" data-gallery-zoom="<?= e($zoomSrc) ?>" role="img" aria-label="<?= e($product['name']) ?> — крупный план"></div>
-                <figcaption class="product-gallery__cap">Приближение этого же фото</figcaption>
+                <figcaption class="product-gallery__cap">Крупный план</figcaption>
               </figure>
             </div>
             <button type="button" class="product-gallery__nav product-gallery__nav--l" data-gnav="-1" aria-label="Предыдущий вид">‹</button>

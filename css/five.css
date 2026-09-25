@@ -1244,3 +1244,12 @@ html{scroll-padding-top:96px}
 }
 .product-card__cta{background:var(--pink-deep);color:#fff}
 .product-card__cta:hover{background:var(--pink-deep-hover);color:#fff}
+
+/* ============ W100-fixH (оркестратор): компактный город-бар на мобиле ============
+   CRO-критик W99/W100: citybar 120px (2 ряда) + шапка + cookie = 42% первого экрана.
+   Одна строка с ellipsis: ~52px, выбор города не теряется. */
+@media (max-width: 899px) {
+  .fc-citybar .wrap{flex-wrap:nowrap;gap:8px;padding-top:6px;padding-bottom:6px}
+  .fc-citybar__text{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.8rem;line-height:1.35;flex:1 1 auto}
+  .fc-citybar .wrap > *{flex:0 0 auto}
+}

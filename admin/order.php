@@ -141,7 +141,13 @@ flash();
     </div>
     <div>
       <h2 style="font-family:var(--font-display);font-size:1.05rem;margin-bottom:6px">Состав</h2>
+      <?php /* W100-fixH2 (J7): таблице состава — заголовки колонок (scope=col),
+         фактические колонки: позиция (имя × количество) и сумма справа */ ?>
       <table>
+        <thead>
+          <tr><th scope="col">Позиция</th><th scope="col" style="text-align:right">Сумма</th></tr>
+        </thead>
+        <tbody>
         <?php if (!$items): /* W68 (obvious NEW-2): заказ без строк — не пустая таблица «Итого», а объяснение */ ?>
         <tr><td style="color:var(--ink-soft)">Позиции не записаны (заказ без состава)</td><td></td></tr>
         <?php endif; ?>
@@ -152,6 +158,7 @@ flash();
         <tr><td>Доставка</td><td style="text-align:right"><?= formatPrice((int)$order['zone_price']) ?></td></tr>
         <?php endif; ?>
         <tr><td><strong>Итого</strong></td><td style="text-align:right"><strong><?= formatPrice((int)$order['total']) ?></strong></td></tr>
+        </tbody>
       </table>
     </div>
   </div>

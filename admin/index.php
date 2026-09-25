@@ -201,6 +201,10 @@ $topProducts = $tpSt->fetchAll();
 
 $itemsStmt = $pdo->prepare('SELECT name, price, qty FROM order_items WHERE order_id = :i');
 
+/* W100-fixH2 (J6): чек-лист запуска и напоминания — только владельцу */
+$me = currentAdmin();
+$isOwner = $me !== null && (string)($me['role'] ?? 'owner') === 'owner';
+
 /* ---------- W98-fixD (D2): чек-лист запуска — динамика по settings/БД ---------- */
 $chkDemoPhone = '+7 (900) 000-00-00';
 $chkPhone = trim(setting('shop_phone', ''));
@@ -218,11 +222,28 @@ $chkZones = (int)$pdo->query('SELECT COUNT(*) FROM delivery_zones')->fetchColumn
 $chkProducts = (int)$pdo->query('SELECT COUNT(*) FROM products WHERE is_active = 1')->fetchColumn();
 $chkPromos = (int)$pdo->query('SELECT COUNT(*) FROM promo_codes')->fetchColumn();
 $chkMetrika = trim(setting('metrika_counter_id', ''));
-/* демо-заказы: «тест» в имени (SQLite LIKE не регистронезависим для кириллицы — оба регистра)
-   или телефон с «900» (демо-номер вида +7 (900) …) */
-$chkDemoOrders = (int)$pdo->query("SELECT COUNT(*) FROM orders
-    WHERE customer_name LIKE '%тест%' OR customer_name LIKE '%Тест%'
-       OR customer_name LIKE '%ТЕСТ%' OR phone LIKE '%900%'")->fetchColumn();
+/* W100-fixH2 (J5г): демо-заказы — расширенная эвристика: имя/комментарий содержат
+   тест/test/демо/w100/w99/w98/w97/критик, телефон — демо-номер из девятки и нулей,
+   email — «test». SQLite LIKE не регистронезависим для кириллицы — считаем в PHP (mb_strtolower). */
+$chkDemoMarkers = ['тест', 'test', 'демо', 'w100', 'w99', 'w98', 'w97', 'критик'];
+$chkDemoIds = [];
+foreach ($pdo->query('SELECT id, customer_name, phone, email, comment FROM orders') as $chkDo) {
+    $chkHay = mb_strtolower((string)$chkDo['customer_name'] . ' ' . (string)$chkDo['comment']);
+    $chkDoEmail = mb_strtolower((string)$chkDo['email']);
+    /* телефон-демо: «90000000000» / «+79000000000» — девятка и нули после неё */
+    $chkPhoneDigits = preg_replace('/\D/', '', (string)$chkDo['phone']);
+    $chkHit = false;
+    foreach ($chkDemoMarkers as $chkM) {
+        if (str_contains($chkHay, $chkM)) { $chkHit = true; break; }
+    }
+    if (!$chkHit && $chkDoEmail !== '' && str_contains($chkDoEmail, 'test')) { $chkHit = true; }
+    if (!$chkHit && $chkPhoneDigits !== ''
+        && (str_contains($chkPhoneDigits, '90000000000') || str_contains($chkPhoneDigits, '79000000000'))) {
+        $chkHit = true;
+    }
+    if ($chkHit) { $chkDemoIds[] = (int)$chkDo['id']; }
+}
+$chkDemoOrders = count($chkDemoIds);
 
 $chk = [
     ['ok' => $chkPhone !== '' && $chkPhone !== $chkDemoPhone,
@@ -255,8 +276,14 @@ $chk = [
      'url' => '/admin/promo.php'],
     ['ok' => $chkDemoOrders === 0,
      'label' => 'Демо-заказов нет',
-     'hint' => 'Найдено демо-заказов: ' . $chkDemoOrders . ' (имя с «тест» или телефон 900…) — удалите их из списка.',
+     'hint' => 'Найдено демо-заказов: ' . $chkDemoOrders . ($chkDemoIds !== [] ? ' (№ ' . implode(', ', $chkDemoIds) . ')' : '')
+         . ' — имя или комментарий с «тест/test/демо/w100…», телефон 900… или email с «test». Удалите их из списка.',
      'url' => '/admin/index.php'],
+    /* W100-fixH2 (J5а): Метрика — ОБЯЗАТЕЛЬНЫЙ пункт (была «необязательной» внизу списка) */
+    ['ok' => $chkMetrika !== '',
+     'label' => 'Счётчик Яндекс.Метрики подключён',
+     'hint' => 'Без счётчика вы не видите, откуда приходят посетители и заказы. Впишите номер счётчика в «Настройки → Продвижение».',
+     'url' => '/admin/settings.php#s-legal'],
 ];
 $chkDone = count(array_filter($chk, fn($c) => $c['ok']));
 
@@ -370,7 +397,9 @@ $dashqs = fn(string $r) => '/admin/index.php?' . e(http_build_query(array_merge(
 </div>
 </div>
 
-<?php /* W98-fixD (D2): чек-лист запуска — сворачивается, стили соседних карточек дашборда */ ?>
+<?php /* W100-fixH2 (J6): чек-лист запуска и напоминания — только владельцу
+       (сотруднику — заглушка по паттерну D5); пароль админа/РКН — не его дело */ ?>
+<?php if ($isOwner): ?>
 <div class="card" id="launch-check">
   <details open>
     <summary style="cursor:pointer;display:flex;align-items:center;gap:12px;flex-wrap:wrap;list-style:none">
@@ -385,21 +414,26 @@ $dashqs = fn(string $r) => '/admin/index.php?' . e(http_build_query(array_merge(
         <span><a href="<?= e($c['url']) ?>" style="text-decoration:underline"><?= e($c['label']) ?></a><?php if (!$c['ok']): ?><br><small style="color:var(--ink-soft)"><?= e($c['hint']) ?></small><?php endif; ?></span>
       </li>
       <?php endforeach; ?>
-      <?php /* Метрика — необязательная проверка */ ?>
-      <li style="display:flex;gap:9px;align-items:flex-start">
-        <span aria-hidden="true" style="flex:0 0 auto;font-weight:700;color:var(--ink-soft)"><?= $chkMetrika !== '' ? '✔' : '○' ?></span>
-        <span><a href="/admin/settings.php#s-legal" style="text-decoration:underline">Счётчик Яндекс.Метрики</a> — <small style="color:var(--ink-soft)"><?= $chkMetrika !== '' ? 'задан ✓' : 'необязательно: без счётчика сайт работает, но вы не увидите статистику' ?></small></span>
-      </li>
     </ul>
     <p style="font-size:.78rem;font-weight:600;color:var(--ink-soft);margin:14px 0 4px">Напоминания (отмечаются вручную):</p>
     <ul style="list-style:none;display:grid;gap:7px;font-size:.9rem">
+      <?php /* W100-fixH2 (J5б): РКН-пункты — статические, пояснение текстом без внешних URL */ ?>
       <li style="display:flex;gap:9px;align-items:flex-start">
         <span aria-hidden="true" style="flex:0 0 auto;font-weight:700;color:var(--ink-soft)">○</span>
-        <span>Подать уведомление РКН об обработке персональных данных (152-ФЗ) — до запуска, на <a href="https://zpp.gov.ru" target="_blank" rel="noopener">zpp.gov.ru</a>.</span>
+        <span>Подано уведомление РКН об обработке персональных данных (152-ФЗ). Обработка ПД покупателей должна быть заявлена в Роскомнадзор до запуска магазина — бланк уведомления оператора ПД есть на портале РКН.</span>
+      </li>
+      <li style="display:flex;gap:9px;align-items:flex-start">
+        <span aria-hidden="true" style="flex:0 0 auto;font-weight:700;color:var(--ink-soft)">○</span>
+        <span>Уведомление РКН о трансграничной передаче данных (Telegram) — до включения токена бота. Уведомления о заказах уходят в Telegram, а это передача ПД за рубеж: подайте отдельное уведомление до того, как включите бот в «Профиле».</span>
       </li>
       <li style="display:flex;gap:9px;align-items:flex-start">
         <span aria-hidden="true" style="flex:0 0 auto;font-weight:700;color:var(--ink-soft)">○</span>
         <span><a href="/admin/zones.php" style="text-decoration:underline">Заполнить зоны доставки</a>, <a href="/admin/settings.php#s-contacts" style="text-decoration:underline">часы работы и мессенджеры</a> (WhatsApp/Telegram/ВК).</span>
+      </li>
+      <?php /* W100-fixH2 (J5в): срочная доставка — локальный стандарт рынка */ ?>
+      <li style="display:flex;gap:9px;align-items:flex-start">
+        <span aria-hidden="true" style="flex:0 0 auto;font-weight:700;color:var(--ink-soft)">○</span>
+        <span>Срочная доставка: добавьте зону «Срочная доставка (1–2 часа)» с наценкой в разделе <a href="/admin/zones.php" style="text-decoration:underline">Зоны</a> — локальный стандарт рынка.</span>
       </li>
       <li style="display:flex;gap:9px;align-items:flex-start">
         <span aria-hidden="true" style="flex:0 0 auto;font-weight:700;color:var(--ink-soft)">○</span>
@@ -408,6 +442,11 @@ $dashqs = fn(string $r) => '/admin/index.php?' . e(http_build_query(array_merge(
     </ul>
   </details>
 </div>
+<?php else: ?>
+<div class="card" id="launch-check">
+  <p style="font-size:.85rem;color:var(--ink-soft);margin:0;padding:10px 12px;background:var(--bg-alt,#F1EAD9);border:1px dashed var(--ink-soft);border-radius:10px">🔒 Чек-лист запуска и напоминания — <strong>доступно владельцу</strong>. Заказы и статистика ниже — ваши рабочие инструменты.</p>
+</div>
+<?php endif; ?>
 
 <div class="card">
   <?php /* W98-fixD (D1): быстрые чипы планирования — по дате ДОСТАВКИ (не создания) */

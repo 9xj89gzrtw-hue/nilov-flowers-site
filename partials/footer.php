@@ -75,10 +75,10 @@ $__nfIsProduct = (bool)preg_match('#^/product(/|$)#', $__nfPath)
       <p class="site-footer__messengers">
         <?php if ($waOn): ?><a href="https://wa.me/<?= e(preg_replace('/[^0-9]/', '', $whatsapp)) ?>" target="_blank" rel="noopener">WhatsApp</a><?php endif; ?>
         <?php if ($tgOn): ?><a href="https://t.me/<?= e($telegram) ?>" target="_blank" rel="noopener">Telegram</a><?php endif; ?>
-        <?php if ($vkOn): ?><a href="<?= e(preg_match('#^https?://#i', setting('shop_vk')) ? setting('shop_vk') : 'https://vk.com/' . ltrim(setting('shop_vk'), '/')) ?>" target="_blank" rel="noopener me">VK</a><?php endif; ?>
-        <?php if ($maxOn): ?><a href="<?= e(setting('shop_max_link')) ?>" target="_blank" rel="noopener">MAX</a><?php endif; ?>
+        <?php if ($vkOn): ?><a href="<?= e(safe_url(preg_match('#^https?://#i', setting('shop_vk')) ? setting('shop_vk') : 'https://vk.com/' . ltrim(setting('shop_vk'), '/'))) ?>" target="_blank" rel="noopener me">VK</a><?php endif; ?>
+        <?php if ($maxOn): ?><a href="<?= e(safe_url(setting('shop_max_link'))) ?>" target="_blank" rel="noopener">MAX</a><?php endif; ?>
         <?php if ($igOn): ?>
-          <a href="<?= e(setting('shop_instagram')) ?>" target="_blank" rel="noopener">Instagram*</a>
+          <a href="<?= e(safe_url(setting('shop_instagram'))) ?>" target="_blank" rel="noopener">Instagram*</a>
         <?php endif; ?>
         <?php if ($emailOn): ?><a href="mailto:<?= e(setting('shop_email')) ?>"><?= e(setting('shop_email')) ?></a><?php endif; ?>
       </p>
@@ -131,7 +131,7 @@ $__nfIsProduct = (bool)preg_match('#^/product(/|$)#', $__nfPath)
     <?php if ($legalName !== '' && $legalNum !== ''): ?>
     <p class="fc-footer__legal"><?= e($legalName) ?><?= $legalInn !== '' ? ' · ИНН ' . e($legalInn) : '' ?> · <?= e($legalType === 'ip' ?  'ОГРНИП' : 'ОГРН') ?> <?= e($legalNum) ?><?= $legalAddr !== '' ? ' · ' . e($legalAddr) : '' ?></p>
     <?php endif; ?>
-    <span>© <?= date('Y') ?> <?= e($siteName) ?><?= setting('feature_track_link','1')==='1' ? ' · <a href="/track">Где мой заказ?</a>' : '' ?> · <a href="/policy">Политика обработки ПД</a> · <a href="/offer">Оферта</a> · <a href="#" onclick="if(window.cookieSettings){window.cookieSettings();}return false">Настройки cookie</a></span>
+    <span>© <?= date('Y') ?> <?= e($siteName) ?><?= setting('feature_track_link','1')==='1' ? ' · <a href="/track">Где мой заказ?</a>' : '' ?> · <a href="/policy">Политика обработки персональных данных</a> · <a href="/offer">Оферта</a> · <a href="#" onclick="if(window.cookieSettings){window.cookieSettings();}return false">Настройки cookie</a></span>
   </div>
 </footer>
 
@@ -182,18 +182,21 @@ elseif ($__nfIsHome || preg_match('#^/(product|category)(\.php)?(/|$)#', $__nfPa
       <?php endif; ?>
       <p class="cart-panel__total">Итого: <span id="cartTotal">0 ₽</span></p>
       <?php /* Логика-критик W34: «Итого» в корзине ≠ «К оплате» в форме (drawer не знает район).
-         Честная сноска вместо расхождения; текст правится в админке, пустая строка = скрыть. */ ?>
+         W100-fixH1 (I15): смена семантики cart_total_note — ПУСТОЕ значение в БД больше
+         НЕ прячет сноску: пусто = автотекст из зон доставки (мин–макс), непустое =
+         кастом владельца как есть. Скрыть автотекст можно только обнулив зоны. */ ?>
       <?php
         $znMin = null; $znMax = null;
         try {
           $zr = db()->query('SELECT MIN(price) mn, MAX(price) mx FROM delivery_zones')->fetch();
           $znMin = (int)($zr['mn'] ?? 0); $znMax = (int)($zr['mx'] ?? 0);
         } catch (Throwable $e) { $znMin = 0; $znMax = 0; }
-        $totalNoteDefault = ($znMax > 0)
-          ? sprintf('Доставка по вашему району — от %s до %s ₽, точную стоимость покажем в заказе.', $znMin === 0 ? '0' : formatSum($znMin), formatSum($znMax))
-          : '';
-        $totalNote = setting('cart_total_note', '__DEFAULT__');
-        if ($totalNote === '__DEFAULT__') $totalNote = $totalNoteDefault;
+        $totalNote = trim(setting('cart_total_note', ''));
+        if ($totalNote === '') {
+            $totalNote = ($znMax > 0)
+              ? sprintf('Доставка по вашему району — от %s до %s ₽, точная сумма — при оформлении', $znMin === 0 ? '0' : formatSum($znMin), formatSum($znMax))
+              : '';
+        }
       ?>
       <?php if ($totalNote !== ''): ?><p class="cart-panel__note" style="font-size:.76rem;color:var(--ink-soft);margin:2px 0 0"><?= e($totalNote) ?></p><?php endif; ?>
       <button type="button" class="btn btn--accent" id="cartCheckout" disabled><?= e(setting('cart_checkout_text', 'Оформить заказ')) ?></button>

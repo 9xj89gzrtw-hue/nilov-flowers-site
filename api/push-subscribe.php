@@ -17,6 +17,15 @@ function respondp(int $code, array $payload): never {
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') { respondp(405, ['error' => 'method']); }
 if (setting('feature_webpush', '0') !== '1') { respondp(403, ['error' => 'disabled']); }
 
+/* W100 (security-критик): без rate-limit подписки спамятся неограниченно (рост таблицы).
+   30 запросов/час на IP достаточно для легитимных подписок одного-двух устройств. */
+if (!function_exists('rl_check')) {
+    require_once __DIR__ . '/../includes/security.php';
+}
+if (rl_check('pushsub', 30, 3600) === false) {
+    respondp(429, ['error' => 'rate_limited']);
+}
+
 $raw = file_get_contents('php://input') ?: '';
 $data = json_decode($raw, true);
 if (!is_array($data)) { respondp(400, ['error' => 'json']); }

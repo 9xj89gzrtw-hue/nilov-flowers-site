@@ -114,9 +114,9 @@ function notifyNewOrder(int $orderId): void
             if (!is_dir($dir)) {
                 @mkdir($dir, 0755, true);
             }
-            @file_put_contents($dir . '/skipped-quiet.log', date('Y-m-d H:i:s') . " заказ №{$orderId} — tg пропущен (тихие часы)\n", FILE_APPEND);
+            @file_put_contents($dir . '/skipped-quiet.log', date('Y-m-d H:i:s') . " заказ № {$orderId} — tg пропущен (тихие часы)\n", FILE_APPEND);
         } else {
-            $tgMsg = "🌸 <b>Новый заказ №{$orderId}</b>\n"
+            $tgMsg = "🌸 <b>Новый заказ № {$orderId}</b>\n"
                 . "Имя: " . htmlspecialchars((string)$order['customer_name'], ENT_QUOTES, 'UTF-8') . "\n"
                 . "Телефон: " . htmlspecialchars((string)$order['phone'], ENT_QUOTES, 'UTF-8') . "\n"
                 . "Состав:\n" . htmlspecialchars($lines, ENT_QUOTES, 'UTF-8')
@@ -129,7 +129,7 @@ function notifyNewOrder(int $orderId): void
     if (setting('feature_webpush', '0') === '1') {
         require_once __DIR__ . '/vapid.php';
         @webpushSendAll(
-            'Новый заказ №' . $orderId,
+            'Новый заказ № ' . $orderId,
             $order['customer_name'] . ' · ' . formatPrice((int)$order['total']) . ' · ' . date('H:i'),
             '/admin/'
         );
@@ -145,15 +145,17 @@ function notifyNewOrder(int $orderId): void
     if ($clientEmail !== '' && filter_var($clientEmail, FILTER_VALIDATE_EMAIL) !== false) {
         $from = trim(setting('shop_email', ''));
         if ($from === '' || filter_var($from, FILTER_VALIDATE_EMAIL) === false) {
-            $from = 'shop@nilovflowers.local'; /* дефолт как у owner-письма */
+            /* W100-fixH1 (I13): домен .local не резолвится у почтовых провайдеров —
+               фолбэк на домен сайта; shop_email из настроек остаётся приоритетом */
+            $from = 'noreply@flowers.interfood-catering.ru';
         }
         $payLine = ($order['payment_method'] ?? 'cash') === 'online'
             ? 'К оплате онлайн'
             : 'К оплате при получении';
         $trackUrl = rtrim(setting('site_url', 'https://flowers.interfood-catering.ru'), '/') . '/track';
-        $clientSubject = 'Заказ №' . $orderId . ' принят — ' . setting('shop_name', 'Nilov Flowers');
+        $clientSubject = 'Заказ № ' . $orderId . ' принят — ' . setting('shop_name', 'Nilov Flowers');
         $clientBody = 'Здравствуйте, ' . $order['customer_name'] . "!\n\n"
-            . "Ваш заказ №" . $orderId . " принят.\n\n"
+            . "Ваш заказ № " . $orderId . " принят.\n\n"
             . "Состав заказа:\n" . $clientLines . "\n"
             . $payLine . ': ' . formatPrice((int)$order['total']) . "\n\n"
             . "Мы позвоним в течение 15 минут для подтверждения.\n\n"
@@ -189,8 +191,8 @@ function notifyNewOrder(int $orderId): void
         return; // некуда слать
     }
 
-    $subject = 'Новый заказ №' . $orderId . ' — Nilov Flowers';
-    $body = "Новый заказ №{$orderId} от " . $order['created_at'] . "\n\n"
+    $subject = 'Новый заказ № ' . $orderId . ' — Nilov Flowers';
+    $body = "Новый заказ № {$orderId} от " . $order['created_at'] . "\n\n"
         . "Состав:\n" . $lines
         . "\nСумма: " . formatPrice((int)$order['total']) . "\n"
         . "Получатель: " . $order['customer_name'] . "\n"
@@ -203,11 +205,11 @@ function notifyNewOrder(int $orderId): void
         if (!is_dir($dir)) {
             @mkdir($dir, 0755, true);
         }
-        @file_put_contents($dir . '/skipped-quiet.log', date('Y-m-d H:i:s') . " заказ №{$orderId} — тихие часы\n", FILE_APPEND);
+        @file_put_contents($dir . '/skipped-quiet.log', date('Y-m-d H:i:s') . " заказ № {$orderId} — тихие часы\n", FILE_APPEND);
         return;
     }
 
-    $headers = 'From: shop@nilovflowers.local' . "\r\n" . 'Content-Type: text/plain; charset=UTF-8';
+    $headers = 'From: noreply@flowers.interfood-catering.ru' . "\r\n" . 'Content-Type: text/plain; charset=UTF-8';
     $sent = @mail($to, '=?UTF-8?B?' . base64_encode($subject) . '?=', $body, $headers);
     if (!$sent) {
         $dir = STATE_OUT_DIR . '/mail-out';

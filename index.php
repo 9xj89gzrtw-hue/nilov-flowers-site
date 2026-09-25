@@ -17,7 +17,7 @@ $zones = $pdo->query('SELECT id, name, price FROM delivery_zones ORDER BY sort, 
 $heroTextEnabled = setting('hero_text_enabled', '1') === '1';
 $heroH1 = setting('seo_h1', setting('hero_title', 'Доставка цветов по Санкт-Петербургу'));
 $heroBtnText = trim(setting('hero_button_text', 'Выбрать букет'));
-$heroBtnLink = trim(setting('hero_button_link', '#catalog'));
+$heroBtnLink = safe_url(trim(setting('hero_button_link', '#catalog')));
 $heroBtn = $heroTextEnabled && $heroBtnText !== '' && $heroBtnLink !== '';
 
 /* Функции витрины (критерий 16): каждый блок отключаем из админки */
@@ -516,9 +516,9 @@ $seoTextDefault = "Доставка цветов по Санкт-Петербу�
 ?><!DOCTYPE html>
 <html lang="ru">
 <head>
-<title><?= e(setting('seo_title', 'Доставка цветов в СПб — ' . setting('shop_name', 'Nilov Flowers') . ' | Свежие букеты с доставкой сегодня')) ?></title>
+<title><?= e(setting('seo_title', 'Доставка цветов по СПб — ' . setting('shop_name', 'Nilov Flowers'))) ?></title>
 <meta name="description" content="<?= e(setting('seo_description', 'Доставка букетов по Санкт-Петербургу в день заказа. Свежие цветы с утренней поставки, фото перед отправкой. Заказы до 20:00 — доставим сегодня.')) ?>">
-<meta property="og:title" content="<?= e(setting('seo_title', 'Доставка цветов в СПб — ' . setting('shop_name', 'Nilov Flowers') . ' | Свежие букеты с доставкой сегодня')) ?>">
+<meta property="og:title" content="<?= e(setting('seo_title', 'Доставка цветов по СПб — ' . setting('shop_name', 'Nilov Flowers'))) ?>">
 <meta property="og:description" content="Букеты с доставкой в день заказа по Санкт-Петербургу. Фото перед отправкой, свежие цветы с утренней поставки.">
 <meta property="og:url" content="https://flowers.interfood-catering.ru/">
 <?php /* W97-fixB2 (B2-7): og:image:width/height — соцсети резервируют превью без
@@ -744,7 +744,7 @@ echo json_encode([
           <span class="fc-hero__promo-eyebrow"><?= e(setting('hero_promo_badge', 'Всегда')) ?></span>
           <h2 class="fc-hero__promo-title"><?= e(setting('hero_promo_title', 'Открытка в подарок')) ?></h2>
           <p class="fc-hero__promo-text"><?= e(setting('hero_promo_text', 'Напишем ваш текст от руки и вложим в букет — бесплатно, в каждом заказе')) ?></p>
-          <a class="fc-hero__promo-btn" href="<?= e(setting('hero_promo_link', '#catalog')) ?>"><?= e(setting('hero_promo_btn_text', 'Выбрать букет')) ?></a>
+          <a class="fc-hero__promo-btn" href="<?= e(safe_url(setting('hero_promo_link', '#catalog'))) ?>"><?= e(setting('hero_promo_btn_text', 'Выбрать букет')) ?></a>
         </div>
         <?php endif; ?>
         <?php /* Карточка доставки: сроки по городу (W96-fix1/F4 — без обещания «1–2 часа») */ ?>
@@ -762,13 +762,21 @@ echo json_encode([
   </section>
 
   <?php /* W96-fix1 (F8): траст-ряд под hero — гарантии с галочками (гейт hero-текста,
-     те же guarantee_1..3, что на странице товара; прячется вместе с hero-текстом) */ ?>
-  <?php if ($heroTextEnabled && $guarantees !== []): ?>
+     те же guarantee_1..3, что на странице товара; прячется вместе с hero-текстом).
+     W100-fixH1 (I16): соцдоказательство — пилюля-ссылка «Отзывы на Яндекс Картах»
+     в том же ряду: ТОЛЬКО при включённой настройке yandex_reviews_enabled И
+     непустом yandex_reviews_id (выкл/пусто — элемента нет, ряд как был). */ ?>
+  <?php $yrId = trim(setting('yandex_reviews_id', ''));
+     $yrOn = setting('yandex_reviews_enabled', '0') === '1' && $yrId !== ''; ?>
+  <?php if (($heroTextEnabled && $guarantees !== []) || $yrOn): ?>
   <div class="wrap">
     <ul class="fc-trust" aria-label="Наши гарантии">
       <?php foreach (array_slice($guarantees, 0, 3) as $g): ?>
       <li class="fc-trust__item"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="currentColor"/><path d="M7 12.5l3.2 3.2L17 9" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><?= e($g) ?></li>
       <?php endforeach; ?>
+      <?php if ($yrOn): ?>
+      <li class="fc-trust__item"><a href="https://yandex.ru/maps/org/<?= e(rawurlencode($yrId)) ?>" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">★★ Отзывы о нас на Яндекс Картах →</a></li>
+      <?php endif; ?>
     </ul>
   </div>
   <?php endif; ?>
@@ -862,7 +870,7 @@ echo json_encode([
         <span class="zone-check" style="display:inline-flex;align-items:center;gap:6px;margin-left:auto">
           <label for="zoneCheckInput" style="font-size:.85rem;font-weight:600;color:var(--ink-soft)">Район:</label>
           <input type="search" id="zoneCheckInput" placeholder="<?= e(setting('zone_check_placeholder', 'Например: Центральный')) ?>" aria-label="Узнать стоимость доставки в ваш район"
-                 data-fallback="<?= e(setting('zone_check_fallback', 'не нашли — уточним по телефону')) ?>"
+                 data-fallback="<?= e(setting('zone_check_fallback', 'район не найден — уточним по телефону')) ?>"
                  style="width:clamp(150px,46vw,240px);min-width:0" class="pill"
                  list="zoneCheckList">
           <datalist id="zoneCheckList">
@@ -896,7 +904,7 @@ echo json_encode([
   <section class="fc-section" id="occasions">
     <div class="wrap">
       <div class="fc-row__head">
-        <h2 class="fc-row__title"><?= e(setting('occasions_title', 'Цветы по поводу')) ?></h2>
+        <h2 class="fc-row__title"><?= e(setting('occasions_title', 'Цветы по поводам')) ?></h2>
       </div>
       <div class="fc-occasions">
         <?php foreach ($occTiles as $t): ?>
@@ -1140,7 +1148,7 @@ echo json_encode([
          сидированы старым текстом — значения обновит guard-миграция другой волны;
          здесь дефолты для витрин без записей в settings). */
       $faqAnswerDefaults = [
-          1 => 'Зависит от района: 300–500 ₽ по СПб, самовывоз — бесплатно. Точная сумма сразу видна при оформлении заказа',
+          1 => 'Зависит от района: 300–500 ₽ по СПб, самовывоз бесплатный. Точная сумма сразу видна при оформлении заказа',
           4 => 'Наличными или картой курьеру при получении. Онлайн-оплата — сообщим, когда появится',
       ];
       for ($i = 1; $i <= 4; $i++) {
@@ -1188,7 +1196,7 @@ echo json_encode([
           <?php if ($j['image'] !== ''): ?><div class="fc-journal__media"><img src="/img/uploads/<?= e(rawurlencode($j['image'])) ?>" alt="" loading="lazy" decoding="async"></div><?php endif; ?>
           <h3 class="fc-journal__title"><?= e($j['title']) ?></h3>
           <?php if ($j['text'] !== ''): ?><p class="fc-journal__text"><?= e($j['text']) ?></p><?php endif; ?>
-          <?php if ($j['link'] !== ''): ?><a class="fc-journal__link" href="<?= e($j['link']) ?>">Читать →</a><?php endif; ?>
+          <?php if ($j['link'] !== ''): ?><a class="fc-journal__link" href="<?= e(safe_url($j['link'])) ?>">Читать →</a><?php endif; ?>
         </article>
         <?php endforeach; ?>
       </div>

@@ -89,6 +89,10 @@ Require all denied
 <FilesMatch "\.(eml|log|txt~)$">
 Require all denied
 </FilesMatch>
+# W100 (security-критик): bootstrap-файлы с паролём админа (db/admin-bootstrap-*.txt)
+<FilesMatch "^admin-bootstrap-.*\.txt$">
+Require all denied
+</FilesMatch>
 RedirectMatch 410 ^/state/
 RedirectMatch 410 ^/admin/state/
 # W98-fixF (F1): .git может остаться на проде после ручного канала заливки —

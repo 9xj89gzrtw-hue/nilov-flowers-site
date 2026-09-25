@@ -9,6 +9,12 @@ requireAdmin();
 
 $pdo = db();
 
+/* W100-fixH2 (J1): глобальные каналы уведомлений (токен бота, ID чатов, тихие часы)
+   настраивает только владелец — сотруднику в профиле доступна смена своего пароля,
+   запасного email и локального звука. */
+$me = currentAdmin();
+$isOwner = $me !== null && (string)($me['role'] ?? 'owner') === 'owner';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_check()) {
         /* W90 (stress P3): отказ = HTTP 400, exit ДО PRG-редиректа */
@@ -40,19 +46,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($section === 'notifications') {
+        /* W100-fixH2 (J1): серверный гард — сотруднику глобальные каналы не сохраняются
+           (даже собранным руками POST), форма у staff и не рендерится */
+        if (!$isOwner) {
+            flash('Уведомления магазина настраивает владелец', true);
+            header('Location: /admin/profile.php');
+            exit;
+        }
         /* Личные чаты и email уведомлений (пусто → на email логина) */
         $tg = trim((string)($_POST['tg_chat_id'] ?? ''));
         $mx = trim((string)($_POST['max_chat_id'] ?? ''));
         /* W98-fixD (D4): токен бота Telegram — его читает includes/notify.php
-           (setting('telegram_bot_token')), раньше поле в админке отсутствовало вовсе */
+           (setting('telegram_bot_token')), раньше поле в админке отсутствовало вовсе.
+           W100-fixH2 (J2-паттерн): токен в DOM не отдаётся — поле без value;
+           пусто = не трогать, непусто = записать. */
         $tgToken = mb_substr(trim((string)($_POST['telegram_bot_token'] ?? '')), 0, 200);
         $notifyEmail = trim((string)($_POST['notify_email'] ?? ''));
         $notifyEnabled = isset($_POST['notify_enabled']) ? 1 : 0;
         if ($notifyEmail !== '' && !filter_var($notifyEmail, FILTER_VALIDATE_EMAIL)) {
             flash('Некорректный email для уведомлений', true);
         } else {
-            /* tg_chat_id/max_chat_id/telegram_bot_token — глобальные ключи settings (db.php seed), а не колонки admin_users */
-            saveSettings(['tg_chat_id' => $tg, 'max_chat_id' => $mx, 'telegram_bot_token' => $tgToken]);
+            /* tg_chat_id/max_chat_id — глобальные ключи settings (db.php seed), а не колонки admin_users;
+               токен пишем только если пришёл непустым — пустая отправка не затирает секрет */
+            $saveGlobals = ['tg_chat_id' => $tg, 'max_chat_id' => $mx];
+            if ($tgToken !== '') {
+                $saveGlobals['telegram_bot_token'] = $tgToken;
+            }
+            saveSettings($saveGlobals);
             $pdo->prepare('UPDATE admin_users SET notify_email = :n, notify_enabled = :en WHERE id = :i')
                 ->execute([':n' => $notifyEmail, ':en' => $notifyEnabled, ':i' => (int)$admin['id']]);
             flash('Настройки уведомлений сохранены');
@@ -62,7 +82,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($section === 'quiet_hours') {
-        /* Тихие часы магазина (глобальные настройки, UI в профиле) */
+        /* Тихие часы магазина (глобальные настройки, UI в профиле) — только владельцу (W100-fixH2 J1) */
+        if (!$isOwner) {
+            flash('Уведомления магазина настраивает владелец', true);
+            header('Location: /admin/profile.php');
+            exit;
+        }
         $qf = trim((string)($_POST['quiet_from'] ?? ''));
         $qt = trim((string)($_POST['quiet_to'] ?? ''));
         $valid = static fn(string $t): bool => $t === '' || preg_match('/^\d{2}:\d{2}$/', $t);
@@ -134,6 +159,7 @@ flash();
   </form>
 </div>
 
+<?php if ($isOwner): /* W100-fixH2 (J1): каналы уведомлений магазина — только владельцу */ ?>
 <div class="card" style="max-width:560px">
   <h2 style="font-size:1.05rem;margin-bottom:8px">Уведомления о заказах</h2>
   <form method="post">
@@ -147,13 +173,13 @@ flash();
     <div class="grid2" style="margin-top:12px">
       <div>
         <label class="f" for="tgt">Токен бота Telegram</label>
-        <input class="input" id="tgt" name="telegram_bot_token" type="password" autocomplete="off" value="<?= e(setting('telegram_bot_token', '')) ?>" placeholder="1234567890:AAE...">
-        <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Получите у <a href="https://t.me/BotFather" target="_blank" rel="noopener">@BotFather</a> (/newbot → скопируйте токен). Вместе с ID чата включает уведомления о заказах в Telegram.</p>
+        <?php /* W100-fixH2 (J2-паттерн): значение НЕ отдаётся в DOM — пусто = секрет не изменится */ ?>
+        <input class="input" id="tgt" name="telegram_bot_token" type="password" autocomplete="new-password" value="" placeholder="оставьте пустым — токен не изменится"<?= trim(setting('telegram_bot_token', '')) !== '' ? ' data-secret-set="1"' : '' ?>>
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Получите у <a href="https://t.me/BotFather" target="_blank" rel="noopener">@BotFather</a> (/newbot → скопируйте токен). Вместе с ID чата включает уведомления о заказах в Telegram.<?= trim(setting('telegram_bot_token', '')) !== '' ? ' Токен задан — поле пустое, чтобы его не показывать.' : '' ?></p>
       </div>
       <div>
-        <label class="f" for="tg">ID чата в Telegram (цифры, один раз настроит программист)</label>
+        <label class="f" for="tg">ID чата: напишите боту @userinfobot — он ответит вашим ID</label>
         <input class="input" id="tg" name="tg_chat_id" value="<?= e(setting('tg_chat_id', '')) ?>" placeholder="123456789">
-        <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">ID подскажет бот @userinfobot: напишите ему из своего Telegram и скопируйте число.</p>
       </div>
     </div>
     <label class="f" for="mx">ID чата в MAX <small style="font-weight:400;color:var(--ink-soft)">(для MAX — пока не используется)</small></label>
@@ -162,6 +188,12 @@ flash();
     <button class="btn btn--accent" type="submit" style="margin-top:16px">💾 Сохранить настройки уведомлений</button>
   </form>
 </div>
+<?php else: /* W100-fixH2 (J1): паттерн D5 — заглушка для сотрудника */ ?>
+<div class="card" style="max-width:560px">
+  <h2 style="font-size:1.05rem;margin-bottom:8px">Уведомления о заказах</h2>
+  <p style="font-size:.85rem;color:var(--ink-soft);margin:0;padding:10px 12px;background:var(--bg-alt,#F1EAD9);border:1px dashed var(--ink-soft);border-radius:10px">🔒 Уведомления магазина (токен Telegram-бота, ID чатов, тихие часы) — <strong>доступно владельцу</strong>. Здесь вы можете сменить свой пароль и запасной email.</p>
+</div>
+<?php endif; ?>
 <div class="card" style="max-width:560px">
   <h2 style="font-size:1.05rem;margin-bottom:8px">Звук при новом заказе</h2>
   <p style="font-size:.85rem;color:var(--ink-soft);margin-bottom:8px">Пока открыта панель, новые заказы проверяются каждые 10 секунд, пока вкладка активна (в фоне — раз в минуту), и подаётся короткий сигнал. Настройка действует только на этом устройстве и в этом браузере.</p>
@@ -201,6 +233,7 @@ flash();
 })();
 </script>
 
+<?php if ($isOwner): /* W100-fixH2 (J1): тихие часы — глобальная настройка, только владельцу */ ?>
 <div class="card" style="max-width:560px">
   <h2 style="font-size:1.05rem;margin-bottom:8px">Тихие часы магазина</h2>
   <p style="font-size:.85rem;color:var(--ink-soft);margin-bottom:8px">В это время письма о новых заказах не отправляются. Оба поля пустые — тихие часы выключены. Часовой пояс магазина: <?= e(setting('shop_timezone', 'Europe/Moscow')) ?>.</p>
@@ -220,4 +253,5 @@ flash();
     <button class="btn" type="submit" style="margin-top:16px">Сохранить тихие часы</button>
   </form>
 </div>
+<?php endif; ?>
 <?php adminFooter(); ?>

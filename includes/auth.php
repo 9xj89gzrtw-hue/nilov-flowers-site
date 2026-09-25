@@ -143,7 +143,10 @@ function ensureAdminUser(): void
         $pass = getenv('ADMIN_BOOTSTRAP_PASSWORD') ?: bin2hex(random_bytes(8));
         $stmt = $pdo->prepare('INSERT INTO admin_users (login, password_hash, email) VALUES (:l, :h, :e)');
         $stmt->execute([':l' => $login, ':h' => password_hash($pass, PASSWORD_DEFAULT), ':e' => $login]);
-        @file_put_contents(BASE_PATH . 'db/admin-bootstrap-' . date('Ymd-His') . '.txt',
+        /* W100 (security-критик): concat-баг — BASE_PATH без хвостового слэша писал файл
+           в несуществующий «<root>db/…» наружу (запись молча проваливалась, владелец
+           нового инсталла не видел пароль). Путь исправлен; db/ закрыт .htaccess=403/410. */
+        @file_put_contents(BASE_PATH . '/db/admin-bootstrap-' . date('Ymd-His') . '.txt',
             "login: {$login}\npassword: {$pass}\nСмените пароль в админке и удалите этот файл.\n");
     }
 }

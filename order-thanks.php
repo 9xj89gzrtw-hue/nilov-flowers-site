@@ -12,6 +12,15 @@ if ($orderId <= 0) {
     header('Location: /');
     exit;
 }
+/* W100 (security-критик, BOLA): ранее детали заказа (email, состав, слоты, сумма) были
+   доступны анонимно по последовательным id — перебор всей базы. Теперь страница требует
+   одноразовый токен из ответа API (paymentToken того же заказа, hash_equals), который
+   знает только клиент, оформивший заказ. Без токена — тихий редирект. */
+$__thanksTok = (string)($_GET['t'] ?? '');
+if ($__thanksTok === '') {
+    header('Location: /');
+    exit;
+}
 $siteName = setting('shop_name', 'Nilov Flowers');
 $phone = setting('shop_phone', '');
 $phoneDigits = preg_replace('/\D/', '', $phone) ?: '';
@@ -22,11 +31,11 @@ $pickupAddr = trim(setting('shop_address', ''));
    W99-fixG (G15): одним запросом тянем и сам заказ (email/дата/интервал/оплата/сумма),
    и зону доставки (LEFT JOIN, как было). */
 $__orderStmt = db()->prepare('SELECT o.id, o.email, o.delivery_date, o.delivery_slot,
-    o.delivery_zone_id, o.payment_method, o.total, z.name AS zone
+    o.delivery_zone_id, o.payment_method, o.total, o.payment_token, z.name AS zone
     FROM orders o LEFT JOIN delivery_zones z ON z.id = o.delivery_zone_id WHERE o.id = :i LIMIT 1');
 $__orderStmt->execute([':i' => $orderId]);
 $__order = $__orderStmt->fetch();
-if (!$__order) {
+if (!$__order || !hash_equals((string)($__order['payment_token'] ?? ''), $__thanksTok)) {
     header('Location: /');
     exit;
 }
@@ -55,11 +64,11 @@ if ($__zoneName !== '') {
 $__orderEmail = trim((string)($__order['email'] ?? ''));
 
 $canonicalUrl = 'https://flowers.interfood-catering.ru/order-thanks';
-$pageTitle = 'Заказ №' . $orderId . ' принят — ' . $siteName;
+$pageTitle = 'Заказ № ' . $orderId . ' принят — ' . $siteName;
 ?><!DOCTYPE html>
 <html lang="ru">
 <head>
-<title>Заказ №<?= $orderId ?> принят — <?= e($siteName) ?></title>
+<title>Заказ № <?= $orderId ?> принят — <?= e($siteName) ?></title>
 <meta name="robots" content="noindex">
 <?php require __DIR__ . '/partials/head.php'; ?>
 </head>
@@ -73,7 +82,7 @@ $pageTitle = 'Заказ №' . $orderId . ' принят — ' . $siteName;
       <span aria-hidden="true" style="display:inline-grid;place-items:center;width:72px;height:72px;border-radius:50%;background:var(--surface-warm);margin-bottom:18px">
         <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="var(--pink,#ff4ea2)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
       </span>
-      <h1 class="page-hero__title">Спасибо! Заказ №<?= $orderId ?> принят</h1>
+      <h1 class="page-hero__title">Спасибо! Заказ № <?= $orderId ?> принят</h1>
       <?php /* W96-fix3b (D8): конкретное обещание звонка — настройка thanks_call_text
          (пустое значение в БД скрывает строку, отсутствующий ключ — дефолт) */ ?>
       <?php $thanksCall = trim(setting('thanks_call_text', 'Мы позвоним в течение 15 минут для подтверждения')); ?>

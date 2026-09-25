@@ -43,11 +43,17 @@
       if (!('nfCtaOrig' in btn.dataset)) {
         btn.dataset.nfCtaOrig = btn.innerHTML;
         btn.dataset.nfCtaPlus = btn.textContent.trim() === '+' ? '1' : '';
+        btn.dataset.nfCtaAria = btn.getAttribute('aria-label') || '';
       }
       btn.textContent = btn.dataset.nfCtaPlus === '1' ? '✓' : 'В корзине ✓';
+      /* W100 (редактор): aria-label синхронен видимому состоянию — SR не говорит
+         «Добавить в корзину», когда кнопка уже «В корзине ✓». */
+      btn.setAttribute('aria-label', 'Добавлено в корзину');
       clearTimeout(btn._nfCtaReset);
       btn._nfCtaReset = setTimeout(function () {
         btn.innerHTML = btn.dataset.nfCtaOrig;
+        if (btn.dataset.nfCtaAria !== '') { btn.setAttribute('aria-label', btn.dataset.nfCtaAria); }
+        else { btn.removeAttribute('aria-label'); }
       }, 2500);
       /* Мягкая обратная связь без перекрытия: короткая анимация самой кнопки
          (skipped при prefers-reduced-motion — A8) */

@@ -75,9 +75,11 @@
   function itemsWord(n) {
     const mod10 = n % 10;
     const mod100 = n % 100;
-    if (mod10 === 1 && mod100 !== 11) return 'позиция';
-    if ([2, 3, 4].includes(mod10) && ![12, 13, 14].includes(mod100)) return 'позиции';
-    return 'позиций';
+    /* W100 (редактор): единая терминология с анонсом добавления (cart-cta.js) —
+       «товар/товара/товаров» вместо «позиция/позиции/позиций» (разнобой рядом). */
+    if (mod10 === 1 && mod100 !== 11) return 'товар';
+    if ([2, 3, 4].includes(mod10) && ![12, 13, 14].includes(mod100)) return 'товара';
+    return 'товаров';
   }
 
   /* ============ W97-fixA (A7): live-регион для молчаливых сумм ============
@@ -330,6 +332,8 @@
         price: Number(btn.dataset.price) || 0,
         image: btn.dataset.image || '',
       });
+      /* W100 (CRO-критик): добавление апсейла — тот же шаг воронки add_to_cart. */
+      nfGoal('add_to_cart');
     });
   }
 

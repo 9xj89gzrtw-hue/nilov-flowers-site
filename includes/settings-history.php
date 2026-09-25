@@ -4,12 +4,26 @@
    (критерий 17). Идемпотентно, только stdlib. */
 declare(strict_types=1);
 
+/** Ключи-секреты, значения которых не храним в истории копиями (W100-fixH2 J3):
+ *  вместо значения — маска «***»; undo маску пропускает (секреты маской не затираются).
+ *  vapid_private — исключается целиком (прежнее поведение), эти два — маскируются,
+ *  чтобы в снимке оставался сам факт «ключ настроен» и diff истории (J8) видел их изменение. */
+function settingsSecretKeys(): array
+{
+    return ['yk_secret_key', 'telegram_bot_token'];
+}
+
 /** Сохранить текущее состояние settings как точку отката ПЕРЕД записью newValues.
  *  source: save | undo | defaults | defaults-save | defaults-reset (W76). Вызывается из admin/settings.php. */
 function settingsSnapshot(string $source): void
 {
     $snap = allSettings();
     unset($snap['vapid_private']); // приватный ключ не храним в истории
+    foreach (settingsSecretKeys() as $sk) {
+        if (isset($snap[$sk]) && (string)$snap[$sk] !== '') {
+            $snap[$sk] = '***'; /* W100-fixH2 (J3): до 60 копий секрета в БД больше не копится */
+        }
+    }
     db()->prepare('INSERT INTO settings_history (ts, source, snapshot) VALUES (:t, :s, :j)')
         ->execute([':t' => date('Y-m-d H:i:s'), ':s' => $source, ':j' => json_encode($snap, JSON_UNESCAPED_UNICODE)]);
     /* хвост режем: 60 снимков ≈ все отмены последних ~часов */
@@ -32,19 +46,56 @@ function settingsUndoLast(): bool
     if (!$row) { return false; }
     $snap = json_decode((string)$row['snapshot'], true);
     if (!is_array($snap) || $snap === []) { return false; }
+    /* W100-fixH2 (J3): маска «***» = «значение не трогать»: секреты не откатываются
+       (восстановить их из истории невозможно — значений там нет) и не затираются маской.
+       Реальные значения в старых снимках (снятых до J3) откатываются как раньше. */
+    foreach (settingsSecretKeys() as $sk) {
+        if (isset($snap[$sk]) && (string)$snap[$sk] === '***') {
+            unset($snap[$sk]);
+        }
+    }
     /* сама отмена — тоже изменение: снимаем текущее состояние, чтобы отменить отмену */
     settingsSnapshot('undo');
     saveSettings($snap);
     return true;
 }
 
-/** Список последних изменений (для UI): дата + тип. */
+/** Список последних изменений (для UI): дата + тип + имена изменённых ключей (W100-fixH2 J8).
+ *  Снимок N снимается ДО записи N-го изменения, поэтому «что изменила запись N» — это
+ *  diff(снимок N, снимок N+1); для самой свежей записи — diff(снимок, текущие настройки)
+ *  (текущее состояние = результат последнего сохранения). Механика выводная: формат
+ *  хранения не менялся, старые записи показывают имена ключей наравне с новыми, undo не затронут. */
 function settingsHistoryList(int $limit = 8): array
 {
-    $stmt = db()->prepare('SELECT id, ts, source FROM settings_history ORDER BY id DESC LIMIT :l');
-    $stmt->bindValue(':l', $limit, PDO::PARAM_INT);
+    $stmt = db()->prepare('SELECT id, ts, source, snapshot FROM settings_history ORDER BY id DESC LIMIT :l');
+    $stmt->bindValue(':l', max(1, $limit), PDO::PARAM_INT);
     $stmt->execute();
-    return $stmt->fetchAll();
+    $rows = $stmt->fetchAll();
+    $current = allSettings();
+    $out = [];
+    foreach ($rows as $i => $r) {
+        $snap = json_decode((string)$r['snapshot'], true);
+        $snap = is_array($snap) ? $snap : [];
+        /* более новое состояние: соседний снимок сверху, для самого свежего — текущие настройки */
+        $newer = $i === 0
+            ? $current
+            : (json_decode((string)$rows[$i - 1]['snapshot'], true) ?: []);
+        $changed = [];
+        foreach ($snap as $k => $v) {
+            if (!array_key_exists($k, $newer) || (string)$newer[$k] !== (string)$v) {
+                $changed[] = (string)$k;
+            }
+        }
+        foreach ($newer as $k => $v) {
+            if (!array_key_exists($k, $snap)) {
+                $changed[] = (string)$k;
+            }
+        }
+        sort($changed, SORT_STRING);
+        $r['changed'] = $changed;
+        $out[] = $r;
+    }
+    return $out;
 }
 
 /** Заводские значения витринных текстов/тумблеров (из seedDatabase/migrations).

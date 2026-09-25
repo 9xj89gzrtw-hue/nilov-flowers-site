@@ -17,6 +17,13 @@ function adminHeader(string $title, string $active = ''): void
            всем страницам; иконка — эмодзи по образцу подписей настроек (🖼/💾/⚙️) */
         'help' => '📖 Инструкция',
     ];
+    /* W100-fixH2 (J6): пункт «Сотрудники» — только владельцу (страница и так 403-ит staff,
+       теперь и из меню не соблазняет); все админ-страницы идут после requireAdmin() */
+    $navIsOwner = true;
+    if (function_exists('currentAdmin')) {
+        $navMe = currentAdmin();
+        $navIsOwner = $navMe !== null && (string)($navMe['role'] ?? 'owner') === 'owner';
+    }
     ?><!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -256,6 +263,7 @@ table tr.row-flash{animation:rowFlash 2.5s ease-out 1}
     <span class="admin-logo">Админ-панель</span>
     <nav class="admin-nav">
       <?php foreach ($nav as $key => $label): ?>
+        <?php if ($key === 'users' && !$navIsOwner) { continue; } /* W100-fixH2 (J6) */ ?>
         <a href="/admin/<?= e($key) ?>.php" class="<?= $active === $key ? 'active' : '' ?>"><?= e($label) ?></a>
       <?php endforeach; ?>
     </nav>

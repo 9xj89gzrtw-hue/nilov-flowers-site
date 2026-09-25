@@ -126,7 +126,7 @@ function trackStep(string $status): int {
           ?>
           <div class="track-card">
             <div class="track-card__top">
-              <span class="track-card__id">Заказ №<?= (int)$o['id'] ?> · <?= e($o['created_at']) ?></span>
+              <span class="track-card__id">Заказ № <?= (int)$o['id'] ?> · <?= e($o['created_at']) ?></span>
               <span class="track-card__status <?= e($o['status']) ?>"><?= e($statusText[$o['status']] ?? $o['status']) ?></span>
             </div>
             <p class="track-card__meta">

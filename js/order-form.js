@@ -375,9 +375,12 @@
         const created = await res.json().catch(function () { return null; });
         /* Цели Яндекс.Метрики: отправка заказа (после согласия в cookie-баннере).
            ORDER_SUBMIT — историческая цель (сохранена); purchase — новая цель
-           воронки W98-fixF (F4). Считаем ДО cart.clear(); параметры — только сумма. */
-        const orderTotal = window.cart && typeof window.cart.getTotal === 'function'
-          ? (window.cart.getTotal() + (selectedDeliveryPrice())) : 0;
+           воронки W98-fixF (F4). Считаем ДО cart.clear(); параметры — только сумма.
+           W100 (CRO-критик): выручка цели — как серверный total: букеты + доставка − промо. */
+        const __promoDiscount = (window.PROMO_STATE && Number(window.PROMO_STATE.discount) > 0)
+          ? Number(window.PROMO_STATE.discount) : 0;
+        const orderTotal = Math.max(0, (window.cart && typeof window.cart.getTotal === 'function'
+          ? window.cart.getTotal() : 0) + (selectedDeliveryPrice()) - __promoDiscount);
         if (window.ym && window.YM_COUNTER_ID) {
           try { ym(window.YM_COUNTER_ID, 'reachGoal', 'ORDER_SUBMIT', { order_price: orderTotal, currency: 'RUB' }); } catch (err) { /* метрика не критична */ }
         }
@@ -398,7 +401,10 @@
         if (redirected) return;
 
         if (!wantsOnline && created && created.id) {
-          window.location.assign('/order-thanks?id=' + encodeURIComponent(created.id));
+          /* W100 (security): paymentToken из ответа = одноразовый ключ спасибо-страницы
+             (order-thanks требует ?t= — BOLA-защита от перебора заказов). */
+          window.location.assign('/order-thanks?id=' + encodeURIComponent(created.id)
+            + (created.paymentToken ? '&t=' + encodeURIComponent(created.paymentToken) : ''));
           return;
         }
 
