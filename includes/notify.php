@@ -158,7 +158,7 @@ function notifyNewOrder(int $orderId): void
             . "Ваш заказ № " . $orderId . " принят.\n\n"
             . "Состав заказа:\n" . $clientLines . "\n"
             . $payLine . ': ' . formatPrice((int)$order['total']) . "\n\n"
-            . "Мы позвоним в течение 15 минут для подтверждения.\n\n"
+            . setting('thanks_call_text', 'Мы позвоним в течение 15 минут для подтверждения') . "\n\n"
             . 'Отследить заказ: ' . $trackUrl . "\n\n"
             . '— ' . setting('shop_name', 'Nilov Flowers') . "\n";
         $clientHeaders = 'From: ' . $from . "\r\n" . 'Content-Type: text/plain; charset=UTF-8';

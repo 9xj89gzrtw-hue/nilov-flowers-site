@@ -10,6 +10,8 @@ function adminSessionStart(): void
         session_set_cookie_params(['lifetime' => 0, 'path' => '/admin', 'domain' => '', 'secure' => true,
             'httponly' => true, 'samesite' => 'Lax']);
         session_name('floweradmin');
+        /* W101 (security): строгий режим сессий — чужие/устаревшие ID не принимаются */
+        ini_set('session.use_strict_mode', '1');
         session_start();
     }
 }

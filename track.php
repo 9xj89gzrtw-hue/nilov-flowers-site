@@ -36,7 +36,7 @@ if (strlen($normalized) === 10 || strlen($normalized) === 11) {
         $d11 = strlen($normalized) === 10 ? '7' . $normalized : preg_replace('/^8/', '7', $normalized);
         $rows = db()->prepare(
             "SELECT o.id, o.created_at, o.status, o.total, o.delivery_zone_id,
-                    z.name AS zone
+                    z.name AS zone, o.handover_photo
              FROM orders o LEFT JOIN delivery_zones z ON z.id = o.delivery_zone_id
              WHERE REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(o.phone, ' ', ''), '+', ''), '(', ''), ')', ''), '-', '') = :n
                 OR REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(o.phone, ' ', ''), '+', ''), '(', ''), ')', ''), '-', '') = :n8
@@ -139,10 +139,10 @@ function trackStep(string $status): int {
             </div>
             <p class="track-card__meta">
               <?= e($addr) ?> · Сумма: <strong><?= formatPrice((int)$o['total']) ?></strong>
-              <?php if ($o['status'] === 'new'): ?><br>Мы свяжемся с вами для подтверждения в течение 15 минут.
+              <?php if ($o['status'] === 'new'): ?><br><?= e(trim(setting('thanks_call_text', 'Мы позвоним в течение 15 минут для подтверждения'))) ?>
               <?php elseif ($o['status'] === 'confirmed'): ?><br>Букет собираем — фото пришлём перед отправкой.
-              <?php elseif ($o['status'] === 'done'): ?><br>Доставлено. Спасибо, что выбираете нас! 💐
-              <?php endif; ?>
+              <?php elseif ($o['status'] === 'done'): ?><br>Доставлено. Спасибо, что выбираете нас!
+              <?php endif; ?><?php if (!empty($o['handover_photo'])): ?><br>Фото вручения: <a href="/img/uploads/<?= e($o['handover_photo']) ?>" target="_blank" rel="noopener">посмотреть</a><?php endif; ?>
             </p>
             <?php if ($step > 0): ?>
             <?php /* W99-fixG (G12): точки-прогресс — декоративны (aria-hidden).

@@ -268,7 +268,7 @@ function normalizeUpload(string $path, string $ext): void
 
 function deleteImage(string $name, string $dir): void
 {
-    if ($name !== '' && !str_contains('/', $name)) {
+    if ($name !== '' && !str_contains($name, '/')) { /* W101 (security): аргументы были перепутаны — guard был мёртв */
         $path = $dir . '/' . $name;
         if (is_file($path)) {
             @unlink($path);
