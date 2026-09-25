@@ -7,6 +7,9 @@
       вкладка И цена И чип И поиск И избранное). Плюс пилюля «Нашлось N —
       посмотреть ↓» под строкой поиска (A3), автоскролл по ?q= и
       ре-применение фильтров на pageshow (bfcache/возврат «Назад»).
+      W99-fixG2: H2 — пилюля слушает событие 'fc:filter' (сброс фильтров в
+      catalog-filter.js тоже обновляет её); H3 — сердечко в шапке включает
+      фильтр «Избранное»; H5 — «Нашёлся 1/21 букет».
    Vanilla JS, без зависимостей. */
 (function () {
   'use strict';
@@ -31,6 +34,7 @@
     carousels();
     catalogFilters(); /* чипы + поиск + сброс — общее состояние (AND) */
     rowLinks();
+    headerFavLink(); /* W99-fixG2 (H3): сердечко шапки → фильтр избранного */
   });
 
   /* ---------- 1. Город-бар: подтверждение города ---------- */
@@ -143,8 +147,11 @@
         (form || document.body).appendChild(pill);
       }
       pill.style.display = 'inline-flex';
-      pill.textContent = 'Нашлось ' + visible + ' ' + pluralBuket(visible) + ' — посмотреть ↓';
-      pill.setAttribute('aria-label', 'Нашлось ' + visible + ' ' + pluralBuket(visible) + ' — перейти к каталогу букетов');
+      /* H5 (W99-fixG2): правильный род — «Нашёлся 1/21/31 букет»,
+         «Нашлось 3 букета/11 букетов». */
+      var verb = (visible % 10 === 1 && visible % 100 !== 11) ? 'Нашёлся' : 'Нашлось';
+      pill.textContent = verb + ' ' + visible + ' ' + pluralBuket(visible) + ' — посмотреть ↓';
+      pill.setAttribute('aria-label', verb + ' ' + visible + ' ' + pluralBuket(visible) + ' — перейти к каталогу букетов');
     }
 
     /* Единый re-apply: карточки/счётчики/empty-state пересчитывает catalog-filter.js;
@@ -162,6 +169,17 @@
         }
       }
     }
+
+    /* H2 (W99-fixG2): пилюля обновляется ЛЮБЫМ apply() каталога, а не только
+       нашими чипами/поиском. «Сбросить фильтры» в catalog-filter.js зовёт
+       apply() напрямую (минуя five.js) — раньше пилюля со старым числом
+       оставалась висеть. apply() рассылает 'fc:filter' с числом видимых —
+       подписываемся и приводим пилюлю в актуальное состояние (при пустом
+       запросе pillUpdate сам её прячет). */
+    window.addEventListener('fc:filter', function (e) {
+      var v = e && e.detail && typeof e.detail.visible === 'number' ? e.detail.visible : null;
+      pillUpdate(v);
+    });
 
     /* Чипы: единственный активный; повторный клик — снять. Сами карточки
        фильтрует NfCatalogApply (читает .fc-chip.is-active). */
@@ -258,6 +276,33 @@
         var chip = document.querySelector('.fc-chip[data-chip="' + chipId + '"]');
         if (!chip || chip.classList.contains('is-active')) return;
         chip.click();
+      }
+    });
+  }
+
+  /* ---------- 5. Сердечко в шапке → фильтр «Избранное» (W99-fixG2, H3) ----------
+     Ссылка «Избранное — в каталоге» (href /#catalog) раньше просто прыгала к
+     каталогу. На главной теперь: включаем тумблер «Избранное» (aria-pressed +
+     .is-on — то же состояние, что ставит клик по самому тумблеру в nilov.js),
+     применяем общие фильтры и плавно скроллим к #catalog. На вторичных
+     страницах (нет #favToggle/#catalogGrid) — обычная навигация по href. */
+  function headerFavLink() {
+    var link = document.querySelector('.fc-header__icons a.fc-header__icon[href="/#catalog"]');
+    if (!link) return;
+    link.addEventListener('click', function (e) {
+      if (e.button !== 0 || e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      var fav = document.getElementById('favToggle');
+      var grid = document.getElementById('catalogGrid');
+      if (!fav || !grid) return; /* не на главной — нативный переход по href */
+      e.preventDefault();
+      if (fav.getAttribute('aria-pressed') !== 'true') {
+        fav.classList.add('is-on');
+        fav.setAttribute('aria-pressed', 'true');
+      }
+      if (typeof window.NfCatalogApply === 'function') window.NfCatalogApply();
+      var cat = document.getElementById('catalog');
+      if (cat && cat.scrollIntoView) {
+        cat.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth' });
       }
     });
   }

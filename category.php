@@ -186,7 +186,7 @@ function render_product_card(array $p, array $ctx): void
     ?>
         <article class="product-card reveal" data-category-id="<?= (int)($p['category_id'] ?? 0) ?>" data-price="<?= (int)$price ?>" data-hit="<?= (int)($p['is_hit'] ?? 0) ?>" data-premium="<?= (int)($p['is_premium'] ?? 0) ?>" data-search="<?= e($searchIndex) ?>">
           <div class="product-card__media">
-            <a class="product-card__media-link" href="<?= e($link) ?>" aria-label="<?= e($p['name']) ?>">
+            <a class="product-card__media-link" href="<?= e($link) ?>" aria-label="<?= e($p['name']) ?>" aria-hidden="true" tabindex="-1">
               <?php if ($img !== ''): ?>
                 <picture>
                   <?php if ($srcset !== ''): ?><source type="image/webp" srcset="<?= e($srcset) ?>"<?= $thumb !== '' ? ' sizes="' . e($sizes) . '"' : '' ?>><?php endif; ?>
@@ -285,6 +285,21 @@ $heroImg = setting('hero_image', '');
     ],
 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>
 </script>
+<?php /* W99-fixG (G10): ItemList — позиции-URL товаров категории (карусель SERP-
+   фичер для intent-страниц; пустая категория — без ItemList). */ ?>
+<?php if ($products !== []): ?>
+<script type="application/ld+json">
+<?= json_encode([
+    '@context' => 'https://schema.org',
+    '@type' => 'ItemList',
+    'itemListElement' => array_map(static fn (int $i, array $p): array => [
+        '@type' => 'ListItem',
+        'position' => $i,
+        'url' => 'https://flowers.interfood-catering.ru/product/' . rawurlencode($p['slug']),
+    ], range(1, count($products)), array_values($products)),
+], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>
+</script>
+<?php endif; ?>
 </head>
 <body>
 <?php require __DIR__ . '/partials/header.php'; ?>

@@ -40,6 +40,13 @@
   const PHONE_RE = /^\+?[\d\s\-().]{7,20}$/;
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+  /* H8 (W99-fixG2): скролл к первой ошибке — уважаем prefers-reduced-motion
+     (как five.js/cart-ui.js): при reduce — мгновенный 'auto'. */
+  function scrollBehavior() {
+    return (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+      ? 'auto' : 'smooth';
+  }
+
   /* Критик-мобайл (форма заказа, 8/10): поля и их подписи ошибок — списком,
      чтобы ошибка чистилась при вводе и вешался aria (баги 5,6). */
   const FIELD_PAIRS = [[nameInput, nameError], [phoneInput, phoneError], [emailInput, emailError],
@@ -142,7 +149,7 @@
     if (!valid && firstInvalid.length) {
       setStatus('', 'err');
       const el = firstInvalid[0];
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.scrollIntoView({ behavior: scrollBehavior(), block: 'center' });
       setTimeout(function () { try { el.focus({ preventScroll: true }); } catch (e) { el.focus(); } }, 350);
     }
     return valid;

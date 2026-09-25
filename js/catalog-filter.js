@@ -68,14 +68,24 @@
   }
 
   /* W96-fix1 (F3): базовый стемминг русского запроса — отрезаем типичные окончания,
-     чтобы «розы» находило «Букет из роз», «пионы» — «пион», «маме» — «мам». */
+     чтобы «розы» находило «Букет из роз», «пионы» — «пион», «маме» — «мам».
+     W99-fixG2 (H10): стеммы больше не ищутся подстрокой — поисковый индекс
+     карточки токенизируется и сравнивается ТОЧНЫМ вхождением стеммы в Set.
+     + прилагательные: «розовое/розовые/розовой/розовых» → стемма «розов»
+     (как у «розовый») — запрос «розовый» находит «Розовое облако» и пр. */
   function stemRu(word) {
     var w = word.toLowerCase();
-    var m = w.match(/^(.+?)(?:ами|ого|ому|ыми|ая|ые|ов|ей|ий|ый|ом|ем|ам|ах|иях|ях|ии|ие|ия|ью|ья|а|я|ы|и|у|ю|е|о)$/);
+    var m = w.match(/^(.+?)(?:ами|ого|ому|ыми|ими|ая|ые|ое|ее|ой|ым|ых|ов|ей|ий|ый|ом|ем|ам|ах|иях|ях|ии|ие|ия|ью|ья|а|я|ы|и|у|ю|е|о)$/);
     return (m && m[1].length >= 3) ? m[1] : w;
   }
+  /* Токены ≥3 символов (буквы/цифры) — «роз» остаётся токеном, а предлоги/«7» отпадают */
+  function tokenize(text) {
+    return String(text || '').toLowerCase()
+      .split(/[^a-zа-яё0-9]+/)
+      .filter(function (t) { return t.length >= 3; });
+  }
   function queryStems(q) {
-    return q.toLowerCase().trim().split(/\s+/).filter(Boolean).map(stemRu);
+    return tokenize(q).map(stemRu);
   }
 
   /* Чип задаёт диапазон: data-min — исключительно («от M»), data-max — включительно
@@ -109,7 +119,10 @@
     var favOn = !!(favToggle && favToggle.getAttribute('aria-pressed') === 'true');
     var rawQ = searchInp ? (searchInp.value || '') : '';
     var q = rawQ.trim().toLowerCase();
-    var stems = q ? queryStems(q) : [];
+    var rawStems = q ? queryStems(q) : [];
+    /* H10: длинные стеммы (≥3) матчатся ТОЧНО по Set стеммов карточки;
+     короткий запрос целиком (напр. «7») — прежний подстрочный fallback */
+    var stems = rawStems.filter(function (w) { return w.length >= 3; });
 
     /* W96-fix1 (F6): считаем и скрываем ТОЛЬКО карточки каталога (#catalogGrid) —
        селектор .product-card зацепил бы и карусели секций (хиты/премиум/…). */
@@ -125,12 +138,21 @@
         var price = parseInt(card.getAttribute('data-price'), 10) || 0;
         if ((min !== null && price < min) || (max !== null && price > max)) ok = false;
       }
-      /* поиск: стеммы запроса входят подстрокой в data-search (имя+категория+
-         описание; фолбэк на имя карточки для старого кэша) */
-      if (ok && stems.length) {
+      /* Поиск (W99-fixG2 H10): токенизируем поисковый индекс карточки (имя+
+         категория+описание; фолбэк на имя для старого кэша) по словам ≥3 симв.,
+         стеммим и складываем в Set — КАЖДАЯ стемма запроса должна быть в нём
+         точно. Было подстрочным indexOf: «роз» матчил «розовый» (стемма
+         «розов» ≠ «роз»), «пион» ложно попадал в «пионерский» и т.п. */
+      if (ok && q !== '') {
         var nameEl = card.querySelector('.product-card__name');
         var hay = (card.getAttribute('data-search') || (nameEl ? nameEl.textContent : '')).toLowerCase();
-        ok = stems.every(function (w) { return hay.indexOf(w) !== -1; });
+        if (stems.length) {
+          var stemSet = new Set(tokenize(hay).map(stemRu));
+          ok = stems.every(function (w) { return stemSet.has(w); });
+        } else if (rawStems.length) {
+          /* запрос из одних коротких токенов — старый подстрочный матч */
+          ok = rawStems.every(function (w) { return hay.indexOf(w) !== -1; });
+        }
       }
       /* избранное */
       if (ok && favOn && !cardFav(card)) ok = false;
@@ -139,11 +161,15 @@
       if (ok) visible++;
     });
 
-    /* Счётчики — ОБА показывают одно число (W96-fix3b D9): у select цены и у чипов. */
+    /* Счётчики — ОБА показывают одно число (W96-fix3b D9): у select цены и у чипов.
+       H6 (W99-fixG2): при активном чипе + поиске подпись чипа сохраняет контекст
+       запроса — «N букетов по запросу «…»» (раньше ветка запроса затиралась числом). */
     if (priceCount) priceCount.textContent = visible + ' ' + plural(visible);
     if (chipsCount) {
       if (chip) {
-        chipsCount.textContent = visible + ' ' + plural(visible);
+        chipsCount.textContent = q !== ''
+          ? visible + ' ' + plural(visible) + ' по запросу «' + rawQ.trim() + '»'
+          : visible + ' ' + plural(visible);
       } else if (q !== '') {
         chipsCount.textContent = 'по запросу «' + rawQ.trim() + '» — ' + visible + ' ' + plural(visible);
       } else {
@@ -173,7 +199,8 @@
     }
 
     /* Совместимость: событие «фильтры применились» (число видимых) — как делал
-       five.js в W96-fix3b (D9); слушателей сейчас нет, оставляем контракт. */
+       five.js в W96-fix3b (D9); W99-fixG2 (H2): five.js подписан на него —
+       пилюля поиска «Нашлось N» обновляется и сбросом «Сбросить фильтры». */
     try {
       window.dispatchEvent(new CustomEvent('fc:filter', { detail: { visible: visible } }));
     } catch (err) { /* старые браузеры без CustomEvent-конструктора — молча */ }
@@ -184,6 +211,37 @@
   window.NfCatalogApply = apply;
 
   if (priceSel) priceSel.addEventListener('change', apply);
+
+  /* H9 (W99-fixG2): клик по ценовому чипу синхронизирует select «Цена:» —
+     «До 3 500 ₽» ставит селект в ту же опцию (match по data-min/data-max —
+     пороги чипов и селекта приходят из настроек и совпадают), снятие чипа
+     возвращает «Любая». Хиты/Премиум ценового эквивалента не имеют — их не
+     трогаем. Слушатель на .fc-chips срабатывает ПОСЛЕ чип-обработчика five.js
+     (target-фаза раньше bubbling) — состояние is-active уже актуально;
+     после синхронизации пересчитываем каталог одним apply(). */
+  var chipsBoxEl = document.querySelector('.fc-chips');
+  if (chipsBoxEl && priceSel) {
+    chipsBoxEl.addEventListener('click', function (e) {
+      var chipEl = e.target.closest ? e.target.closest('.fc-chip') : null;
+      if (!chipEl) return;
+      var kind = chipEl.getAttribute('data-chip');
+      if (kind === 'hit' || kind === 'premium') return;
+      if (!chipEl.classList.contains('is-active')) {
+        /* чип только что сняли — селект больше не должен держать его диапазон */
+        if (priceSel.value !== 'all') { priceSel.value = 'all'; apply(); }
+        return;
+      }
+      var cMin = chipEl.hasAttribute('data-min') ? chipEl.getAttribute('data-min') : '';
+      var cMax = chipEl.hasAttribute('data-max') ? chipEl.getAttribute('data-max') : '';
+      var matched = false;
+      Array.prototype.forEach.call(priceSel.options, function (o) {
+        var oMin = o.hasAttribute('data-min') ? o.getAttribute('data-min') : '';
+        var oMax = o.hasAttribute('data-max') ? o.getAttribute('data-max') : '';
+        if (oMin === cMin && oMax === cMax) { priceSel.value = o.value; matched = true; }
+      });
+      if (matched) apply();
+    });
+  }
 
   /* Кнопка сброса (empty-state): снимает ВСЕ фильтры — цену, категорию,
      избранное, чип и поиск — и пересчитывает каталог одним apply(). */

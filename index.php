@@ -154,6 +154,69 @@ function product_img_width(array $p): int
     return $cache[$file];
 }
 
+/* W99-fixG (G3): hero-превью — webp шириной 480/768 в img/uploads/thumbs/
+   ({имя без ext}-{W}.webp, q78). Паттерн product_img_thumb: ленивая генерация,
+   tmp+rename против гонок, оригинал ≤W / сбой GD / не пишется каталог → ''
+   (деградация до прежнего одного src). Оригинал 1024×1024 (90КБ webp) мобиле
+   не нужен: 390/DPR1 хватает 480w. */
+function hero_img_size(string $file, int $targetW): string
+{
+    static $cache = [];
+    if ($file === '' || $targetW <= 0) return '';
+    $ck = $file . '@' . $targetW;
+    if (isset($cache[$ck])) return $cache[$ck];
+
+    $fail = static function () use (&$cache, $ck): string {
+        $cache[$ck] = '';
+        return '';
+    };
+    $src = IMG_UPLOADS_DIR . '/' . $file;
+    if (!is_file($src)) return $fail();
+    $dim = @getimagesize($src);
+    if ($dim === false) return $fail();
+    [$srcW, $srcH, $type] = [(int)$dim[0], (int)$dim[1], (int)$dim[2]];
+    /* Компактный оригинал — превью не даёт экономии, не апскейлим */
+    if ($srcW <= $targetW) return $fail();
+
+    $base = preg_replace('/\.[^.]+$/', '', $file) ?? $file;
+    $thumbsDir = IMG_UPLOADS_DIR . '/thumbs';
+    $dst = $thumbsDir . '/' . $base . '-' . $targetW . '.webp';
+    $url = '/img/uploads/thumbs/' . rawurlencode($base . '-' . $targetW . '.webp');
+    if (is_file($dst)) return $url;
+
+    if (!is_dir($thumbsDir) && !@mkdir($thumbsDir, 0755, true)) return $fail();
+    $srcIm = match ($type) {
+        IMAGETYPE_JPEG => @imagecreatefromjpeg($src),
+        IMAGETYPE_PNG => @imagecreatefrompng($src),
+        IMAGETYPE_WEBP => function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($src) : false,
+        default => false,
+    };
+    if ($srcIm === false) return $fail();
+
+    $w = $targetW;
+    $h = max(1, (int)round($srcH * $w / $srcW));
+    $dstIm = imagecreatetruecolor($w, $h);
+    if ($type === IMAGETYPE_PNG) {
+        imagealphablending($dstIm, false);
+        imagesavealpha($dstIm, true);
+        imagefill($dstIm, 0, 0, imagecolorallocatealpha($dstIm, 0, 0, 0, 127));
+    }
+    $copied = imagecopyresampled($dstIm, $srcIm, 0, 0, 0, 0, $w, $h, $srcW, $srcH);
+    imagedestroy($srcIm);
+    if (!$copied) {
+        imagedestroy($dstIm);
+        return $fail();
+    }
+    $tmp = $dst . '.tmp' . getmypid();
+    $written = @imagewebp($dstIm, $tmp, 78);
+    imagedestroy($dstIm);
+    if (!$written || !@rename($tmp, $dst)) {
+        if (is_file($tmp)) @unlink($tmp);
+        return $fail();
+    }
+    return $url;
+}
+
 /* Критик-покупатель B1: единый фолбэк-фото (productImageFile) — карточка и страница
    товара всегда показывают одно и то же. */
 $canonicalUrl = 'https://flowers.interfood-catering.ru/';
@@ -166,7 +229,14 @@ unset($pRow);
 
 /* Единая карточка товара (5cv): используется и в каруселях, и в каталоге.
    $ctx — фичи-тумблеры витрины (badge доставки, избранное). is_hit/is_premium
-   может не быть в старой БД — читаем через ?? 0. */
+   может не быть в старой БД — читаем через ?? 0.
+   W99-fixG (G2): $ctx['carousel'] — копия для карусели секции: фильтрационные
+   атрибуты (data-search ~1.5КБ/карточка, data-price/data-hit/data-premium/
+   data-category-id) НЕ печатаем — проверено: js/catalog-filter.js и js/five.js
+   матчат карточки ТОЛЬКО внутри #catalogGrid (grid.querySelectorAll), вне
+   каталога data-search не читается. Остаются данные для рендера, CTA
+   (data-order-cta → cart-cta.js) и сердечка (data-fav-id → nilov.js, который
+   сам ставит data-fav на ближайший .product-card). */
 function render_product_card(array $p, array $ctx): void
 {
     $price = productPrice($p);
@@ -194,12 +264,19 @@ function render_product_card(array $p, array $ctx): void
     $sizes = '(max-width:899px) 45vw, (min-width:900px) 300px';
     $link = '/product/' . rawurlencode($p['slug']);
     /* W96-fix1 (F3): поисковый индекс карточки — имя + категория + описание
-       (нижний регистр; js/five.js матчит по стемму запроса как подстроке) */
-    $searchIndex = mb_strtolower(trim($p['name'] . ' ' . ($p['category_name'] ?? '') . ' ' . ($p['description'] ?? '')));
+       (нижний регистр; js/five.js матчит по стемму запроса как подстроке).
+       W99-fixG (G2): в карусельных копиях НЕ печатаем (описания дублируются —
+       36.5КБ лишнего HTML; поиск живёт только в #catalogGrid). */
+    $isCarousel = !empty($ctx['carousel']);
+    $searchIndex = $isCarousel ? '' : mb_strtolower(trim($p['name'] . ' ' . ($p['category_name'] ?? '') . ' ' . ($p['description'] ?? '')));
     ?>
-        <article class="product-card reveal" data-category-id="<?= (int)($p['category_id'] ?? 0) ?>" data-price="<?= (int)$price ?>" data-hit="<?= (int)($p['is_hit'] ?? 0) ?>" data-premium="<?= (int)($p['is_premium'] ?? 0) ?>" data-search="<?= e($searchIndex) ?>">
+        <article class="product-card reveal"<?= $isCarousel
+            ? ''
+            : ' data-category-id="' . (int)($p['category_id'] ?? 0) . '" data-price="' . (int)$price . '" data-hit="' . (int)($p['is_hit'] ?? 0) . '" data-premium="' . (int)($p['is_premium'] ?? 0) . '" data-search="' . e($searchIndex) . '"' ?>>
           <div class="product-card__media">
-            <a class="product-card__media-link" href="<?= e($link) ?>" aria-label="<?= e($p['name']) ?>">
+          <?php /* W99-fixG (G11): img-ссылка дублирует title-ссылку — прячем от
+             скринридера и Tab-фокуса (href сохранён: клик мышью работает) */ ?>
+            <a class="product-card__media-link" href="<?= e($link) ?>" aria-label="<?= e($p['name']) ?>" aria-hidden="true" tabindex="-1">
               <?php if ($img !== ''): ?>
                 <picture>
                   <?php if ($srcset !== ''): ?><source type="image/webp" srcset="<?= e($srcset) ?>"<?= $thumb !== '' ? ' sizes="' . e($sizes) . '"' : '' ?>><?php endif; ?>
@@ -255,6 +332,9 @@ function render_fc_row(string $title, string $sub, array $items, array $ctx, str
     global $fcProdSeq;
     if ($items === []) return;
     $fcProdSeq++;
+    /* W99-fixG (G2): копии карточек для карусели — без фильтрационных атрибутов
+       (render_product_card по ctx['carousel']) */
+    $ctx['carousel'] = true;
     /* W97-fixB2 (B2-5а): чередование фонов товарных секций — каждая вторая tint
        (стили придёт волной CSS; здесь только классы) */
     $tint = ($fcProdSeq % 2 === 0) ? ' fc-section--tint' : '';
@@ -263,10 +343,12 @@ function render_fc_row(string $title, string $sub, array $items, array $ctx, str
       <div class="fc-row"><div class="fc-row__head">
         <h2 class="fc-row__title"><?= e($title) ?></h2>
         <?php if ($sub !== ''): ?><p class="fc-row__sub"><?= e($sub) ?></p><?php endif; ?>
+        <?php /* W99-fixG (G11): «Смотреть все» ×9 одинаковых имён — aria-label с
+               заголовком секции (визуальный текст не меняется) */ ?>
         <?php if ($catSlug !== ''): ?>
-        <a class="fc-row__link" href="/category/<?= e($catSlug) ?>">Смотреть все</a>
+        <a class="fc-row__link" href="/category/<?= e($catSlug) ?>" aria-label="Смотреть все: <?= e($title) ?>">Смотреть все</a>
         <?php else: ?>
-        <a class="fc-row__link" href="#catalog"<?= $tabId !== '' ? ' data-tab="' . e($tabId) . '"' : '' ?><?= $chip !== '' ? ' data-chip="' . e($chip) . '"' : '' ?>>Смотреть все</a>
+        <a class="fc-row__link" href="#catalog"<?= $tabId !== '' ? ' data-tab="' . e($tabId) . '"' : '' ?><?= $chip !== '' ? ' data-chip="' . e($chip) . '"' : '' ?> aria-label="Смотреть все: <?= e($title) ?>">Смотреть все</a>
         <?php endif; ?>
         <div class="fc-row__arrows">
           <?php /* W97-fixB2 (B2-4): стрелки называют свою секцию — пары «Назад»/«Вперёд»
@@ -282,21 +364,32 @@ function render_fc_row(string $title, string $sub, array $items, array $ctx, str
       </div></div>
     </div></section>
     <?php
-    /* W97-fixB2 (B2-5б): ОДНА editorial-пауза после 3-й товарной секции */
+    /* W97-fixB2 (B2-5б): editorial-паузы после 3-й и 6-й товарных секций
+       (W99-fixG G17: вторая врезка — после ~6-й, ритм длинной витрины) */
     if ($fcProdSeq === 3) {
-        render_fc_editorial();
+        render_fc_editorial(1);
+    }
+    if ($fcProdSeq === 6) {
+        render_fc_editorial(2);
     }
 }
 
-/* W97-fixB2 (B2-5б): editorial-пауза — широкий баннер-строка между товарными секциями.
-   Текст из setting('editorial_text', …); trim()===''  (пустое значение в БД) скрывает
-   блок. Ключа в БД нет → дефолт. Рендерим однажды (guard по счётчику секций). */
-function render_fc_editorial(): void
+/* W97-fixB2 (B2-5б) → W99-fixG (G17): editorial-пауза — широкий баннер-строка
+   между товарными секциями. Тексты из setting('editorial_text_N'); trim()===''
+   (пустое значение в БД) скрывает блок. Ключа в БД нет → дефолт. Каждая
+   врезка рендерится не более одного раза (guard по номеру): №1 — после 3-й
+   секции (как в W97), №2 — после 6-й, №3 — перед FAQ (вызов из тела страницы). */
+function render_fc_editorial(int $n): void
 {
     global $fcEditorialDone;
-    if ($fcEditorialDone) return;
-    $fcEditorialDone = true;
-    $editorialText = trim(setting('editorial_text', 'Соберём букет под ваш повод и бюджет — напишите пожелание в комментарии к заказу, флорист предложит варианты и фото до отправки'));
+    if (($fcEditorialDone[$n] ?? false)) return;
+    $fcEditorialDone[$n] = true;
+    $defaults = [
+        1 => 'Соберём букет под ваш повод и бюджет — напишите пожелание в комментарии к заказу, флорист предложит варианты и фото до отправки',
+        2 => 'Не нашли нужный букет? Опишите пожелание в комментарии к заказу — флорист соберёт авторскую композицию и пришлёт фото до отправки',
+        3 => 'Доставляем ежедневно: утром соберём — вечером уже у адресата',
+    ];
+    $editorialText = trim(setting('editorial_text' . ($n === 1 ? '' : '_' . $n), $defaults[$n] ?? ''));
     if ($editorialText === '') return;
     ?>
     <section class="fc-editorial" aria-label="О сборке букета"><p><?= e($editorialText) ?></p></section>
@@ -306,10 +399,11 @@ function render_fc_editorial(): void
 $cardCtx = ['featDeliveryBadge' => $featDeliveryBadge, 'featFavorites' => $featFavorites];
 
 /* W97-fixB2 (B2-5): счётчик товарных секций — общий для каруселей и каталога:
-   им чередуем фон (каждая вторая — tint) и находим позицию editorial-паузы (после 3-й).
-   Топ-левел index.php = global scope, render_fc_row() читает его через global. */
+   им чередуем фон (каждая вторая — tint) и находим позиции editorial-пауз
+   (после 3-й и 6-й). Топ-левел index.php = global scope, render_fc_row()
+   читает его через global. W99-fixG (G17): guard-массив — по номеру врезки. */
 $fcProdSeq = 0;
-$fcEditorialDone = false;
+$fcEditorialDone = [];
 
 /* ---- Карусели (5cv): хиты / по категориям / премиум / до N ₽ ---- */
 
@@ -443,18 +537,92 @@ $seoTextDefault = "Доставка цветов по Санкт-Петербу�
 <?php require __DIR__ . '/partials/head.php'; ?>
 <?php /* JSON-LD Florist — canonical 2026 (hanafloristpos.com/schema-guide, thestacc.com/local-business-schema) */ ?>
 <?php
-/* LCP-preload: hero.webp если существует (фолбэк — jpg) */
-$__heroPre = setting('hero_image');
-if ($__heroPre !== '') {
-    $__heroWebp = preg_replace('/\.(jpe?g|png)$/i', '.webp', $__heroPre);
-    $__heroPreHref = ($__heroWebp !== $__heroPre && is_file(IMG_UPLOADS_DIR . '/' . $__heroWebp))
-        ? '/img/uploads/' . rawurlencode($__heroWebp)
-        : '/img/uploads/' . rawurlencode($__heroPre);
-    echo '<link rel="preload" as="image" href="' . e($__heroPreHref) . '" fetchpriority="high">' . "\n";
-}
+/* W99-fixG (G3): hero-фото — srcset 480w/768w/{W}w. Расчёт здесь (в <head>):
+   те же переменные использует preload ниже и hero-разметка в теле страницы.
+   Слот .fc-hero__main (css/five.css): моб ≤899px — 100vw, десктоп 2fr/1fr от
+   wrap 1140 → ~640–720px CSS → sizes "(max-width:899px) 100vw, 640px"
+   (DPR1-десктоп берёт 768w, ретина — 1024w; моб 390/DPR1 — 480w). */
+$heroImg = setting('hero_image');
+$heroWebp = $heroImg !== '' ? preg_replace('/\.(jpe?g|png)$/i', '.webp', $heroImg) : '';
+$heroWebpUrl = ($heroWebp !== $heroImg && $heroImg !== '' && is_file(IMG_UPLOADS_DIR . '/' . $heroWebp))
+    ? '/img/uploads/' . rawurlencode($heroWebp) : '';
+$heroWebpOk = $heroWebpUrl !== '';
+/* Layout-критик W35: width/height на <img> — браузер резервирует box до загрузки */
+$heroDim = $heroImg !== '' ? (@getimagesize(IMG_UPLOADS_DIR . '/' . $heroImg) ?: null) : null;
+$heroThumb480 = $heroImg !== '' ? hero_img_size($heroImg, 480) : '';
+$heroThumb768 = $heroImg !== '' ? hero_img_size($heroImg, 768) : '';
+$heroSrcset = [];
+if ($heroThumb480 !== '') { $heroSrcset[] = $heroThumb480 . ' 480w'; }
+if ($heroThumb768 !== '') { $heroSrcset[] = $heroThumb768 . ' 768w'; }
+if ($heroWebpOk && $heroDim !== null) { $heroSrcset[] = $heroWebpUrl . ' ' . (int)$heroDim[0] . 'w'; }
+$heroSrcsetStr = implode(', ', $heroSrcset);
+$heroSizes = '(max-width:899px) 100vw, 640px';
 ?>
+<?php /* LCP-preload: hero.webp если существует (фолбэк — jpg).
+   W99-fixG (G3): imagesrcset/imagessizes дублируют srcset/sizes <source> —
+   предзагрузка попадает в ТОГО ЖЕ кандидата, что выберет разметка (десктоп:
+   DPR1 → 768w, ретина → 1024w); href-фолбэк для браузеров без imagesrcset —
+   полноформатный webp (как раньше). */ ?>
+<?php if ($heroImg !== ''): ?>
+<?php
+$__heroPreHref = $heroWebpOk ? $heroWebpUrl : '/img/uploads/' . rawurlencode($heroImg);
+echo '<link rel="preload" as="image" href="' . e($__heroPreHref) . '" fetchpriority="high"'
+    . ($heroSrcsetStr !== '' ? ' imagesrcset="' . e($heroSrcsetStr) . '" imagesizes="' . e($heroSizes) . '"' : '')
+    . '>' . "\n";
+?>
+<?php endif; ?>
 <script type="application/ld+json">
-<?= json_encode([
+<?php
+/* W99-fixG (G5): openingHoursSpecification — из setting('shop_hours'), если там
+   есть диапазон ЧЧ:ММ-ЧЧ:ММ (в любом месте строки: «Ежедневно 9:00-21:00»,
+   «09:00–21:00», вынос «:»-разделителя и тире любого вида). Не распарсилось
+   (ключ пуст — дефолт владельцем не заполняется) — блока НЕТ вовсе: честное
+   отсутствие вместо выдуманных 09:00-21:00. */
+$__openSpec = [];
+if (preg_match('/(\d{1,2})[:.](\d{2})\s*[-–—.]\s*(\d{1,2})[:.](\d{2})/u', (string)setting('shop_hours', ''), $__hm)) {
+    $__oh = max(0, min(23, (int)$__hm[1]));
+    $__om = max(0, min(59, (int)$__hm[2]));
+    $__ch = max(0, min(23, (int)$__hm[3]));
+    $__cm = max(0, min(59, (int)$__hm[4]));
+    if ($__oh < $__ch || ($__oh === $__ch && $__om < $__cm)) {
+        $__openSpec = [[
+            '@type' => 'OpeningHoursSpecification',
+            'dayOfWeek' => ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+            'opens' => sprintf('%02d:%02d', $__oh, $__om),
+            'closes' => sprintf('%02d:%02d', $__ch, $__cm),
+        ]];
+    }
+}
+/* W99-fixG (G8): sameAs — только непустые и включённые соц-профили (набор ключей
+   как в футере: yandex_reviews_id / shop_vk / shop_instagram / shop_max_link /
+   shop_telegram; для коротких значений без http — канонический префикс сети).
+   Пусто — ключа sameAs нет вовсе. */
+$__sameAs = [];
+if (setting('yandex_reviews_id') !== '') {
+    $__sameAs[] = 'https://yandex.ru/maps/org/' . setting('yandex_reviews_id');
+}
+$__socialLink = static function (string $val, string $prefix): string {
+    $val = trim($val);
+    return $val === '' ? '' : (preg_match('#^https?://#i', $val) ? $val : $prefix . ltrim($val, '/@'));
+};
+if (setting('vk_enabled', '1') === '1') {
+    $__sa = $__socialLink(setting('shop_vk', ''), 'https://vk.com/');
+    if ($__sa !== '') $__sameAs[] = $__sa;
+}
+if (setting('ig_enabled', '1') === '1') {
+    $__sa = $__socialLink(setting('shop_instagram', ''), 'https://instagram.com/');
+    if ($__sa !== '') $__sameAs[] = $__sa;
+}
+if (setting('max_enabled', '1') === '1') {
+    $__sa = $__socialLink(setting('shop_max_link', ''), 'https://max.ru/');
+    if ($__sa !== '') $__sameAs[] = $__sa;
+}
+if (setting('tg_enabled', '1') === '1') {
+    $__sa = $__socialLink(setting('shop_telegram', ''), 'https://t.me/');
+    if ($__sa !== '') $__sameAs[] = $__sa;
+}
+$__sameAs = array_values(array_unique($__sameAs));
+echo json_encode([
     '@context' => 'https://schema.org',
     '@type' => 'Florist',
     'name' => setting('shop_name', 'Nilov Flowers'),
@@ -473,14 +641,9 @@ if ($__heroPre !== '') {
         'latitude' => 59.9970675,
         'longitude' => 30.2727226,
     ],
-    'openingHoursSpecification' => [[
-        '@type' => 'OpeningHoursSpecification',
-        'dayOfWeek' => ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
-        'opens' => '09:00',
-        'closes' => '21:00',
-    ]],
     'image' => setting('hero_image', '') !== '' ? 'https://flowers.interfood-catering.ru/img/uploads/' . rawurlencode(setting('hero_image')) : '',
-] + (setting('yandex_reviews_id') !== '' ? ['sameAs' => ['https://yandex.ru/maps/org/' . setting('yandex_reviews_id')]] : []), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>
+] + ($__openSpec !== [] ? ['openingHoursSpecification' => $__openSpec] : [])
+  + ($__sameAs !== [] ? ['sameAs' => $__sameAs] : []), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>
 </script>
 <?php /* W97-fixB3b (B3b-5а): WebSite + SearchAction — sitelinks searchbox Google:
    запрос уходит на /?q={search_term_string} (тот же ?q=, что живой поиск five.js
@@ -528,17 +691,16 @@ if ($__heroPre !== '') {
   <section class="fc-hero">
     <div class="wrap fc-hero__grid">
       <?php
-      /* Hero в WebP если есть (LCP-критично: 163KB webp vs 509KB jpg), фолбэк jpg */
-      $heroImg = setting('hero_image');
-      $heroWebp = preg_replace('/\.(jpe?g|png)$/i', '.webp', $heroImg);
-      $heroWebpOk = $heroWebp !== $heroImg && is_file(IMG_UPLOADS_DIR . '/' . $heroWebp);
-      /* Layout-критик W35: width/height на <img> — браузер резервирует box до загрузки */
-      $heroDim = $heroImg !== '' ? (@getimagesize(IMG_UPLOADS_DIR . '/' . $heroImg) ?: null) : null;
+      /* W99-fixG (G3): переменные hero ($heroImg/$heroWebpOk/$heroDim/
+         $heroSrcsetStr/$heroSizes) посчитаны выше в <head> — там же preload. */
       ?>
       <div class="fc-hero__main<?= $heroImg === '' ? ' fc-hero__main--fallback' : '' ?>">
         <?php if ($heroImg !== ''): ?>
         <picture>
-          <?php if ($heroWebpOk): ?><source type="image/webp" srcset="/img/uploads/<?= e(rawurlencode($heroWebp)) ?>"><?php endif; ?>
+          <?php /* W99-fixG (G3): srcset 480w/768w/1024w + sizes по слоту
+                 .fc-hero__main (расчёт — в <head>, рядом с preload). GD-сбой —
+                 прежний одиночный src webp. */ ?>
+          <?php if ($heroWebpOk && $heroSrcsetStr !== ''): ?><source type="image/webp" srcset="<?= e($heroSrcsetStr) ?>" sizes="<?= e($heroSizes) ?>"><?php elseif ($heroWebpOk): ?><source type="image/webp" srcset="<?= e($heroWebpUrl) ?>"><?php endif; ?>
           <?php /* W97-fixB2 (B2-6): описательный alt (было alt=H1 — дублировал видимый
                  заголовок для скринридера); текст редактируется как hero_image_alt */ ?>
           <img class="fc-hero__img" src="/img/uploads/<?= e($heroImg) ?>" alt="<?= e(setting('hero_image_alt', 'Свежий букет из сезонных цветов — витрина магазина')) ?>" fetchpriority="high"<?= $heroDim ? ' width="' . (int)$heroDim[0] . '" height="' . (int)$heroDim[1] . '"' : '' ?>>
@@ -651,7 +813,7 @@ if ($__heroPre !== '') {
        W96-fix1 (F11): секция имеет смысл от ≥2 товаров — одиночная карточка
        в карусели выглядит пусто; жёсткий фильтр, чтобы не зависеть от сида -->
   <?php if (count($addonProducts) >= 2): render_fc_row(
-      setting('section_addons_title', 'Дополните букет 🎈'),
+      setting('section_addons_title', 'Дополните букет'),
       setting('section_addons_sub', ''), $addonProducts, $cardCtx);
   endif; ?>
 
@@ -722,9 +884,10 @@ if ($__heroPre !== '') {
       </div>
     </div>
   </section>
-  <?php /* W97-fixB2 (B2-5б): крайний случай короткой витрины — каталог сам оказался 3-й
-         товарной секцией → editorial-пауза после него (guard не даст задвоить) */ ?>
-  <?php if ($fcProdSeq === 3) render_fc_editorial(); ?>
+  <?php /* W97-fixB2 (B2-5б): крайний случай короткой витрины — каталог сам оказался
+         3-й/6-й товарной секцией → editorial-пауза после него (guard не даст задвоить) */ ?>
+  <?php if ($fcProdSeq === 3) render_fc_editorial(1); ?>
+  <?php if ($fcProdSeq === 6) render_fc_editorial(2); ?>
 
   <?php /* W96 (5cv): секция how-it-works убрана — шаги остаются в настройках, но не выводятся. */ ?>
 
@@ -785,7 +948,7 @@ if ($__heroPre !== '') {
           <span class="order-form__error" id="orderPhoneError"></span>
         </div>
         <div class="order-form__field">
-          <label for="orderEmail"><?= e(setting('form_email_label', 'Email')) ?> <span id="orderEmailReq" style="color:var(--rose-cta,#AE4A71);font-weight:600" hidden>* обязательно для онлайн-оплаты</span></label>
+          <label for="orderEmail"><?= e(setting('form_email_label', 'Email — для письма о заказе (необязательно)')) ?> <span id="orderEmailReq" style="color:var(--rose-cta,#AE4A71);font-weight:600" hidden>* обязательно для онлайн-оплаты</span></label>
           <input type="email" id="orderEmail" name="email" autocomplete="email" placeholder="example@mail.ru">
           <span class="order-form__hint" id="orderEmailHint" hidden>На этот адрес придёт чек об оплате</span>
           <span class="order-form__error" id="orderEmailError"></span>
@@ -956,6 +1119,11 @@ if ($__heroPre !== '') {
     </div>
   </section>
   <?php endif; ?>
+
+  <?php /* W99-fixG (G17): третья editorial-врезка ПЕРЕД FAQ — каденция финала
+         страницы, текст/гейт тот же паттерн (setting('editorial_text_3'),
+         trim==='' скрывает; guard не даст задвоить) */ ?>
+  <?php render_fc_editorial(3); ?>
 
   <?php /* FAQ (критерий 13, SEO FAQPage — паттерн Цветовика): реальные вопросы покупателей. Отключаем (критерий 16). */ ?>
   <?php if ($featFaq): ?>

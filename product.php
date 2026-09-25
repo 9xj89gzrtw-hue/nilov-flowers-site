@@ -141,17 +141,56 @@ function product_img_width(array $p): int
     return $cache[$file];
 }
 
-/* Обрезка по границе слова + снятие висячей пунктуации (для meta description) */
+/* W99-fixG (G1): обрезка для meta description по границе ПРЕДЛОЖЕНИЯ.
+   Старый алгоритм (по слову + снятие пунктуации) оставлял висячие предлоги
+   («…в.», «около.», «Повод.») у 12/23 товаров. Новый порядок:
+   (а) набираем ЦЕЛЫЕ предложения (split по '. '), пока сумма ≤ лимита;
+   (б) первое предложение длиннее лимита — режем по границе слова;
+   (в) снимаем хвостовые «висюльки»: последнее слово-введение без continuation
+       (предлоги/союзы и подписи мета-полей описания: Повод/Состав/Размер/…),
+       до 4 итераций («Диаметр — около» → «Диаметр —» → «Диаметр» → «…»);
+   (г) точку после предлога/подписи не оставляем — хвост чистый. */
 function meta_cut(string $s, int $max): string
 {
     $s = trim((string)preg_replace('/\s+/u', ' ', $s));
     if ($s === '' || mb_strlen($s) <= $max) return $s;
-    $cut = mb_substr($s, 0, $max);
-    $sp = mb_strrpos($cut, ' ');
-    if ($sp !== false && $sp > 0) {
-        $cut = mb_substr($cut, 0, $sp);
+
+    /* (а)+(б): предложения — от '. ', '! ', '? ', '… ' */
+    $sentences = (array)preg_split('/(?<=[.!?…])\s+/u', $s);
+    $out = '';
+    foreach ($sentences as $sent) {
+        $sent = trim($sent);
+        if ($sent === '') continue;
+        if ($out === '') {
+            if (mb_strlen($sent) <= $max) {
+                $out = $sent;
+                continue;
+            }
+            /* (б): режем по границе слова внутри первого предложения */
+            $cut = mb_substr($sent, 0, $max);
+            $sp = mb_strrpos($cut, ' ');
+            $out = ($sp !== false && $sp > 0) ? mb_substr($cut, 0, $sp) : $cut;
+            break;
+        }
+        if (mb_strlen($out . ' ' . $sent) <= $max) {
+            $out .= ' ' . $sent;
+        } else {
+            break;
+        }
     }
-    return trim((string)preg_replace('/[\s.,;:!?\-–—]+$/u', '', $cut));
+
+    /* (в)+(г): хвостовые висюльки и пунктуация после среза */
+    $dangling = '/^(?:в|во|на|с|со|до|по|для|или|около|при|и|а|но|что|повод|состав|размер|упаковка|диаметр|сторона|порция|высота|вес)$/ui';
+    for ($i = 0; $i < 4; $i++) {
+        $out = trim((string)preg_replace('/[\s.,;:!?…\-–—]+$/u', '', $out));
+        if ($out === '') break;
+        if (preg_match('/(\S+)$/u', $out, $m) === 1 && preg_match($dangling, $m[1]) === 1) {
+            $out = (string)preg_replace('/\S+$/u', '', $out);
+        } else {
+            break;
+        }
+    }
+    return trim((string)preg_replace('/[\s.,;:!?…\-–—]+$/u', '', $out));
 }
 
 /* B3b-2e: srcset LCP-фото — webp-превью 600w/900w + webp-оригинал {w}w.
@@ -179,8 +218,13 @@ $galSizes = '(max-width:820px) 100vw, 560px';
    слайда. URL — webp (полноформатный twin, иначе 900-превью, иначе оригинал). */
 $zoomSrc = $imgWebpOk ? $imgWebp : ($thumb900 !== '' ? $thumb900 : $img);
 
-/* B3b-2b: title «{name} — с доставкой по СПб | бренд» — ~54 симв., окно 60-70 */
-$pageTitle = $product['name'] . ' — с доставкой по СПб | ' . setting('shop_name', 'Nilov Flowers');
+/* B3b-2b → W99-fixG (G7): title «{name} — с доставкой по СПб | бренд».
+   Длинное имя (>40 симв.) ИЛИ итог длиннее 65 (Google режет ~60, окно 60–65) —
+   суффикс доставки опускаем: «{name} | Nilov Flowers»; короткое — как раньше. */
+$__titleFull = $product['name'] . ' — с доставкой по СПб | ' . setting('shop_name', 'Nilov Flowers');
+$pageTitle = (mb_strlen($product['name']) > 40 || mb_strlen($__titleFull) > 65)
+    ? $product['name'] . ' | ' . setting('shop_name', 'Nilov Flowers')
+    : $__titleFull;
 
 /* B3b-2c: meta description — первые ~130 симв. описания (теперь 200–400 симв.)
    + хвост « Доставка по СПб в день заказа, оплата при получении.» (53 симв.).
@@ -291,7 +335,9 @@ function render_related_card(array $rp): void
     ?>
         <article class="product-card" data-search="<?= e($rSearch) ?>">
           <div class="product-card__media">
-            <a class="product-card__media-link" href="<?= e($rLink) ?>" aria-label="<?= e($rp['name']) ?>">
+          <?php /* W99-fixG (G11): img-ссылка дублирует title-ссылку — прячем от
+             скринридера и Tab-фокуса (href сохранён: клик мышью работает) */ ?>
+            <a class="product-card__media-link" href="<?= e($rLink) ?>" aria-label="<?= e($rp['name']) ?>" aria-hidden="true" tabindex="-1">
               <?php if ($rImg !== ''): ?>
                 <picture>
                   <?php if ($rSrcset !== ''): ?><source type="image/webp" srcset="<?= e($rSrcset) ?>"<?= $rSizes !== '' ? ' sizes="' . e($rSizes) . '"' : '' ?>><?php endif; ?>
@@ -527,6 +573,9 @@ $breadcrumbItems[] = ['@type' => 'ListItem', 'position' => count($breadcrumbItem
             },{threshold:0.02}).observe(ft);
           });
           </script>
+          <?php /* W99-fixG (G9): заголовок мета-блока для контура заголовков/SR —
+             sr-only класса в css/ нет (проверено), инлайн-приём «визуально скрыто» */ ?>
+          <h2 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap">Доставка и оплата</h2>
           <?php /* Мета-блок 5cv: доставка / самовывоз / оплата + гарантии с иконками */ ?>
           <ul class="fc-product__meta">
             <?php /* W96-fix3b (D6): «доставим сегодня» — первая строка мета-блока.
@@ -566,7 +615,7 @@ $breadcrumbItems[] = ['@type' => 'ListItem', 'position' => count($breadcrumbItem
           <?php /* W96-fix2 (F3): «Смотреть все» в шапке related-блока — как у каруселей
                  витрины (класс/подчёркивание те же). W97-fixB3b (B3b-1g): ведёт на
                  посадочную категории товара (/category/{slug}), без категории — каталог */ ?>
-          <a class="fc-row__link" href="<?= $catSlug !== '' ? '/category/' . e($catSlug) : '/#catalog' ?>">Смотреть все</a>
+          <a class="fc-row__link" href="<?= $catSlug !== '' ? '/category/' . e($catSlug) : '/#catalog' ?>" aria-label="Смотреть все: <?= e(setting('related_title', '') ?: 'С этим берут') ?>">Смотреть все</a>
           <div class="fc-row__arrows">
             <button class="fc-row__arrow" type="button" aria-label="Назад"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
             <button class="fc-row__arrow fc-row__arrow--next" type="button" aria-label="Вперёд"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>

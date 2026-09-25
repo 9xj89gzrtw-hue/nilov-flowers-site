@@ -12,31 +12,47 @@ if ($orderId <= 0) {
     header('Location: /');
     exit;
 }
-/* Security-критик W40 MEDIUM: без проверки страница рисовала «Заказ №N принят» для ЛЮБОГО N
-   (подтверждение существования/несуществования заказов). Теперь — только реальный заказ. */
-$__exists = db()->prepare('SELECT 1 FROM orders WHERE id = :i LIMIT 1');
-$__exists->execute([':i' => $orderId]);
-if ($__exists->fetchColumn() === false) {
-    header('Location: /');
-    exit;
-}
-
 $siteName = setting('shop_name', 'Nilov Flowers');
 $phone = setting('shop_phone', '');
 $phoneDigits = preg_replace('/\D/', '', $phone) ?: '';
 $pickupAddr = trim(setting('shop_address', ''));
 
-/* W96-fix4 (финальный критик-покупатель, major): страница безусловно писала «Самовывоз: …»,
-   даже когда заказ оформлен ДОСТАВКОЙ в район. Честная строка: смотрим зону заказа. */
-$__zoneStmt = db()->prepare('SELECT z.name FROM orders o LEFT JOIN delivery_zones z ON z.id = o.delivery_zone_id WHERE o.id = :i LIMIT 1');
-$__zoneStmt->execute([':i' => $orderId]);
-$__zoneName = (string)$__zoneStmt->fetchColumn();
+/* Security-критик W40 MEDIUM: без проверки страница рисовала «Заказ №N принят» для ЛЮБОГО N
+   (подтверждение существования/несуществования заказов). Теперь — только реальный заказ.
+   W99-fixG (G15): одним запросом тянем и сам заказ (email/дата/интервал/оплата/сумма),
+   и зону доставки (LEFT JOIN, как было). */
+$__orderStmt = db()->prepare('SELECT o.id, o.email, o.delivery_date, o.delivery_slot,
+    o.delivery_zone_id, o.payment_method, o.total, z.name AS zone
+    FROM orders o LEFT JOIN delivery_zones z ON z.id = o.delivery_zone_id WHERE o.id = :i LIMIT 1');
+$__orderStmt->execute([':i' => $orderId]);
+$__order = $__orderStmt->fetch();
+if (!$__order) {
+    header('Location: /');
+    exit;
+}
+$__zoneName = (string)($__order['zone'] ?? '');
+
+/* W99-fixG (G15): состав заказа — позиции × количество (для сводки) */
+$__items = [];
+try {
+    $__itemsStmt = db()->prepare('SELECT name, price, qty FROM order_items WHERE order_id = :i ORDER BY id');
+    $__itemsStmt->execute([':i' => $orderId]);
+    $__items = $__itemsStmt->fetchAll();
+} catch (Throwable $e) {
+    $__items = [];
+}
+
+/* Доставка/самовывоз — честная строка: зона заказа ИЛИ адрес самовывоза */
 $deliveryLine = '';
 if ($__zoneName !== '') {
     $deliveryLine = 'Доставка: район «' . $__zoneName . '» — время и адрес подтвердим по телефону.';
 } elseif ($pickupAddr !== '') {
     $deliveryLine = 'Самовывоз: ' . $pickupAddr . ' — предупредим, когда букет будет готов.';
 }
+
+/* W99-fixG (G15): строка про письмо — только если у заказа есть email
+   (транзакционное письмо клиенту отправляет notifyNewOrder, W98-fixF F3) */
+$__orderEmail = trim((string)($__order['email'] ?? ''));
 
 $canonicalUrl = 'https://flowers.interfood-catering.ru/order-thanks';
 $pageTitle = 'Заказ №' . $orderId . ' принят — ' . $siteName;
@@ -64,10 +80,33 @@ $pageTitle = 'Заказ №' . $orderId . ' принят — ' . $siteName;
       <?php if ($thanksCall !== ''): ?>
       <p style="font-size:1.05rem;margin:10px 0 0"><strong><?= e($thanksCall) ?></strong></p>
       <?php endif; ?>
+      <?php /* W99-fixG (G15а): письмо с деталями — если email в заказе есть */ ?>
+      <?php if ($__orderEmail !== ''): ?>
+      <p style="margin:8px 0 0;color:var(--ink-soft,#6e6a72);font-size:.92rem">Мы отправили письмо с деталями на <?= e($__orderEmail) ?></p>
+      <?php endif; ?>
       <p class="section-sub" style="margin:12px auto 24px">
         Букет соберём из цветов утренней поставки, а фото пришлём вам перед отправкой.
         <?php if ($deliveryLine !== ''): ?><br><?= e($deliveryLine) ?><?php endif; ?>
       </p>
+      <?php /* W99-fixG (G15б): сводка заказа — состав × количество, дата+интервал
+         доставки, район и сумма к оплате. Карточка по образцу существующих блоков
+         (border/16px/#fff, как .track-card), компактно. */ ?>
+      <?php if ($__items !== []): ?>
+      <div style="border:1.5px solid var(--line,#e7e5ea);border-radius:16px;padding:16px 18px;background:#fff;text-align:left;margin:0 auto 20px;max-width:440px">
+        <p style="font-weight:700;margin:0 0 8px;font-size:.95rem">Ваш заказ</p>
+        <ul style="margin:0 0 10px;padding-left:18px;font-size:.9rem;line-height:1.6">
+          <?php foreach ($__items as $__it): ?>
+          <li><?= e($__it['name']) ?> — <?= (int)$__it['qty'] ?> × <?= formatPrice((int)$__it['price']) ?></li>
+          <?php endforeach; ?>
+        </ul>
+        <p style="margin:0 0 4px;font-size:.88rem;color:var(--ink-soft,#6e6a72)">
+          <?php if ($__zoneName !== ''): ?>Доставка: <?= e($__zoneName) ?><?php else: ?>Самовывоз<?php endif; ?><?= trim((string)$__order['delivery_date']) !== '' ? ' · ' . e($__order['delivery_date']) : '' ?><?= trim((string)$__order['delivery_slot']) !== '' ? ' · ' . e($__order['delivery_slot']) : '' ?>
+        </p>
+        <p style="margin:0;font-size:.95rem;font-weight:700">
+          <?= ($__order['payment_method'] ?? 'cash') === 'cash' ? 'К оплате при получении: ' : 'Итого: ' ?><?= formatPrice((int)$__order['total']) ?>
+        </p>
+      </div>
+      <?php endif; ?>
       <?php /* W96-fix3b (D8): «Что дальше» — 3 шага в стилистике карточки заказа */ ?>
       <div class="fc-thanks__steps">
         <p class="fc-thanks__title">Что дальше</p>

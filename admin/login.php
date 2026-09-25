@@ -47,7 +47,9 @@ input:focus-visible{outline:3px solid rgba(174,74,113,.55);outline-offset:2px}
 button{width:100%;margin-top:20px;border:none;border-radius:999px;padding:14px;font:600 .95rem var(--font-ui);background:#AE4A71;color:#fff;cursor:pointer}
 button:hover{background:#9E4062}
 .err{margin-top:14px;color:var(--err);font-size:.85rem}
-@media(hover:none),(pointer:coarse){.forgot-link{min-height:44px;display:flex !important;align-items:center;justify-content:center}} /* W76 */
+.back-link{display:block;margin-top:10px;text-align:center;font-size:.85rem;color:var(--ink-soft);text-decoration:none}
+.back-link:hover,.back-link:focus-visible{color:var(--rose-deep);text-decoration:underline}
+@media(hover:none),(pointer:coarse){.forgot-link,.back-link{min-height:44px;display:flex !important;align-items:center;justify-content:center}} /* W76 */
 </style>
 </head>
 <body>
@@ -62,6 +64,9 @@ button:hover{background:#9E4062}
   <?= csrf_field() ?>
   <?php if ($err !== ''): ?><p class="err"><?= e($err) ?></p><?php endif; ?>
   <a class="forgot-link" href="/admin/forgot.php" style="display:block;margin-top:14px;text-align:center;font-size:.85rem;color:var(--ink-soft)">Забыли пароль?</a>
+  <?php /* W99-fixG (G14): единственный выход со страницы входа назад в магазин —
+         раньше ни одной ссылки не было (в т.ч. через /help → 301 сюда для анонима) */ ?>
+  <a class="back-link" href="/">← Вернуться в магазин</a>
 </form>
 </body>
 </html>

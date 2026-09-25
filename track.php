@@ -50,12 +50,15 @@ if (strlen($normalized) === 10 || strlen($normalized) === 11) {
 $shopPhone = setting('shop_phone', '');
 $pageTitle = 'Где мой заказ? — ' . setting('shop_name', 'Nilov Flowers');
 
-$statusEmoji = [
-    'new' => '🌸 Новый',
-    'confirmed' => '✅ Подтверждён',
-    'done' => '💐 Выполнен',
-    'canceled' => '✖️ Отменён',
-    'unredeemed' => '📦 Не выкуплен',
+/* W99-fixG (G12): статусы — чистый текст без emoji (цвет статуса несёт
+   пилюля .track-card__status); «Шаг N из 3» — отдельная visually-hidden строка */
+$statusText = [
+    'new' => 'Новый',
+    'confirmed' => 'Подтверждён',
+    'in_progress' => 'В работе',
+    'done' => 'Выполнен',
+    'canceled' => 'Отменён',
+    'unredeemed' => 'Не выкуплен',
 ];
 function trackStep(string $status): int {
     return match ($status) {
@@ -83,6 +86,8 @@ function trackStep(string $status): int {
 .track-steps{display:flex;gap:4px;margin-top:14px}
 .track-steps span{flex:1;height:6px;border-radius:3px;background:var(--line)}
 .track-steps span.on{background:var(--pink)}
+/* W99-fixG (G12): визуально-скрытый текст для скринридера (класс sr-only в css/ нет) */
+.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .track-empty{padding:36px 20px;text-align:center;color:var(--ink-muted);border:1.5px dashed var(--line);border-radius:16px;margin-top:16px}
 </style>
 </head>
@@ -122,7 +127,7 @@ function trackStep(string $status): int {
           <div class="track-card">
             <div class="track-card__top">
               <span class="track-card__id">Заказ №<?= (int)$o['id'] ?> · <?= e($o['created_at']) ?></span>
-              <span class="track-card__status <?= e($o['status']) ?>"><?= $statusEmoji[$o['status']] ?? e($o['status']) ?></span>
+              <span class="track-card__status <?= e($o['status']) ?>"><?= e($statusText[$o['status']] ?? $o['status']) ?></span>
             </div>
             <p class="track-card__meta">
               <?= e($addr) ?> · Сумма: <strong><?= formatPrice((int)$o['total']) ?></strong>
@@ -132,11 +137,14 @@ function trackStep(string $status): int {
               <?php endif; ?>
             </p>
             <?php if ($step > 0): ?>
-            <div class="track-steps" aria-label="Прогресс заказа">
+            <?php /* W99-fixG (G12): точки-прогресс — декоративны (aria-hidden),
+                   состояние озвучивает «Шаг N из 3» рядом */ ?>
+            <div class="track-steps" aria-hidden="true">
               <span class="<?= $step >= 1 ? 'on' : '' ?>"></span>
               <span class="<?= $step >= 2 ? 'on' : '' ?>"></span>
               <span class="<?= $step >= 3 ? 'on' : '' ?>"></span>
             </div>
+            <p class="visually-hidden">Шаг <?= (int)$step ?> из 3</p>
             <?php endif; ?>
           </div>
           <?php endforeach; ?>

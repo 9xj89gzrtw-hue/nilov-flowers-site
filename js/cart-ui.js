@@ -26,6 +26,13 @@
 
   const cartMode = toggle.dataset.cartMode || 'drawer';
 
+  /* H8 (W99-fixG2): плавные скроллы — уважаем prefers-reduced-motion
+     (как five.js): при reduce — мгновенный 'auto'. */
+  function scrollBehavior() {
+    return (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+      ? 'auto' : 'smooth';
+  }
+
   let unavailableProductId = null;
 
   function escapeHtml(str) {
@@ -178,7 +185,12 @@
     emptyEl.hidden = items.length > 0;
     itemsEl.hidden = items.length === 0;
 
-    totalEl.textContent = formatPrice(window.cart.getTotal()) + ' ₽';
+    /* H7 (W99-fixG2): пустая корзина — не показываем «Итого: 0 ₽»: скрываем
+     весь ряд итога (подпись «Корзина пуста» уже объясняет состояние),
+     и не оставляем «0 ₽» в DOM. */
+    const totalRow = totalEl.closest ? totalEl.closest('.cart-panel__total') : null;
+    if (totalRow) totalRow.hidden = items.length === 0;
+    totalEl.textContent = items.length === 0 ? '' : formatPrice(window.cart.getTotal()) + ' ₽';
     /* A7: анонс итога — по факту изменения (учитывает промо-скидку ниже) */
     let payable = window.cart.getTotal();
     /* W81 (владелец OPEN_NEW-1): пустая корзина — блок промо и его сообщения глушим
@@ -217,7 +229,13 @@
       totalEl.innerHTML = '<s style="opacity:.55;margin-right:6px">' + formatPrice(window.cart.getTotal()) + ' ₽</s>' + formatPrice(Math.max(0, window.cart.getTotal() - promoState.discount)) + ' ₽';
       payable = Math.max(0, window.cart.getTotal() - promoState.discount);
     }
-    announce('cartTotal', 'Итого: ' + formatPrice(payable) + ' ₽');
+    /* H7 (W99-fixG2): пустая корзина — «Итого» не на экране, SR тоже молчит;
+       кэш анонса сбрасываем, чтобы возврат товара с прежней суммой озвучился. */
+    if (items.length === 0) {
+      if (liveEl) liveEl.removeAttribute('data-cartTotal');
+    } else {
+      announce('cartTotal', 'Итого: ' + formatPrice(payable) + ' ₽');
+    }
     checkoutBtn.disabled = items.length === 0;
 
     if (orderSelected) {
@@ -380,7 +398,7 @@
     close();
     const orderSection = document.getElementById('order');
     if (orderSection) {
-      orderSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      orderSection.scrollIntoView({ behavior: scrollBehavior(), block: 'start' });
       const nameInput = document.getElementById('orderName');
       if (nameInput) nameInput.focus();
     } else {

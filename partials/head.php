@@ -65,7 +65,10 @@ if (isset($ogType) && $ogType === 'product' && isset($img) && is_string($img) &&
    ДО fonts.css (токены --font-ui закреплены в five.css на html:root — выше :root из fonts.css). */ ?>
 <link rel="stylesheet" href="/css/five.css?v=<?= e($fiveCssV) ?>">
 <link rel="stylesheet" href="/css/fonts.css?v=<?= e($fontsCssV) ?>">
-<script src="/js/pwa-register.js" defer></script>
+<?php /* W99-fixG (G4): pwa-register.js — с ?v={md5_file 8} как у скриптов
+   footer.php (A9): .htaccess отдаёт .js immutable-год, без версии вернувшиеся
+   посетители сидят на старом SW-регистраторе. */ ?>
+<script src="/js/pwa-register.js?v=<?= e(substr((string)@md5_file(__DIR__ . '/../js/pwa-register.js'), 0, 8)) ?>" defer></script>
 <meta property="og:site_name" content="<?= e($shopName) ?>">
 <?php /* SEO-критик W86: страница товара печатает свой og:type=product ДО require head —
    не дублировать og:type=website (парсеры берут первый, валидаторы warn). */ ?>

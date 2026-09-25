@@ -160,7 +160,9 @@ function render_occasion_card(array $p): void
     ?>
         <article class="product-card">
           <div class="product-card__media">
-            <a class="product-card__media-link" href="<?= e($link) ?>" aria-label="<?= e($p['name']) ?>">
+            <?php /* W99-fixG (G11): img-ссылка дублирует title-ссылку — прячем от
+                   скринридера и Tab-фокуса (href сохранён: клик мышью работает) */ ?>
+            <a class="product-card__media-link" href="<?= e($link) ?>" aria-label="<?= e($p['name']) ?>" aria-hidden="true" tabindex="-1">
               <picture>
                 <?php if ($srcset !== ''): ?><source type="image/webp" srcset="<?= e($srcset) ?>"<?= $sizes !== '' ? ' sizes="' . e($sizes) . '"' : '' ?>><?php endif; ?>
                 <img class="product-card__img" src="<?= e($img) ?>" alt="<?= e($p['name']) ?>" loading="lazy" decoding="async">

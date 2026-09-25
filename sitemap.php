@@ -1,6 +1,10 @@
 <?php
 /* Динамический sitemap.xml — главная, активные товары, статические страницы.
-   lastmod товара — по последнему заказу с этим товаром, иначе — сегодня.
+   W99-fixG (G6): lastmod — ТОЛЬКО реальные даты из БД: у товара — последний заказ
+   с этим товаром ИЛИ updated_at (обоих нет — тега нет вовсе, фиктивный «сегодня»
+   удаляем); у главной — свежий updated_at товара (контент витрины = каталог);
+   у поводов реальной даты нет (таблица без updated_at/заказов) — без lastmod.
+   changefreq товаров: 23 демо-позиции не меняются ежедневно — daily → weekly.
    Отдаётся с Content-Type: application/xml. */
 declare(strict_types=1);
 require_once __DIR__ . '/includes/db.php';
@@ -9,15 +13,17 @@ require_once __DIR__ . '/includes/util.php';
 $base = 'https://flowers.interfood-catering.ru';
 header('Content-Type: application/xml; charset=UTF-8');
 
-$today = date('Y-m-d');
 /* W96-fix3a (T5a): /policy и /offer убраны — страницы noindex (robots),
    в sitemap им делать нечего (mixed signals для поисковиков). */
+/* Главная: lastmod — свежий updated_at товара (реальная дата контента витрины) */
+$homeLast = db()->query('SELECT MAX(updated_at) FROM products WHERE is_active = 1')->fetchColumn();
 $urls = [
-    ['loc' => $base . '/', 'priority' => '1.0', 'changefreq' => 'daily', 'lastmod' => $today],
+    ['loc' => $base . '/', 'priority' => '1.0', 'changefreq' => 'daily',
+     'lastmod' => ($homeLast !== null && $homeLast !== '' && $homeLast !== false) ? date('Y-m-d', strtotime((string)$homeLast)) : null],
 ];
 
 $products = db()->query(
-    "SELECT p.slug, MAX(o.created_at) AS last_order
+    "SELECT p.slug, p.updated_at, MAX(o.created_at) AS last_order
      FROM products p
      LEFT JOIN order_items oi ON oi.product_id = p.id
      LEFT JOIN orders o ON o.id = oi.order_id
@@ -26,18 +32,23 @@ $products = db()->query(
      ORDER BY MIN(p.sort), p.id"
 )->fetchAll();
 foreach ($products as $p) {
-    $lastmod = $p['last_order'] !== null ? date('Y-m-d', strtotime($p['last_order'])) : $today;
+    /* Реальная дата: последний заказ с товаром ИЛИ обновление карточки;
+       обоих нет — без lastmod (не выдумываем «сегодня») */
+    $src = $p['last_order'] !== null && $p['last_order'] !== ''
+        ? $p['last_order']
+        : ($p['updated_at'] !== null && $p['updated_at'] !== '' ? $p['updated_at'] : null);
     $urls[] = [
         'loc' => $base . '/product/' . rawurlencode($p['slug']),
         'priority' => '0.8',
-        'changefreq' => 'daily',
-        'lastmod' => $lastmod,
+        'changefreq' => 'weekly',
+        'lastmod' => $src !== null ? date('Y-m-d', strtotime($src)) : null,
     ];
 }
 
 try {
     foreach (db()->query('SELECT slug FROM occasions WHERE active = 1 ORDER BY sort, id')->fetchAll() as $o) {
-        $urls[] = ['loc' => $base . '/occasion/' . rawurlencode($o['slug']), 'priority' => '0.7', 'changefreq' => 'weekly', 'lastmod' => $today];
+        /* У поводов нет ни заказов, ни updated_at — честно без lastmod */
+        $urls[] = ['loc' => $base . '/occasion/' . rawurlencode($o['slug']), 'priority' => '0.7', 'changefreq' => 'weekly', 'lastmod' => null];
     }
 } catch (Throwable $e) { /* старая БД без таблицы — не роняем sitemap */ }
 

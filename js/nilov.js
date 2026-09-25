@@ -63,6 +63,11 @@
                и шлёт 'nf:cookie-done'). */
   (function installHint() {
     if (window.matchMedia('(display-mode: standalone)').matches) return;
+    /* W99-fixG2 (H11): на /order-thanks подсказку установки НЕ показываем —
+       сразу после заказа не время агитировать за приложение (покупатель
+       ждёт подтверждения; и локальный стенд, и прод-роуты дают pathname
+       /order-thanks или /order-thanks.php). */
+    if (/^\/order-thanks(\.php)?$/i.test(window.location.pathname)) return;
     try {
       /* (в) dismissal навсегда: ключ 'pwaHintDismissed' (по ТЗ W97-fixA);
          'nfInstallHintClosed' — легаси-ключ прошлых волн: кто уже закрыл подсказку,
@@ -284,6 +289,14 @@
   var out = document.getElementById('zoneCheckResult');
   var sel = document.getElementById('orderDeliveryZone');
   if (!inp || !out) return;
+  /* W99-fixG2 (H12): aria-label поля синхронизирован с видимым лейблом
+     «Район:» — было «Узнать стоимость доставки в ваш район» (задаётся в
+     index.php, файл вне разрешённых волны; синхронизируем отсюда). */
+  (function () {
+    var zl = document.querySelector('label[for="zoneCheckInput"]');
+    var base = zl ? (zl.textContent || '').trim().replace(/:\s*$/, '') : 'Район';
+    if (base) inp.setAttribute('aria-label', base + ': узнайте стоимость доставки');
+  })();
   function norm(s) { return (s || '').toLowerCase().replace(/район|ра[йё]он/g, '').replace(/[^a-zа-яё0-9]/gi, '').trim(); }
   function match(v) {
     var opts = sel ? sel.querySelectorAll('option[data-price]') : [];

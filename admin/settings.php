@@ -75,6 +75,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
         'section_hits_title','section_hits_sub','section_premium_title','section_premium_sub',
         'section_budget_title','section_addons_title','badge_hit_text','badge_premium_text',
         'editorial_text',
+        /* W99-fixG2 (H14): вторая/третья editorial-строки — читаются витриной
+           (index.php: после 6-й секции и перед FAQ) с дефолтами из кода */
+        'editorial_text_2','editorial_text_3',
         'occasions_title','stores_title','stores_sub',
         'stores_1_title','stores_1_text','stores_2_title','stores_2_text','stores_3_title','stores_3_text',
         'seo_text_title','seo_text_body',
@@ -530,7 +533,14 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
            (index.php), здесь нужен только для редактирования владельцем. */ ?>
         <label class="f" for="ed-text" style="margin-top:10px">Текст editorial-строки между секциями каталога</label>
         <textarea class="input" id="ed-text" name="editorial_text" rows="2" maxlength="300"><?= sv('editorial_text', $s) !== '' ? sv('editorial_text', $s) : 'Соберём букет под ваш повод и бюджет — напишите пожелание в комментарии к заказу, флорист предложит варианты и фото до отправки' ?></textarea>
-        <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Широкая строка-пауза после третьей товарной секции. Очистите поле — строка исчезнет с сайта.</p>
+        <?php /* W99-fixG2 (H14): editorial №2 (после 6-й товарной секции) и №3 (перед FAQ) —
+               ключи читает index.php (render_fc_editorial), дефолты те же, что в коде
+               витрины; пустое значение скрывает соответствующую врезку. */ ?>
+        <label class="f" for="ed-text2" style="margin-top:8px">Вторая editorial-строка (после 6-й товарной секции)</label>
+        <textarea class="input" id="ed-text2" name="editorial_text_2" rows="2" maxlength="300"><?= sv('editorial_text_2', $s) !== '' ? sv('editorial_text_2', $s) : 'Не нашли нужный букет? Опишите пожелание в комментарии к заказу — флорист соберёт авторскую композицию и пришлёт фото до отправки' ?></textarea>
+        <label class="f" for="ed-text3" style="margin-top:8px">Третья editorial-строка (перед разделом FAQ)</label>
+        <textarea class="input" id="ed-text3" name="editorial_text_3" rows="2" maxlength="300"><?= sv('editorial_text_3', $s) !== '' ? sv('editorial_text_3', $s) : 'Доставляем ежедневно: утром соберём — вечером уже у адресата' ?></textarea>
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Три широкие строки-паузы: после 3-й и 6-й товарных секций и перед FAQ. Очистите поле — строка исчезнет с сайта.</p>
       </div>
     </div>
 

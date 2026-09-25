@@ -18,6 +18,9 @@
     var el = document.querySelector('.cookie-banner');
     if (el) el.remove();
     document.body.classList.remove('cookie-visible');
+    /* W99-fixG2 (H1б/в): второй маркер открытого баннера — CSS поднимает
+       sticky-CTA товара выше компактного мобильного баннера; снимается здесь. */
+    document.body.classList.remove('nf-cookie-open');
     /* nilov.js install-hint: показывать только после решения по cookie (критик layout W35) */
     document.dispatchEvent(new Event('nf:cookie-done'));
   }
@@ -43,13 +46,25 @@
       '</span>';
 
     document.body.appendChild(banner);
-    /* баг 8 (критик-мобайл): запас снизу, чтобы кнопка «Отправить» не лежала под баннером */
+    /* баг 8 (критик-мобайл): запас снизу, чтобы кнопка «Отправить» не лежала под баннером.
+       W99-fixG2 (H1б): nf-cookie-open — маркер для CSS-подъёма sticky-CTA товара
+       над компактным мобильным баннером (≤899px), снимается в dismissBanner(). */
     document.body.classList.add('cookie-visible');
+    document.body.classList.add('nf-cookie-open');
 
     var buttons = banner.querySelectorAll('.cookie-banner__btn');
     var accept = buttons[0];
     var reject = buttons[1];
     var settingsBtn = document.getElementById('cookieSettingsBtn');
+
+    /* W99-fixG2 (H1а): компактная мобильная версия (≤899px) — кнопки идут одним
+       рядом «Принять · Настройки · Отклонить»: длинную дефолтную подпись отказа
+       «Только необходимые» на мобиле укорачиваем до «Отклонить» (кастомный текст
+       владелька не трогаем — CSS ограничит переполнение многоточием). */
+    if (window.matchMedia && window.matchMedia('(max-width:899px)').matches
+        && reject && (cfg.reject || 'Только необходимые') === 'Только необходимые') {
+      reject.textContent = 'Отклонить';
+    }
 
     if (accept) {
       accept.addEventListener('click', function () {

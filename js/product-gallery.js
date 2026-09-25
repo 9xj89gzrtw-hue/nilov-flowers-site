@@ -3,7 +3,11 @@
    W97-fixB3b (B3b-2f): zoom-слайд не несёт background-image в HTML — .jpg
    грузился сразу вторым дублем вместе с LCP-фото. Фон (webp-URL из
    data-gallery-zoom, печатает product.php) подставляем лениво — только
-   когда этот слайд стал активным (стрелки/свайп/миниатюра). */
+   когда этот слайд стал активным (стрелки/свайп/миниатюра).
+   W99-fixG2: H4 — стрелки дизейблятся на краях (первый слайд → prev
+   disabled, последний → next disabled); H12 — визуально-скрытый счётчик
+   aria-live=polite «Слайд N из M» (в DOM счётчика нет — PHP не трогаем,
+   создаём из JS и обновляем при смене слайда). */
 (function () {
   const track = document.getElementById('productGalleryTrack');
   if (!track) return;
@@ -13,6 +17,7 @@
     document.querySelectorAll('#productGalleryThumbs .product-gallery__thumb')
   );
   const counter = document.getElementById('productGalleryCounter');
+  const navButtons = Array.from(document.querySelectorAll('[data-gnav]'));
   if (slides.length < 1) return;
 
   function activateZoomBg(slide) {
@@ -22,8 +27,31 @@
     if (src) zoom.style.backgroundImage = 'url("' + src + '")';
   }
 
+  /* H12 (W99-fixG2): живой счётчик для скринридера. #productGalleryCounter в
+     разметке нет (product.php вне волны) — создаём визуально-скрытый span
+     aria-live=polite рядом с галереей и анонсируем «Слайд N из M». */
+  let srCounter = document.getElementById('productGallerySrCounter');
+  if (!srCounter) {
+    srCounter = document.createElement('span');
+    srCounter.id = 'productGallerySrCounter';
+    srCounter.setAttribute('aria-live', 'polite');
+    srCounter.style.cssText = 'position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap';
+    (track.parentNode || document.body).appendChild(srCounter);
+  }
+
+  /* H4 (W99-fixG2): стрелки на краях — disabled (первый слайд → «предыдущий»,
+     последний → «следующий»); визуал в five.css (opacity .35 + cursor default). */
+  function syncNav(idx) {
+    navButtons.forEach(function (btn) {
+      var dir = Number(btn.getAttribute('data-gnav'));
+      btn.disabled = (dir < 0 && idx <= 0) || (dir > 0 && idx >= slides.length - 1);
+    });
+  }
+
   function setActive(index) {
     if (counter) counter.textContent = index + 1 + ' / ' + slides.length;
+    srCounter.textContent = 'Слайд ' + (index + 1) + ' из ' + slides.length;
+    syncNav(index);
     thumbs.forEach(function (thumb, i) {
       if (i === index) thumb.setAttribute('aria-current', 'true');
       else thumb.removeAttribute('aria-current');
