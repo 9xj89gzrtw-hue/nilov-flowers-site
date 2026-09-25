@@ -79,6 +79,7 @@ $ykOn = setting('yk_enabled', '0') === '1' && trim(setting('yk_shop_id', '')) !=
 /* Иконки мета-блока (inline SVG в стиле витрины; размер/цвет задаёт .fc-product__meta-icon) */
 $metaIcons = [
     'truck' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 6h11v11H2z"/><path d="M13 9h4l3 3v5h-3"/><circle cx="5.5" cy="17.5" r="2"/><circle cx="16.5" cy="17.5" r="2"/></svg>',
+    'clock' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>',
     'map' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="2.6"/></svg>',
     'card' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>',
     'camera' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
@@ -228,7 +229,10 @@ function render_related_card(array $rp): void
               <figure class="product-gallery__slide">
                 <picture>
                   <?php if ($imgWebpOk): ?><source type="image/webp" srcset="<?= e($imgWebp) ?>"><?php endif; ?>
-                  <img class="product-gallery__img" src="<?= e($img) ?>" alt="<?= e($product['name']) ?>"<?= ($gDim = @getimagesize(IMG_PRODUCTS_DIR . '/' . productImageFile($product))) ? ' width="' . (int)$gDim[0] . '" height="' . (int)$gDim[1] . '"' : '' ?>>
+                  <?php /* W96-fix3a (T2b): LCP-снимок — явный eager + высокий приоритет
+                     загрузки (loading-атрибута не было — работало eager по умолчанию,
+                     но без приоритета браузер мог тянуть фото после стилей/скриптов) */ ?>
+                  <img class="product-gallery__img" src="<?= e($img) ?>" alt="<?= e($product['name']) ?>" loading="eager" fetchpriority="high"<?= ($gDim = @getimagesize(IMG_PRODUCTS_DIR . '/' . productImageFile($product))) ? ' width="' . (int)$gDim[0] . '" height="' . (int)$gDim[1] . '"' : '' ?>>
                 </picture>
                 <figcaption class="product-gallery__cap">Общий план букета</figcaption>
               </figure>
@@ -245,7 +249,8 @@ function render_related_card(array $rp): void
             <?php if ($img !== ''): ?>
               <picture>
                 <?php if ($imgWebpOk): ?><source type="image/webp" srcset="<?= e($imgWebp) ?>"><?php endif; ?>
-                <img class="product-gallery__img" src="<?= e($img) ?>" alt="<?= e($product['name']) ?>">
+                <?php /* W96-fix3a (T2b): LCP-снимок (вариант без галереи) — eager + приоритет */ ?>
+                <img class="product-gallery__img" src="<?= e($img) ?>" alt="<?= e($product['name']) ?>" loading="eager" fetchpriority="high">
               </picture>
             <?php else: ?>
               <div class="product-gallery__slide--placeholder">
@@ -302,6 +307,13 @@ function render_related_card(array $rp): void
           </script>
           <?php /* Мета-блок 5cv: доставка / самовывоз / оплата + гарантии с иконками */ ?>
           <ul class="fc-product__meta">
+            <?php /* W96-fix3b (D6): «доставим сегодня» — первая строка мета-блока.
+               Текст — настройка product_today_text (владелец выключает пустой
+               строкой: пустое ЗНАЧЕНИЕ скрывает пункт, отсутствующий ключ — дефолт) */ ?>
+            <?php $todayText = trim(setting('product_today_text', 'Оформите до 20:00 — доставим сегодня')); ?>
+            <?php if ($todayText !== ''): ?>
+            <li><span class="fc-product__meta-icon"><?= $metaIcons['clock'] ?></span><span><?= e($todayText) ?></span></li>
+            <?php endif; ?>
             <li><span class="fc-product__meta-icon"><?= $metaIcons['truck'] ?></span><span><?= e(setting('delivery_badge_text', 'Доставка по Санкт-Петербургу')) ?></span></li>
             <?php if ($pickupAddr !== ''): ?><li><span class="fc-product__meta-icon"><?= $metaIcons['map'] ?></span><span>Самовывоз: <?= e($pickupAddr) ?></span></li><?php endif; ?>
             <li><span class="fc-product__meta-icon"><?= $metaIcons['card'] ?></span><span><?= $ykOn ? 'Оплата — картой, СБП или при получении. На защищённой странице платёжного провайдера.' : 'Оплата — курьеру при получении заказа.' ?></span></li>

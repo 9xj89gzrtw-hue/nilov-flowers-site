@@ -875,3 +875,92 @@ img.product-card__img{background:var(--surface-subtle)}
    сам SVG в index.php теперь заполненный круг с белой галочкой
    (цвет круга — color:var(--pink) на .fc-trust__item svg, уже задан). */
 .fc-trust__item{color:#4a4550}
+
+/* ================================================================
+   W96-fix3b: дизайн/UX-фиксы по волне критиков 3 (D1–D11)
+   ================================================================ */
+
+/* D1: бейдж акции на мобиле — эллипсис сохранён, но с запасом под сердечко.
+   Было max-width:calc(100% - 60px): «Акционная цена −16%» наезжала на
+   сердечко на 2px. Резерв 92px справа = отступ 10 + сердечко 40 (тач) +
+   тап-зона 10 + зазор ≥ 8 + страховка. Замер 390px: зазор ~30px. */
+@media(max-width:699px){
+  .product-card__badge{max-width:calc(100% - 92px);font-size:.68rem;padding:3px 8px}
+}
+
+/* D2: футер — 4 колонки (бренд / каталог / поводы / контакты); реквизиты
+   и юр-ссылки — нижней строкой. Селектор .site-footer .fc-footer__grid —
+   перекрывает легаси .site-footer .wrap{display:flex} из style.css
+   (та же специфичность, five.css подключён позже). Тёмный --ink-фон:
+   тексты колонок ≥ rgba(255,255,255,.75) — читаемы. */
+.site-footer .fc-footer__grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1.2fr;gap:32px;align-items:start}
+.fc-footer__brand .site-footer__name{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.fc-footer__about{font-size:.9rem;line-height:1.55;color:rgba(255,255,255,.75);max-width:34ch}
+.fc-footer__heading{
+  font-weight:700;font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;
+  color:rgba(255,255,255,.55);margin:0 0 14px;
+}
+.fc-footer__links{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.fc-footer__links a{color:rgba(255,255,255,.85)}
+.fc-footer__links a:hover{color:var(--pink)}
+.fc-footer__links .fc-footer__muted{color:rgba(255,255,255,.75);font-size:.85rem}
+.fc-footer__brand .site-footer__messengers{margin-top:16px}
+.fc-footer__legal{font-size:.78rem;color:rgba(255,255,255,.6);margin:0 0 10px}
+@media(max-width:899px){
+  .site-footer .fc-footer__grid{grid-template-columns:1fr 1fr;gap:24px}
+}
+@media(max-width:599px){
+  .site-footer .fc-footer__grid{grid-template-columns:1fr;gap:24px}
+  .fc-footer__brand .site-footer__messengers{margin-top:12px}
+}
+
+/* D3: hero — worst-case контраст заголовка на светлых пикселях фото
+   (1.21:1): усиленный боковой+нижний скрим, тень заголовка, плотнее
+   подложка eyebrow-пилюли. Перекрывает T3-3 (fix1) — этот блок ниже. */
+.fc-hero__main::after{
+  background:
+    linear-gradient(90deg,rgba(28,26,30,.52),rgba(28,26,30,.12) 46%,rgba(0,0,0,0) 62%),
+    linear-gradient(180deg,rgba(28,26,30,.04) 26%,rgba(28,26,30,.8) 100%);
+}
+.fc-hero__title{text-shadow:0 2px 24px rgba(28,26,30,.45)}
+.fc-hero__eyebrow{background:rgba(28,26,30,.42)}
+
+/* D5: страница товара на мобиле — галерея наследовала top:88px от
+   десктоп-правила .product-gallery{position:sticky;top:88px} (style.css);
+   при мобильном position:relative сдвиг оставался → фото съезжало на 88px
+   вниз и накрывало верх инфо-колонки (бейджи «Хит»/заголовок под фото,
+   поверх ещё и fixed-CTA). Сбрасываем сдвиг — бейджи/заголовок чистые. */
+@media(max-width:820px){
+  .product-gallery{top:auto}
+}
+
+/* D7: звонок в мобильной шапке — иконка-трубка tel: (текстовый телефон
+   на ≤899px скрыт). Круглая 40px как прочие иконки шапки. */
+.fc-header__call{display:none}
+@media(max-width:899px){
+  .fc-header__call{display:grid}
+}
+
+/* D8: спасибо-страница — карточка «Что дальше» (3 шага) в стилистике
+   мета-блока товара: белый фон, линия, круглые розовые иконки. */
+.fc-thanks__steps{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px 22px;text-align:left}
+.fc-thanks__title{font-weight:800;font-size:1.05rem;color:var(--ink);margin:0 0 14px}
+.fc-thanks__list{list-style:none;margin:0;padding:0;display:grid;gap:14px}
+.fc-thanks__list li{display:flex;align-items:flex-start;gap:12px;font-size:.92rem;color:var(--ink-muted);line-height:1.5}
+.fc-thanks__list li strong{color:var(--ink);font-weight:700}
+.fc-thanks__icon{flex:none;width:36px;height:36px;border-radius:50%;background:var(--surface-warm);display:grid;place-items:center}
+.fc-thanks__icon svg{width:18px;height:18px;color:var(--pink)}
+@media(max-width:599px){.fc-thanks__steps{padding:16px}}
+
+/* D10: install-hint (js/nilov.js рисует его инлайн-стилями без классов —
+   role="region" aria-label="Установка приложения") — кнопка наследует
+   Montserrat: инлайн font:sans-serif перекрыт !important. И body-паддинг
+   под таббар = реальная высота mnav 61px (было 58 — низ резался на 3px). */
+body > div[role="region"][aria-label="Установка приложения"] button{font-family:var(--font-ui)!important}
+@media(max-width:820px){
+  body{padding-bottom:61px}
+}
+
+/* D11: «Смотреть все» в шапках секций — по центру строки (было на
+   baseline заголовка 1.5rem → ссылка провисала на 3px ниже). */
+.fc-row__link{align-self:center}

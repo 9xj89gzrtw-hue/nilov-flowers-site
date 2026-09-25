@@ -17,25 +17,41 @@ $maxOn = setting('max_enabled', '1') === '1' && setting('shop_max_link', '') !==
 $igOn = setting('ig_enabled', '1') === '1' && setting('shop_instagram', '') !== '';
 $emailOn = setting('email_enabled', '1') === '1' && setting('shop_email', '') !== '';
 $igDisclaimer = $igOn; /* пометку Meta показываем только вместе с активной ссылкой Instagram */
+
+/* W96-fix3b (D2): колоночный футер — категории каталога (вкладки) и поводы.
+   Запросы обёрнуты в try — футер не должен падать на старой/повреждённой БД. */
+try {
+    $__footerCats = db()->query('SELECT id, name FROM categories ORDER BY sort, id')->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable $e) {
+    $__footerCats = [];
+}
+try {
+    $__occLinks = db()->query('SELECT title, slug FROM occasions WHERE active = 1 ORDER BY sort, id LIMIT 6')->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable $e) {
+    $__occLinks = [];
+}
+$shopHours = setting('shop_hours', '');
+$shopEmail = setting('shop_email', '');
 ?>
 <footer class="site-footer" id="contacts">
-  <div class="wrap">
-    <div>
-      <p class="site-footer__name"><?= e($siteName) ?></p>
-      <?php
-      /* Реквизиты продавца в футере (152-ФЗ + доверие скептика-покупателя).
-         Показываются только если владелец заполнил legal_* в настройках. */
-      $legalType = mb_strtolower(trim(setting('legal_subject_type', '')));
-      $legalName = setting('legal_name', '');
-      $legalNum = setting('legal_number', '');
-      $legalAddr = setting('legal_address', '');
-      if ($legalName !== '' && $legalNum !== ''): ?>
-      <?php $legalInn = setting('legal_inn', ''); ?>
-      <p style="font-size:.78rem;color:var(--ink-soft)"><?= e($legalName) ?><?= $legalInn !== '' ? ' · ИНН ' . e($legalInn) : '' ?> · <?= e($legalType === 'ip' ?  'ОГРНИП' : 'ОГРН') ?> <?= e($legalNum) ?><?= $legalAddr !== '' ? ' · ' . e($legalAddr) : '' ?></p>
-      <?php endif; ?>
-      <?php if ($address !== ''): ?><p><?= e($address) ?></p><?php endif; ?>
-      <?php if (setting('shop_hours', '') !== ''): ?><p style="color:var(--ink-soft);font-size:.92rem"><?= e(setting('shop_hours')) ?></p><?php endif; ?>
-      <?php if ($phone !== ''): ?><p><a class="site-footer__phone" href="tel:+<?= e($phoneDigits) ?>"><?= e($phone) ?></a></p><?php endif; ?>
+  <?php /* W96-fix3b (D2): 4 колонки — бренд / каталог / поводы / контакты.
+     Реквизиты и юр-ссылки — в нижней строке (как раньше по содержанию).
+     data-tab/data-chip у ссылок каталога обрабатывает js/five.js (делегирование
+     по всей странице) — клик из футера включает вкладку/чип на главной. */ ?>
+  <div class="wrap fc-footer__grid">
+    <div class="fc-footer__brand">
+      <p class="site-footer__name">
+        <svg width="22" height="22" viewBox="0 0 32 32" style="color:var(--pink,#ff4ea2);flex:none" aria-hidden="true">
+          <ellipse cx="16" cy="9.5" rx="4.6" ry="7.2" fill="currentColor"/>
+          <ellipse cx="16" cy="9.5" rx="4.6" ry="7.2" fill="currentColor" transform="rotate(72 16 16)"/>
+          <ellipse cx="16" cy="9.5" rx="4.6" ry="7.2" fill="currentColor" transform="rotate(144 16 16)"/>
+          <ellipse cx="16" cy="9.5" rx="4.6" ry="7.2" fill="currentColor" transform="rotate(216 16 16)"/>
+          <ellipse cx="16" cy="9.5" rx="4.6" ry="7.2" fill="currentColor" transform="rotate(288 16 16)"/>
+          <circle cx="16" cy="16" r="3.2" style="fill:var(--amber,#f5b301)"/>
+        </svg>
+        <?= e($siteName) ?>
+      </p>
+      <p class="fc-footer__about"><?= e(setting('footer_about', 'Свежие букеты с доставкой по Санкт-Петербургу в день заказа')) ?></p>
       <?php if ($waOn || $tgOn || $vkOn || $maxOn || $igOn || $emailOn): ?>
       <p class="site-footer__messengers">
         <?php if ($waOn): ?><a href="https://wa.me/<?= e(preg_replace('/[^0-9]/', '', $whatsapp)) ?>" target="_blank" rel="noopener">WhatsApp</a><?php endif; ?>
@@ -48,17 +64,58 @@ $igDisclaimer = $igOn; /* пометку Meta показываем только 
         <?php if ($emailOn): ?><a href="mailto:<?= e(setting('shop_email')) ?>"><?= e(setting('shop_email')) ?></a><?php endif; ?>
       </p>
       <?php if ($igDisclaimer): ?>
-      <p style="font-size:.72rem;color:var(--ink-soft);margin-top:4px">* Instagram принадлежит Meta, признанной экстремистской организацией, деятельность которой запрещена на территории РФ.</p>
+      <p style="font-size:.72rem;color:rgba(255,255,255,.55);margin-top:4px">* Instagram принадлежит Meta, признанной экстремистской организацией, деятельность которой запрещена на территории РФ.</p>
       <?php endif; ?>
       <?php endif; ?>
     </div>
-    <?php try { $__occLinks = db()->query('SELECT title, slug FROM occasions WHERE active = 1 ORDER BY sort, id LIMIT 3')->fetchAll(PDO::FETCH_ASSOC); } catch (Throwable $e) { $__occLinks = []; } ?>
-    <span>© <?= date('Y') ?> <?= e($siteName) ?><?php $ocStr=''; foreach ($__occLinks as $__o) { $ocStr .= ' · <a href="/occasion/' . rawurlencode($__o['slug']) . '">' . e($__o['title']) . '</a>'; } echo setting('feature_track_link','1')==='1' ? ' · <a href="/track">Где мой заказ?</a>' : ''; echo $ocStr; ?> · <a href="/policy">Конфиденциальность</a> · <a href="/offer">Оферта</a> · <a href="#" onclick="if(window.cookieSettings){window.cookieSettings();}return false">Настройки cookie</a></span>
+    <nav class="fc-footer__col" aria-label="Каталог">
+      <p class="fc-footer__heading">Каталог</p>
+      <ul class="fc-footer__links">
+        <?php foreach ($__footerCats as $__fc): ?>
+        <li><a href="/#catalog" data-tab="<?= (int)$__fc['id'] ?>"><?= e($__fc['name']) ?></a></li>
+        <?php endforeach; ?>
+        <li><a href="/#catalog" data-chip="hit"><?= e(setting('section_hits_title', 'Хиты продаж')) ?></a></li>
+      </ul>
+    </nav>
+    <nav class="fc-footer__col" aria-label="Поводы">
+      <p class="fc-footer__heading">Поводы</p>
+      <?php if ($__occLinks !== []): ?>
+      <ul class="fc-footer__links">
+        <?php foreach ($__occLinks as $__o): ?>
+        <li><a href="/occasion/<?= e(rawurlencode($__o['slug'])) ?>"><?= e((string)preg_replace('/\s+в Санкт-Петербурге$/u', '', (string)$__o['title'])) ?></a></li>
+        <?php endforeach; ?>
+      </ul>
+      <?php else: ?><p class="fc-footer__about">Скоро добавим</p><?php endif; ?>
+    </nav>
+    <div class="fc-footer__col fc-footer__contacts">
+      <p class="fc-footer__heading">Контакты</p>
+      <ul class="fc-footer__links">
+        <?php if ($phone !== ''): ?><li><a class="site-footer__phone" href="tel:+<?= e($phoneDigits) ?>"><?= e($phone) ?></a></li><?php endif; ?>
+        <?php if ($shopHours !== ''): ?><li><span class="fc-footer__muted"><?= e($shopHours) ?></span></li><?php endif; ?>
+        <?php if ($address !== ''): ?><li><span class="fc-footer__muted"><?= e($address) ?></span></li><?php endif; ?>
+        <?php if ($shopEmail !== ''): ?><li><a href="mailto:<?= e($shopEmail) ?>"><?= e($shopEmail) ?></a></li><?php endif; ?>
+      </ul>
+    </div>
+  </div>
+  <div class="wrap">
+    <?php /* Реквизиты продавца (152-ФЗ): только если владелец заполнил legal_* */ ?>
+    <?php
+      $legalType = mb_strtolower(trim(setting('legal_subject_type', '')));
+      $legalName = setting('legal_name', '');
+      $legalNum = setting('legal_number', '');
+      $legalAddr = setting('legal_address', '');
+      $legalInn = setting('legal_inn', '');
+    ?>
+    <?php if ($legalName !== '' && $legalNum !== ''): ?>
+    <p class="fc-footer__legal"><?= e($legalName) ?><?= $legalInn !== '' ? ' · ИНН ' . e($legalInn) : '' ?> · <?= e($legalType === 'ip' ?  'ОГРНИП' : 'ОГРН') ?> <?= e($legalNum) ?><?= $legalAddr !== '' ? ' · ' . e($legalAddr) : '' ?></p>
+    <?php endif; ?>
+    <span>© <?= date('Y') ?> <?= e($siteName) ?><?= setting('feature_track_link','1')==='1' ? ' · <a href="/track">Где мой заказ?</a>' : '' ?> · <a href="/policy">Конфиденциальность</a> · <a href="/offer">Оферта</a> · <a href="#" onclick="if(window.cookieSettings){window.cookieSettings();}return false">Настройки cookie</a></span>
   </div>
 </footer>
 
 <nav class="mnav" aria-label="Мобильная навигация">
-  <a href="/#catalog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-4.6-7-10a4.5 4.5 0 0 1 7-3.7A4.5 4.5 0 0 1 19 11c0 5.4-7 10-7 10z"/></svg>Каталог</a>
+  <?php /* W96-fix3b (D4): «Каталог» — иконка-грид (сердце неверно семантически) */ ?>
+  <a href="/#catalog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Каталог</a>
   <?php /* W96 (5cv): «Как работаем» → «Поводы» (how-it-works на витрине больше нет) */ ?>
   <a href="/#occasions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="2.6"/></svg>Поводы</a>
   <a href="/#contacts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.6 10.8c1.4 2.8 3.8 5.2 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.4c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.4 0 .8-.2 1L6.6 10.8z"/></svg>Контакты</a>

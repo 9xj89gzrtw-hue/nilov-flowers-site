@@ -7,6 +7,12 @@ $favicon = setting('site_favicon', '');
 $iconHref = $favicon !== '' ? '/img/uploads/' . rawurlencode($favicon) : '/img/favicon.ico';
 $yandexVerification = trim(setting('yandex_verification', ''));
 $googleVerification = trim(setting('google_site_verification', ''));
+/* W96-fix3a (T4): версионирование CSS — ?v= из md5-хэша файла (паттерн favicon).
+   immutable-кэш (T3 .htaccess) безопасен: смена файла меняет URL, кэш инвалидируется. */
+$styleCssV = substr((string)@md5_file(__DIR__ . '/../css/style.css'), 0, 8);
+$nilovCssV = substr((string)@md5_file(__DIR__ . '/../css/nilov.css'), 0, 8);
+$fiveCssV = substr((string)@md5_file(__DIR__ . '/../css/five.css'), 0, 8);
+$fontsCssV = substr((string)@md5_file(__DIR__ . '/../css/fonts.css'), 0, 8);
 ?>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -28,20 +34,20 @@ $googleVerification = trim(setting('google_site_verification', ''));
 <?php /* layout-критик 768px + RF-remediation: шрифты локализованы (Google Fonts display=swap
    = CLS-лавина при подгрузке). fonts.css со своим :root-стеком подключается ПОСЛЕ style.css. */ ?>
 <link rel="preload" href="/fonts/GolosText-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/fonts/PlayfairDisplay-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
 <?php /* Layout-критик W35: latin-подмножества грузились на ~944мс → font-swap сдвиги 768-load 0.045–0.083 */ ?>
 <link rel="preload" href="/fonts/GolosText-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/fonts/PlayfairDisplay-latin.woff2" as="font" type="font/woff2" crossorigin>
+<?php /* W96-fix3a (T1): Playfair-preload удалён — дизайн 5cv использует только Montserrat
+   (Golos остаётся: fallback-стек fonts.css). Шрифты Playfair в /fonts/ — для legacy-страниц админки. */ ?>
 <?php /* W96/T2-a (5cv): Montserrat — основной шрифт нового дизайна. Preload только
    cyrillic-подмножества (23КБ): latin подтянется по unicode-range при латинице —
    не грузим лишнее на мобильных. */ ?>
 <link rel="preload" href="/fonts/MontserratVariable-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/css/style.css">
-<link rel="stylesheet" href="/css/nilov.css">
+<link rel="stylesheet" href="/css/style.css?v=<?= e($styleCssV) ?>">
+<link rel="stylesheet" href="/css/nilov.css?v=<?= e($nilovCssV) ?>">
 <?php /* W96/T2-a: дизайн-система 5cv — ПОСЛЕ nilov.css (перекрывает той же специфичностью),
    ДО fonts.css (токены --font-ui закреплены в five.css на html:root — выше :root из fonts.css). */ ?>
-<link rel="stylesheet" href="/css/five.css">
-<link rel="stylesheet" href="/css/fonts.css">
+<link rel="stylesheet" href="/css/five.css?v=<?= e($fiveCssV) ?>">
+<link rel="stylesheet" href="/css/fonts.css?v=<?= e($fontsCssV) ?>">
 <script src="/js/pwa-register.js" defer></script>
 <meta property="og:site_name" content="<?= e($shopName) ?>">
 <?php /* SEO-критик W86: страница товара печатает свой og:type=product ДО require head —
@@ -51,4 +57,9 @@ $googleVerification = trim(setting('google_site_verification', ''));
 <?php /* SEO-критик W40: twitter/X и Telegram превью без twitter:card беднее — добавляем карточку */ ?>
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="<?= e($pageTitle ?? $shopName) ?>">
+<?php /* W96-fix3a (T5d): twitter-превью парно к og:description — печатаем только если
+   страница передала $pageDescription до require (сейчас — главная; og:description
+   на остальных страницах печатается локально, не через переменную). */ ?>
+<?php if (!empty($pageDescription)): ?><meta name="twitter:description" content="<?= e($pageDescription) ?>">
+<?php endif; ?>
 <?php require __DIR__ . '/../includes/metrika.php'; ?>

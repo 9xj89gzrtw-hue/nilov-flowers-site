@@ -1,5 +1,5 @@
 /* Service worker — Nilov Flowers. VERSION менять при каждом деплое. */
-const VERSION = 'w5c';
+const VERSION = 'w5d';
 const STATIC_CACHE = `static-${VERSION}`;
 const PAGE_CACHE = `pages-${VERSION}`;
 const OFFLINE_URL = '/offline.html';
@@ -10,7 +10,8 @@ const STATIC_ASSETS = [
   '/css/five.css',
   '/css/fonts.css',
   '/fonts/GolosText-cyrillic.woff2',
-  '/fonts/PlayfairDisplay-cyrillic.woff2',
+  // W96-fix3a (T1): Playfair убран из precache — дизайн 5cv не использует его
+  // (файлы шрифтов остаются в /fonts для legacy-страниц админки).
   '/fonts/MontserratVariable-cyrillic.woff2',
   '/fonts/MontserratVariable-latin.woff2',
   '/img/favicon.svg',

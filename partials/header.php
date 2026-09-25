@@ -55,6 +55,14 @@ $cartMode = in_array(setting('cart_mode', 'drawer'), ['drawer', 'hybrid', 'page'
     </span>
     <?php if ($headerPhone !== ''): ?><a class="fc-header__phone" href="tel:+<?= e(preg_replace('/\D/', '', $headerPhone)) ?>"><?= e($headerPhone) ?></a><?php endif; ?>
     <div class="fc-header__icons">
+      <?php /* W96-fix3b (D7): звонок — главный канал цветочного; на мобиле
+         текстовый телефон скрыт (≤899px) — круглая иконка-трубка tel: рядом
+         с корзиной. CSS: .fc-header__call показывается только ≤899px. */ ?>
+      <?php if ($headerPhone !== ''): ?>
+      <a class="fc-header__icon fc-header__call" href="tel:+<?= e(preg_replace('/\D/', '', $headerPhone)) ?>" aria-label="Позвонить">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      </a>
+      <?php endif; ?>
       <?php /* Избранное живёт в каталоге (сердечки на карточках) — ведём туда;
          W96-fix1 (F2): абсолютный якорь — работает и с вторичных страниц */ ?>
       <a class="fc-header__icon" href="/#catalog" aria-label="Избранное — в каталоге">

@@ -40,6 +40,26 @@
   var sel = document.getElementById('priceFilter');
   var count = document.getElementById('priceFilterCount');
   if (!sel) return;
+  function plural(n) {
+    var m10 = n % 10, m100 = n % 100;
+    if (m10 === 1 && m100 !== 11) return 'букет';
+    if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return 'букета';
+    return 'букетов';
+  }
+  /* W96-fix3b (D9): счётчик цены = ВСЕ видимые карточки каталога (вкладка +
+     цена + чип/поиск js/five.js + избранное), а не только ценовой срез —
+     раньше чип «Хиты» показывал «5 букетов», а соседний счётчик врал «17».
+     Видимость считаем как five.js: без data-fc-filtered, без is-hidden,
+     не скрытые стилем (display) — вычисленный стиль ловит все три способа. */
+  function recountAll() {
+    var cards = document.querySelectorAll('#catalogGrid .product-card');
+    var visible = 0;
+    cards.forEach(function (c) {
+      if (!c.hasAttribute('data-fc-filtered') && !c.classList.contains('is-hidden')
+          && getComputedStyle(c).display !== 'none') visible++;
+    });
+    if (count) count.textContent = visible + ' ' + plural(visible);
+  }
   function apply() {
     var v = sel.value;
     var opt = sel.options[sel.selectedIndex];
@@ -49,7 +69,6 @@
        раньше селектор .product-card[data-price] зацепал и карусели секций
        (хиты/премиум/…), счётчик показывал «51 букет» и карусели пустели */
     var cards = document.querySelectorAll('#catalogGrid .product-card[data-price]');
-    var visible = 0;
     cards.forEach(function (c) {
       var price = parseInt(c.getAttribute('data-price'), 10) || 0;
       /* Диапазоны из data-атрибутов опции (критерий 16: пороги задаются в админке) */
@@ -58,21 +77,18 @@
          НЕ скрыта категорией (is-hidden от catalog-tabs) И проходит по цене. */
       var show = ok && !c.classList.contains('is-hidden');
       c.style.display = show ? '' : 'none';
-      if (show) visible++;
     });
-    if (count) count.textContent = visible + ' ' + plural(visible);
-  }
-  function plural(n) {
-    var m10 = n % 10, m100 = n % 100;
-    if (m10 === 1 && m100 !== 11) return 'букет';
-    if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return 'букета';
-    return 'букетов';
+    recountAll();
   }
   sel.addEventListener('change', apply);
   /* Пересчёт при смене категории (табы меняют is-hidden) */
   document.getElementById('catalogTabs')?.addEventListener('click', function (e) {
     if (e.target.closest('.catalog-tabs__tab')) setTimeout(apply, 0);
   });
+  /* W96-fix3b (D9): five.js (чипы/поиск) после каждой своей фильтрации
+     диспатчит 'fc:filter' — пересчитываемся, чтобы ОБА счётчика страницы
+     (у чипов и у селекта цены) показывали одно и то же число */
+  window.addEventListener('fc:filter', function () { recountAll(); });
   apply();
 })();
 

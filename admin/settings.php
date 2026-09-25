@@ -74,7 +74,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
         'journal_title',
         'journal_1_title','journal_1_text','journal_1_link',
         'journal_2_title','journal_2_text','journal_2_link',
-        'journal_3_title','journal_3_text','journal_3_link'];
+        'journal_3_title','journal_3_text','journal_3_link',
+        /* W96-fix3: футер-описание, «доставим сегодня» на товаре, текст звонка на спасибо-странице */
+        'footer_about','product_today_text','thanks_call_text'];
     $values = [];
     /* КЛАСС-ЗАЩИТА (критик-2): ключ из allowlist, которого нет в отправленной форме,
        НЕ должен затираеться пустотой. Текстовые поля: пишем только если ключ реально пришёл
@@ -528,6 +530,21 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
     <label class="f" for="seo-5cv-b" style="margin-top:8px">Текст (абзацы — через пустую строку)</label>
     <textarea class="input" id="seo-5cv-b" name="seo_text_body" rows="8"><?= sv('seo_text_body', $s) ?></textarea>
     <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Честный текст про зоны, сроки, свежесть и оплату помогает поисковикам. Разрешены ссылки вида <code>&lt;a href="/help"&gt;…&lt;/a&gt;</code> — как в тексте cookie-окна.</p>
+    <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
+    <p style="font-size:.85rem;font-weight:600;margin:0 0 8px">Футер, товар и спасибо-страница</p>
+    <div class="grid2">
+      <div>
+        <label class="f" for="ft-about">Описание магазина в футере</label>
+        <input class="input" id="ft-about" name="footer_about" value="<?= sv('footer_about', $s) !== '' ? sv('footer_about', $s) : 'Свежие букеты с доставкой по Санкт-Петербургу в день заказа' ?>" maxlength="140">
+        <label class="f" for="pt-today" style="margin-top:8px">Строка «доставим сегодня» на странице товара</label>
+        <input class="input" id="pt-today" name="product_today_text" value="<?= sv('product_today_text', $s) !== '' ? sv('product_today_text', $s) : 'Оформите до 20:00 — доставим сегодня' ?>" maxlength="90">
+      </div>
+      <div>
+        <label class="f" for="th-call">Обещание звонка на спасибо-странице</label>
+        <input class="input" id="th-call" name="thanks_call_text" value="<?= sv('thanks_call_text', $s) !== '' ? sv('thanks_call_text', $s) : 'Мы позвоним в течение 15 минут для подтверждения' ?>" maxlength="90">
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Пустые строки «доставим сегодня» скрывают строку; футер и звонок показываются всегда (пустая = дефолт).</p>
+      </div>
+    </div>
 
     <?php /* Журнал */ ?>
     <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">

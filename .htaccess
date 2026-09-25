@@ -98,8 +98,10 @@ ExpiresByType image/webp "access plus 30 days"
 ExpiresByType image/jpeg "access plus 30 days"
 ExpiresByType image/png "access plus 30 days"
 ExpiresByType image/svg+xml "access plus 7 days"
-ExpiresByType text/css "access plus 1 hour"
-ExpiresByType application/javascript "access plus 1 hour"
+# W96-fix3a (T3b): CSS/JS — год (было 1 час): ссылки версионированы ?v=md5 (head.php, T4),
+# смена файла меняет URL — долгий кэш безопасен. Картинки НЕ тронуты.
+ExpiresByType text/css "access plus 1 year"
+ExpiresByType application/javascript "access plus 1 year"
 ExpiresByType image/x-icon "access plus 7 days"
 </IfModule>
 <IfModule mod_headers.c>
@@ -110,6 +112,17 @@ Header set Cache-Control "public, max-age=31536000, immutable"
 Header set Cache-Control "public, max-age=2592000"
 </FilesMatch>
 <FilesMatch "\.(css|js)$">
-Header set Cache-Control "public, max-age=3600, must-revalidate"
+Header set Cache-Control "public, max-age=31536000, immutable"
 </FilesMatch>
+</IfModule>
+
+# W96-fix3a (T3a): сжатие текстовых типов (Apache 2.4, прод SpaceWeb).
+# Картинки уже сжаты форматом — не дефлейтим (усугубит CPU без выигрыша).
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain
+  AddOutputFilterByType DEFLATE text/css
+  AddOutputFilterByType DEFLATE application/javascript
+  AddOutputFilterByType DEFLATE application/json
+  AddOutputFilterByType DEFLATE image/svg+xml
+  AddOutputFilterByType DEFLATE text/xml application/xml application/xhtml+xml
 </IfModule>

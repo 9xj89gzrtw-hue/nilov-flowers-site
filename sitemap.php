@@ -10,10 +10,10 @@ $base = 'https://flowers.interfood-catering.ru';
 header('Content-Type: application/xml; charset=UTF-8');
 
 $today = date('Y-m-d');
+/* W96-fix3a (T5a): /policy и /offer убраны — страницы noindex (robots),
+   в sitemap им делать нечего (mixed signals для поисковиков). */
 $urls = [
     ['loc' => $base . '/', 'priority' => '1.0', 'changefreq' => 'daily', 'lastmod' => $today],
-    ['loc' => $base . '/policy', 'priority' => '0.2', 'changefreq' => 'yearly', 'lastmod' => $today],
-    ['loc' => $base . '/offer', 'priority' => '0.3', 'changefreq' => 'yearly', 'lastmod' => $today],
 ];
 
 $products = db()->query(

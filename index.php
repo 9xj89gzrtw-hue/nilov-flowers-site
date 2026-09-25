@@ -72,8 +72,86 @@ function product_img_url(array $p): string
 function product_img_webp(array $p): string
 {
     if ($p['image'] === '') return '';
-    $webp = '/img/products/' . rawurlencode(preg_replace('/\.(jpe?g|png)$/i', '.webp', $p['image']));
+    $webp = '/img/products/' . rawurlencode(preg_replace('/\.(jpe?g|png|webp)$/i', '.webp', $p['image']));
     return is_file(BASE_PATH . urldecode($webp)) ? $webp : '';
+}
+
+/* W96-fix3a (T2): превью карточек каталога — webp шириной 400px в img/products/thumbs/
+   ({имя без расширения}-400.webp). Генерация ленивая: файла нет — GD-ресайз на месте
+   (q78); оригинал уже ≤400px / GD не справился / каталог не писуется — вернём ''
+   и карточка живёт без превью (как до фикса). Запись через tmp+rename: параллельные
+   запросы не прочитают половину файла; статик-кэш — одна попытка за запрос. */
+function product_img_thumb(array $p): string
+{
+    static $cache = [];
+    if (($p['image'] ?? '') === '') return '';
+    $file = (string)$p['image'];
+    if (isset($cache[$file])) return $cache[$file];
+
+    $fail = static function () use (&$cache, $file): string {
+        $cache[$file] = '';
+        return '';
+    };
+    $src = IMG_PRODUCTS_DIR . '/' . $file;
+    if (!is_file($src)) return $fail();
+    $dim = @getimagesize($src);
+    if ($dim === false) return $fail();
+    [$srcW, $srcH, $type] = [(int)$dim[0], (int)$dim[1], (int)$dim[2]];
+    /* Компактный оригинал — превью не даёт экономии, не апскейлим */
+    if ($srcW <= 400) return $fail();
+
+    $base = preg_replace('/\.[^.]+$/', '', $file) ?? $file;
+    $thumbsDir = IMG_PRODUCTS_DIR . '/thumbs';
+    $dst = $thumbsDir . '/' . $base . '-400.webp';
+    $url = '/img/products/thumbs/' . rawurlencode($base . '-400.webp');
+    if (is_file($dst)) return $url;
+
+    if (!is_dir($thumbsDir) && !@mkdir($thumbsDir, 0755, true)) return $fail();
+    $srcIm = match ($type) {
+        IMAGETYPE_JPEG => @imagecreatefromjpeg($src),
+        IMAGETYPE_PNG => @imagecreatefrompng($src),
+        IMAGETYPE_WEBP => function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($src) : false,
+        default => false, /* gif без анимации терять не хотим, прочее не поддерживаем */
+    };
+    if ($srcIm === false) return $fail();
+
+    $w = 400;
+    $h = max(1, (int)round($srcH * $w / $srcW));
+    $dstIm = imagecreatetruecolor($w, $h);
+    if ($type === IMAGETYPE_PNG) {
+        /* PNG может нести альфу — сохраняем прозрачность (webp её умеет) */
+        imagealphablending($dstIm, false);
+        imagesavealpha($dstIm, true);
+        imagefill($dstIm, 0, 0, imagecolorallocatealpha($dstIm, 0, 0, 0, 127));
+    }
+    $copied = imagecopyresampled($dstIm, $srcIm, 0, 0, 0, 0, $w, $h, $srcW, $srcH);
+    imagedestroy($srcIm);
+    if (!$copied) {
+        imagedestroy($dstIm);
+        return $fail();
+    }
+    $tmp = $dst . '.tmp' . getmypid();
+    $written = @imagewebp($dstIm, $tmp, 78);
+    imagedestroy($dstIm);
+    if (!$written || !@rename($tmp, $dst)) {
+        if (is_file($tmp)) @unlink($tmp);
+        return $fail();
+    }
+    return $url;
+}
+
+/* W96-fix3a (T2): фактическая ширина оригинала в px — для честного {w}-дескриптора
+   srcset (оригиналы разные: 582–900px, «864w» для всех был бы ложью). */
+function product_img_width(array $p): int
+{
+    static $cache = [];
+    if (($p['image'] ?? '') === '') return 0;
+    $file = (string)$p['image'];
+    if (!isset($cache[$file])) {
+        $dim = @getimagesize(IMG_PRODUCTS_DIR . '/' . $file);
+        $cache[$file] = $dim === false ? 0 : (int)$dim[0];
+    }
+    return $cache[$file];
 }
 
 /* Критик-покупатель B1: единый фолбэк-фото (productImageFile) — карточка и страница
@@ -97,6 +175,23 @@ function render_product_card(array $p, array $ctx): void
     $isPremium = (int)($p['is_premium'] ?? 0) === 1;
     $img = product_img_url($p);
     $imgWebp = product_img_webp($p);
+    /* W96-fix3a (T2): srcset карточки — webp-превью 400w + webp-оригинал {w}w.
+   Слот карточки: моб — 2 колонки ≈ 45vw, десктоп — 280–300px (карусель clamp
+   + сетка 3 кол.) → браузер при DPR≤2 берёт лёгкое превью, ретина-десктоп — оригинал.
+   img-фолбэк (jpg) остаётся без srcset: превью только webp, браузерам без webp
+   отдаётся оригинал как раньше. */
+    $thumb = product_img_thumb($p);
+    $origW = product_img_width($p);
+    if ($thumb !== '' && $imgWebp !== '' && $origW > 0) {
+        $srcset = $thumb . ' 400w, ' . $imgWebp . ' ' . $origW . 'w';
+    } elseif ($thumb !== '') {
+        $srcset = $thumb . ' 400w';
+    } elseif ($imgWebp !== '') {
+        $srcset = $imgWebp;
+    } else {
+        $srcset = '';
+    }
+    $sizes = '(max-width:899px) 45vw, (min-width:900px) 300px, 280px';
     $link = '/product/' . rawurlencode($p['slug']);
     /* W96-fix1 (F3): поисковый индекс карточки — имя + категория + описание
        (нижний регистр; js/five.js матчит по стемму запроса как подстроке) */
@@ -107,14 +202,14 @@ function render_product_card(array $p, array $ctx): void
             <a class="product-card__media-link" href="<?= e($link) ?>" aria-label="<?= e($p['name']) ?>">
               <?php if ($img !== ''): ?>
                 <picture>
-                  <?php if ($imgWebp !== ''): ?><source type="image/webp" srcset="<?= e($imgWebp) ?>"><?php endif; ?>
+                  <?php if ($srcset !== ''): ?><source type="image/webp" srcset="<?= e($srcset) ?>"<?= $thumb !== '' ? ' sizes="' . e($sizes) . '"' : '' ?>><?php endif; ?>
                   <img class="product-card__img" src="<?= e($img) ?>" alt="<?= e($p['name']) ?>" loading="lazy" decoding="async">
                 </picture>
               <?php else: ?>
                 <svg viewBox="0 0 80 94" style="width:30%;margin:auto;color:var(--blue)" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="40" cy="30" r="11"/><circle cx="26" cy="38" r="8"/><circle cx="54" cy="38" r="8"/><path d="M40 41v20M40 61c-8 6-14 14-16 25M40 61c8 6 14 14 16 25"/></svg>
               <?php endif; ?>
             </a>
-            <?php if ($isSale): $offPct = (int)$p['price'] > 0 ? (int)round((1 - $price / (int)$p['price']) * 100) : 0; ?><span class="product-card__badge"><?= e(setting('badge_sale_text', 'Акционная цена')) ?><?php if ($offPct > 0): ?> −<?= $offPct ?>%<?php endif; ?></span><?php endif; ?>
+            <?php if ($isSale): $offPct = (int)$p['price'] > 0 ? (int)round((1 - $price / (int)$p['price']) * 100) : 0; ?><span class="product-card__badge product-card__badge--sale"><?= e(setting('badge_sale_text', 'Акционная цена')) ?><?php if ($offPct > 0): ?> −<?= $offPct ?>%<?php endif; ?></span><?php endif; ?>
             <?php if ((int)($p['is_urgent'] ?? 0) === 1): ?><span class="product-card__badge product-card__badge--urgent"><?= e(setting('badge_urgent_text', 'Успеть сегодня')) ?></span><?php endif; ?>
             <?php /* Бейджи 5cv: «Хит» (amber) и «Премиум» (ink) — по флагам товара */ ?>
             <?php if ($isHit): ?><span class="product-card__badge product-card__badge--hit"><?= e(setting('badge_hit_text', 'Хит')) ?></span><?php endif; ?>
@@ -291,6 +386,9 @@ $seoTextDefault = "Доставка цветов по Санкт-Петербу�
 <meta property="og:description" content="Букеты с доставкой в день заказа по Санкт-Петербургу. Фото перед отправкой, свежие цветы с утренней поставки.">
 <meta property="og:url" content="https://flowers.interfood-catering.ru/">
 <?= setting('hero_image') !== '' ? '<meta property="og:image" content="https://flowers.interfood-catering.ru/img/uploads/' . e(rawurlencode(setting('hero_image'))) . '">' : '' ?>
+<?php /* W96-fix3a (T5d): $pageDescription → twitter:description в partials/head.php
+   (парно к og:description; значение — редактируемый из админки seo_description) */ ?>
+<?php $pageDescription = setting('seo_description', 'Доставка букетов по Санкт-Петербургу в день заказа. Свежие цветы с утренней поставки, фото перед отправкой. Заказы до 20:00 — доставим сегодня.'); ?>
 <?php require __DIR__ . '/partials/head.php'; ?>
 <?php /* JSON-LD Florist — canonical 2026 (hanafloristpos.com/schema-guide, thestacc.com/local-business-schema) */ ?>
 <?php
@@ -555,7 +653,9 @@ if ($__heroPre !== '') {
         <?php foreach ($occTiles as $t): ?>
         <a class="fc-occasion<?= $t['photo'] !== '' ? ' fc-occasion--photo' : ' fc-occasion--pastel' ?>" href="/occasion/<?= e(rawurlencode($t['slug'])) ?>">
           <?php if ($t['photo'] !== ''): ?>
-            <img class="fc-occasion__img" src="<?= e($t['photo']) ?>" alt="" loading="lazy" decoding="async">
+            <?php /* W96-fix3a (T6): осмысленный alt из заголовка повода (было alt="" —
+               скринридер молчал на плитке с фото) */ ?>
+            <img class="fc-occasion__img" src="<?= e($t['photo']) ?>" alt="<?= e('Букеты: ' . $t['title']) ?>" loading="lazy" decoding="async">
           <?php else: ?>
             <?php /* Пастельная плитка без фото: декоративный прозрачный цветок (размер фиксируем инлайном — CSS-агент его не стилизует) */ ?>
             <svg class="fc-occasion__flower" width="44" height="44" viewBox="0 0 32 32" style="position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);color:var(--pink);opacity:.5" aria-hidden="true">

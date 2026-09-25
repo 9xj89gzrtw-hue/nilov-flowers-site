@@ -202,6 +202,12 @@
           countEl.textContent = '';
         }
       }
+      /* W96-fix3b (D9): оповещаем счётчик цены (catalog-filter.js слушает
+         'fc:filter' и пересчитывает видимые) — ОБА счётчика страницы всегда
+         показывают одно число: чип «5 букетов» = счётчик цены «5 букетов». */
+      try {
+        window.dispatchEvent(new CustomEvent('fc:filter', { detail: { visible: total } }));
+      } catch (err) { /* старые браузеры без CustomEvent-конструктора — молча */ }
       /* Плавный скролл к каталогу — только когда фильтруют чипом/поиском, не по сбросу */
       if (scroll) {
         var cat = document.getElementById('catalog');
@@ -278,25 +284,40 @@
     }
   }
 
-  /* ---------- 4. «Смотреть все» у каруселей ----------
+  /* ---------- 4. «Смотреть все» + ссылки каталога в футере ----------
      data-tab={id}: включаем соответствующую вкладку каталога (её клик
      обработает catalog-filter.js), якорь #catalog срабатывает сам.
      W96-fix1 (F7): data-chip={hit|premium|low} — «Смотреть все» у Хитов/
      Премиума/До N применяет одноимённый чип (полный путь клика по чипу:
-     active + aria-pressed + фильтр + скролл; уже активный чип — только якорь). */
+     active + aria-pressed + фильтр + скролл; уже активный чип — только якорь).
+     W96-fix3b (D2): делегирование по документу — работают ЛЮБЫЕ ссылки
+     с data-tab/data-chip (карусели витрины И колонки футера). На вторичных
+     страницах каталога нет: data-tab уводит на глубокую ссылку
+     /?category=N#catalog (её подхватит catalog-filter.js), data-chip —
+     просто к каталогу (нативный переход по href). */
   function rowLinks() {
-    document.querySelectorAll('.fc-row__link[data-tab]').forEach(function (a) {
-      a.addEventListener('click', function () {
-        var tab = document.querySelector('.catalog-tabs__tab[data-category-id="' + a.getAttribute('data-tab') + '"]');
-        if (tab) tab.click();
-      });
-    });
-    document.querySelectorAll('.fc-row__link[data-chip]').forEach(function (a) {
-      a.addEventListener('click', function () {
-        var chip = document.querySelector('.fc-chip[data-chip="' + a.getAttribute('data-chip') + '"]');
+    document.addEventListener('click', function (e) {
+      if (e.button !== 0 || e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      var a = e.target.closest ? e.target.closest('a[data-tab],a[data-chip]') : null;
+      if (!a) return;
+      var tabId = a.getAttribute('data-tab');
+      var chipId = a.getAttribute('data-chip');
+      if (tabId) {
+        var tab = document.querySelector('.catalog-tabs__tab[data-category-id="' + tabId + '"]');
+        if (tab) {
+          tab.click();
+        } else {
+          /* Вторичная страница: вкладки нет — глубокая ссылка включит её на главной */
+          e.preventDefault();
+          location.href = '/?category=' + encodeURIComponent(tabId) + '#catalog';
+          return;
+        }
+      }
+      if (chipId) {
+        var chip = document.querySelector('.fc-chip[data-chip="' + chipId + '"]');
         if (!chip || chip.classList.contains('is-active')) return;
         chip.click();
-      });
+      }
     });
   }
 })();
