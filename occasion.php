@@ -201,6 +201,9 @@ function render_occasion_card(array $p): void
     <?php
 }
 $pageTitle = $metaTitle;
+/* W103/G2: display-ДНК вторички (Playfair H1, шкала H2) — общий файл для
+   category+occasion (версия — md5-хэш, паттерн product.php) */
+$secondaryCssV = substr((string)@md5_file(__DIR__ . '/css/secondary.css'), 0, 8);
 ?><!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -212,6 +215,10 @@ $pageTitle = $metaTitle;
 <?php $ocImg = $products !== [] ? '/img/products/' . rawurlencode(productImageFile($products[0])) : ''; ?>
 <?= $ocImg !== '' ? '<meta property="og:image" content="https://flowers.interfood-catering.ru' . e($ocImg) . '">' : '' ?>
 <?php require __DIR__ . '/partials/head.php'; ?>
+<?php /* W103/G2: H1 повода выше фолда — Playfair: preload cyrillic-подмножества
+       (21КБ, тот же паттерн product.php: FOUT на Georgia-фолбэке недопустим) */ ?>
+<link rel="preload" href="/fonts/PlayfairDisplay-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/css/secondary.css?v=<?= e($secondaryCssV) ?>">
 <?php /* W97-fixB3b (B3b-3): CollectionPage БЕЗ mainEntity-вопросов (FAQ как
    mainEntity у CollectionPage невалиден) — FAQ вынесен в отдельный top-level
    FAQPage ниже; CollectionPage оставлен: name/description/url/isPartOf */ ?>
@@ -248,7 +255,17 @@ $pageTitle = $metaTitle;
         <a href="/">Главная</a> / <a href="/#catalog">Каталог</a> / <span aria-current="page"><?= e($oc['title']) ?></span>
       </nav>
       <div class="page-hero">
-        <h1 class="page-hero__title"><?= e($oc['title']) ?></h1>
+        <?php /* W103/G2: display-ДНК — H1 поводов Playfair 600 (как категории;
+               типо-спека п.1: display-шрифт на всех посадочных). Первое слово —
+               italic-акцент pink-deep (паттерн fc-hero__accent главной).
+               Разбиение по первому пробелу, e() на ОБЕ части. */ ?>
+        <?php
+        $h1Text = (string)$oc['title'];
+        $h1Space = mb_strpos($h1Text, ' ');
+        $h1First = $h1Space === false ? $h1Text : mb_substr($h1Text, 0, $h1Space);
+        $h1Rest = $h1Space === false ? '' : mb_substr($h1Text, $h1Space);
+        ?>
+        <h1 class="page-hero__title"><em class="page-hero__accent"><?= e($h1First) ?></em><?= e($h1Rest) ?></h1>
         <p class="section-sub"><?= e($oc['intro']) ?></p>
       </div>
 

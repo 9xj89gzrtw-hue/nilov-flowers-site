@@ -52,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
         /* Тексты бегущей ленты (критерий 16) */
         'marquee_1','marquee_2','marquee_3','marquee_4',
         /* Заголовки секций (критерий 16) */
-        'catalog_title','catalog_subtitle','order_title',
+        'catalog_title','catalog_subtitle','catalog_strip_text','order_title',
         /* Бейджи карточек + cookie-баннер (критерий 16) */
         'badge_sale_text','badge_urgent_text',
         'cookie_banner_text','cookie_accept_text','cookie_reject_text',
@@ -69,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
         /* W96 (редизайн 5cv): тексты новых блоков витрины — город, hero-промо, чипы цен,
            секции хитов/премиума/бюджета/допов, поводы, магазины, SEO-текст, журнал */
         'citybar_text','city_label','search_placeholder','catalog_btn_text',
-        'hero_promo_badge','hero_promo_title','hero_promo_text','hero_promo_btn_text','hero_promo_link',
+        'hero_promo_badge','hero_promo_title','hero_promo_text','hero_promo_btn_text','hero_promo_link','hero_promo_image',
         'hero_delivery_title','hero_delivery_text',
         'chips_price_low','chips_price_high',
         'section_hits_title','section_hits_sub','section_premium_title','section_premium_sub',

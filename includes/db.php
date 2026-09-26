@@ -142,7 +142,7 @@ function seedDemoData(PDO $pdo): void
         ('hero_subtitle', 'Соберём и доставим букет в течение дня — к празднику или просто так'),
         ('hero_button_text', 'Выбрать букет'),
         ('hero_button_link', '#catalog'),
-        ('hero_image', ''),
+        ('hero_image', 'img/editorial/petals-macro.jpg'),
         ('logo_image', ''),
         ('logo_enabled', '1'),
         ('steps_title', 'Как это работает'),

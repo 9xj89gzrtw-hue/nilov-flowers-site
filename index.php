@@ -207,11 +207,34 @@ function render_premium_picture(array $p, string $sizes): void
     <?php
 }
 
+/* W103 (6-b): setting-значение картинки — имя файла из img/uploads/ (админ-аплоад)
+   ИЛИ путь от корня сайта (сид-дефолты img/editorial/…, img/products/… — файлы
+   трекаются в git). Возвращают путь от корня ('' — файла нет). */
+function site_image_root(string $val): string
+{
+    $val = trim(str_replace('\\', '/', $val));
+    if ($val === '') return '';
+    if (is_file(IMG_UPLOADS_DIR . '/' . $val)) return 'img/uploads/' . $val;
+    if (is_file(BASE_PATH . '/' . $val)) return $val;
+    return '';
+}
+
+function site_image_url(string $val): string
+{
+    $root = site_image_root($val);
+    if ($root === '') return '';
+    return '/' . implode('/', array_map('rawurlencode', explode('/', $root)));
+}
+
 /* W99-fixG (G3): hero-превью — webp шириной 480/768 в img/uploads/thumbs/
    ({имя без ext}-{W}.webp, q78). Паттерн product_img_thumb: ленивая генерация,
    tmp+rename против гонок, оригинал ≤W / сбой GD / не пишется каталог → ''
    (деградация до прежнего одного src). Оригинал 1024×1024 (90КБ webp) мобиле
-   не нужен: 390/DPR1 хватает 480w. */
+   не нужен: 390/DPR1 хватает 480w.
+   W103 (6-b): $file — теперь ПУТЬ ОТ КОРНЯ сайта (site_image_root): аплоады
+   дают то же имя превью, что раньше; прочие пути (img/editorial/…) — «сплющенное»
+   имя (img-editorial-florist-hands-480.webp), чтобы весь генерируемый кэш жил
+   в gitignored img/uploads/thumbs/. */
 function hero_img_size(string $file, int $targetW): string
 {
     static $cache = [];
@@ -223,7 +246,7 @@ function hero_img_size(string $file, int $targetW): string
         $cache[$ck] = '';
         return '';
     };
-    $src = IMG_UPLOADS_DIR . '/' . $file;
+    $src = BASE_PATH . '/' . $file;
     if (!is_file($src)) return $fail();
     $dim = @getimagesize($src);
     if ($dim === false) return $fail();
@@ -231,7 +254,12 @@ function hero_img_size(string $file, int $targetW): string
     /* Компактный оригинал — превью не даёт экономии, не апскейлим */
     if ($srcW <= $targetW) return $fail();
 
-    $base = preg_replace('/\.[^.]+$/', '', $file) ?? $file;
+    /* W103 (6-b): база имени — как раньше для аплоадов ({name}-{W}.webp),
+       «сплющенный» путь для сид-файлов вне img/uploads (кэш — в одном каталоге) */
+    $isUploads = str_starts_with($file, 'img/uploads/');
+    $base = $isUploads
+        ? (preg_replace('/\.[^.]+$/', '', substr($file, 12)) ?? substr($file, 12))
+        : str_replace('/', '-', (string)(preg_replace('/\.[^.]+$/', '', $file) ?? $file));
     $thumbsDir = IMG_UPLOADS_DIR . '/thumbs';
     $dst = $thumbsDir . '/' . $base . '-' . $targetW . '.webp';
     $url = '/img/uploads/thumbs/' . rawurlencode($base . '-' . $targetW . '.webp');
@@ -600,36 +628,27 @@ $seoTextDefault = "Доставка цветов по Санкт-Петербу�
 <meta property="og:title" content="<?= e(setting('seo_title', 'Доставка цветов по СПб — ' . setting('shop_name', 'Nilov Flowers'))) ?>">
 <meta property="og:description" content="Букеты с доставкой в день заказа по Санкт-Петербургу. Фото перед отправкой, свежие цветы с утренней поставки.">
 <meta property="og:url" content="https://flowers.interfood-catering.ru/">
-<?php /* W97-fixB2 (B2-7): og:image:width/height — соцсети резервируют превью без
-       повторной загрузки; @-guard: файла нет — размеры не печатаем */ ?>
-<?php if (setting('hero_image') !== ''): ?>
-<meta property="og:image" content="https://flowers.interfood-catering.ru/img/uploads/<?= e(rawurlencode(setting('hero_image'))) ?>">
-<?php $ogDim = @getimagesize(IMG_UPLOADS_DIR . '/' . setting('hero_image')); ?>
-<?php if ($ogDim !== false): ?>
-<meta property="og:image:width" content="<?= (int)$ogDim[0] ?>">
-<meta property="og:image:height" content="<?= (int)$ogDim[1] ?>">
-<?php endif; ?>
-<?php endif; ?>
 <?php /* W96-fix3a (T5d): $pageDescription → twitter:description в partials/head.php
    (парно к og:description; значение — редактируемый из админки seo_description) */ ?>
 <?php $pageDescription = setting('seo_description', 'Доставка букетов по Санкт-Петербургу в день заказа. Свежие цветы с утренней поставки, фото перед отправкой. Заказы до 20:00 — доставим сегодня.'); ?>
-<?php require __DIR__ . '/partials/head.php'; ?>
-<?php /* JSON-LD Florist — canonical 2026 (hanafloristpos.com/schema-guide, thestacc.com/local-business-schema) */ ?>
-<?php
-/* W99-fixG (G3): hero-фото — srcset 480w/768w/{W}w. Расчёт здесь (в <head>):
-   те же переменные использует preload ниже и hero-разметка в теле страницы.
-   Слот .fc-hero__main (css/five.css): моб ≤899px — 100vw, десктоп 2fr/1fr от
-   wrap 1140 → ~640–720px CSS → sizes "(max-width:899px) 100vw, 640px"
-   (DPR1-десктоп берёт 768w, ретина — 1024w; моб 390/DPR1 — 480w). */
-$heroImg = setting('hero_image');
-$heroWebp = $heroImg !== '' ? preg_replace('/\.(jpe?g|png)$/i', '.webp', $heroImg) : '';
-$heroWebpUrl = ($heroWebp !== $heroImg && $heroImg !== '' && is_file(IMG_UPLOADS_DIR . '/' . $heroWebp))
-    ? '/img/uploads/' . rawurlencode($heroWebp) : '';
+<?php /* W103 (6-b): hero-картинка — нормализация и расчёты ЗАРАНЕЕ (нужны и
+   og:image ниже, и preload, и разметке в теле): setting('hero_image') — имя
+   из img/uploads/ (админ-аплоад) ИЛИ путь от корня сайта (сид-дефолт
+   img/editorial/florist-hands.jpg — файл в git). $heroRoot '' = файла нет
+   → fallback-градиент. Слот .fc-hero__main (css/five.css): моб ≤899px — 100vw,
+   десктоп 2fr/1fr от wrap 1140 → ~640–720px CSS → sizes "(max-width:899px) 100vw,
+   640px" (DPR1-десктоп берёт 768w, ретина — 1024w; моб 390/DPR1 — 480w). */
+$heroImg = (string)setting('hero_image');
+$heroRoot = site_image_root($heroImg);
+$heroUrl = site_image_url($heroImg);
+$heroWebp = $heroRoot !== '' ? (preg_replace('/\.(jpe?g|png)$/i', '.webp', $heroRoot) ?? '') : '';
+$heroWebpUrl = ($heroWebp !== $heroRoot && $heroRoot !== '' && is_file(BASE_PATH . '/' . $heroWebp))
+    ? '/' . implode('/', array_map('rawurlencode', explode('/', $heroWebp))) : '';
 $heroWebpOk = $heroWebpUrl !== '';
 /* Layout-критик W35: width/height на <img> — браузер резервирует box до загрузки */
-$heroDim = $heroImg !== '' ? (@getimagesize(IMG_UPLOADS_DIR . '/' . $heroImg) ?: null) : null;
-$heroThumb480 = $heroImg !== '' ? hero_img_size($heroImg, 480) : '';
-$heroThumb768 = $heroImg !== '' ? hero_img_size($heroImg, 768) : '';
+$heroDim = $heroRoot !== '' ? (@getimagesize(BASE_PATH . '/' . $heroRoot) ?: null) : null;
+$heroThumb480 = $heroRoot !== '' ? hero_img_size($heroRoot, 480) : '';
+$heroThumb768 = $heroRoot !== '' ? hero_img_size($heroRoot, 768) : '';
 $heroSrcset = [];
 if ($heroThumb480 !== '') { $heroSrcset[] = $heroThumb480 . ' 480w'; }
 if ($heroThumb768 !== '') { $heroSrcset[] = $heroThumb768 . ' 768w'; }
@@ -637,20 +656,30 @@ if ($heroWebpOk && $heroDim !== null) { $heroSrcset[] = $heroWebpUrl . ' ' . (in
 $heroSrcsetStr = implode(', ', $heroSrcset);
 $heroSizes = '(max-width:899px) 100vw, 640px';
 ?>
-<?php /* LCP-preload: hero.webp если существует (фолбэк — jpg).
+<?php /* W97-fixB2 (B2-7): og:image:width/height — соцсети резервируют превью без
+       повторной загрузки; @-guard: файла нет — размеры не печатаем */ ?>
+<?php if ($heroRoot !== ''): ?>
+<meta property="og:image" content="https://flowers.interfood-catering.ru<?= e($heroUrl) ?>">
+<?php if ($heroDim !== false && $heroDim !== null): ?>
+<meta property="og:image:width" content="<?= (int)$heroDim[0] ?>">
+<meta property="og:image:height" content="<?= (int)$heroDim[1] ?>">
+<?php endif; ?>
+<?php endif; ?>
+<?php /* LCP-preload: hero.webp если существует (фолбэк — оригинал).
    W99-fixG (G3): imagesrcset/imagessizes дублируют srcset/sizes <source> —
    предзагрузка попадает в ТОГО ЖЕ кандидата, что выберет разметка (десктоп:
    DPR1 → 768w, ретина → 1024w); href-фолбэк для браузеров без imagesrcset —
-   полноформатный webp (как раньше). */ ?>
-<?php if ($heroImg !== ''): ?>
+   полноформатный webp (как раньше). W103 (6-b): пути — от корня сайта. */ ?>
+<?php if ($heroRoot !== ''): ?>
 <?php
-$__heroPreHref = $heroWebpOk ? $heroWebpUrl : '/img/uploads/' . rawurlencode($heroImg);
+$__heroPreHref = $heroWebpOk ? $heroWebpUrl : $heroUrl;
 echo '<link rel="preload" as="image" href="' . e($__heroPreHref) . '" fetchpriority="high"'
     . ($heroSrcsetStr !== '' ? ' imagesrcset="' . e($heroSrcsetStr) . '" imagesizes="' . e($heroSizes) . '"' : '')
     . '>' . "\n";
 ?>
 <?php endif; ?>
-<script type="application/ld+json">
+<?php require __DIR__ . '/partials/head.php'; ?>
+<?php /* JSON-LD Florist — canonical 2026 (hanafloristpos.com/schema-guide, thestacc.com/local-business-schema) */ ?>
 <?php
 /* W99-fixG (G5): openingHoursSpecification — из setting('shop_hours'), если там
    есть диапазон ЧЧ:ММ-ЧЧ:ММ (в любом месте строки: «Ежедневно 9:00-21:00»,
@@ -720,7 +749,7 @@ echo json_encode([
         'latitude' => 59.9970675,
         'longitude' => 30.2727226,
     ],
-    'image' => setting('hero_image', '') !== '' ? 'https://flowers.interfood-catering.ru/img/uploads/' . rawurlencode(setting('hero_image')) : '',
+    'image' => $heroUrl !== '' ? 'https://flowers.interfood-catering.ru' . $heroUrl : '',
 ] + ($__openSpec !== [] ? ['openingHoursSpecification' => $__openSpec] : [])
   + ($__sameAs !== [] ? ['sameAs' => $__sameAs] : []), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>
 </script>
@@ -790,8 +819,8 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
       /* W99-fixG (G3): переменные hero ($heroImg/$heroWebpOk/$heroDim/
          $heroSrcsetStr/$heroSizes) посчитаны выше в <head> — там же preload. */
       ?>
-      <div class="fc-hero__main<?= $heroImg === '' ? ' fc-hero__main--fallback' : '' ?>">
-        <?php if ($heroImg !== ''): ?>
+      <div class="fc-hero__main<?= $heroRoot === '' ? ' fc-hero__main--fallback' : '' ?>">
+        <?php if ($heroRoot !== ''): ?>
         <picture>
           <?php /* W99-fixG (G3): srcset 480w/768w/1024w + sizes по слоту
                  .fc-hero__main (расчёт — в <head>, рядом с preload). GD-сбой —
@@ -799,7 +828,7 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
           <?php if ($heroWebpOk && $heroSrcsetStr !== ''): ?><source type="image/webp" srcset="<?= e($heroSrcsetStr) ?>" sizes="<?= e($heroSizes) ?>"><?php elseif ($heroWebpOk): ?><source type="image/webp" srcset="<?= e($heroWebpUrl) ?>"><?php endif; ?>
           <?php /* W97-fixB2 (B2-6): описательный alt (было alt=H1 — дублировал видимый
                  заголовок для скринридера); текст редактируется как hero_image_alt */ ?>
-          <img class="fc-hero__img" src="/img/uploads/<?= e($heroImg) ?>" alt="<?= e(setting('hero_image_alt', 'Свежий букет из сезонных цветов — витрина магазина')) ?>" fetchpriority="high"<?= $heroDim ? ' width="' . (int)$heroDim[0] . '" height="' . (int)$heroDim[1] . '"' : '' ?>>
+          <img class="fc-hero__img" src="<?= e($heroUrl) ?>" alt="<?= e(setting('hero_image_alt', 'Свежий букет из сезонных цветов — витрина магазина')) ?>" fetchpriority="high"<?= $heroDim ? ' width="' . (int)$heroDim[0] . '" height="' . (int)$heroDim[1] . '"' : '' ?>>
         </picture>
         <?php endif; ?>
         <div class="fc-hero__content">
@@ -808,7 +837,9 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
         <h1 class="fc-hero__title"><?php
         /* W103 (F1): акцентное слово H1 — Playfair italic + amber-мазок (стили в five.css).
            Ищем «цветов» (без пунктуации), иначе — второе слово. NBSP-склейка «по Санкт-…»
-           сохранена: \s в PCRE /u не матчит U+00A0 — склеенный токен не разваливается. */
+           сохранена: \s в PCRE /u не матчит U+00A0 — склеенный токен не разваливается.
+           W103 (6-b, M1): entrance — по-СЛОВНЫЙ rise из-под маски (nv-line/nv-ch —
+           оживлённый W4-набор из nilov.css; слова — inline-block, --i — порядок). */
         $heroWords = preg_split('/\s+/u', trim(preg_replace('/ по /u', ' по ', ' ' . trim($heroH1) . ' ', 1))) ?: [];
         $heroAccentIdx = -1;
         foreach ($heroWords as $hwI => $hwW) {
@@ -816,10 +847,12 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
         }
         if ($heroAccentIdx < 0 && count($heroWords) >= 2) { $heroAccentIdx = 1; }
         foreach ($heroWords as $hwI => $hwW) {
-            if ($hwI > 0) { echo ' '; }
-            echo $hwI === $heroAccentIdx
-                ? '<em class="fc-hero__accent">' . e($hwW) . '</em>'
-                : e($hwW);
+            if ($hwI > 0) { echo "\n"; }
+            echo '<span class="nv-line"><span class="nv-ch" style="--i:' . $hwI . '">'
+                . ($hwI === $heroAccentIdx
+                    ? '<em class="fc-hero__accent">' . e($hwW) . '</em>'
+                    : e($hwW))
+                . '</span></span>';
         }
         ?></h1>
         <p class="fc-hero__sub"><?= e(setting('hero_subtitle', 'Соберём и доставим букет в течение дня — к празднику или просто так')) ?></p>
@@ -861,7 +894,12 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
         <?php /* Промо-карточка (жёлтая, 5cv) — W96-fix1 (F4): честный дефолт «Открытка
            в подарок» (подписки в магазине нет, открытка — правда есть) */ ?>
         <?php if ($heroPromoOn): ?>
+        <?php /* W103 (6-b): миниатюра в промо-карточке (84–96px, radius 12) —
+               setting('hero_promo_image') с дефолтом gen20.jpg; пусто/файла нет —
+               карточка без фото, как раньше */ ?>
+        <?php $heroPromoUrl = site_image_url(setting('hero_promo_image', 'img/products/gen20.jpg')); ?>
         <div class="fc-hero__promo">
+          <?php if ($heroPromoUrl !== ''): ?><img class="fc-hero__promo-img" src="<?= e($heroPromoUrl) ?>" alt="" loading="lazy" decoding="async" width="96" height="96"><?php endif; ?>
           <span class="fc-hero__promo-eyebrow"><?= e(setting('hero_promo_badge', 'Всегда бесплатно')) ?></span>
           <h2 class="fc-hero__promo-title"><?= e(setting('hero_promo_title', 'Открытка в подарок')) ?></h2>
           <p class="fc-hero__promo-text"><?= e(setting('hero_promo_text', 'Напишем ваш текст от руки и вложим в букет — бесплатно, в каждом заказе')) ?></p>
@@ -1019,6 +1057,21 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
   endif; ?>
 
   <!-- КАТАЛОГ -->
+  <?php /* W103 (6-b, критик-5а P0 «каталожный дамп»): editorial full-bleed полоса
+         ПЕРЕД каталогом — фото лепестков + ink-оверлей + Playfair-цитата.
+         Полоса — самостоятельная секция ВНЕ грида: #catalogTabs/#catalogGrid
+         и catalog-filter.js не затронуты (фильтры работают как раньше). */ ?>
+  <?php $catalogStripText = trim((string)setting('catalog_strip_text', 'Каждый букет собираем утром — и фотографируем перед отправкой')); ?>
+  <?php if ($catalogStripText !== ''): ?>
+  <section class="fc-catalog-strip" aria-label="О сборке букетов">
+    <?php if (is_file(BASE_PATH . '/img/editorial/petals-macro.jpg')): ?>
+    <img class="fc-catalog-strip__img" src="/img/editorial/petals-macro.jpg" alt="" loading="lazy" decoding="async">
+    <?php endif; ?>
+    <div class="wrap fc-catalog-strip__inner">
+      <p class="fc-catalog-strip__text reveal"><?= e($catalogStripText) ?></p>
+    </div>
+  </section>
+  <?php endif; ?>
   <?php /* W97-fixB2 (B2-5а): каталог — тоже товарная секция, продолжает чередование фонов */ ?>
   <?php $fcProdSeq++; ?>
   <section class="fc-section<?= ($fcProdSeq % 2 === 0) ? ' fc-section--tint' : '' ?>" id="catalog">
@@ -1311,7 +1364,10 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
   </section>
   <?php endif; ?>
 
-  <!-- SEO-ТЕКСТ (5cv): sanitize_rich_text разрешает только <a>; абзацы — через \n\n → <p> (стилизует .fc-seo p) -->
+  <!-- SEO-ТЕКСТ (5cv): sanitize_rich_text разрешает только <a>; абзацы — через \n\n → <p> (стилизует .fc-seo p).
+       W103 (6-b, критик-5а P0 «низ главной»): колофон-стиль — тихий caps-заголовок,
+       первые два абзаца снаружи, остальной текст в <details> (в HTML остаётся весь
+       текст — SEO не страдает); summary — Playfair-курсив. -->
   <?php if ($featSeotext): ?>
   <section class="fc-section">
     <div class="wrap">
@@ -1323,9 +1379,20 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
         $seoParas = array_values(array_filter(array_map('trim',
             preg_split('/\n{2,}/u', sanitize_rich_text(setting('seo_text_body', $seoTextDefault), 5000))),
             static fn (string $s): bool => $s !== ''));
-        foreach ($seoParas as $seoPara): ?>
+        $seoLead = array_slice($seoParas, 0, 2);
+        $seoRest = array_slice($seoParas, 2);
+        ?>
+        <?php foreach ($seoLead as $seoPara): ?>
         <p><?= nl2br($seoPara) ?></p>
         <?php endforeach; ?>
+        <?php if ($seoRest !== []): ?>
+        <details class="fc-seo__more">
+          <summary><?= e(setting('seo_more_summary', 'О доставке цветов по Санкт-Петербургу')) ?></summary>
+          <?php foreach ($seoRest as $seoPara): ?>
+          <p><?= nl2br($seoPara) ?></p>
+          <?php endforeach; ?>
+        </details>
+        <?php endif; ?>
       </div>
     </div>
   </section>
@@ -1364,7 +1431,10 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
       <?php foreach ($faqItems as $f): ?>
       <details class="faq-item">
         <summary class="faq-item__q"><?= e($f['q']) ?></summary>
-        <p class="faq-item__a"><?= e($f['a']) ?></p>
+        <?php /* W103 (6-b, M8): обёртка для плавного раскрытия 280мс —
+               grid-template-rows 0fr→1fr (стили five.css); текст целиком
+               остаётся в HTML/JSON-LD как раньше */ ?>
+        <div class="faq-item__a-wrap"><p class="faq-item__a"><?= e($f['a']) ?></p></div>
       </details>
       <?php endforeach; ?>
       </div>

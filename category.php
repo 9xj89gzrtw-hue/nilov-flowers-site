@@ -261,6 +261,9 @@ $heroImg = setting('hero_image', '');
 /* W103/F2: стили тулбара фильтров/сортировки — отдельный файл, подключается
    ниже отдельным <link> после five.css (версия — md5-хэш, паттерн head.php T4) */
 $categoryCssV = substr((string)@md5_file(__DIR__ . '/css/category.css'), 0, 8);
+/* W103/G2: display-ДНК вторички (Playfair H1, шкала H2) — общий файл для
+   category+occasion, подключается ПОСЛЕ category.css (версия — md5-хэш) */
+$secondaryCssV = substr((string)@md5_file(__DIR__ . '/css/secondary.css'), 0, 8);
 ?><!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -281,6 +284,10 @@ $categoryCssV = substr((string)@md5_file(__DIR__ . '/css/category.css'), 0, 8);
 <?php /* W103/F2: тулбар категорий — ПОСЛЕ five.css (токены var(--pink)/var(--ink)
        из five.css доступны на этой же странице; @import не нужен — CSP) */ ?>
 <link rel="stylesheet" href="/css/category.css?v=<?= e($categoryCssV) ?>">
+<?php /* W103/G2: H1 выше фолда — Playfair, поэтому preload cyrillic-подмножества
+       (21КБ, тот же паттерн product.php: FOUT на Georgia-фолбэке недопустим) */ ?>
+<link rel="preload" href="/fonts/PlayfairDisplay-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/css/secondary.css?v=<?= e($secondaryCssV) ?>">
 <?php /* BreadcrumbList — ОТДЕЛЬНЫЙ top-level JSON-LD (Главная → Каталог → категория),
    в SERP — хлебные крошки; noindex НЕ ставим */ ?>
 <script type="application/ld+json">
@@ -319,7 +326,17 @@ $categoryCssV = substr((string)@md5_file(__DIR__ . '/css/category.css'), 0, 8);
         <a href="/">Главная</a> / <a href="/#catalog">Каталог</a> / <span aria-current="page"><?= e($catName) ?></span>
       </nav>
       <div class="page-hero">
-        <h1 class="page-hero__title"><?= e($catName) ?> с доставкой по Санкт-Петербургу</h1>
+        <?php /* W103/G2: display-ДНК — H1 категорий Playfair 600 (SOTD-судья: «H1
+               Montserrat 36px — маркетплейс»). Первое слово — italic-акцент
+               pink-deep (паттерн fc-hero__accent главной). Разбиение по первому
+               пробелу, e() на ОБЕ части (mb_* — UTF-8-безопасно). */ ?>
+        <?php
+        $h1Text = $catName . ' с доставкой по Санкт-Петербургу';
+        $h1Space = mb_strpos($h1Text, ' ');
+        $h1First = $h1Space === false ? $h1Text : mb_substr($h1Text, 0, $h1Space);
+        $h1Rest = $h1Space === false ? '' : mb_substr($h1Text, $h1Space);
+        ?>
+        <h1 class="page-hero__title"><em class="page-hero__accent"><?= e($h1First) ?></em><?= e($h1Rest) ?></h1>
         <p class="section-sub"><?= e($intro) ?></p>
       </div>
 

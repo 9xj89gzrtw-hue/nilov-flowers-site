@@ -111,7 +111,12 @@
   color:var(--rose-deep,#E2799C);
 }
 
-/* Split-буквы: по-буквенный stagger-rise (spec H1 из research) */
+/* Split-буквы: по-буквенный stagger-rise (spec H1 из research).
+   W103 (6-b): набор ОЖИВЛЁН — переиспользуется hero-бенто главной
+   (.fc-hero__title в index.php): слова H1 в .nv-line > .nv-ch[--i]
+   (по-СЛОВНЫЙ rise из-под маски; скоуп-правила — five.css W103-6b).
+   Правила универсальные: display инлайновый задан здесь, маска —
+   overflow:hidden на .nv-line (для слов — inline-block, five.css). */
 .nv-line{
   display:block;
   position:relative;

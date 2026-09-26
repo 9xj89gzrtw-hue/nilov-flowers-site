@@ -207,7 +207,12 @@ html{scrollbar-width:thin;scrollbar-color:var(--line) transparent}
     linear-gradient(90deg,rgba(28,26,30,.32),transparent 55%),
     linear-gradient(180deg,rgba(28,26,30,.15),rgba(28,26,30,.62));
 }
-.fc-hero__main--fallback{background:linear-gradient(135deg,#fbe3ef,#ffd9ec 45%,#f6f6f8)}
+/* W103 (6-b, P1): фолбэк-hero — ink-база вместо розового градиента: скрим
+   (::after C1) больше не мутирует пастель в «грязно-бордовый туман»; текст
+   на тёмном — 16:1. Водяной знак приглушён. */
+.fc-hero__main--fallback{background:linear-gradient(135deg,#2b2833,#1c1a1e 55%,#262329)}
+.fc-hero__main--fallback::after{background:none}
+.fc-hero__main--fallback::before{opacity:.4}
 .fc-hero__main--fallback::before{
   content:"";position:absolute;left:50%;top:42%;width:min(46%,240px);aspect-ratio:1;
   transform:translate(-50%,-50%);opacity:.55;pointer-events:none;
@@ -223,7 +228,7 @@ html{scrollbar-width:thin;scrollbar-color:var(--line) transparent}
   padding:6px 14px;border-radius:999px;
   background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.28);
   backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
-  color:#fff;font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:#fff;font-size:.75rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
 }
 /* W103 (F1): display-заголовок — Playfair 600, крупный кегль, плотный интерлиньяж;
    акцент-слово <em> — курсив + amber-мазок кистью (SVG data-URI; CSP img-src data: ок) */
@@ -547,10 +552,16 @@ img.product-card__img{background:var(--surface-subtle)}
 .fc-store__rating b,.fc-store__rating-num{font-weight:700;color:var(--ink)}
 
 /* ============ 11. SEO-ТЕКСТ (fc-seo) ============ */
-.fc-seo{background:var(--surface-warm);border-radius:24px;padding:32px;max-width:900px;margin:0 auto}
-@media(min-width:900px){.fc-seo{padding:40px;columns:2;column-gap:40px}}
-.fc-seo__title{font-weight:800;font-size:1.4rem;letter-spacing:-.01em;margin:0 0 16px;color:var(--ink)}
-.fc-seo p{font-size:.95rem;line-height:1.65;color:var(--ink-muted);break-inside:avoid}
+/* W103 (6-b, P0 «низ главной» → колофон): тихий caps-заголовок 11px,
+   два абзаца снаружи + остальной текст в <details> (summary — Playfair-
+   курсив); раскрытие — плавное (grid-rows 0fr→1fr, как FAQ). */
+.fc-seo{background:var(--surface-warm);border-radius:24px;padding:28px 32px;max-width:840px;margin:0 auto}
+@media(min-width:900px){.fc-seo{padding:32px 40px}}
+.fc-seo__title{
+  font:700 11px/1.5 var(--font-ui);letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink-muted);margin:0 0 16px;
+}
+.fc-seo p{font-size:.95rem;line-height:1.65;color:var(--ink-muted);margin:0}
 .fc-seo p+p{margin-top:12px}
 
 /* ============ 12. FAQ (fc-faq + рестайл .faq-item) ============ */
@@ -627,12 +638,16 @@ img.product-card__img{background:var(--surface-subtle)}
 
 /* ============ 15. ФОРМА ЗАКАЗА (рестайл .order-form) ============ */
 .order{background:var(--surface-subtle)}
+/* W103 (6-b, P0 «низ главной»): форма-карточка на тёплом фоне — мягкая тень
+   + воздух (padding 32–40px); раньше box-shadow:none — карточка «сливалась». */
 .order-form{
   background:#fff;border:1.5px solid var(--line);border-radius:24px;
-  padding:28px;max-width:880px;margin-inline:auto;
-  display:grid;gap:16px;box-shadow:none;
+  padding:32px 36px;max-width:880px;margin-inline:auto;
+  display:grid;gap:16px;
+  box-shadow:0 24px 60px -34px rgba(28,26,30,.32);
 }
-@media(max-width:719px){.order-form{padding:22px}}
+@media(min-width:900px){.order-form{padding:36px 40px}}
+@media(max-width:719px){.order-form{padding:24px 20px}}
 @media(min-width:720px){
   .order-form{grid-template-columns:1fr 1fr}
   .order-form__payment,.order-form__nested,.order-form__status,
@@ -747,12 +762,15 @@ img.product-card__img{background:var(--surface-subtle)}
 .cookie-banner__text{margin:0;flex:none}
 .cookie-banner__text a{color:var(--pink-deep)}
 .cookie-banner__actions{display:flex;gap:6px;align-items:center;flex-wrap:nowrap}
+/* W103 (6-b, P1): «Принять» — тихая outline-ink, не конкурирует с розовой
+   hero-CTA (критик-5а: розовых кнопок слишком много в первом экране).
+   Модалка «Настройки» наследует — вся система кнопок строже. */
 .cookie-banner__btn{
-  background:var(--pink-deep);color:#fff;border:none;border-radius:14px;
+  background:#fff;color:var(--ink);border:1.5px solid var(--ink);border-radius:16px;
   font:700 .9rem var(--font-ui);min-height:44px;padding:11px 22px;
-  transition:background .15s;
+  transition:background .15s,color .15s;
 }
-.cookie-banner__btn:hover{background:var(--pink-deep-hover)}
+.cookie-banner__btn:hover{background:var(--ink);color:#fff}
 .cookie-banner__link{
   background:transparent;border:none;color:var(--ink-muted);
   font:600 .82rem var(--font-ui);min-height:44px;padding:0 8px;cursor:pointer;
@@ -878,8 +896,9 @@ img.product-card__img{background:var(--surface-subtle)}
    вместо одноколонного легаси ≤480 (карточка 350px — «плитка-гигант»). */
 @media(min-width:360px) and (max-width:480px){
   .catalog__grid{grid-template-columns:repeat(2,1fr);gap:14px}
-  /* компенсация плотности: чуть мельче типографика карточки на узких экранах */
-  .catalog__grid .product-card__name{font-size:.85rem}
+  /* компенсация плотности: чуть мельче типографика карточки на узких экранах
+     W103 (6-b, P1): имя .92rem (было .85) — иерархия имя≈цена и на мобиле */
+  .catalog__grid .product-card__name{font-size:.92rem;min-height:46px}
   .catalog__grid .product-card__price{font-size:1rem}
 }
 @media(max-width:359px){.catalog__grid{grid-template-columns:1fr}}
@@ -1141,8 +1160,10 @@ body > div[role="region"][aria-label="Установка приложения"] 
    2×20.925px + padding 4px = 45.85px > старого min-height 44px ⇒ блок
    рос и цена уезжала на 2px. Поднимаем min-height до 46px (фикс ≥ двух
    строк) — priceY соседних карточек ряда совпадают, line-clamp:2 уже был.
-   W103 (F1): имя — ink (иерархия имя > цена, критик-1). */
-.product-card__name{font-size:15.5px;font-weight:600;color:var(--ink);min-height:46px}
+   W103 (F1): имя — ink (иерархия имя > цена, критик-1).
+   W103 (6-b, P1): 17px/600 — имя ≥ цены 16.8px (критик-5б); min-height 50px
+   = две строки 17px×1.35 + padding — «волна» не возвращается. */
+.product-card__name{font-size:17px;font-weight:600;color:var(--ink);min-height:50px}
 
 /* --- C6 → W103 (F1): промо-кнопка жёлтой карточки — тихая текстовая
    ссылка (не конкурирует с розовой пилюлей hero); радиус не нужен. */
@@ -1426,7 +1447,7 @@ html{scroll-padding-top:96px}
    тэглайн футера, grain). Разметка — index.php волны W103.
    ================================================================ */
 
-/* --- M1: eyebrow над H2 секции: «КАПС Montserrat + Playfair-курсив».
+/* W103 (F1): eyebrow над H2 секции: «КАПС Montserrat + Playfair-курсив».
    Обёртка .fc-row__heading группирует eyebrow+заголовок+подпись, чтобы
    flex-строка шапки секции (.fc-row__head — общий с product.php) не
    меняла раскладку «Смотреть все»/стрелок. --- */
@@ -1437,7 +1458,8 @@ html{scroll-padding-top:96px}
 
 /* --- M2: MARQUEE-лента (ink) под hero — ритм-разделитель.
    Трек = две одинаковые «половины» (каждая — набор текстов ×3), сдвиг
-   на -50% ширины трека = бесшовный цикл. 32s linear, pause on hover;
+   на -50% ширины трека = бесшовный цикл. W103 (6-b, P1): 64s (было 32s —
+   лента неслась слишком быстро) + letter-spacing .18em; pause on hover;
    prefers-reduced-motion — M9. --- */
 .fc-marquee{
   background:var(--ink);color:#fff;
@@ -1445,13 +1467,13 @@ html{scroll-padding-top:96px}
 }
 .fc-marquee__track{
   display:flex;width:max-content;
-  animation:fc-marquee 32s linear infinite;
+  animation:fc-marquee 64s linear infinite;
   padding:13px 0;
 }
 .fc-marquee__half{display:flex;align-items:center;gap:2.6rem;padding-right:2.6rem}
 .fc-marquee__item{
   font:700 .82rem/1.4 var(--font-ui);
-  letter-spacing:.14em;text-transform:uppercase;white-space:nowrap;
+  letter-spacing:.18em;text-transform:uppercase;white-space:nowrap;
 }
 .fc-marquee__sep{color:var(--pink);font-size:.8rem;line-height:1;flex:none}
 @keyframes fc-marquee{
@@ -1624,3 +1646,314 @@ body::after{
   .fc-hero__accent{background-position:left bottom}
 }
 
+
+/* ================================================================
+   W103 (6-b, критик-5а/5б P0): HERO-ФОТО + MOTION-СЛОЙ (M1–M11)
+   + editorial-полоса каталога + низ главной + P1-полировка.
+   Разметка — index.php волны 6-b; JS-контракты не менялись.
+   ================================================================ */
+
+/* --- M1–M3: HERO ENTRANCE — по-словный rise H1 из-под маски
+   (nv-line/nv-ch — оживлённый W4-набор из nilov.css, слова inline-block);
+   sub/CTA/таймер — nv-fade с задержками .12/.75/.9/1.05s (критик-5б:
+   «hero без входной анимации при готовом мёртвом nv-ch-стаггере»).
+   Анимации чисто CSS — js-ready не нужен, флэша нет. --- */
+.fc-hero__title .nv-line{
+  display:inline-block;vertical-align:top;
+  overflow:hidden;            /* маска: слово выезжает из-под строки */
+  padding-bottom:.1em;margin-bottom:-.1em;  /* компенсация descender'ов */
+}
+.fc-hero__eyebrow,
+.fc-hero__sub,
+.fc-hero__actions,
+.fc-hero .hero__deadline{
+  opacity:0;
+  animation:nv-fade .8s ease forwards;
+}
+.fc-hero__eyebrow{animation-delay:.12s}
+.fc-hero__sub{animation-delay:.75s}
+.fc-hero__actions{animation-delay:.9s}
+.fc-hero .hero__deadline{animation-delay:1.05s}
+/* Текст выключен (hero_text_enabled=0) — таймер не «зависает» в пустоте */
+.fc-hero__content > .hero__deadline:first-child{animation-delay:.15s}
+
+/* --- M4: HERO-ФОТО — scale 1.04→1 при загрузке (1.2s ease-out):
+   «фото выдыхает» после появления, LCP-элемент живой. --- */
+@keyframes fc-hero-zoom{
+  from{transform:scale(1.04)}
+  to{transform:scale(1)}
+}
+.fc-hero__img{animation:fc-hero-zoom 1.2s ease-out both}
+
+/* --- Магнитная hero-CTA: js/five.js двигает за курсором (≤6px, инлайн
+   transform); возврат .25s — transition задаётся JS-ом при mouseleave.
+   CSS здесь только страховка кривой возврата для программного сброса. --- */
+@media(hover:hover) and (pointer:fine){
+  .fc-hero__cta.will-magnet{transition:transform .25s cubic-bezier(.22,1,.36,1)}
+}
+
+/* --- Промо-карточка hero: миниатюра открытки/букета 84–96px, radius 12
+   (критик-5а: «правые карточки плоские — продают layout, а не цветы»).
+   Картинка прижата к верху, текст — вокруг неё не ломается. --- */
+.fc-hero__promo{gap:12px}
+.fc-hero__promo-img{
+  width:92px;height:92px;flex:none;align-self:flex-start;
+  border-radius:12px;object-fit:cover;
+  border:3px solid rgba(255,255,255,.65);
+  box-shadow:0 10px 24px -12px rgba(28,26,30,.45);
+}
+@media(max-width:899px){
+  .fc-hero__promo{padding:20px}
+  .fc-hero__promo-img{width:84px;height:84px}
+}
+
+/* --- M5: STAGGER КАРТОЧЕК в каруселях и каталоге — каскад
+   60мс×шаг при scroll-reveal (критик-5б: «reveal без stagger»).
+   --i заготавливается nth-child'ами (PHP-рендер не тронут), потолок 5 шагов;
+   scroll-driven reveal (nilov.css) для карточек заменяем класс-каскадом. --- */
+.fc-carousel>.reveal:nth-child(2),
+.catalog__grid>.reveal:nth-child(2){--i:1}
+.fc-carousel>.reveal:nth-child(3),
+.catalog__grid>.reveal:nth-child(3){--i:2}
+.fc-carousel>.reveal:nth-child(4),
+.catalog__grid>.reveal:nth-child(4){--i:3}
+.fc-carousel>.reveal:nth-child(5),
+.catalog__grid>.reveal:nth-child(5){--i:4}
+.fc-carousel>.reveal:nth-child(n+6),
+.catalog__grid>.reveal:nth-child(n+6){--i:5}
+.fc-carousel .reveal,
+.catalog__grid .reveal{
+  opacity:0;transform:translateY(18px);transition:none;
+}
+@supports (animation-timeline: view()){
+  /* выключаем scroll-driven reveal ТОЛЬКО у карточек в треках
+     (остальные .reveal секций работают как раньше) */
+  .fc-carousel .reveal,
+  .catalog__grid .reveal{animation:none}
+}
+.fc-carousel .reveal.reveal--visible,
+.catalog__grid .reveal.reveal--visible{
+  opacity:1;transform:none;
+  animation:fc-card-in .55s cubic-bezier(.22,1,.36,1) both;
+  animation-delay:calc(var(--i,0)*60ms);
+}
+@keyframes fc-card-in{
+  from{opacity:0;transform:translateY(18px)}
+  to{opacity:1;transform:none}
+}
+
+/* --- IMAGE-UNVEIL: фото карточки проявляется лево→право wipe'ом
+   (clip-path .8s) одновременно с каскадом карточки (критик-5а:
+   «каталожный дамп»). Растровые фильтры/layоut не трогаем. --- */
+.product-card .product-card__media-link{
+  clip-path:inset(0 100% 0 0);
+  transition:clip-path .8s cubic-bezier(.22,1,.36,1) .05s;
+}
+.product-card.reveal--visible .product-card__media-link,
+.product-card:not(.reveal) .product-card__media-link{
+  clip-path:inset(0);
+}
+/* JS не исполнился — фото не должно остаться закрытым шторкой */
+html:not(.js-ready) .product-card .product-card__media-link{clip-path:inset(0);transition:none}
+
+/* --- EDITORIAL-ПОЛОСА ПЕРЕД КАТАЛОГОМ (критик-5а P0 «каталожный дамп»):
+   full-bleed 240–300px, фото лепестков + ink-оверлей + Playfair-цитата.
+   Секция самостоятельная — грид/фильтры каталога не затронуты. --- */
+.fc-catalog-strip{
+  position:relative;overflow:hidden;
+  background:var(--ink);
+  min-height:clamp(240px,26vw,300px);
+  display:flex;align-items:center;
+}
+.fc-catalog-strip__img{
+  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+}
+.fc-catalog-strip::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(90deg,rgba(28,26,30,.84) 0%,rgba(28,26,30,.5) 52%,rgba(28,26,30,.28) 100%);
+}
+.fc-catalog-strip__inner{
+  position:relative;z-index:2;
+  width:100%;padding:clamp(28px,4vw,48px) 0;
+}
+.fc-catalog-strip__text{
+  margin:0;max-width:30ch;
+  font:italic 500 clamp(1.6rem,2.4vw,1.875rem)/1.4 var(--font-display);
+  color:#fff;text-wrap:balance;
+}
+.fc-catalog-strip__text::before{
+  content:"";display:block;width:56px;height:3px;margin-bottom:14px;
+  background:var(--amber);
+}
+@media(max-width:899px){
+  .fc-catalog-strip__text{font-size:1.45rem}
+}
+
+/* --- M8: FAQ — плавное раскрытие 280мс (grid-template-rows 0fr→1fr,
+   @starting-style — современные браузеры; прочие открывают мгновенно,
+   как раньше; закрывание — нативное). Обёртка .faq-item__a-wrap — index.php. --- */
+.faq-item__a-wrap{
+  display:grid;grid-template-rows:1fr;
+  transition:grid-template-rows .28s cubic-bezier(.22,1,.36,1);
+}
+.faq-item__a-wrap > .faq-item__a{
+  overflow:hidden;min-height:0;
+  margin:0;padding:0 20px;
+}
+.faq-item__a-wrap > .faq-item__a::after{
+  content:"";display:block;height:18px;  /* нижний воздух — клипится вместе с текстом */
+}
+@starting-style{
+  .faq-item[open] .faq-item__a-wrap{grid-template-rows:0fr}
+}
+
+/* --- M9: MANIFESTO PARALLAX — фото чуть «отдаляется» при пролёте
+   (scale 1.08→1 linear по view()-таймлайне, range cover). Параллакс —
+   на IMG, scroll-reveal — на СЕКЦИИ: два animation-timeline не конфликтуют. --- */
+@supports (animation-timeline: view()){
+  @keyframes fc-manifesto-parallax{
+    from{transform:scale(1.08)}
+    to{transform:scale(1)}
+  }
+  .fc-manifesto__img{
+    animation:fc-manifesto-parallax linear both;
+    animation-timeline:view();
+    animation-range:cover;
+  }
+}
+
+/* --- M6: CART-DRAWER — slide вместо display-snap (критик-5б P0).
+   Контракт JS сохранён: cart-ui.js переключает panel.hidden. Современные
+   браузеры (117+): @starting-style + allow-discrete — открытие И закрытие
+   плавные; старые — keyframe-открытие (закрытие мгновенное, как было). --- */
+@keyframes fc-drawer-in{
+  from{transform:translateX(100%)}
+  to{transform:none}
+}
+@keyframes fc-backdrop-in{
+  from{opacity:0}
+  to{opacity:1}
+}
+@supports not (transition-behavior: allow-discrete){
+  #cartPanel:not([hidden]) .cart-panel__drawer{animation:fc-drawer-in .32s cubic-bezier(.22,1,.36,1)}
+  #cartPanel:not([hidden]) .cart-panel__backdrop{animation:fc-backdrop-in .24s ease-out}
+}
+@supports (transition-behavior: allow-discrete){
+  /* display:none при закрытии откладывается на длительность перехода —
+     drawer успевает уехать, прежде чем панель снимется с рендера */
+  #cartPanel{transition:display .24s allow-discrete}
+  #cartPanel .cart-panel__drawer{
+    transition:transform .32s cubic-bezier(.22,1,.36,1);
+  }
+  #cartPanel .cart-panel__backdrop{
+    transition:opacity .24s ease-out;
+  }
+  #cartPanel[hidden] .cart-panel__drawer{
+    transform:translateX(100%);
+    transition:transform .24s ease-in;
+  }
+  #cartPanel[hidden] .cart-panel__backdrop{
+    opacity:0;
+    transition:opacity .24s ease-in;
+  }
+  @starting-style{
+    #cartPanel .cart-panel__drawer{transform:translateX(100%)}
+    #cartPanel .cart-panel__backdrop{opacity:0}
+  }
+}
+
+/* --- M7: TOTAL-PULSE — итог корзины пульсирует при изменении
+   (класс .is-pulse вешает js/five.js по событию 'cart:change'). --- */
+#cartTotal{display:inline-block}
+#cartTotal.is-pulse{animation:fc-total-pulse .18s ease-out}
+@keyframes fc-total-pulse{
+  50%{transform:scale(1.06)}
+}
+
+/* --- SEO-КОЛОФОН: <details> для «длинного хвоста» (критик-5а:
+   «SEO-простыня»). Summary — Playfair-курсив, раскрытие плавное. --- */
+.fc-seo__more{margin-top:4px}
+.fc-seo__more summary{
+  list-style:none;cursor:pointer;
+  display:flex;align-items:center;gap:12px;
+  min-height:48px;margin-top:10px;
+  font:italic 500 1.25rem/1.3 var(--font-display);color:var(--ink);
+}
+.fc-seo__more summary::-webkit-details-marker{display:none}
+.fc-seo__more summary::marker{content:""}
+.fc-seo__more summary::after{
+  content:"+";flex:none;
+  font:700 1.25rem/1 var(--font-ui);color:var(--ink-muted);
+  transition:transform .2s;
+}
+.fc-seo__more[open] summary::after{content:"−";color:var(--pink-deep)}
+.fc-seo__more .faq-item__a-wrap{display:grid;grid-template-rows:1fr;transition:grid-template-rows .28s cubic-bezier(.22,1,.36,1)}
+.fc-seo__more[open] .faq-item__a-wrap{grid-template-rows:1fr}
+.fc-seo__more > .faq-item__a-wrap > p{
+  overflow:hidden;min-height:0;margin:0;padding:0;
+}
+.fc-seo__more > .faq-item__a-wrap > p::after{content:"";display:block;height:6px}
+@starting-style{
+  .fc-seo__more[open] .faq-item__a-wrap{grid-template-rows:0fr}
+}
+
+/* --- НИЗ ГЛАВНОЙ: заглушка «Корзина пока пуста» скрыта (критик-5а:
+   рядом каталог с товарами — placeholder дублирует смысл и рвёт чекаут);
+   форма показана всегда (CSS-приоритет над инлайн display:none из
+   cart-ui.js — JS-файлы волны не трогаем; #order* есть только на главной). --- */
+#orderEmptyState{display:none!important}
+#orderForm{display:grid!important}
+
+/* --- P1: зачёркнутая старая цена на узких экранах — минимум 13px
+   (было .85em от 16px = 13.6px у десктопа, но .85em от 1rem мобиле = 13.6 —
+   при squeezing-компенсации могло уехать ниже 13px). --- */
+@media(max-width:480px){
+  .product-card__price--old{font-size:max(.85em,13px)}
+}
+
+/* --- P1: GRAIN на тёмных секциях чуть плотнее (.05 против .035 глобально) —
+   плёнка читается на ink/фото (тренд-отчёт W103). --- */
+.fc-manifesto::before,
+.fc-catalog-strip::before,
+.fc-footer-tagline::before,
+.fc-premium::after{
+  content:"";position:absolute;inset:0;pointer-events:none;opacity:.05;
+  background:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.fc-manifesto::before{z-index:3}
+.fc-catalog-strip::before{z-index:3}
+.fc-footer-tagline::before{z-index:3}
+.fc-premium::after{z-index:2}
+
+/* --- W103 (6-b): PREFERS-REDUCED-MOTION — весь новый motion-слой выключен --- */
+@media(prefers-reduced-motion:reduce){
+  .fc-hero__title .nv-line{overflow:visible}
+  .fc-hero__title .nv-ch{animation:none!important;opacity:1!important;transform:none!important}
+  .fc-hero__eyebrow,.fc-hero__sub,.fc-hero__actions,.fc-hero .hero__deadline{
+    animation:none!important;opacity:1!important;transform:none!important;
+  }
+  .fc-hero__img{animation:none!important}
+  .fc-carousel .reveal,.catalog__grid .reveal{
+    opacity:1!important;transform:none!important;animation:none!important;
+  }
+  .product-card .product-card__media-link{clip-path:inset(0);transition:none}
+  .faq-item__a-wrap,.fc-seo__more .faq-item__a-wrap{transition:none}
+  .fc-manifesto__img{animation:none!important;transform:none!important}
+  #cartPanel,#cartPanel .cart-panel__drawer,#cartPanel .cart-panel__backdrop{transition:none!important}
+  #cartPanel .cart-panel__drawer,#cartPanel .cart-panel__backdrop{animation:none!important}
+  #cartTotal.is-pulse{animation:none!important}
+}
+
+/* --- W103 (G1-хвост): чекаут-форма в карточке (критик-5а: «низ главной
+   разваливается — SEO-простыня и форма в потоке»). Белая карточка на
+   subtle-фоне, radius 24, мягкая тень — форма читается как отдельный шаг. --- */
+#order .wrap{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:24px;
+  padding:clamp(20px,3.4vw,44px);
+  box-shadow:0 24px 64px -32px rgba(28,26,30,.18);
+}
+@media(max-width:899px){
+  #order .wrap{border-radius:18px;padding:18px 16px}
+}

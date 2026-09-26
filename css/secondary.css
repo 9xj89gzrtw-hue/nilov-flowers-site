@@ -1,0 +1,86 @@
+/* ================================================================
+   SECONDARY.CSS — display-ДНК главной на вторичных страницах
+   (посадочные категорий /category/{slug} и поводов /occasion/{slug}).
+
+   W103 / G2 (по вердиктам критиков 5-a/5-b):
+   • SOTD-судья: «страницы категорий говорят "маркетплейс" — H1
+     Montserrat 36px» → H1 вторичек = Playfair Display 600 (типо-спека
+     п.1: display-шрифт не обрывается за пределами главной);
+   • арт-директор: провал шкалы H2 33.6→24 на вторичках → H2 секций
+     выровнен с .fc-row__title главной: clamp(1.6rem,2.4vw,2.1rem) 800.
+
+   Подключается ОТДЕЛЬНЫМ <link> в category.php (после category.css)
+   и occasion.php (после partials/head.php → five.css + fonts.css).
+   Токены var(--pink), var(--ink), var(--ink-muted) живут в five.css;
+   --font-display — Playfair-стек (fonts.css :root / five.css html:root).
+   Локальное переобъявление --font-display в .page-hero__title — та же
+   защита каскада, что у .fc-product__title в product-extras.css.
+
+   Скоуп: только классы вторичек (.page-hero*, .breadcrumbs,
+   .section-title). Главная и PDP этот файл не подключают.
+   ================================================================ */
+
+/* ============ 1. H1 ВТОРИЧНЫХ СТРАНИЦ — PLAYFAIR DISPLAY ============
+   Клоны паттерна .fc-hero__title главной (600, ls -.01em, balance),
+   но в ink-цвете на светлой подложке. Акцентное первое слово —
+   <em class="page-hero__accent"> из PHP (разбиение по первому пробелу,
+   e() на обе части): Playfair italic + pink-deep — тот же приём, что
+   fc-hero__accent главной, без amber-мазка (на белом он шумит). */
+.page-hero__title{
+  --font-display:'Playfair Display','Playfair Fallback',Georgia,'Times New Roman',serif;
+  font-family:var(--font-display);
+  font-weight:600;
+  font-size:clamp(2.2rem,4vw,3.25rem);   /* было Montserrat 800 36px */
+  line-height:1.12;
+  letter-spacing:-.01em;
+  text-wrap:balance;
+}
+.page-hero__accent{
+  font-style:italic;
+  color:var(--pink-deep,#cc2f7a);
+}
+
+/* ============ 2. ИНТРО-АБЗАЦ ПОД H1 ============
+   Комфортное чтение до каталога: 1.05rem muted, строка ≤ 62ch
+   (типо-спека: интро — не маркетинговый крик, а подводка). */
+.page-hero .section-sub{
+  font-size:1.05rem;
+  line-height:1.6;
+  color:var(--ink-muted,#6e6a72);
+  max-width:62ch;
+}
+
+/* ============ 3. ХЛЕБНЫЕ КРОШКИ ============
+   12.8 → 13px (читаемее на длинных названиях категорий/поводов);
+   текущая страница — ink 600 (было и так — закреплено здесь, чтобы
+   не зависеть от правок five.css). */
+.breadcrumbs{font-size:.8125rem}
+.breadcrumbs [aria-current="page"]{color:var(--ink,#1c1a1e);font-weight:600}
+
+/* ============ 4. H2 СЕКЦИЙ ВНИЗУ СТРАНИЦ (FAQ/SEO/CTA) ============
+   Выровнены с .fc-row__title главной (шаг шкалы после H1-Playfair):
+   Montserrat 800, clamp(1.6rem,2.4vw,2.1rem) — провал 33.6→24
+   (арт-директор, типо-спека) закрыт на вторичках. */
+.section-title{
+  font-size:clamp(1.6rem,2.4vw,2.1rem);
+  font-weight:800;
+  line-height:1.18;
+  letter-spacing:-.015em;
+}
+
+/* ============ 5. ПЕРЕХОДЫ И ФОКУС ============
+   Единая кривая ховеров главной: cubic-bezier(.22,1,.36,1) 300ms.
+   Фокус-кольца --pink 3px — как у тулбара категории (category.css)
+   и интерактива главной. */
+.breadcrumbs a{transition:color .3s cubic-bezier(.22,1,.36,1)}
+.breadcrumbs a:focus-visible,
+.btn--accent:focus-visible,
+.btn--outline:focus-visible{
+  outline:3px solid var(--pink,#ff4ea2);
+  outline-offset:2px;
+}
+
+/* ============ 6. PREFERS-REDUCED-MOTION ============ */
+@media(prefers-reduced-motion:reduce){
+  .breadcrumbs a{transition:none}
+}

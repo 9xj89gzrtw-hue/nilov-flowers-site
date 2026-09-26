@@ -35,6 +35,8 @@
     catalogFilters(); /* чипы + поиск + сброс — общее состояние (AND) */
     rowLinks();
     headerFavLink(); /* W99-fixG2 (H3): сердечко шапки → фильтр избранного */
+    magneticHeroCta(); /* W103 (6-b): магнитная hero-CTA (только hover+fine) */
+    cartTotalPulse(); /* W103 (6-b, M7): пульс итога корзины при изменении */
   });
 
   /* ---------- 1. Город-бар: подтверждение города ---------- */
@@ -344,6 +346,51 @@
       if (cat && cat.scrollIntoView) {
         cat.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth' });
       }
+    });
+  }
+  /* ---------- 6. Магнитная hero-CTA (W103, 6-b) ----------
+     Кнопка тянется за курсором (≤6px), возврат .25s. Только мышь с точным
+     указателем и без prefers-reduced-motion; инлайн-transform живёт до
+     mouseleave — CSS-ховер (translateY −2px) на время магнита замещается. */
+  function magneticHeroCta() {
+    if (reducedMotion()) return;
+    if (!window.matchMedia || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+    var cta = document.querySelector('.fc-hero__cta');
+    if (!cta || !cta.addEventListener) return;
+    var R = 6; /* максимальное смещение, px */
+    cta.classList.add('will-magnet');
+    cta.addEventListener('mousemove', function (e) {
+      var r = cta.getBoundingClientRect();
+      if (!r.width || !r.height) return;
+      var dx = Math.max(-1, Math.min(1, (e.clientX - (r.left + r.width / 2)) / (r.width / 2)));
+      var dy = Math.max(-1, Math.min(1, (e.clientY - (r.top + r.height / 2)) / (r.height / 2)));
+      cta.style.transition = 'transform .07s linear';
+      cta.style.transform = 'translate(' + (dx * R).toFixed(1) + 'px,' + (dy * R).toFixed(1) + 'px)';
+    });
+    cta.addEventListener('mouseleave', function () {
+      cta.style.transition = 'transform .25s cubic-bezier(.22,1,.36,1)';
+      cta.style.transform = '';
+    });
+  }
+
+  /* ---------- 7. Пульс итога корзины (W103, 6-b — M7) ----------
+     Слушаем 'cart:change' (его же слушает cart-ui.js для перерисовки;
+     наш обработчик в очереди ПОСЛЕ — текст итога уже обновлён). Пульс —
+     только при реальном изменении суммы: класс .is-pulse + reflow-рестарт. */
+  function cartTotalPulse() {
+    var total = document.getElementById('cartTotal');
+    if (!total) return;
+    var last = null;
+    window.addEventListener('cart:change', function () {
+      var t = document.getElementById('cartTotal');
+      if (!t) return;
+      var v = t.textContent;
+      if (last !== null && v !== last && v !== '') {
+        t.classList.remove('is-pulse');
+        void t.offsetWidth; /* reflow — перезапуск keyframes */
+        t.classList.add('is-pulse');
+      }
+      last = v;
     });
   }
 })();
