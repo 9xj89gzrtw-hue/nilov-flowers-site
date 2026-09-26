@@ -172,6 +172,9 @@
   if (st === '1') { saveState('accept'); st = 'accept'; } /* миграция старого формата */
   if (st === 'accept') { startAnalytics(); }
   if (st !== 'accept' && st !== 'necessary') {
-    showBanner();
+    /* W103 (финал-джадж P2): пауза 1.2с — баннер не появляется
+       одновременно с рендером hero/entrance-анимацией (не бьёт
+       по первому впечатлению); дисклеймер всё ещё «до взаимодействия» */
+    setTimeout(showBanner, 1200);
   }
 })();

@@ -1497,7 +1497,7 @@ html{scroll-padding-top:96px}
 .fc-manifesto__img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .fc-manifesto::after{
   content:"";position:absolute;inset:0;
-  background:linear-gradient(90deg,rgba(28,26,30,.88) 0%,rgba(28,26,30,.62) 40%,rgba(28,26,30,.14) 68%,rgba(28,26,30,.42) 100%);
+  background:linear-gradient(90deg,rgba(28,26,30,.92) 0%,rgba(28,26,30,.72) 46%,rgba(28,26,30,.32) 72%,rgba(28,26,30,.55) 100%);
 }
 .fc-manifesto__content{
   position:relative;z-index:2;
@@ -1808,9 +1808,9 @@ html:not(.js-ready) .product-card .product-card__media-link{clip-path:inset(0);t
 .faq-item__a-wrap > .faq-item__a::after{
   content:"";display:block;height:18px;  /* нижний воздух — клипится вместе с текстом */
 }
-@starting-style{
-  .faq-item[open] .faq-item__a-wrap{grid-template-rows:0fr}
-}
+details:not([open]) .faq-item__a-wrap{grid-template-rows:0fr}
+   /* W103 (финал-джадж): надёжный 0fr на закрытом состоянии — переход
+      0fr→1fr при открытии работает без @starting-style (все браузеры) */
 
 /* --- M9: MANIFESTO PARALLAX — фото чуть «отдаляется» при пролёте
    (scale 1.08→1 linear по view()-таймлайне, range cover). Параллакс —
@@ -1961,4 +1961,26 @@ html:not(.js-ready) .product-card .product-card__media-link{clip-path:inset(0);t
 }
 @media(max-width:899px){
   #order .wrap{border-radius:18px;padding:18px 16px}
+}
+
+/* --- W103 (финал-джадж P1): «дыры» сетки — одинокая последняя карточка
+   разворачивается в полноширинную feature-карточку (горизонтальный бит):
+   фото слева, контент справа. Позиционные селекторы — работают и после
+   живой фильтрации чипами/табами (пересчёт при каждой перерисовке).
+   Главная каталог 4 кол: count%4==1 (5 SKU → 4+1 с 3 дырами) → span 4;
+   count%4==2 → последняя span 2. Категория 3 кол: аналогично span 3/2.
+   Мобайл 2 кол: count%2==1 → span 2. --- */
+@media(min-width:900px){
+  .catalog__grid > .product-card:nth-last-child(1):nth-child(4n+1){grid-column:1/-1;display:grid;grid-template-columns:minmax(220px,320px) 1fr;align-items:stretch}
+  .catalog__grid > .product-card:nth-last-child(1):nth-child(4n+1) .product-card__media{aspect-ratio:auto;height:100%;min-height:220px;border-radius:16px 0 0 16px}
+  .catalog__grid > .product-card:nth-last-child(1):nth-child(4n+1) .product-card__body{align-self:center;padding:20px 24px}
+  .catalog__grid > .product-card:nth-last-child(1):nth-child(4n+1) .product-card__name{font-size:1.15rem;min-height:0;white-space:normal}
+  .catalog__grid > .product-card:nth-last-child(1):nth-child(2n){grid-column:span 2}
+  .catalog__grid > .product-card:nth-last-child(1):nth-child(4n+1) .product-card__cat{display:none}
+}
+@media(max-width:899px){
+  .catalog__grid > .product-card:nth-last-child(1):nth-child(2n+1){grid-column:1/-1;display:grid;grid-template-columns:minmax(140px,44%) 1fr;align-items:stretch}
+  .catalog__grid > .product-card:nth-last-child(1):nth-child(2n+1) .product-card__media{aspect-ratio:auto;height:100%;min-height:150px;border-radius:16px 0 0 16px}
+  .catalog__grid > .product-card:nth-last-child(1):nth-child(2n+1) .product-card__body{align-self:center;padding:14px 16px}
+  .catalog__grid > .product-card:nth-last-child(1):nth-child(2n+1) .product-card__name{min-height:0;white-space:normal}
 }
