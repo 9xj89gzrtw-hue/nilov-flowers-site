@@ -1,6 +1,8 @@
-/* motion-w104.css — motion-слой W104-c (motion-агент).
-   Владелец файла: motion-агент (W104-c). Дизайн-токены, стрелки каруселей
-   и остальная типографика — css/five.css (агент W104-a), здесь их нет.
+/* motion-w104.css — motion-слой W104-c (motion-агент) + фиксы W104-β (C1-M).
+   Владелец файла: motion-агент (W104-c/W104-β). Дизайн-токены, стрелки
+   каруселей и остальная типографика — css/five.css (агент W104-a), здесь
+   их нет (только точечные OVERRIDE-правила W104-β — файл грузится ПОСЛЕ
+   five.css, см. partials/head.php).
 
    Состав:
    1. Canvas «Лепестков» — js/petals.js инъектирует canvas в .fc-hero__main.
@@ -9,7 +11,11 @@
    3. Кинетическая типографика: line-reveal манифеста/premium-титулов +
       slide-up H2-акцентов. Скрытые состояния — ТОЛЬКО под
       html.kinetic-ready (класс ставит js/kinetic.js): без JS тексты видимы.
-   4. prefers-reduced-motion — всё статично. */
+   4. W104-β (C1-M): FAQ-закрытие 1fr→0fr · drawer-backdrop на системную
+      кривую · пульс итога 320мс/1.1 · stagger 40мс айтемов корзины ·
+      idle-тень карточек → только hover · marquee только в вьюпорте ·
+      cookie-карточка компакт bottom-left · motion-lite для слабого железа.
+   5. prefers-reduced-motion — всё статично. */
 
 /* ============ 1. ЛЕПЕСТКИ (canvas в hero) ============
    Слой: фото + скрим ::after (z:auto) → canvas .fc-petals (z:1) →
@@ -59,7 +65,8 @@ html.kinetic-ready .kin-split.kin-in .kin-line__in {
   transition-delay: calc(var(--kin-i, 0) * 90ms);  /* stagger 90мс */
 }
 
-/* H2-акценты (eyebrow «КАПС|Playfair-курсив») — slide-up + fade */
+/* H2-акценты (eyebrow «КАПС|Playfair-курсив») — slide-up + fade.
+   W104-β (C1-M ease-изгои): было «opacity 550ms ease» — системная кривая. */
 html.kinetic-ready .kin-acc {
   display: inline-block;          /* transform на inline не работает */
   opacity: 0;
@@ -68,11 +75,137 @@ html.kinetic-ready .kin-acc {
 html.kinetic-ready .kin-acc.kin-in {
   opacity: 1;
   transform: none;
-  transition: opacity 550ms ease,
+  transition: opacity 550ms cubic-bezier(0.22, 1, 0.36, 1),
               transform 550ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* ============ 4. PREFERS-REDUCED-MOTION ============
+/* ============ 4. W104-β — ФИКСЫ C1-M ============ */
+
+/* --- 4a. FAQ: плавное ЗАКРЫТИЕ (P0) ---
+   Открытие уже анимировано (five.css: grid-rows 0fr→1fr .28s), закрытие
+   снапалось (нативный details прячет контент через content-visibility
+   тем же кадром). js/five.js перехватывает click по summary, ставит
+   .is-closing и снимает open по transitionend — это правило даёт
+   закрытию ту же кривую/длительность, что открытию (асимметрии-снапа
+   больше нет). SEO-колофон details.fc-seo__more — тот же механизм. */
+html.js-ready details.faq-item.is-closing > .faq-item__a-wrap,
+html.js-ready details.fc-seo__more.is-closing > .faq-item__a-wrap {
+  grid-template-rows: 0fr;
+}
+
+/* --- 4b. Drawer-backdrop: системная кривая (ease-изгой → система) ---
+   Открытие — cubic-bezier(.22,1,.36,1); закрытие — осознанная
+   асимметрия ease-in (drawer уходит быстрее, чем приезжает),
+   теперь явной кривой, а не ключевым словом ease-out/ease-in. */
+@supports (transition-behavior: allow-discrete) {
+  #cartPanel .cart-panel__backdrop {
+    transition: opacity .24s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  #cartPanel[hidden] .cart-panel__backdrop {
+    transition: opacity .24s cubic-bezier(0.42, 0, 1, 1);
+  }
+}
+@supports not (transition-behavior: allow-discrete) {
+  #cartPanel:not([hidden]) .cart-panel__backdrop {
+    animation: fc-backdrop-in .24s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
+/* --- 4c. Пульс итога корзины: .18s/1.06 → 320мс/scale(1.1) ---
+   Системный back-out (зарезервирован под pop-моменты), заметный без
+   грубости. Перекрывает five.css (этот файл грузится позже). */
+#cartTotal.is-pulse {
+  animation: fc-total-pulse-w104 .32s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes fc-total-pulse-w104 {
+  0%   { transform: scale(1); }
+  38%  { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+/* --- 4d. Stagger 40мс айтемов корзины при открытии drawer ---
+   Класс #cartPanel.is-entering + индексы --ci ставит js/cart-ui.js
+   (в open(), пересчёт при cart:change на входе). Потолок индекса 8 —
+   длинные корзины не тянут каскад (320мс максимум задержки). */
+#cartPanel.is-entering .cart-item {
+  animation: fc-cart-item-in .34s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--ci, 0) * 40ms);
+}
+@keyframes fc-cart-item-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* --- 4e. Карточки: idle-тень долой, transition на системную кривую ---
+   C1-M P0-2(а): box-shadow 0 1px 2px на каждой из 55 карточек рендерился
+   постоянно (на скролле — лишняя работа растеризатору); тень теперь
+   только hover-состояние. Голый ease в transition → системная кривая. */
+.product-card {
+  box-shadow: none;
+  transition: transform .25s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow .25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.product-card:hover {
+  box-shadow: 0 24px 48px rgba(28, 26, 30, 0.16);
+}
+
+/* --- 4f. Marquee: играет только в вьюпорте ---
+   js/five.js (IntersectionObserver) вешает/снимает .is-offscreen.
+   Вне экрана infinite-анимация не тикает вовсе — на софтверном/слабом
+   рендере это были честные потерянные кадры (p95 скролла 39–67мс).
+   Ховер-пауза five.css продолжает работать (специфичнее). */
+.fc-marquee__track.is-offscreen,
+.nv-marquee__track.is-offscreen {
+  animation-play-state: paused;
+}
+
+/* --- 4g. Cookie-баннер: компактная карточка bottom-left (C1-D1 P0) ---
+   Было 360×214px по центру с заголовком и полным абзацем. Теперь
+   (десктоп): угловая карточка ≤340px, без заголовка, текст 2 строки
+   (line-clamp; ссылка политики остаётся на второй), кнопки в один ряд.
+   Мобильная версия (≤899px) уже компактна (five.css). */
+@media (min-width: 900px) {
+  .cookie-banner {
+    left: 16px;
+    right: auto;
+    transform: none;
+    max-width: 340px;
+    padding: 12px 14px;
+    gap: 8px;
+    border-radius: 16px;
+  }
+  .cookie-banner__title { display: none; }
+  .cookie-banner__text {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 12.5px;
+    line-height: 1.35;
+  }
+}
+
+/* --- 4h. MOTION-LITE (слабое железо, C1-M P0-2) ---
+   Класс ставит js/kinetic.js при hardwareConcurrency ≤ 4: scroll-driven
+   view()-таймлайны (62 .reveal + параллакс + блум) на таком железе
+   считаются на главном потоке каждый кадр скролла — переводим их на
+   IO-fallback (reveal.js уже умеет .reveal--visible + transition),
+   параллакс-фото и цветочный блум — статика. Lenis/кинетика/лепестки
+   (адаптивный счётчик) остаются. 8+ ядер — полный motion. */
+html.motion-lite .reveal { animation: none; }
+html.motion-lite .fc-manifesto__img { animation: none; }
+html.motion-lite .nv-bloom .nv-bloom-petals {
+  animation: none;
+  transform: none;  /* статика в открытом состоянии, не полузакрытым */
+}
+/* Marquee на lite-железе — статичная лента: infinite-анимация текста
+   на софтверном растеризаторе стоит ~33мс каждые несколько кадров даже
+   когда лента в вьюпорте (замер стенда). IO-пауза вне экрана (4f) не
+   спасает момент, когда она видна. */
+html.motion-lite .fc-marquee__track,
+html.motion-lite .nv-marquee__track { animation: none; }
+
+/* ============ 5. PREFERS-REDUCED-MOTION ============
    Всё статично: контент виден сразу (JS-слой тоже не анимирует —
    petals рисует один статичный кадр, kinetic не активируется;
    правила ниже — страховка на случай смены системной настройки
@@ -84,4 +217,6 @@ html.kinetic-ready .kin-acc.kin-in {
     opacity: 1 !important;
     transition: none !important;
   }
+  #cartTotal.is-pulse { animation: none !important; }
+  #cartPanel.is-entering .cart-item { animation: none !important; }
 }

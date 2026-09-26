@@ -136,7 +136,7 @@ function seedDemoData(PDO $pdo): void
     /* OR IGNORE: часть ключей мог вставить migrateSchema (он теперь идёт раньше) */
     $pdo->exec("INSERT OR IGNORE INTO settings (key, value) VALUES
         ('shop_name', 'Nilov Flowers'),
-        ('shop_phone', '+7 (900) 000-00-00'),
+        ('shop_phone', '+7 911 941-72-05'),
         ('shop_address', 'г. Санкт-Петербург, Полевая Сабировская ул., 47, корп. 1'),
         ('hero_title', 'Доставка цветов по Санкт-Петербургу'),
         ('hero_subtitle', 'Соберём и доставим букет в течение дня — к празднику или просто так'),
@@ -803,5 +803,28 @@ function migrateSchema(PDO $pdo): void
 $pdo->exec("UPDATE occasions SET meta_description = replace(meta_description, 'именинный букет, открытка и шарик', 'свежие цветы, бесплатная открытка с вашим текстом') WHERE slug = 'buket-na-den-rozhdeniya' AND meta_description LIKE '%открытка и шарик%'");
 $pdo->exec("UPDATE occasions SET body = replace(body, 'дарим нечёт: 5, 7, 9, 15, 25 стеблей', 'дарим нечётное число стеблей: 5, 7, 9, 15, 25') WHERE slug = 'buket-na-den-rozhdeniya' AND body LIKE '%дарим нечёт:%'");
 $pdo->exec("UPDATE occasions SET faq_q1 = replace(faq_q1, 'Какую карту приложите к букету?', 'Какую открытку приложить к букету?') WHERE slug = 'buket-na-den-rozhdeniya' AND faq_q1 LIKE '%Какую карту%'");
+
+    /* W104 (редизайн-волна: типографико-контентные фиксы критиков C1-D1/C1-T).
+       Guard-UPDATE по ТОЧНЫМ старым значениям (паттерн W97-fixE): правленое
+       владельцем не трогаем; идемпотентно — после применения value ≠ old.
+       Дефолты в шаблонах уже новые — это перенос на прод-БД, где ключи
+       сохранены со старыми значениями. */
+    /* Телефон-заглушка → реальный телефон владельца (шапка/футер/PDP/оферта) */
+    $pdo->exec("UPDATE settings SET value = '+7 911 941-72-05' WHERE key = 'shop_phone' AND value IN ('+7 (900) 000-00-00', '+79000000000', '')");
+    /* Давящий тон таймера → спокойный сервис (и ночной вариант без эмодзи) */
+    $pdo->exec("UPDATE settings SET value = 'Заказ до {D} — доставим сегодня' WHERE key = 'countdown_text' AND value = 'Успейте заказать сегодня — осталось {T} до {D}'");
+    $pdo->exec("UPDATE settings SET value = 'Примем заказ сейчас — доставим с 9:00 утра' WHERE key = 'countdown_night_text' AND value = 'Ночь. Заказ примем сейчас — доставим сегодня после 9:00'");
+    /* Empty-state без эмодзи и с подсказкой */
+    $pdo->exec("UPDATE settings SET value = 'Под эти фильтры ничего не подошло' WHERE key = 'catalog_empty_title' AND value = 'По этим фильтрам букетов не нашлось 🌷'");
+    $pdo->exec("UPDATE settings SET value = 'Сбросьте цену или загляните в соседнюю категорию' WHERE key = 'catalog_empty_hint' AND value = 'Попробуйте убрать фильтр цены или выбрать другую категорию'");
+    /* FAQ-вопросы: конкретика вместо тем */
+    $pdo->exec("UPDATE settings SET value = 'Как быстро вы доставите букет?' WHERE key = 'faq_q2' AND value = 'Успею ли заказать сегодня?'");
+    $pdo->exec("UPDATE settings SET value = 'Я увижу букет до доставки?' WHERE key = 'faq_q3' AND value = 'Как понять, что пришёл именно мой букет?'");
+    /* Апселл-заголовок: уверенный вместо мнущегося */
+    $pdo->exec("UPDATE settings SET value = 'Добавьте к букету' WHERE key = 'upsell_title' AND value = 'Возможно, пригодится'");
+    /* SEO-титул главной: бренд вперёд, без разговорного «СПб» */
+    $pdo->exec("UPDATE settings SET value = 'Nilov Flowers — доставка цветов по Санкт-Петербургу' WHERE key = 'seo_title' AND value = 'Доставка цветов по СПб — Nilov Flowers'");
+    /* Город-бар: убрать дублирование слов */
+    $pdo->exec("UPDATE settings SET value = 'Санкт-Петербург — ваш город?' WHERE key = 'citybar_text' AND value = 'Ваш город — Санкт-Петербург?'");
 
 }

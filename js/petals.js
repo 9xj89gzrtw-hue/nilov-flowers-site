@@ -32,6 +32,7 @@
   const GUST_R = 140;          /* радиус порыва от курсора, px */
   const GUST_R2 = GUST_R * GUST_R;
   const GUST_VMAX = 160;       /* потолок скорости порыва, px/s */
+  const BLOOM_FADE = 0.55;     /* W104-β: рамп альфы одного лепестка, с */
 
   let host = null;
   let canvas = null;
@@ -62,25 +63,32 @@
   }
 
   function makePetal(spread) {
-    const s = RND(8, 22);
+    /* W104-β (C1-M «как усилить»): глубина сцены d∈[0,1] связывает размер/
+    альфу/скорость/ветер/амплитуду — дальние лепестки мелкие, полупрозрачные
+    и медленные, ближние — крупные, плотные и быстрые. Поле получает объём
+    вместо набора одинаковых случайных величин. */
+    const d = Math.random();          /* 0 — далеко, 1 — близко */
+    const s = 8 + 14 * d;             /* 8–22px */
     const p = {
       s,
+      depth: d,
       w: s * RND(0.72, 0.98),         /* полуширина (в самой широкой части ≈0.8w) */
       a1: RND(-2.5, 2.5), a2: RND(-2.5, 2.5),
       a3: RND(-2.5, 2.5), a4: RND(-2.5, 2.5),  /* асимметрия безье */
       baseX: RND(-50, W + 50),
       y: spread ? RND(-30, H + 10) : RND(-160, -16),
-      vy: RND(12, 40),                 /* скорость падения, px/s */
-      windK: RND(0.45, 1.6),           /* личный коэффициент ветра (глубина) */
-      amp: RND(6, 24),                 /* амплитуда sin-качания */
-      fr: RND(0.35, 0.95),             /* частота качания */
+      vy: 12 + 28 * d,                /* 12–40px/s — глубина = скорость */
+      windK: 0.45 + 1.15 * d,         /* личный коэффициент ветра (= глубина) */
+      amp: 6 + 18 * d,                /* амплитуда sin-качания */
+      fr: RND(0.35, 0.95),            /* частота качания */
       ph: RND(0, Math.PI * 2),
       rot: RND(0, Math.PI * 2),
-      tum: RND(-1.15, 1.15),           /* tumble, рад/с */
+      tum: RND(-1.15, 1.15) * (0.55 + 0.65 * d), /* tumble, рад/с */
       gvx: 0, gvy: 0,                  /* скорость порыва (затухает) */
-      alpha: RND(0.55, 0.85),
+      alpha: 0.55 + 0.3 * d,           /* .55–.85 — глубина = плотность */
       col: PALETTE[(Math.random() * PALETTE.length) | 0],
       grad: null,
+      bloom: -1,                       /* W104-β: <0 — уже проявлен (статика/реcайкл) */
       x: 0
     };
     p.x = p.baseX;
@@ -94,6 +102,7 @@
     p.gvx = 0;
     p.gvy = 0;
     p.rot = RND(0, Math.PI * 2);
+    p.bloom = -1; /* реcайкл после старта — без повторного рампа */
   }
 
   /* Форма лепестка розы/пиона: узкое основание → широкие бока →
@@ -120,6 +129,13 @@
   }
 
   function drawPetal(p) {
+    /* W104-β (bloom вместо pop-in): каскадный спавн — до своего момента
+    лепесток не рисуется, дальше 0.55с рамп альфы (0→полная) и мягкий
+    рост масштаба 0.72→1: поле «распускается» ~1.4с, а не включается
+    разом после window.load. */
+    const bk = p.bloom < 0 ? 1
+      : Math.max(0, Math.min(1, (time - p.bloom) / BLOOM_FADE));
+    if (bk <= 0) return;               /* ещё не родился */
     if (!p.grad) {
       /* вертикальный градиент в локальных координатах — кэшируется
          (градиент пользователя живёт в текущем трансформе):
@@ -132,8 +148,9 @@
     }
     const c = Math.cos(p.rot);
     const sn = Math.sin(p.rot);
-    ctx.setTransform(DPR * c, DPR * sn, -DPR * sn, DPR * c, p.x * DPR, p.y * DPR);
-    ctx.globalAlpha = p.alpha;
+    const gs = 0.72 + 0.28 * bk;       /* bloom: вырастает из 0.72 */
+    ctx.setTransform(DPR * c * gs, DPR * sn * gs, -DPR * sn * gs, DPR * c * gs, p.x * DPR, p.y * DPR);
+    ctx.globalAlpha = p.alpha * bk;
     ctx.fillStyle = p.grad;
     tracePath(p);
     ctx.fill();
@@ -215,13 +232,18 @@
         }
       }
 
-      /* интеграция: ветер + порыв + собственное падение */
+      /* интеграция: ветер + порыв + собственное падение.
+         W104-β (C1-M «флаттер»): вертикальная скорость модулируется фазой
+         качания — на экстремумах дуги (|sway|→1) лепесток «зависает»
+         (до −45% vy), в центре дуги падает полной скоростью. Живая
+         биомеханика листа вместо равномерного лифта. */
+      const sway = Math.sin(time * p.fr + p.ph);
       p.baseX += (wind * 16 * p.windK + p.gvx) * dt;
-      p.y += (p.vy + p.gvy) * dt;
+      p.y += (p.vy * (1 - 0.45 * sway * sway) + p.gvy) * dt;
       p.gvx *= damp;
       p.gvy *= damp;
       p.rot += (p.tum + p.gvx * 0.012) * dt;
-      p.x = p.baseX + Math.sin(time * p.fr + p.ph) * p.amp;
+      p.x = p.baseX + sway * p.amp;
 
       /* реcайкл: вышел за нижнюю/боковую/верхнюю границу — родился сверху */
       if (p.y > H + 30 || p.y < -320 || p.x < -90 || p.x > W + 90) respawn(p);
@@ -325,7 +347,18 @@
     if (started || REDUCED || isOff()) return;
     if (tornDown && !build()) return;
     started = true;
+    scheduleBloom(); /* W104-β: волна проявления вместо pop-in */
     syncRun();
+  }
+
+  /* W104-β (C1-M): каскадный bloom — момент старта рампа у каждого свой
+     (случайный порядок, ближние чуть раньше), вся волна ~0.9с + рамп
+     0.55с ≈ 1.4с. Плюс лёгкий сдвиг вниз: «начинают падать». */
+  function scheduleBloom() {
+    for (let i = 0; i < petals.length; i++) {
+      const p = petals[i];
+      p.bloom = time + (1 - p.depth) * 0.18 + Math.random() * 0.72;
+    }
   }
 
   function teardown() {
@@ -393,6 +426,8 @@
       return {
         running,
         petals: petals.length,
+        /* W104-β: сколько лепестков уже полностью проявились (bloom-волна) */
+        bloomed: petals.reduce((n, p) => n + (p.bloom < 0 || time - p.bloom >= BLOOM_FADE ? 1 : 0), 0),
         cursorEnergy: Math.round(cursor.energy * 100) / 100,
         gustSpeedMax: Math.round(g)
       };

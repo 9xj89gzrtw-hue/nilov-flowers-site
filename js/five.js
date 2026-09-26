@@ -37,6 +37,8 @@
     headerFavLink(); /* W99-fixG2 (H3): сердечко шапки → фильтр избранного */
     magneticHeroCta(); /* W103 (6-b): магнитная hero-CTA (только hover+fine) */
     cartTotalPulse(); /* W103 (6-b, M7): пульс итога корзины при изменении */
+    faqSmoothClose(); /* W104-β (C1-M P0): FAQ/SEO-details — плавное закрытие 1fr→0fr */
+    marqueePlayback(); /* W104-β (C1-M P0): marquee-лента играет только в вьюпорте */
   });
 
   /* ---------- 1. Город-бар: подтверждение города ---------- */
@@ -348,19 +350,17 @@
       }
     });
   }
-  /* ---------- 6. Магнитная hero-CTA (W103, 6-b) ----------
-     Кнопка тянется за курсором (≤6px), возврат .25s. Только мышь с точным
+  /* ---------- 6. Магнитные CTA (W103 → W104-β, C1-M P1) ----------
+     Кнопка тянется за курсором, возврат .3s back-out. Только мышь с точным
      указателем и без prefers-reduced-motion; инлайн-transform живёт до
-     mouseleave — CSS-ховер (translateY −2px) на время магнита замещается. */
+     mouseleave — CSS-ховер (translateY −2px) на время магнита замещается.
+     W104-β (C1-M): радиус 6→12px (hero/премиум/sticky-PDP) и 10px на CTA
+     карточек каталога; лёгкий scale(1.02) в притяжении — тактильный
+     «прилипший» отклик вместо едва заметного сдвига. */
   function magneticHeroCta() {
     if (reducedMotion()) return;
     if (!window.matchMedia || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-    /* W103 (критик-8 P0-2): магнит на все primary CTA — hero-пилюля
-       и премиум-кнопка (один механизм, R=6px, spring-возврат в CSS) */
-    var ctas = document.querySelectorAll('.fc-hero__cta, .fc-premium__cta');
-    if (ctas.length === 0) return;
-    var R = 6; /* максимальное смещение, px */
-    ctas.forEach(function (cta) {
+    function attach(cta, R) {
       if (!cta.addEventListener) return;
       cta.classList.add('will-magnet');
       cta.addEventListener('mousemove', function (e) {
@@ -369,16 +369,23 @@
         var dx = Math.max(-1, Math.min(1, (e.clientX - (r.left + r.width / 2)) / (r.width / 2)));
         var dy = Math.max(-1, Math.min(1, (e.clientY - (r.top + r.height / 2)) / (r.height / 2)));
         cta.style.transition = 'transform .07s linear';
-        cta.style.transform = 'translate(' + (dx * R).toFixed(1) + 'px,' + (dy * R).toFixed(1) + 'px)';
+        cta.style.transform = 'translate(' + (dx * R).toFixed(1) + 'px,'
+          + (dy * R).toFixed(1) + 'px) scale(1.02)';
       });
       cta.addEventListener('mouseleave', function () {
         cta.style.transition = 'transform .3s cubic-bezier(.34,1.56,.64,1)';
         cta.style.transform = '';
       });
-    });
+    }
+    /* сильный магнит: hero-пилюля, премиум-кнопка, sticky-CTA товара */
+    document.querySelectorAll('.fc-hero__cta, .fc-premium__cta, .product-page__cta--sticky')
+      .forEach(function (cta) { attach(cta, 12); });
+    /* мягкий: CTA карточек каталога (кнопки компактнее — 10px) */
+    document.querySelectorAll('.product-card__cta')
+      .forEach(function (cta) { attach(cta, 10); });
   }
 
-  /* ---------- 7. Пульс итога корзины (W103, 6-b — M7) ----------
+  /* ---------- 7. Пульс итога корзины (W103, 6-b — M7; W104-β: кривая/амплитуда — motion-w104.css) ----------
      Слушаем 'cart:change' (его же слушает cart-ui.js для перерисовки;
      наш обработчик в очереди ПОСЛЕ — текст итога уже обновлён). Пульс —
      только при реальном изменении суммы: класс .is-pulse + reflow-рестарт. */
@@ -396,6 +403,71 @@
         t.classList.add('is-pulse');
       }
       last = v;
+    });
+  }
+
+  /* ---------- 8. FAQ: плавное закрытие details (W104-β, C1-M P0-1) ----------
+     Открытие анимировано (grid-rows 0fr→1fr .28s, five.css), закрытие —
+     мгновенный снап: нативный <details> прячет контент в тот же кадр
+     (::details-content → content-visibility), переход 1fr→0fr не успевает.
+     Перехватываем click по summary (мышь И клавиатура — Enter/Space на
+     summary стреляют тем же click): при закрытии preventDefault, класс
+     .is-closing (motion-w104.css: та же кривая/длительность, 1fr→0fr),
+     снимаем open по transitionend по grid-template-rows (+fallback
+     450мс). Повторный клик во время закрытия — отмена (снова открыть).
+     prefers-reduced-motion — нативное поведение (five.css: transition:none).
+     Применяем и к SEO-колофону details.fc-seo__more (тот же механизм). */
+  function faqSmoothClose() {
+    if (reducedMotion()) return;
+    var items = document.querySelectorAll('details.faq-item, details.fc-seo__more');
+    Array.prototype.forEach.call(items, function (d) {
+      var summary = d.querySelector('summary');
+      var wrap = d.querySelector('.faq-item__a-wrap');
+      if (!summary || !wrap) return;
+      var timer = 0;
+      summary.addEventListener('click', function (e) {
+        if (!d.open) return;          /* открытие — нативное (CSS уже анимирует) */
+        e.preventDefault();           /* open не снимается мгновенно */
+        if (d.classList.contains('is-closing')) {
+          /* клик по закрывающемуся — отмена, снова открываем */
+          clearTimeout(timer);
+          d.classList.remove('is-closing');
+          return;
+        }
+        d.classList.add('is-closing');
+        var done = function () {
+          wrap.removeEventListener('transitionend', onEnd);
+          clearTimeout(timer);
+          d.classList.remove('is-closing');
+          d.open = false;             /* теперь контент скрывается нативно (уже 0fr) */
+        };
+        var onEnd = function (ev) {
+          if (ev.target === wrap && ev.propertyName === 'grid-template-rows') done();
+        };
+        wrap.addEventListener('transitionend', onEnd);
+        timer = setTimeout(done, 450); /* страховка: transitionend не пришёл */
+      });
+    });
+  }
+
+  /* ---------- 9. Marquee: играет только в вьюпорте (W104-β, C1-M P0-2) ----------
+     Бегущая строка — infinite transform-анимация; вне вьюпорта она всё
+     равно тикает каждый кадр (на слабом/софтверном рендере — реальный
+     jank: p95 скролла 39–67мс на 2-ядерном стенде). IntersectionObserver
+     ставит/снимает play-state. Ховер-пауза из five.css продолжает работать
+     (paused остаётся приоритетнее running). */
+  function marqueePlayback() {
+    var tracks = document.querySelectorAll('.fc-marquee__track, .nv-marquee__track');
+    if (!tracks.length) return;
+    if (!('IntersectionObserver' in window)) return; /* лента просто играет */
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        en.target.classList.toggle('is-offscreen', !en.isIntersecting);
+      });
+    }, { rootMargin: '80px 0px' });
+    Array.prototype.forEach.call(tracks, function (t) {
+      t.classList.add('is-offscreen'); /* до первого колбека IO — не тикаем */
+      io.observe(t);
     });
   }
 })();

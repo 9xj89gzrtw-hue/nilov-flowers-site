@@ -16,7 +16,7 @@
 .fc-product__title{
   --font-display:'Playfair Display','Playfair Fallback',Georgia,'Times New Roman',serif;
   font-family:var(--font-display);
-  font-weight:600;
+  font-weight:500;
   font-size:clamp(2.1rem,3.8vw,2.75rem);   /* W103/G2 типо-спека п.4: 1.9–2.5 → 2.1–2.75rem */
   line-height:1.12;
   letter-spacing:-.01em;
@@ -24,23 +24,24 @@
 }
 
 /* ============ 1b. RELATED-СЕКЦИЯ «С ЭТИМ БЕРУТ» (W103/G2 → W104) ============
-   Заголовок — в единой H2-шкале W104: Playfair 500, clamp(2rem,3.2vw,2.75rem)
-   (был Montserrat 800 clamp(1.6rem,2.4vw,2.1rem) — провал шкалы). */
+   W104-α (I): PDP-иерархия — H1 товара 44px не должен равняться H2
+   «С этим берут»: related-H2 ниже шкалой (clamp 1.6–2.1rem, Playfair 500),
+   H1 — вес 500 (было 600) — разница читается и весом, и кеглем. */
 .fc-related__title{
   --font-display:'Playfair Display','Playfair Fallback',Georgia,'Times New Roman',serif;
   font-family:var(--font-display);
   font-weight:500;
-  font-size:clamp(2rem,3.2vw,2.75rem);
-  line-height:1.12;
+  font-size:clamp(1.6rem,2.4vw,2.1rem);
+  line-height:1.15;
   letter-spacing:-.01em;
 }
 
-/* Цена — якорь иерархии сразу после H1: 1.75rem/800, tabular-nums
-   (унаследованы из five.css); sale: старая — muted 1.1rem, новая —
-   pink-deep 1.75rem/800 */
-.fc-product__price{font-size:1.75rem}
+/* Цена — якорь иерархии сразу после H1: 1.75rem/700 (W104-α D: без 800-х
+   весов, максимум 700 для цен-цифр), tabular-nums (унаследованы из five.css);
+   sale: старая — muted 1.1rem, новая — pink-deep 1.75rem/700 */
+.fc-product__price{font-size:1.75rem;font-weight:700}
 .fc-product__price--old{font-size:1.1rem;font-weight:600}
-.fc-product__price--discount{font-size:1.75rem;font-weight:800;color:var(--pink-deep,#cc2f7a)}
+.fc-product__price--discount{font-size:1.75rem;font-weight:700;color:var(--pink-deep,#cc2f7a)}
 
 /* Категория-крошка над заголовком: 11.2 → 12.5px (читаемая, не кричащая) */
 .fc-product__info .product-card__cat{font-size:12.5px}
@@ -72,7 +73,7 @@
 }
 .pdp-specs__caption{
   font:600 10px/1.3 var(--font-ui);
-  letter-spacing:.12em;text-transform:uppercase;
+  letter-spacing:.14em;text-transform:uppercase;
   color:var(--ink-muted,#6e6a72);
 }
 

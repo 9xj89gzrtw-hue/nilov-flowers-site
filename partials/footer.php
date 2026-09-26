@@ -168,7 +168,7 @@ elseif ($__nfIsHome || preg_match('#^/(product|category)(\.php)?(/|$)#', $__nfPa
     <div class="cart-panel__items" id="cartItems"></div>
     <p class="cart-panel__empty" id="cartEmpty"><?= e(setting('cart_empty_text', 'Корзина пуста — выберите букет в каталоге')) ?></p>
     <div class="cart-upsell" id="cartUpsell" hidden>
-      <p class="cart-upsell__title"><?= e(setting('upsell_title', 'Возможно, пригодится')) ?></p>
+      <p class="cart-upsell__title"><?= e(setting('upsell_title', 'Добавьте к букету')) ?></p>
       <div class="cart-upsell__items" id="cartUpsellItems"></div>
     </div>
     <div class="cart-panel__foot">

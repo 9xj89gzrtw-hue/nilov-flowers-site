@@ -199,7 +199,7 @@ function render_product_card(array $p, array $ctx): void
                 <svg viewBox="0 0 80 94" style="width:30%;margin:auto;color:var(--blue)" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="40" cy="30" r="11"/><circle cx="26" cy="38" r="8"/><circle cx="54" cy="38" r="8"/><path d="M40 41v20M40 61c-8 6-14 14-16 25M40 61c8 6 14 14 16 25"/></svg>
               <?php endif; ?>
             </a>
-            <?php if ($isSale): $offPct = (int)$p['price'] > 0 ? (int)round((1 - $price / (int)$p['price']) * 100) : 0; ?><span class="product-card__badge product-card__badge--sale"><?php if ($offPct > 0): ?><span class="product-card__badge-word"><?= e(setting('badge_sale_text', 'Скидка')) ?> </span>&#8722;<?= $offPct ?>%<?php else: ?><?= e(setting('badge_sale_text', 'Скидка')) ?><?php endif; ?></span><?php endif; ?>
+            <?php if ($isSale): $offPct = (int)$p['price'] > 0 ? (int)round((1 - $price / (int)$p['price']) * 100) : 0; ?><span class="product-card__badge product-card__badge--sale"><?= $offPct > 0 ? '&#8722;' . (int)$offPct . '%' : e(setting('badge_sale_text', 'Скидка')) ?></span><?php endif; ?>
             <?php if ((int)($p['is_urgent'] ?? 0) === 1): ?><span class="product-card__badge product-card__badge--urgent"><?= e(setting('badge_urgent_text', 'Успеть сегодня')) ?></span><?php endif; ?>
             <?php if ($isHit): ?><span class="product-card__badge product-card__badge--hit"><?= e(setting('badge_hit_text', 'Хит')) ?></span><?php endif; ?>
             <?php if ($isPremium): ?><span class="product-card__badge product-card__badge--premium"><?= e(setting('badge_premium_text', 'Премиум')) ?></span><?php endif; ?>
@@ -250,7 +250,7 @@ if ($intro === '') {
 }
 
 $canonicalUrl = 'https://flowers.interfood-catering.ru/category/' . rawurlencode($slug);
-$metaTitle = $catName . ' — купить с доставкой в СПб | ' . $shopName;
+$metaTitle = $catName . ' — свежие букеты с доставкой по Санкт-Петербургу | ' . $shopName;
 $metaDesc = meta_cut($intro, 160);
 $pageTitle = $metaTitle;
 /* $pageDescription → twitter:description в head.php; hero-og:image — ниже */

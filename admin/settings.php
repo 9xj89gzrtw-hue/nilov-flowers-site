@@ -86,10 +86,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
         'premium_title','premium_sub','premium_price_label','premium_cta_text',
         'footer_tagline','hero_ghost_text','hero_ghost_link',
         'section_hits_eyebrow','section_budget_eyebrow',
-        /* W104 (design-system): eyebrow каталога/поводов, oversize-нумералы
-           секций (data-numeral), подписи editorial-спек-чипов страницы товара */
+        /* W104 (design-system): eyebrow каталога/поводов, подписи
+           editorial-спек-чипов страницы товара. W104-α: ручные нумералы
+           section_numeral_* упразднены — нумерация сквозная и автоматическая */
         'catalog_eyebrow','occasions_eyebrow',
-        'section_numeral_hits','section_numeral_premium','section_numeral_catalog','section_numeral_occasions',
         'pdp_spec_captions',
         'occasions_title','stores_title','stores_sub',
         'stores_1_title','stores_1_text','stores_2_title','stores_2_text','stores_3_title','stores_3_text',
@@ -458,13 +458,13 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
     <p style="font-size:.85rem;font-weight:600;margin:0 0 8px">Шапка и город</p>
     <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
       <input type="checkbox" name="feature_citybar" style="width:auto" <?= sv('feature_citybar', $s) !== '0' ? 'checked' : '' ?>>
-      Полоска «Ваш город — Санкт-Петербург?» над шапкой
+      Полоска «Санкт-Петербург — ваш город?» над шапкой
     </label>
     <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 10px 26px">Покупатель сразу видит город доставки — и не звонит уточнять.</p>
     <div class="grid2">
       <div>
         <label class="f" for="cb-bar">Текст полоски города</label>
-        <input class="input" id="cb-bar" name="citybar_text" value="<?= sv('citybar_text', $s) !== '' ? sv('citybar_text', $s) : 'Ваш город — Санкт-Петербург?' ?>" maxlength="90">
+        <input class="input" id="cb-bar" name="citybar_text" value="<?= sv('citybar_text', $s) !== '' ? sv('citybar_text', $s) : 'Санкт-Петербург — ваш город?' ?>" maxlength="90">
         <label class="f" for="cb-city" style="margin-top:8px">Название города в шапке</label>
         <input class="input" id="cb-city" name="city_label" value="<?= sv('city_label', $s) !== '' ? sv('city_label', $s) : 'Санкт-Петербург' ?>" maxlength="40">
       </div>
@@ -810,27 +810,10 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
         <label class="f" for="eb-budget" style="margin-top:8px">Eyebrow секции «До N ₽»</label>
         <input class="input" id="eb-budget" name="section_budget_eyebrow" value="<?= sv('section_budget_eyebrow', $s) !== '' ? sv('section_budget_eyebrow', $s) : 'Выгодно|каждый день' ?>" maxlength="60">
         <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Формат eyebrow: «капс|курсив» — до <code>|</code> заглавными буквами, после — курсивным серифом. Пустое поле скрывает надпись.</p>
-        <?php /* W104: oversize-нумералы секций (Playfair italic за заголовком) */ ?>
-        <p style="font-size:.85rem;font-weight:600;margin:14px 0 6px">Нумералы секций (крупный индекс за заголовком)</p>
-        <div style="display:flex;gap:10px;flex-wrap:wrap">
-          <div style="flex:1;min-width:110px">
-            <label class="f" for="nm-hits">Хиты</label>
-            <input class="input" id="nm-hits" name="section_numeral_hits" value="<?= sv('section_numeral_hits', $s) !== '' ? sv('section_numeral_hits', $s) : '01' ?>" maxlength="4">
-          </div>
-          <div style="flex:1;min-width:110px">
-            <label class="f" for="nm-prem">Премиум</label>
-            <input class="input" id="nm-prem" name="section_numeral_premium" value="<?= sv('section_numeral_premium', $s) !== '' ? sv('section_numeral_premium', $s) : '02' ?>" maxlength="4">
-          </div>
-          <div style="flex:1;min-width:110px">
-            <label class="f" for="nm-cat">Каталог</label>
-            <input class="input" id="nm-cat" name="section_numeral_catalog" value="<?= sv('section_numeral_catalog', $s) !== '' ? sv('section_numeral_catalog', $s) : '03' ?>" maxlength="4">
-          </div>
-          <div style="flex:1;min-width:110px">
-            <label class="f" for="nm-occ">Поводы</label>
-            <input class="input" id="nm-occ" name="section_numeral_occasions" value="<?= sv('section_numeral_occasions', $s) !== '' ? sv('section_numeral_occasions', $s) : '04' ?>" maxlength="4">
-          </div>
-        </div>
-        <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Полупрозрачные крупные цифры «01»…«04» за заголовками ключевых секций. Очистите поле — нумерал исчезнет.</p>
+        <?php /* W104-α (M): ручные нумералы секций убраны — оглавление главной
+               нумеруется автоматически (01 хиты → … → 09 FAQ) в порядке секций;
+               ручное редактирование ломало сквозную последовательность */ ?>
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:14px 0 0">Нумералы секций (крупные индексы «01»…«09» за заголовками) нумеруются автоматически по порядку секций — настройки не требуют.</p>
       </div>
       <div>
         <label class="f" for="ft-tagline">Крупная подпись футера (Playfair-курсив)</label>
@@ -895,7 +878,7 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
         <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 10px 26px">Зелёная плачка про доставку по Санкт-Петербургу на каждой карточке каталога.</p>
         <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
           <input type="checkbox" name="feature_countdown" style="width:auto" <?= sv('feature_countdown', $s) === '1' ? 'checked' : '' ?>>
-          Таймер «успейте заказать до 20:00»
+          Таймер дедлайна заказа («до 20:00 — доставим сегодня»)
         </label>
         <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 10px 26px">Живые часы обратного отсчёта в шапке главной страницы.</p>
         <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
@@ -1025,12 +1008,12 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
       </div>
     </div>
     <label class="f" for="cd-t" style="margin-top:12px">Текст таймера (до дедлайна)</label>
-    <input class="input" id="cd-t" name="countdown_text" value="<?= sv('countdown_text', $s) !== '' ? sv('countdown_text', $s) : 'Успейте заказать сегодня — осталось {T} до {D}' ?>" maxlength="120">
+    <input class="input" id="cd-t" name="countdown_text" value="<?= sv('countdown_text', $s) !== '' ? sv('countdown_text', $s) : 'Заказ до {D} — доставим сегодня' ?>" maxlength="120">
     <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 12px">Вместо <code>{T}</code> подставится время («2 ч 15 мин»), вместо <code>{D}</code> — ваш дедлайн. Ночью (до открытия) и после дедлайна показывается соответствующий текст ниже.</p>
     <label class="f" for="cd-c">Текст после дедлайна</label>
     <input class="input" id="cd-c" name="countdown_closed_text" value="<?= sv('countdown_closed_text', $s) !== '' ? sv('countdown_closed_text', $s) : 'Приём заказов на сегодня закрыт — доставим завтра с 9:00' ?>" maxlength="120">
     <label class="f" for="cd-n" style="margin-top:10px">Текст ночью (с дедлайна до открытия)</label>
-    <input class="input" id="cd-n" name="countdown_night_text" value="<?= sv('countdown_night_text', $s) !== '' ? sv('countdown_night_text', $s) : 'Ночь. Заказ примем сейчас — доставим сегодня после 9:00' ?>" maxlength="120">
+    <input class="input" id="cd-n" name="countdown_night_text" value="<?= sv('countdown_night_text', $s) !== '' ? sv('countdown_night_text', $s) : 'Примем заказ сейчас — доставим с 9:00 утра' ?>" maxlength="120">
     <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
     <p style="font-size:.85rem;font-weight:600;margin:0 0 8px">Пороги фильтра цены в каталоге</p>
     <div class="grid2">
@@ -1060,11 +1043,11 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
     <div class="grid2">
       <div>
         <label class="f" for="ce-t">Заголовок</label>
-        <input class="input" id="ce-t" name="catalog_empty_title" value="<?= sv('catalog_empty_title', $s) !== '' ? sv('catalog_empty_title', $s) : 'По этим фильтрам букетов не нашлось 🌷' ?>" maxlength="100">
+        <input class="input" id="ce-t" name="catalog_empty_title" value="<?= sv('catalog_empty_title', $s) !== '' ? sv('catalog_empty_title', $s) : 'Под эти фильтры ничего не подошло' ?>" maxlength="100">
       </div>
       <div>
         <label class="f" for="ce-h">Подсказка</label>
-        <input class="input" id="ce-h" name="catalog_empty_hint" value="<?= sv('catalog_empty_hint', $s) !== '' ? sv('catalog_empty_hint', $s) : 'Попробуйте убрать фильтр цены или выбрать другую категорию' ?>" maxlength="160">
+        <input class="input" id="ce-h" name="catalog_empty_hint" value="<?= sv('catalog_empty_hint', $s) !== '' ? sv('catalog_empty_hint', $s) : 'Сбросьте цену или загляните в соседнюю категорию' ?>" maxlength="160">
       </div>
     </div>
     <?php /* Cookie-баннер (критерий 16): юр-тексты редактируются */ ?>
@@ -1235,7 +1218,7 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
       </div>
       <div>
         <label class="f" for="u-title">Заголовок блока</label>
-        <input class="input" id="u-title" name="upsell_title" value="<?= sv('upsell_title', $s) !== '' ? sv('upsell_title', $s) : 'Возможно, пригодится' ?>">
+        <input class="input" id="u-title" name="upsell_title" value="<?= sv('upsell_title', $s) !== '' ? sv('upsell_title', $s) : 'Добавьте к букету' ?>">
         <label class="f" for="u-cats">Из каких категорий показывать («1,2» — id категорий из списка ниже)</label>
         <input class="input" id="u-cats" name="upsell_categories" value="<?= sv('upsell_categories', $s) ?>" placeholder="1,2">
         <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Пусто — все активные товары. Плюс всегда добавляются товары с галочкой «в апсейле».</p>
@@ -1293,7 +1276,7 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
     <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
     <p style="font-size:.85rem;font-weight:600;margin:0 0 8px">Продвижение: заголовок и описание для поисковиков</p>
     <label class="f" for="seo-t">Title (виден во вкладке и в Яндексе)</label>
-    <input class="input" id="seo-t" name="seo_title" value="<?= sv('seo_title', $s) !== '' ? sv('seo_title', $s) : 'Доставка цветов по СПб — ' . sv('shop_name', $s) ?>" maxlength="80">
+    <input class="input" id="seo-t" name="seo_title" value="<?= sv('seo_title', $s) !== '' ? sv('seo_title', $s) : sv('shop_name', $s) . ' — доставка цветов по Санкт-Петербургу' ?>" maxlength="80">
     <label class="f" for="seo-d" style="margin-top:8px">Description (описание в результатах поиска)</label>
     <input class="input" id="seo-d" name="seo_description" value="<?= sv('seo_description', $s) !== '' ? sv('seo_description', $s) : 'Доставка букетов по Санкт-Петербургу в день заказа. Свежие цветы с утренней поставки, фото перед отправкой. Заказы до 20:00 — доставим сегодня.' ?>" maxlength="200">
     <label class="f" for="mk-id" style="margin-top:8px">Счётчик Яндекс.Метрики (номер)</label>

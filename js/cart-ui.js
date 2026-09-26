@@ -252,7 +252,10 @@
 
     /* Панель открыта — обновляем апсейл при каждой мутации корзины,
        чтобы добавленный товар сразу исчезал из предложений. */
-    if (!panel.hidden) renderUpsell();
+    if (!panel.hidden) {
+      renderUpsell();
+      if (panel.classList.contains('is-entering')) staggerItems(); /* W104-β: новые строки — в каскад */
+    }
 
     /* W98-fixF (F7): пустая корзина на #order — показываем заглушку волны E
        (#orderEmptyState уже в DOM, скрыта инлайном) и прячем саму форму:
@@ -392,55 +395,91 @@
     });
   }
 
+  /* W104-β (C1-M P1): stagger 40мс айтемов при открытии drawer —
+     индексы --ci + класс is-entering (keyframes — motion-w104.css).
+     Пересчитываем и при cart:change пока идёт вход (новые строки).
+     prefers-reduced-motion — без анимации. */
+  var enterTimer = 0;
+  function staggerItems() {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var rows = itemsEl.querySelectorAll('.cart-item');
+    if (!rows.length) return;
+    Array.prototype.forEach.call(rows, function (r, i) {
+      r.style.setProperty('--ci', String(Math.min(i, 8))); /* длинные корзины — потолок 320мс */
+    });
+    panel.classList.add('is-entering');
+    clearTimeout(enterTimer);
+    enterTimer = setTimeout(function () {
+      panel.classList.remove('is-entering');
+      Array.prototype.forEach.call(rows, function (r) { r.style.removeProperty('--ci'); });
+    }, rows.length * 40 + 520);
+  }
+
   function open() {
+    if (!panel.hidden) return;
+    /* W104-β (C1-M P1, drawer-лаг ~100мс): показать и стартовать transform
+       в одном кадре. Порядок был: unhide → тяжёлая синхронщина (inert-цикл
+       по всему DOM + renderUpsell с innerHTML + фокус) → и только потом
+       первый кадр анимации (замер — 185мс от клика). Теперь: unhide →
+       forced reflow (коммит @starting-style: translateX(100%)) → лёгкие
+       синхронные вещи → тяжёлая работа после первого кадра (rAF×2). */
     panel.hidden = false;
-    /* W98-fixF (F4): открытие drawer → cart_open (воронка) */
-    nfGoal('cart_open');
+    void panel.offsetWidth; /* коммит стартового состояния в этом кадре */
     document.body.classList.add('no-scroll');
     /* a11y-критик S2: body.overflow не блокирует window-scroll на iOS/Safari — вешаем на html */
     document.documentElement.classList.add('no-scroll');
-    /* a11y-критик S1 → W97-fixA (A5): Tab убегал за drawer (inert висел на
-       устаревшем header.site-header — шапка давно header.fc-header, плюс есть
-       #fcCitybar). Инертим ВСЁ вне drawer: шапку (оба варианта класса — на
-       случай легаси-страниц), город-бар, skip-link, main, футер, таббар,
-       cookie-баннер/настройки и PWA-подсказку nilov.js. Панель корзины —
-       fixed sibling вне этих контейнеров, фокус остаётся внутри. */
-    const inertEls = document.querySelectorAll('header.fc-header, header.site-header, #fcCitybar, a.skip-link, main, footer.site-footer, nav.mnav, .cookie-banner, .cookie-settings, div[role="region"][aria-label="Установка приложения"]');
-    inertEls.forEach(function (el) { el.inert = true; });
-    panel._inertEls = inertEls;
-    /* A5: Tab-ловушка поверх inert — на последнем элементе drawer Chrome может
-       транзитом выкинуть фокус на <body>; перехватываем Tab и держим цикл
-       внутри панели (first↔last), фокус никогда не покидает корзину. */
-    panel._trapTab = function (e) {
-      if (e.key !== 'Tab' || panel.hidden) return;
-      const drawer = panel.querySelector('.cart-panel__drawer');
-      if (!drawer) return;
-      const nodes = drawer.querySelectorAll('button, input, select, textarea, a[href], [tabindex]:not([tabindex="-1"])');
-      const list = Array.prototype.filter.call(nodes, function (n) {
-        return !n.disabled && (n.offsetParent !== null || n === document.activeElement);
-      });
-      if (!list.length) return;
-      const first = list[0], last = list[list.length - 1];
-      const active = document.activeElement;
-      if (!drawer.contains(active)) {
-        e.preventDefault();
-        (e.shiftKey ? last : first).focus();
-      } else if (e.shiftKey && active === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && active === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    };
-    document.addEventListener('keydown', panel._trapTab);
     toggle.setAttribute('aria-expanded', 'true');
-    renderUpsell();
+    /* W98-fixF (F4): открытие drawer → cart_open (воронка) */
+    nfGoal('cart_open');
+    staggerItems();
     if (closeBtn) closeBtn.focus();
+    /* Тяжёлая работа — после первого кадра движения drawer'а */
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        if (panel.hidden) return; /* успели закрыть — не инертим закрытый */
+        /* a11y-критик S1 → W97-fixA (A5): инертим ВСЁ вне drawer: шапку
+           (оба варианта класса — на случай легаси-страниц), город-бар,
+           skip-link, main, футер, таббар, cookie-баннер/настройки и
+           PWA-подсказку nilov.js. Панель корзины — fixed sibling вне
+           этих контейнеров, фокус остаётся внутри. */
+        var inertEls = document.querySelectorAll('header.fc-header, header.site-header, #fcCitybar, a.skip-link, main, footer.site-footer, nav.mnav, .cookie-banner, .cookie-settings, div[role="region"][aria-label="Установка приложения"]');
+        inertEls.forEach(function (el) { el.inert = true; });
+        panel._inertEls = inertEls;
+        /* A5: Tab-ловушка поверх inert — на последнем элементе drawer Chrome может
+           транзитом выкинуть фокус на <body>; перехватываем Tab и держим цикл
+           внутри панели (first↔last), фокус никогда не покидает корзину. */
+        panel._trapTab = function (e) {
+          if (e.key !== 'Tab' || panel.hidden) return;
+          const drawer = panel.querySelector('.cart-panel__drawer');
+          if (!drawer) return;
+          const nodes = drawer.querySelectorAll('button, input, select, textarea, a[href], [tabindex]:not([tabindex="-1"])');
+          const list = Array.prototype.filter.call(nodes, function (n) {
+            return !n.disabled && (n.offsetParent !== null || n === document.activeElement);
+          });
+          if (!list.length) return;
+          const first = list[0], last = list[list.length - 1];
+          const active = document.activeElement;
+          if (!drawer.contains(active)) {
+            e.preventDefault();
+            (e.shiftKey ? last : first).focus();
+          } else if (e.shiftKey && active === first) {
+            e.preventDefault();
+            last.focus();
+          } else if (!e.shiftKey && active === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        };
+        document.addEventListener('keydown', panel._trapTab);
+        renderUpsell();
+      });
+    });
   }
 
   function close() {
     panel.hidden = true;
+    clearTimeout(enterTimer);
+    panel.classList.remove('is-entering');
     document.body.classList.remove('no-scroll');
     document.documentElement.classList.remove('no-scroll');
     (panel._inertEls || []).forEach(function (el) { el.inert = false; });

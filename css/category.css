@@ -41,7 +41,7 @@
   min-height:44px;padding:0 20px;border-radius:999px;
   background:var(--surface-subtle,#f6f6f8);color:var(--ink,#1c1a1e);
   border:1.5px solid transparent;
-  font:600 .92rem var(--font-ui,sans-serif);cursor:pointer;
+  font:600 .875rem var(--font-ui,sans-serif);cursor:pointer; /* W104-α J: единая кнопочная шкала 14px */
   transition:background .15s,color .15s,border-color .15s,transform .1s;
 }
 .cat-chip:hover{background:#eceaf0;border-color:var(--ink,#1c1a1e)}
@@ -71,7 +71,7 @@
   flex:none;display:inline-flex;align-items:center;justify-content:center;
   white-space:nowrap;min-height:44px;padding:0 18px;border:0;
   background:transparent;color:var(--ink-muted,#6e6a72);
-  font:600 .88rem var(--font-ui,sans-serif);cursor:pointer;
+  font:600 .8125rem var(--font-ui,sans-serif);cursor:pointer; /* W104-α J: вторичная шкала 13px */
   transition:background .15s,color .15s;
 }
 .cat-sort__btn:hover{background:var(--surface-subtle,#f6f6f8);color:var(--ink,#1c1a1e)}
@@ -103,7 +103,7 @@
   flex:none;display:inline-flex;align-items:center;white-space:nowrap;
   min-height:44px;padding:0 18px;border-radius:999px;
   border:1.5px solid var(--line,#e7e5ea);background:#fff;
-  color:var(--ink,#1c1a1e);font:600 .85rem var(--font-ui,sans-serif);cursor:pointer;
+  color:var(--ink,#1c1a1e);font:600 .8125rem var(--font-ui,sans-serif);cursor:pointer; /* W104-α J: вторичная шкала 13px */
   transition:border-color .15s,color .15s;
 }
 .cat-reset:hover{border-color:var(--ink,#1c1a1e);color:var(--ink,#1c1a1e)}

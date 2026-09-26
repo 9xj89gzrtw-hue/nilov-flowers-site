@@ -36,6 +36,19 @@
   const coarse = () => !!(window.matchMedia
     && window.matchMedia('(pointer: coarse)').matches);
 
+  /* ============ 0. MOTION-LITE (W104-β, C1-M P0-2: скролл-jank) ============
+     Слабое железо (≤4 ядер — включая 2-ядерный жюри-стенд) не тянет
+     десятки scroll-driven view()-таймлайнов на каждый кадр скролла
+     (замер: p95 39–67мс). html.motion-lite — CSS (motion-w104.css)
+     переводит scroll-driven анимации на IO-fallback (reveal.js уже
+     умеет: класс .reveal--visible + transition), параллакс/блум —
+     статик. Lenis и кинетика остаются. 8+ ядер — полный motion. */
+  (function motionLite() {
+    if (reduced()) return;
+    var cores = navigator.hardwareConcurrency || 8;
+    if (cores <= 4) ROOT.classList.add('motion-lite');
+  })();
+
   /* ============ 1. LENIS ============ */
   (function smoothScroll() {
     if (reduced() || coarse()) return;
@@ -54,6 +67,39 @@
       return; /* непредвиденное — остаёмся на нативном скролле */
     }
     window.NF_LENIS = lenis;
+
+    /* W104-β (C1-M P1): Lenis-десинк. onNativeScroll у Lenis синхронизирует
+       animatedScroll только пока isScrolling !== 'smooth' — внешний скачок
+       скролла (bfcache/scroll-restoration, программный window.scrollTo,
+       нативный hash-прыжок) оставляет animatedScroll устаревшим, и
+       следующий якорный клик телепортирует к старой позиции → откат →
+       повторный пробег. Латаем своим scroll-слушателем: рассинхрон
+       ≥120px между фактическим scrollY и animatedScroll — lenis.reset()
+       (синх animatedScroll/targetScroll + остановка текущей анимации:
+       продолжать её с чужой позиции и есть телепорт).
+       ИСКЛЮЧЕНИЕ — якорные клики: нативный fragment-прыжок срабатывает
+       в том же клике, что и lenis-анимация, и его scroll-событие приходит
+       ДО первого кадра анимации (actual уже у цели, animated — на старте).
+       Без грейса мы бы убили анимацию — якорь стал бы мгновенным телепортом.
+       Грейс 150мс с capture-фазы click по same-page ссылке. */
+    var anchorGraceUntil = 0;
+    document.addEventListener('click', function (e) {
+      var t = e.target;
+      var a = t && t.closest ? t.closest('a[href]') : null;
+      if (!a || !a.hash) return;
+      var href = a.getAttribute('href') || '';
+      var samePage = href.charAt(0) === '#'
+        || (a.host === location.host && a.pathname === location.pathname);
+      if (samePage) anchorGraceUntil = performance.now() + 150;
+    }, { capture: true, passive: true });
+    window.addEventListener('scroll', function () {
+      if (lenis.isStopped) return;
+      if (performance.now() < anchorGraceUntil) return; /* якорный клик — ведёт Lenis */
+      if (Math.abs(lenis.actualScroll - lenis.animatedScroll) >= 120) {
+        lenis.reset();
+        window.__nfLenisResets = (window.__nfLenisResets | 0) + 1; /* диагностика */
+      }
+    }, { passive: true });
 
     /* Оверлеи со своим скроллом: колесо над ними не должно вести страницу.
        #cartPanel — в разметке footer.php; .lightbox создаёт lightbox.js

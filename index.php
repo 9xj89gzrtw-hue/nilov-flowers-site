@@ -376,7 +376,7 @@ function render_product_card(array $p, array $ctx): void
                 <svg viewBox="0 0 80 94" style="width:30%;margin:auto;color:var(--blue)" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="40" cy="30" r="11"/><circle cx="26" cy="38" r="8"/><circle cx="54" cy="38" r="8"/><path d="M40 41v20M40 61c-8 6-14 14-16 25M40 61c8 6 14 14 16 25"/></svg>
               <?php endif; ?>
             </a>
-            <?php if ($isSale): $offPct = (int)$p['price'] > 0 ? (int)round((1 - $price / (int)$p['price']) * 100) : 0; ?><span class="product-card__badge product-card__badge--sale"><?php if ($offPct > 0): ?><span class="product-card__badge-word"><?= e(setting('badge_sale_text', 'Скидка')) ?> </span>&#8722;<?= $offPct ?>%<?php else: ?><?= e(setting('badge_sale_text', 'Скидка')) ?><?php endif; ?></span><?php endif; ?>
+            <?php if ($isSale): $offPct = (int)$p['price'] > 0 ? (int)round((1 - $price / (int)$p['price']) * 100) : 0; ?><span class="product-card__badge product-card__badge--sale"><?= $offPct > 0 ? '&#8722;' . (int)$offPct . '%' : e(setting('badge_sale_text', 'Скидка')) /* W104-α (C): только «−16%» типографским минусом — слово «Скидка» убрано, без процента — текст настройки */ ?></span><?php endif; ?>
             <?php if ((int)($p['is_urgent'] ?? 0) === 1): ?><span class="product-card__badge product-card__badge--urgent"><?= e(setting('badge_urgent_text', 'Успеть сегодня')) ?></span><?php endif; ?>
             <?php /* Бейджи 5cv: «Хит» (amber) и «Премиум» (ink) — по флагам товара */ ?>
             <?php if ($isHit): ?><span class="product-card__badge product-card__badge--hit"><?= e(setting('badge_hit_text', 'Хит')) ?></span><?php endif; ?>
@@ -510,6 +510,19 @@ $cardCtx = ['featDeliveryBadge' => $featDeliveryBadge, 'featFavorites' => $featF
 $fcProdSeq = 0;
 $fcEditorialDone = [];
 
+/* W104-α (M): единая система оглавления — сквозная нумерация контентных
+   секций главной (01 хиты → 02/03 категорийные → 04 премиум → 05 «До N ₽» →
+   06 «Дополните» → 07 каталог → 08 поводы → 09 FAQ). Авто-последовательность
+   самовосстанавливается при выключении секций тумблерами — ручные настройки
+   section_numeral_* (ломали порядок) упразднены. */
+$fcNumeralSeq = 0;
+function fc_next_numeral(): string
+{
+    global $fcNumeralSeq;
+    $fcNumeralSeq++;
+    return sprintf('%02d', $fcNumeralSeq);
+}
+
 /* ---- Карусели (5cv): хиты / по категориям / премиум / до N ₽ ---- */
 
 /* Хиты: is_hit=1; если ни одного — первые 8 активных по sort,id */
@@ -634,9 +647,9 @@ $seoTextDefault = "Доставка цветов по Санкт-Петербу�
 ?><!DOCTYPE html>
 <html lang="ru">
 <head>
-<title><?= e(setting('seo_title', 'Доставка цветов по СПб — ' . setting('shop_name', 'Nilov Flowers'))) ?></title>
+<title><?= e(setting('seo_title', setting('shop_name', 'Nilov Flowers') . ' — доставка цветов по Санкт-Петербургу')) ?></title>
 <meta name="description" content="<?= e(setting('seo_description', 'Доставка букетов по Санкт-Петербургу в день заказа. Свежие цветы с утренней поставки, фото перед отправкой. Заказы до 20:00 — доставим сегодня.')) ?>">
-<meta property="og:title" content="<?= e(setting('seo_title', 'Доставка цветов по СПб — ' . setting('shop_name', 'Nilov Flowers'))) ?>">
+<meta property="og:title" content="<?= e(setting('seo_title', setting('shop_name', 'Nilov Flowers') . ' — доставка цветов по Санкт-Петербургу')) ?>">
 <meta property="og:description" content="Букеты с доставкой в день заказа по Санкт-Петербургу. Фото перед отправкой, свежие цветы с утренней поставки.">
 <meta property="og:url" content="https://flowers.interfood-catering.ru/">
 <?php /* W96-fix3a (T5d): $pageDescription → twitter:description в partials/head.php
@@ -689,6 +702,11 @@ echo '<link rel="preload" as="image" href="' . e($__heroPreHref) . '" fetchprior
     . '>' . "\n";
 ?>
 <?php endif; ?>
+<?php /* W104-α (A): preload обоих Playfair-подмножеств кириллицы — H1 hero
+   (roman) и его акцент-слово <em> (НАСТОЯЩИЙ italic теперь в /fonts):
+   LCP-текст не должен ждать свапа с Georgia-фолбэка. */ ?>
+<link rel="preload" href="/fonts/PlayfairDisplay-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/PlayfairDisplay-Italic-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
 <?php require __DIR__ . '/partials/head.php'; ?>
 <?php /* JSON-LD Florist — canonical 2026 (hanafloristpos.com/schema-guide, thestacc.com/local-business-schema) */ ?>
 <?php
@@ -797,17 +815,25 @@ echo json_encode([
 <a class="skip-link" href="#main">Перейти к содержимому</a>
 <?php /* Город-бар (5cv): подтверждение города, JS five.js прячет по localStorage 'fc-city-ok'.
    W103 (F4, критик-3 P0-1): мобильный компакт-режим — тонкая строка
-   «Санкт-Петербург ✓ · Изменить» (~36px) вместо вопроса с двумя кнопками (56px).
-   Десктоп не меняется. Город для компакт-строки извлекаем из полного текста
-   (убираем канонический префикс «Ваш город — » и хвостовой «?»); кастомный
-   текст владельца без префикса показывается целиком — ellipsis подстрахует.
-   a11y: на мобиле полный текст и подпись «Выбрать другой» остаются в дереве
-   скринридера (CSS прячет их только визуально), «✓» — декоративный. */ ?>
+   «Санкт-Петербург ✓ · Выбрать другой» (~36px) вместо вопроса с двумя кнопками (56px).
+   W104-α (L6, критик C1-T): вопрос короче — «Санкт-Петербург — ваш город?»,
+   без дублирующих «Изменить» и «×»: бар отвечает на вопрос (Да/Выбрать другой),
+   а не закрывается. five.js вешает слушатель на #fcCityClose null-safe —
+   отсутствие кнопки безопасно. Город для компакт-строки извлекаем из полного
+   текста (новый формат «Город — ваш город?» и легаси «Ваш город — Город?»);
+   кастомный текст владельца показывается целиком — ellipsis подстрахует.
+   a11y: на мобиле полный текст остаётся в дереве скринридера (CSS прячет
+   только визуально), «✓» — декоративный. */ ?>
 <?php if ($featCitybar): ?>
 <?php
-$citybarText = (string)setting('citybar_text', 'Ваш город — Санкт-Петербург?');
-$citybarCity = preg_replace('/^\s*Ваш\s+город[^А-Яа-яЁё]*\s*/u', '', $citybarText);
-$citybarCity = trim((string)preg_replace('/\s*\?\s*$/u', '', (string)$citybarCity));
+$citybarText = (string)setting('citybar_text', 'Санкт-Петербург — ваш город?');
+/* Новый формат «<Город> — ваш город?» → город; иначе легаси-префикс «Ваш город — » */
+if (preg_match('/^\s*(\S.*?)\s*—\s*ваш\s+город\s*\?\s*$/u', $citybarText, $m)) {
+    $citybarCity = $m[1];
+} else {
+    $citybarCity = preg_replace('/^\s*Ваш\s+город[^А-Яа-яЁё]*\s*/u', '', $citybarText);
+    $citybarCity = trim((string)preg_replace('/\s*\?\s*$/u', '', (string)$citybarCity));
+}
 if ($citybarCity === '') { $citybarCity = $citybarText; }
 ?>
 <div class="fc-citybar" id="fcCitybar">
@@ -815,11 +841,7 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
     <span class="fc-citybar__text"><?= e($citybarText) ?></span>
     <span class="fc-citybar__compact" aria-hidden="true"><?= e($citybarCity) ?></span>
     <button type="button" class="fc-citybar__yes" id="fcCityYes">Да, верно</button>
-    <a class="fc-citybar__no" href="#contacts">
-      <span class="fc-citybar__no-full"><?= e(setting('citybar_no_text', 'Выбрать другой')) ?></span>
-      <span class="fc-citybar__no-short" aria-hidden="true">Изменить</span>
-    </a>
-    <button type="button" class="fc-citybar__close" id="fcCityClose" aria-label="Закрыть">&times;</button>
+    <a class="fc-citybar__no" href="#contacts"><?= e(setting('citybar_no_text', 'Выбрать другой')) ?></a>
   </div>
 </div>
 <?php endif; ?>
@@ -854,7 +876,25 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
            сохранена: \s в PCRE /u не матчит U+00A0 — склеенный токен не разваливается.
            W103 (6-b, M1): entrance — по-СЛОВНЫЙ rise из-под маски (nv-line/nv-ch —
            оживлённый W4-набор из nilov.css; слова — inline-block, --i — порядок). */
-        $heroWords = preg_split('/\s+/u', trim(preg_replace('/ по /u', ' по ', ' ' . trim($heroH1) . ' ', 1))) ?: [];
+        /* W104-α (N, критик C1-T/C1-D1): короткий предлог (≤3 букв, не последнее
+           слово) клеится NBSP-ом к СЛЕДУЮЩЕМУ слову ПОСЛЕ сплита — «по␣Санкт-
+           Петербургу» одним токеном: не висит в конце строки и не отрывается
+           от города («Доставка цветов / по Санкт-Петербургу»). Прежняя склейка
+           ДО сплита не работала: PCRE2 в /u-режиме матчит U+00A0 как \s —
+           токен разваливался обратно. white-space:nowrap у .nv-line + cqi-кегль
+           H1 (five.css) держат фразу цельной на любой ширине тайла. */
+        $heroWordsRaw = preg_split("/\s+/u", trim((string)$heroH1)) ?: [];
+        $heroWords = [];
+        for ($hwI = 0, $hwN = count($heroWordsRaw); $hwI < $hwN; $hwI++) {
+            $hwW = $heroWordsRaw[$hwI];
+            if ($hwI < $hwN - 1
+                && preg_match("/^[a-zа-яё]+$/ui", $hwW) === 1
+                && mb_strlen($hwW) <= 3) {
+                $heroWords[] = $hwW . "\u{00A0}" . $heroWordsRaw[++$hwI];
+            } else {
+                $heroWords[] = $hwW;
+            }
+        }
         $heroAccentIdx = -1;
         foreach ($heroWords as $hwI => $hwW) {
             if (mb_strtolower(trim($hwW, '.,!?:;—«»„“')) === 'цветов') { $heroAccentIdx = (int)$hwI; break; }
@@ -890,7 +930,11 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
         </div>
         <?php endif; ?>
         <?php /* Таймер «до 20:00» — не зависит от hero-текста (юр-независимый элемент). Отключаем (критерий 16). */ ?>
-        <?php if ($featCountdown): ?><p class="hero__deadline" style="display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:8px 16px;border-radius:999px;background:rgba(255,255,255,.75);backdrop-filter:blur(6px);border:1px solid var(--line);font-size:.9rem;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;max-width:100%;min-height:38px"><?= e(str_replace(['{T}', '{D}'], ['…', setting('order_deadline_hour', '20') . ':' . str_pad(setting('order_deadline_minute', '0'), 2, '0', STR_PAD_LEFT)], setting('countdown_text', 'Успейте заказать сегодня — осталось {T} до {D}'))) /* W80 → W103 (F4, критик-3 P2): пре-JS paint без ложного «00 ч 00 мин» — нейтральное многоточие; реальное время подставляет nilov.js первым тиком */ ?></p><?php endif; ?>
+        <?php /* W104-α (L1): дефолт без давления «Успейте» — «Заказ до 20:00 — доставим
+               сегодня». {D} подставляется и в PHP (до-JS paint = финальный текст,
+               без мигания «…»), и nilov.js'ом (первый тик); токен {T} в дефолте
+               больше нет — таймер показывает дедлайн, а не обратный отсчёт. */ ?>
+        <?php if ($featCountdown): ?><p class="hero__deadline" style="display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:8px 16px;border-radius:999px;background:rgba(255,255,255,.75);backdrop-filter:blur(6px);border:1px solid var(--line);font-size:.9rem;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;max-width:100%;min-height:38px"><?= e(str_replace(['{T}', '{D}'], ['…', setting('order_deadline_hour', '20') . ':' . str_pad(setting('order_deadline_minute', '0'), 2, '0', STR_PAD_LEFT)], setting('countdown_text', 'Заказ до {D} — доставим сегодня'))) ?></p><?php endif; ?>
         </div>
         <?php /* NILOV_CONFIG — общий конфиг JS (вне гейта таймера): порог бесплатной доставки
                должен работать и при выключенном таймере. */ ?>
@@ -899,8 +943,8 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
           deadlineMinute: <?= (int)(setting('order_deadline_minute', '0')) ?>,
           openHour: <?= (int)(preg_match('/(\d{1,2})\s*:/', (string)setting('shop_hours', ''), $m) ? max(0, min(23, (int)$m[1])) : 9) ?>,
           tz: <?= json_encode(setting('shop_timezone', 'Europe/Moscow')) ?>,
-          nightText: <?= json_encode(setting('countdown_night_text', 'Ночь. Заказ примем сейчас — доставим сегодня после 9:00'), JSON_UNESCAPED_UNICODE) ?>,
-          countdownText: <?= json_encode(setting('countdown_text', 'Успейте заказать сегодня — осталось {T} до {D}'), JSON_UNESCAPED_UNICODE) ?>,
+          nightText: <?= json_encode(setting('countdown_night_text', 'Примем заказ сейчас — доставим с 9:00 утра'), JSON_UNESCAPED_UNICODE) ?>,
+          countdownText: <?= json_encode(setting('countdown_text', 'Заказ до {D} — доставим сегодня'), JSON_UNESCAPED_UNICODE) ?>,
           closedText: <?= json_encode(setting('countdown_closed_text', 'Приём заказов на сегодня закрыт — доставим завтра с 9:00'), JSON_UNESCAPED_UNICODE) ?>,
           freeDeliveryThreshold: <?= (int) setting('free_delivery_threshold', '0') ?>
         };</script>
@@ -1061,14 +1105,15 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
         setting('section_hits_title', 'Хиты продаж'),
         setting('section_hits_sub', 'Букеты, которые выбирают чаще всего'),
         $hitProducts, $cardCtx, '', 'hit', '', setting('section_hits_eyebrow', 'Выбор|покупателей'),
-        setting('section_numeral_hits', '01'));
+        fc_next_numeral());
     endif; ?>
     <?php /* W103 (критик-8 P0-3): H2-модуляция — eyebrow «капс|Playfair-курсив»
        на каждой товарной секции (у хитов/бюджета уже были; здесь — категорийные
        и апсейл, чтобы страница звучала не одной нотой) */ ?>
     <?php foreach ($categoryRows as $ci => $cr): render_fc_row(
         $cr['name'], '', $cr['items'], $cardCtx, '', '', $cr['slug'],
-        $ci === 0 ? setting('section_first_cat_eyebrow', 'Свежие поступления|каждое утро') : setting('section_cat_eyebrow', 'Собирают|наши флористы'));
+        $ci === 0 ? setting('section_first_cat_eyebrow', 'Свежие поступления|каждое утро') : setting('section_cat_eyebrow', 'Собирают|наши флористы'),
+        fc_next_numeral());
     endforeach; ?>
   <?php endif; ?>
 
@@ -1109,7 +1154,7 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
           </a>
           <?php endforeach; ?>
         </div>
-        <div class="fc-premium__info" data-numeral="<?= e(setting('section_numeral_premium', '02')) ?>">
+        <div class="fc-premium__info" data-numeral="<?= e(fc_next_numeral()) ?>">
           <h2 class="fc-premium__title"><?= e(setting('premium_title', 'Для особых случаев')) ?></h2>
           <p class="fc-premium__sub"><?= e(setting('premium_sub', 'Крупные композиции из гортензий, пионов и орхидей — когда впечатление важнее бюджета')) ?></p>
           <p class="fc-premium__price-row">
@@ -1126,7 +1171,8 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
   <?php if ($featCarousels): ?>
     <?php if ($featSectionBudget && $budgetProducts !== []): render_fc_row(
         sprintf(setting('section_budget_title', 'До %s ₽'), formatSum($chipsN)),
-        setting('section_budget_sub', ''), $budgetProducts, $cardCtx, '', 'low', '', setting('section_budget_eyebrow', 'Выгодно|каждый день'));
+        setting('section_budget_sub', ''), $budgetProducts, $cardCtx, '', 'low', '', setting('section_budget_eyebrow', 'Выгодно|каждый день'),
+        fc_next_numeral());
     endif; ?>
   <?php endif; ?>
 
@@ -1139,7 +1185,8 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
   <?php if (count($addonProducts) >= 2): render_fc_row(
       setting('section_addons_title', 'Дополните букет'),
       setting('section_addons_sub', ''), $addonProducts, $cardCtx, '', '', '',
-      setting('section_addons_eyebrow', 'К букету|и без повода'));
+      setting('section_addons_eyebrow', 'К букету|и без повода'),
+      fc_next_numeral());
   endif; ?>
 
   <!-- КАТАЛОГ -->
@@ -1166,7 +1213,7 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
              oversize-нумерал (data-numeral), «Смотреть все» здесь не нужен —
              это сам каталог. */ ?>
       <div class="fc-row__head">
-        <div class="fc-row__heading" data-numeral="<?= e(setting('section_numeral_catalog', '03')) ?>">
+        <div class="fc-row__heading" data-numeral="<?= e(fc_next_numeral()) ?>">
         <?php render_fc_eyebrow(setting('catalog_eyebrow', 'Весь|ассортимент')); ?>
         <h2 class="fc-row__title"><?= e(setting('catalog_title', 'Каталог')) ?></h2>
         <?php $catalogSub = setting('catalog_subtitle', 'Соберём и доставим букет в день заказа'); ?>
@@ -1223,10 +1270,12 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
       <div class="catalog__grid" id="catalogGrid">
         <?php foreach ($products as $p) { render_product_card($p, $cardCtx); } ?>
       </div>
-      <?php /* Empty-state (критик P2): при 0 карточек от фильтров — подсказка + сброс. Тексты редактируются (критерий 16). */ ?>
+      <?php /* Empty-state (критик P2): при 0 карточек от фильтров — подсказка + сброс. Тексты редактируются (критерий 16).
+         W104-α (L2): без эмодзи и канцелярита — короткая строка-титул + подсказка-действие. */ ?>
       <div class="catalog-empty" id="catalogEmpty" hidden style="text-align:center;padding:44px 20px;border:1px dashed var(--line);border-radius:16px;margin-top:14px">
-        <p style="font-size:1.05rem;font-weight:600;margin-bottom:6px"><?= e(setting('catalog_empty_title', 'По этим фильтрам букетов не нашлось 🌷')) ?></p>
-        <p style="color:var(--ink-soft);font-size:.9rem;margin-bottom:16px"><?= e(setting('catalog_empty_hint', 'Попробуйте убрать фильтр цены или выбрать другую категорию')) ?></p>
+        <p style="font-size:1.05rem;font-weight:600;margin-bottom:6px"><?= e(setting('catalog_empty_title', 'Под эти фильтры ничего не подошло')) ?></p>
+        <?php $catalogEmptyHint = trim(setting('catalog_empty_hint', 'Сбросьте цену или загляните в соседнюю категорию')); ?>
+        <?php if ($catalogEmptyHint !== ''): ?><p style="color:var(--ink-soft);font-size:.9rem;margin-bottom:16px"><?= e($catalogEmptyHint) ?></p><?php endif; ?>
         <button type="button" class="btn btn--outline" id="catalogEmptyReset">Сбросить фильтры</button>
       </div>
     </div>
@@ -1243,7 +1292,7 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
     <div class="wrap">
       <?php /* W104: шапка поводов — единый компонент (eyebrow + нумерал за H2) */ ?>
       <div class="fc-row__head">
-        <div class="fc-row__heading" data-numeral="<?= e(setting('section_numeral_occasions', '04')) ?>">
+        <div class="fc-row__heading" data-numeral="<?= e(fc_next_numeral()) ?>">
         <?php render_fc_eyebrow(setting('occasions_eyebrow', 'Повод|найти просто')); ?>
         <h2 class="fc-row__title"><?= e(setting('occasions_title', 'Цветы по поводам')) ?></h2>
         </div>
@@ -1394,7 +1443,7 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
           </div>
           <div class="order-form__field">
             <label for="orderCardText">Текст открытки</label>
-            <textarea id="orderCardText" name="card_text" rows="2" maxlength="500" placeholder="С днём рождения! ❤️ — от Евгения"></textarea>
+            <textarea id="orderCardText" name="card_text" rows="2" maxlength="500" placeholder="С днём рождения! — от Евгения"></textarea>
             <p class="order-form__hint">Напишем от руки и вложим в букет · бесплатно</p>
           </div>
         </fieldset>
@@ -1506,7 +1555,11 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
     <?php /* W96-fix2 (F4): FAQ-колонка шире (760→880) — вопрос-ответ читается
            без «узкой газетной» колонки; длинные вопросы не переносятся в 3 строки */ ?>
     <div class="wrap" style="max-width:880px">
+      <?php /* W104-α (M): FAQ — завершающий нумерал оглавления главной (09);
+             обёртка fc-row__heading включает тот же oversize-индекс за H2 */ ?>
+      <div class="fc-row__heading" data-numeral="<?= e(fc_next_numeral()) ?>">
       <h2 class="section-title"><?= e(setting('faq_title', 'Частые вопросы')) ?></h2>
+      </div>
       <?php
       /* FAQ редактируется из админки (критерий 16): 4 пары вопрос-ответ.
          Непустые пары рендерятся; JSON-LD строится из тех же полей — синхрон с видимым текстом. */

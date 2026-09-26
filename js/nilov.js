@@ -45,33 +45,29 @@
     updateSy();
   }
 
-  /* 1d. PWA-подсказка установки (fix R2 → W97-fixA A1).
+  /* 1d. PWA-подсказка установки (fix R2 → W97-fixA A1 → W104-β C1-D1 P0).
          iOS: честный текст-хинт на мобиле; Android: beforeinstallprompt → кнопка.
-         W97-fixA (A1), по валидированным дефектам критиков:
-           (б) показываем ТОЛЬКО со второй сессии — при первом визите лишь ставим
-               localStorage 'pwaHintVisited' (sessionStorage не переживает
-               перезагрузку вкладки/«Назад», поэтому именно localStorage);
-           (а) закрытие — «×» (aria-label «Закрыть подсказку») или «Понятно»;
-           (в) dismissal запоминается навсегда — 'nfInstallHintClosed'
-               (ключ отдельный от pwaHintVisited);
-           (г) на страницах с фиксированной нижней CTA товара
-               (.product-page__cta--sticky, mobile ≤820px) баннер ставится
-               ВЫШЕ кнопки «В корзину» (bottom = ctaTop + 10px), не перекрывая;
-               иначе — над таббаром, как раньше;
-           (д) пока на экране cookie-баннер — подсказку не показываем вовсе
-               (ждём решения: cookie-banner.js снимает .cookie-visible
-               и шлёт 'nf:cookie-done'). */
+         W97-fixA (A1): (б) только со второй сессии ('pwaHintVisited');
+         (а) закрытие — «×» или «Понятно»; (в) dismissal навсегда
+         ('pwaHintDismissed' + легаси 'nfInstallHintClosed'); (д) пока на
+         экране cookie-баннер — не показываем вовсе ('nf:cookie-done').
+         W104-β (этикет оверлеев, C1-D1 P0 «первый визит = два баннера над
+         продуктом», VLM 4.5/10):
+         • НЕ показываем на страницах товара/оформления (/product/*,
+           /order-thanks) — над sticky-CTA и формой ничему не место;
+         • компактный ЧИП (тёмная ink-пилюля системы marquee), не карточка;
+         • только после 25с на сайте (не бьёт по первому впечатлению);
+         • автоскрытие через 6с — без пометки dismissed (это не отказ),
+           раз в сессии (sessionStorage 'pwaHintShown'). */
   (function installHint() {
     if (window.matchMedia('(display-mode: standalone)').matches) return;
-    /* W99-fixG2 (H11): на /order-thanks подсказку установки НЕ показываем —
-       сразу после заказа не время агитировать за приложение (покупатель
-       ждёт подтверждения; и локальный стенд, и прод-роуты дают pathname
-       /order-thanks или /order-thanks.php). */
+    /* W104-β: страницы товара/оформления — без подсказки вовсе */
+    if (/^\/product(\/|$)/i.test(window.location.pathname)) return;
+    /* W99-fixG2 (H11): сразу после заказа не время агитировать за приложение */
     if (/^\/order-thanks(\.php)?$/i.test(window.location.pathname)) return;
+    /* W104-β: в этой сессии уже показывали (автоскрытие ≠ отказ) */
+    try { if (sessionStorage.getItem('pwaHintShown') === '1') return; } catch (e) {}
     try {
-      /* (в) dismissal навсегда: ключ 'pwaHintDismissed' (по ТЗ W97-fixA);
-         'nfInstallHintClosed' — легаси-ключ прошлых волн: кто уже закрыл подсказку,
-         ту её больше не увидит. */
       if (localStorage.getItem('pwaHintDismissed') === '1'
           || localStorage.getItem('nfInstallHintClosed') === '1') return;
       if (localStorage.getItem('pwaHintVisited') !== '1') {
@@ -84,21 +80,35 @@
     var isMobile = window.matchMedia('(max-width: 820px)').matches;
     if (!isMobile && !isIOS) return;
     var el = document.createElement('div');
-    el.style.cssText = 'position:fixed;bottom:64px;left:12px;right:12px;z-index:95;background:#fff;border:1px solid rgba(43,45,47,.14);border-radius:14px;padding:12px 14px;font-size:.85rem;box-shadow:0 14px 40px -18px rgba(43,45,47,.4);display:flex;gap:10px;align-items:center';
-    /* axe region-fix: плавающий баннер вне landmark'ов → делаем его явной region-областью */
+    /* W104-β: чип — ink-пилюля, одна строка текста с ellipsis, тихая
+       кнопка и «×»; не карточка поверх контента. Над таббаром
+       (mnav ≈ 61px + зазор) с учётом safe-area. */
+    el.style.cssText = 'position:fixed;bottom:calc(66px + env(safe-area-inset-bottom));left:12px;z-index:95'
+      + ';display:inline-flex;align-items:center;gap:8px;max-width:min(88vw,420px)'
+      + ';background:var(--ink,#1c1a1e);color:#fff;border-radius:999px'
+      + ';padding:9px 8px 9px 16px;font:500 .8rem/1.3 var(--font-ui,Montserrat,sans-serif)'
+      + ';box-shadow:0 14px 40px -16px rgba(28,26,30,.55)';
+    /* axe region-fix: плавающий баннер вне landmark'ов → явная region-область */
     el.setAttribute('role', 'region');
     el.setAttribute('aria-label', 'Установка приложения');
-    var hintText = null; /* K11 (W101): span с текстом подсказки — фраза про кнопку
-       «Установить справа» вставляется ТОЛЬКО по событию beforeinstallprompt
-       (в Firefox события нет — текст не обещает несуществующую кнопку). */
-    el.innerHTML = '<span style="flex:1">' + (isIOS
-      ? 'Добавьте «Nilov Flowers» на главный экран — откройте меню «Поделиться» и выберите «На экран Домой».'
-      : 'Установите «Nilov Flowers» как приложение — быстрый доступ к букетам с главного экрана.') + '</span>'
-      + '<button type="button" data-hint-action style="border:none;background:var(--rose-deep,#E2799C);color:#fff;border-radius:999px;padding:8px 14px;font:600 .8rem sans-serif;cursor:pointer;flex:none">Понятно</button>'
-      + '<button type="button" data-hint-close aria-label="Закрыть подсказку" title="Закрыть подсказку" style="border:none;background:transparent;color:#6e6a72;border-radius:999px;padding:8px 6px;font:600 1.05rem/1 sans-serif;cursor:pointer;flex:none;align-self:flex-start">×</button>';
+    var hintText = null; /* K11 (W101): фраза про кнопку «Установить справа» —
+       только по факту beforeinstallprompt (Firefox: события нет — не обещаем) */
+    el.innerHTML = '<span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (isIOS
+      ? 'Добавьте «Nilov Flowers» на экран «Домой» — меню «Поделиться»'
+      : 'Установите «Nilov Flowers» как приложение — быстрый доступ к букетам')
+      + '</span>'
+      + '<button type="button" data-hint-action style="flex:none;border:none;background:rgba(255,255,255,.16);color:#fff;border-radius:999px;padding:8px 14px;font:600 .78rem var(--font-ui,Montserrat,sans-serif);cursor:pointer">Понятно</button>'
+      + '<button type="button" data-hint-close aria-label="Закрыть подсказку" title="Закрыть подсказку" style="flex:none;border:none;background:transparent;color:rgba(255,255,255,.6);border-radius:999px;width:30px;height:30px;font:600 1rem/1 sans-serif;cursor:pointer">×</button>';
+    var autoHideTimer = 0;
     function dismiss() {
       try { localStorage.setItem('pwaHintDismissed', '1'); } catch (e) {}
+      clearTimeout(autoHideTimer);
       el.remove();
+    }
+    function autoHide() {
+      /* W104-β: тихо убрали через 6с — не отказ; в сессии больше не покажем */
+      clearTimeout(autoHideTimer);
+      autoHideTimer = setTimeout(function () { el.remove(); }, 6000);
     }
     hintText = el.querySelector('span');
     el.querySelector('[data-hint-close]').addEventListener('click', dismiss);
@@ -107,53 +117,22 @@
     if (!isIOS && 'onbeforeinstallprompt' in window) {
       window.addEventListener('beforeinstallprompt', function (e) {
         e.preventDefault();
-        /* K11 (W101): событие пришло — кнопка «Установить» реально появится,
-          упоминаем её в тексте (до этого текст про кнопку не обещал ничего). */
-        if (hintText) hintText.textContent = 'Установите «Nilov Flowers» как приложение — кнопка «Установить» справа.';
+        if (!el.isConnected) return;
+        /* K11 (W101): кнопка «Установить» реально появится — упоминаем её */
+        if (hintText) hintText.textContent = 'Установите «Nilov Flowers» как приложение — кнопка справа';
         actionBtn.textContent = 'Установить';
         actionBtn.onclick = function () { e.prompt(); dismiss(); };
       });
     }
-    /* (г) позиция: ВЫШЕ фиксированной нижней CTA товара, если она есть;
-       перерасчёт при resize и при скрытии/показе CTA (IntersectionObserver
-       product.php тогглит .product-page__cta--hidden у футера). */
-    function positionHint() {
-      var bottom = 64; /* по умолчанию — над таббаром (mnav ≈ 61px + зазор) */
-      var cta = document.querySelector('.product-page__cta--sticky');
-      if (cta) {
-        var st = getComputedStyle(cta);
-        if (st.position === 'fixed' && st.display !== 'none'
-            && !cta.classList.contains('product-page__cta--hidden')) {
-          var r = cta.getBoundingClientRect();
-          if (r.height > 0) {
-            /* верх CTA от низа вьюпорта + отступ 10px */
-            bottom = Math.max(bottom, Math.round(window.innerHeight - r.top + 10));
-          }
-        }
-      }
-      el.style.bottom = bottom + 'px';
-    }
-    window.addEventListener('resize', positionHint);
-    if (window.MutationObserver) {
-      var ctaEl = document.querySelector('.product-page__cta--sticky');
-      if (ctaEl) {
-        new MutationObserver(positionHint).observe(ctaEl, { attributes: true, attributeFilter: ['class'] });
-      }
-    }
-    /* (д) cookie-баннер на экране → подсказку не показываем вовсе;
-       повторяем попытку после решения (nf:cookie-done от cookie-banner.js).
-       W103 (F4, критик-3 P0-2): подсказка не должна занимать зону кнопки
-       «Отправить заказ» — (1) не показываем вовсе на /#order или с непустой
-       корзиной (ключ localStorage 'flowerCart' — формат cart.js: JSON-массив);
-       (2) если зона заказа (секция #order, только главная) оказывается в
-       вьюпорте ПОСЛЕ показа — убираем подсказку БЕЗ пометки dismissed
-       (жест не означал отказ; на других страницах она ещё пригодится).
+    /* W103 (F4): не показываем вовсе на /#order или с непустой корзиной
+       (ключ 'flowerCart' — формат cart.js: JSON-массив); если зона заказа
+       (секция #order, только главная) оказывается в вьюпорте ПОСЛЕ показа —
+       убираем подсказку БЕЗ пометки dismissed (жест не означал отказ).
        F4b: меряем СЕКЦИЮ #order, а не #orderForm — при пустой корзине
        cart-ui.js ставит форме display:none (нулевой rect: проверка
        «пересекает вьюпорт» всегда false, а IO по скрытому элементу
-       не срабатывает вовсе — оба гарда молча пропускали конфликт
-       с заглушкой «Корзина пока пуста»). Секция всегда в потоке
-       и содержит и заглушку, и форму — покрывает оба состояния. */
+       не срабатывает вовсе). Секция всегда в потоке и содержит и
+       заглушку, и форму — покрывает оба состояния. */
     function cartBusy() {
       try {
         var raw = localStorage.getItem('flowerCart');
@@ -174,21 +153,28 @@
       return r.height > 0 && r.top < window.innerHeight && r.bottom > 0;
     }
     var shown = false;
+    /* W104-β: 25с на сайте до показа (от старта скрипта); cookie-баннер
+       на экране → ждём решения и долёживаем остаток ожидания */
+    var T0 = performance.now();
+    var SHOW_AFTER = 25000;
     function tryShow() {
       if (shown) return;
-      if (document.body.classList.contains('cookie-visible')) {
-        document.addEventListener('nf:cookie-done', tryShow, { once: true });
-        return;
-      }
-      /* F4: якорь заказа открыт / корзина не пуста — подсказка не нужна */
-      if (window.location.hash === '#order' || cartBusy()) return;
-      shown = true;
+      var wait = Math.max(0, SHOW_AFTER - (performance.now() - T0));
       setTimeout(function () {
-        /* F4: пользователь мог доскроллить к заказу за эти 2.5 секунды */
+        if (shown) return;
+        if (document.body.classList.contains('cookie-visible')) {
+          document.addEventListener('nf:cookie-done', tryShow, { once: true });
+          return;
+        }
+        /* F4: якорь заказа открыт / корзина не пуста — подсказка не нужна */
+        if (window.location.hash === '#order' || cartBusy()) return;
+        shown = true;
+        try { sessionStorage.setItem('pwaHintShown', '1'); } catch (e) {}
+        /* F4: пользователь мог доскроллить к заказу за время ожидания */
         if (orderZoneIntersects()) return;
         document.body.appendChild(el);
-        positionHint();
-      }, 2500);
+        autoHide();
+      }, wait);
     }
     tryShow();
     /* F4: живое скрытие — секция заказа вошла в вьюпорт (в т.ч. по клику
@@ -198,7 +184,7 @@
       if (!zone || !('IntersectionObserver' in window)) return;
       new IntersectionObserver(function (entries, io) {
         for (var i = 0; i < entries.length; i++) {
-          if (entries[i].isIntersecting) { el.remove(); io.disconnect(); }
+          if (entries[i].isIntersecting) { clearTimeout(autoHideTimer); el.remove(); io.disconnect(); }
         }
       }, { threshold: 0 }).observe(zone);
     })();

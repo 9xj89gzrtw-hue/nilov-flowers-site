@@ -400,7 +400,7 @@ body.cookie-visible #cartToast{bottom:calc(258px + env(safe-area-inset-bottom))}
 @media(min-width:821px){body.cookie-visible #cartToast{bottom:130px}} /* W72 (obvious NEW): тост не под cookie-баннером (z80<z90, 100% cover) */
 @media(min-width:821px){#cartToast{bottom:28px}}
 @media(prefers-reduced-motion:reduce){#cartToast{transition:none}}
-.reveal{opacity:0;transform:translateY(18px);transition:opacity .6s ease,transform .6s ease}
+.reveal{opacity:0;transform:translateY(18px);transition:opacity .6s cubic-bezier(.22,1,.36,1),transform .6s cubic-bezier(.22,1,.36,1)}
 .reveal--visible{opacity:1;transform:none}
 @media(prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}html{scroll-behavior:auto}}
 
