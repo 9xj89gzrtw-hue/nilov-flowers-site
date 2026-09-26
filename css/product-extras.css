@@ -109,11 +109,12 @@
 .product-page__media:focus-visible{
   outline:3px solid var(--pink,#ff4ea2);outline-offset:2px;
 }
-/* Desktop: фото не выше 660px — H1/цена/CTA попадают в первый экран
-   (object-fit:cover у img уже есть — обрезка незаметна) */
+/* Desktop: фото не выше 760px — компромисс между «H1/цена в первом экране»
+   и кропом букетов (критик-8 P0-1: при 660px низ срезался на ~86px).
+   Продуктовые фото 3:4 (560→746) и 5:6 (560→658) — 760 покрывает оба без обрезки */
 @media(min-width:960px){
-  .product-gallery__slide img{max-height:660px}
-  .product-gallery__zoom{max-height:660px}
+  .product-gallery__slide img{max-height:760px}
+  .product-gallery__zoom{max-height:760px}
 }
 /* Стрелки галереи — SVG-шевроны (были текстовые ‹ ›); тап-зона 44px — five.css */
 .product-gallery__nav svg{width:20px;height:20px;display:block}

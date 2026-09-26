@@ -370,7 +370,7 @@ html{scroll-padding-bottom:230px}
 .product-gallery__nav{display:none;position:absolute;top:50%;transform:translateY(-50%);z-index:5;width:44px;height:44px;min-width:44px;border-radius:50%;border:1px solid var(--line);background:rgba(255,255,255,.94);color:var(--ink);font-size:1.1rem;cursor:pointer;place-items:center;box-shadow:0 6px 18px -10px rgba(43,45,47,.4)}
 .product-gallery__nav--l{left:8px}.product-gallery__nav--r{right:8px}
 @media(hover:hover){.product-gallery__nav{display:grid}}
-.product-gallery__slide img{width:100%;height:auto;aspect-ratio:4/4.8;object-fit:cover}
+.product-gallery__slide img{width:100%;height:auto;object-fit:cover} /* W103 (критик-8 P0-1): форс-кроп 4/4.8 резал низ букетов — натуральная пропорция */
 .product-gallery__slide--placeholder{display:grid;place-items:center;background:var(--bg-alt);aspect-ratio:4/4.8}
 .product-gallery__counter{position:absolute;bottom:14px;right:14px;background:rgba(255,255,255,.9);border-radius:999px;padding:4px 12px;font-size:.75rem;font-weight:600}
 /* W69 (жюри FAIL п.16): без z-index бейдж проигрывал paint-order opaque-фото viewport'а (оба positioned, z:auto, viewport позже в DOM) */
@@ -406,7 +406,7 @@ body.cookie-visible #cartToast{bottom:calc(258px + env(safe-area-inset-bottom))}
 
 /* ============ PRODUCT PAGE: hover zoom ============ */
 .product-page__media{cursor:zoom-in}
-.product-gallery__img{width:100%;height:auto;aspect-ratio:4/4.8;object-fit:cover;transition:transform .5s ease}
+.product-gallery__img{width:100%;height:auto;object-fit:cover;transition:transform .5s ease} /* W103: без форс-кропа */
 .product-page__media:hover .product-gallery__img{transform:scale(1.06)}
 .product-gallery__img-placeholder{display:grid;place-items:center;background:var(--bg-alt);aspect-ratio:4/4.8}
 

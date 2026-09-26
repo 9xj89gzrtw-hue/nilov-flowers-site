@@ -355,21 +355,26 @@
   function magneticHeroCta() {
     if (reducedMotion()) return;
     if (!window.matchMedia || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-    var cta = document.querySelector('.fc-hero__cta');
-    if (!cta || !cta.addEventListener) return;
+    /* W103 (критик-8 P0-2): магнит на все primary CTA — hero-пилюля
+       и премиум-кнопка (один механизм, R=6px, spring-возврат в CSS) */
+    var ctas = document.querySelectorAll('.fc-hero__cta, .fc-premium__cta');
+    if (ctas.length === 0) return;
     var R = 6; /* максимальное смещение, px */
-    cta.classList.add('will-magnet');
-    cta.addEventListener('mousemove', function (e) {
-      var r = cta.getBoundingClientRect();
-      if (!r.width || !r.height) return;
-      var dx = Math.max(-1, Math.min(1, (e.clientX - (r.left + r.width / 2)) / (r.width / 2)));
-      var dy = Math.max(-1, Math.min(1, (e.clientY - (r.top + r.height / 2)) / (r.height / 2)));
-      cta.style.transition = 'transform .07s linear';
-      cta.style.transform = 'translate(' + (dx * R).toFixed(1) + 'px,' + (dy * R).toFixed(1) + 'px)';
-    });
-    cta.addEventListener('mouseleave', function () {
-      cta.style.transition = 'transform .25s cubic-bezier(.22,1,.36,1)';
-      cta.style.transform = '';
+    ctas.forEach(function (cta) {
+      if (!cta.addEventListener) return;
+      cta.classList.add('will-magnet');
+      cta.addEventListener('mousemove', function (e) {
+        var r = cta.getBoundingClientRect();
+        if (!r.width || !r.height) return;
+        var dx = Math.max(-1, Math.min(1, (e.clientX - (r.left + r.width / 2)) / (r.width / 2)));
+        var dy = Math.max(-1, Math.min(1, (e.clientY - (r.top + r.height / 2)) / (r.height / 2)));
+        cta.style.transition = 'transform .07s linear';
+        cta.style.transform = 'translate(' + (dx * R).toFixed(1) + 'px,' + (dy * R).toFixed(1) + 'px)';
+      });
+      cta.addEventListener('mouseleave', function () {
+        cta.style.transition = 'transform .3s cubic-bezier(.34,1.56,.64,1)';
+        cta.style.transform = '';
+      });
     });
   }
 

@@ -435,13 +435,14 @@ img.product-card__img{background:var(--surface-subtle)}
 }
 .product-card:hover .product-card__badge--hit,
 .product-card:hover .product-card__badge--premium{transform:rotate(0deg)}
+.product-card:hover .product-card__badge--sale{transform:rotate(0deg)}
 .product-card__badge--hit{background:var(--amber);color:var(--ink)}
 .product-card__badge--premium{background:var(--ink);color:#fff}
 /* W103 (F1): вертикальные дорожки — комбинация бейджей не наезжает
    (2-й бейдж — 50px, 3-й — 88px от верха) */
 .product-card__badge ~ .product-card__badge{top:50px}
 .product-card__badge ~ .product-card__badge ~ .product-card__badge{top:88px}
-.product-card__badge--sale{background:var(--pink);color:var(--ink)}
+.product-card__badge--sale{background:var(--pink);color:var(--ink);transform:rotate(-3deg);border-radius:12px 12px 12px 3px;box-shadow:0 2px 0 rgba(28,26,30,.22);font-size:10.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;padding:5px 10px;transition:transform .2s cubic-bezier(.22,1,.36,1)}
 .product-card__badge--urgent{background:#fff;color:var(--ink);border:1.5px solid var(--ink)}
 .product-card__badge--deliv{background:var(--surface-warm);color:var(--ink-muted)}
 /* W103 (F4, критик-3 P2): «ПРЕМИУМ»/«ХИТ» обрезались на узких карточках
@@ -828,7 +829,7 @@ img.product-card__img{background:var(--surface-subtle)}
 .fc-product__thumb img{width:100%;height:100%;object-fit:cover}
 .fc-product__thumb[aria-current="true"],.fc-product__thumb.is-active{border-color:var(--pink)}
 .fc-product__price{font-weight:800;font-size:1.6rem;color:var(--ink);font-variant-numeric:tabular-nums;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
-.fc-product__price--old{color:var(--ink-muted);text-decoration:line-through;text-decoration-thickness:1.5px;font-weight:600;font-size:1.05rem}
+.fc-product__price--old{color:var(--ink-muted);text-decoration:line-through;text-decoration-thickness:1.5px;font-weight:400;font-size:1.05rem}
 .fc-product__price--discount{color:var(--pink)}
 .fc-product__cta{padding:16px 32px;font-size:1.05rem;min-height:52px}
 .fc-product__meta{display:grid;gap:12px;list-style:none;margin:12px 0 0;padding:0}
@@ -843,7 +844,7 @@ img.product-card__img{background:var(--surface-subtle)}
 /* Рестайл старой страницы товара (product.php до волны T2-d) */
 .product-page__name{font-family:var(--font-ui);font-weight:800;font-size:clamp(1.6rem,3.5vw,2.2rem);line-height:1.15;letter-spacing:-.01em}
 .product-page__price{font-weight:800;font-size:1.6rem}
-.product-page__price--old{color:var(--ink-muted);text-decoration-color:currentColor;font-weight:600}
+.product-page__price--old{color:var(--ink-muted);text-decoration-color:currentColor;font-weight:400}
 .product-page__price--discount{color:var(--pink)}
 .product-page__save-badge{background:var(--surface-warm);color:var(--ink)}
 .product-page__urgent-badge{background:#fff;color:var(--ink);border:1.5px solid var(--ink)}
@@ -1179,7 +1180,7 @@ body > div[role="region"][aria-label="Установка приложения"] 
       (< 18.66px bold): pink на белом 3.06:1 → --pink-deep 4.94:1
       (все три варианта класса — каталог, товар 5cv, товар legacy);
    в) счётчик корзины ~11px/700 белый на pink 3.06:1 → фон --pink-deep. */
-.product-card__badge--sale{background:var(--pink);color:var(--ink)}
+.product-card__badge--sale{background:var(--pink);color:var(--ink);transform:rotate(-3deg);border-radius:12px 12px 12px 3px;box-shadow:0 2px 0 rgba(28,26,30,.22);font-size:10.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;padding:5px 10px;transition:transform .2s cubic-bezier(.22,1,.36,1)}
 .product-card__price--discount,
 .fc-product__price--discount,
 .product-page__price--discount{color:var(--pink-deep)}
@@ -1576,6 +1577,7 @@ html{scroll-padding-top:96px}
 .fc-premium__price{font:700 2.8rem/1 var(--font-ui);color:var(--amber);letter-spacing:-.01em}
 .fc-premium__price-cur{font-size:.6em;font-weight:700}
 .fc-premium__cta{
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1),box-shadow .3s cubic-bezier(.34,1.56,.64,1);
   display:inline-flex;align-items:center;gap:10px;
   background:linear-gradient(135deg,#ff4ea2,#e03a8a);color:#fff;
   border-radius:16px;padding:15px 30px;min-height:52px;

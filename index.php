@@ -985,8 +985,12 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
         setting('section_hits_sub', 'Букеты, которые выбирают чаще всего'),
         $hitProducts, $cardCtx, '', 'hit', '', setting('section_hits_eyebrow', 'Выбор|покупателей'));
     endif; ?>
-    <?php foreach ($categoryRows as $cr): render_fc_row(
-        $cr['name'], '', $cr['items'], $cardCtx, '', '', $cr['slug']);
+    <?php /* W103 (критик-8 P0-3): H2-модуляция — eyebrow «капс|Playfair-курсив»
+       на каждой товарной секции (у хитов/бюджета уже были; здесь — категорийные
+       и апсейл, чтобы страница звучала не одной нотой) */ ?>
+    <?php foreach ($categoryRows as $ci => $cr): render_fc_row(
+        $cr['name'], '', $cr['items'], $cardCtx, '', '', $cr['slug'],
+        $ci === 0 ? setting('section_first_cat_eyebrow', 'Свежие поступления|каждое утро') : setting('section_cat_eyebrow', 'Собирают|наши флористы'));
     endforeach; ?>
   <?php endif; ?>
 
@@ -1056,7 +1060,8 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
        в карусели выглядит пусто; жёсткий фильтр, чтобы не зависеть от сида -->
   <?php if (count($addonProducts) >= 2): render_fc_row(
       setting('section_addons_title', 'Дополните букет'),
-      setting('section_addons_sub', ''), $addonProducts, $cardCtx);
+      setting('section_addons_sub', ''), $addonProducts, $cardCtx, '', '', '',
+      setting('section_addons_eyebrow', 'К букету|и без повода'));
   endif; ?>
 
   <!-- КАТАЛОГ -->
