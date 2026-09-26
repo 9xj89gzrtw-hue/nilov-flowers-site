@@ -62,11 +62,19 @@ try {
         FROM categories c JOIN products p ON p.category_id = c.id AND p.is_active = 1
         GROUP BY c.id ORDER BY MIN(c.sort), c.id');
     foreach ($catStmt->fetchAll() as $c) {
+        /* W103 (критик-9 P1): lastmod='' (категория без правок товаров) давал
+           strtotime('')=false → date(false)=TypeError под strict_types → молчаливый
+           catch обрывал цикл: в sitemap оставалась только первая категория. */
+        $catLm = null;
+        if (!empty($c['lastmod'])) {
+            $ts = strtotime((string)$c['lastmod']);
+            if ($ts !== false) $catLm = date('Y-m-d', $ts);
+        }
         $urls[] = [
             'loc' => $base . '/category/' . rawurlencode(slugify((string)$c['name'])),
             'priority' => '0.7',
             'changefreq' => 'weekly',
-            'lastmod' => $c['lastmod'] !== null ? date('Y-m-d', strtotime($c['lastmod'])) : null,
+            'lastmod' => $catLm,
         ];
     }
 } catch (Throwable $e) { /* старая БД без колонок/таблиц — не роняем sitemap */ }

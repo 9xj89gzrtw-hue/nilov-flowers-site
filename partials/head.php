@@ -28,7 +28,14 @@ if (isset($ogType) && $ogType === 'product' && isset($img) && is_string($img) &&
 } elseif (isset($ocImg) && is_string($ocImg) && $ocImg !== '') {
     $ogImageUrl = 'https://flowers.interfood-catering.ru' . $ocImg;
 } elseif (isset($pageDescription) && setting('hero_image') !== '') {
-    $ogImageUrl = 'https://flowers.interfood-catering.ru/img/uploads/' . rawurlencode(setting('hero_image'));
+    /* W103 (критик-9): hero_image теперь может быть путём от корня
+       (img/editorial/…) — не только именем из img/uploads/. Путь со слэшем —
+       URL-энкодим по сегментам, голое имя — старое поведение uploads. */
+    $__hi = str_replace('\\', '/', trim(setting('hero_image')));
+    $ogImageUrl = 'https://flowers.interfood-catering.ru'
+        . (strpos($__hi, '/') !== false
+            ? '/' . implode('/', array_map('rawurlencode', explode('/', $__hi)))
+            : '/img/uploads/' . rawurlencode($__hi));
 }
 ?>
 <meta charset="UTF-8">

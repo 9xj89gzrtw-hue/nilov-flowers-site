@@ -730,6 +730,9 @@ if (setting('tg_enabled', '1') === '1') {
     if ($__sa !== '') $__sameAs[] = $__sa;
 }
 $__sameAs = array_values(array_unique($__sameAs));
+/* W103 (критик-9 P0): открывающий тег отсутствовал — сырой JSON рендерился
+   видимым текстом над шапкой (закрывающий </script> был, открывающего нет) */
+?><script type="application/ld+json"><?php
 echo json_encode([
     '@context' => 'https://schema.org',
     '@type' => 'Florist',
