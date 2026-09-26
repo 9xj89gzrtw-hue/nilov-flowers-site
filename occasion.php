@@ -172,7 +172,7 @@ function render_occasion_card(array $p): void
                 <img class="product-card__img" src="<?= e($img) ?>" alt="<?= e($p['name']) ?>" loading="lazy" decoding="async">
               </picture>
             </a>
-            <?php if ($isSale): $offPct = (int)$p['price'] > 0 ? (int)round((1 - $price / (int)$p['price']) * 100) : 0; ?><span class="product-card__badge product-card__badge--sale"><?= e(setting('badge_sale_text', 'Скидка')) ?><?php if ($offPct > 0): ?> <?= $offPct ?>%<?php endif; ?></span><?php endif; ?>
+            <?php if ($isSale): $offPct = (int)$p['price'] > 0 ? (int)round((1 - $price / (int)$p['price']) * 100) : 0; ?><span class="product-card__badge product-card__badge--sale"><?php if ($offPct > 0): ?><span class="product-card__badge-word"><?= e(setting('badge_sale_text', 'Скидка')) ?> </span>&#8722;<?= $offPct ?>%<?php else: ?><?= e(setting('badge_sale_text', 'Скидка')) ?><?php endif; ?></span><?php endif; ?>
             <?php if ($isUrgent): ?><span class="product-card__badge product-card__badge--urgent"><?= e(setting('badge_urgent_text', 'Успеть сегодня')) ?></span><?php endif; ?>
             <?php if ($isHit): ?><span class="product-card__badge product-card__badge--hit"><?= e(setting('badge_hit_text', 'Хит')) ?></span><?php endif; ?>
             <?php if ($isPremium): ?><span class="product-card__badge product-card__badge--premium"><?= e(setting('badge_premium_text', 'Премиум')) ?></span><?php endif; ?>
@@ -187,7 +187,7 @@ function render_occasion_card(array $p): void
             <?php if (setting('feature_favorites', '1') === '1'): ?><button type="button" class="product-card__fav" data-fav-id="<?= (int)$p['id'] ?>" data-fav-name="<?= e($p['name']) ?>" aria-label="В избранное: <?= e($p['name']) ?>" title="В избранное">♡</button><?php endif; ?>
           </div>
           <div class="product-card__body">
-            <a class="product-card__name" href="<?= e($link) ?>"><?= e($p['name']) ?></a>
+            <?php /* W104: цена первой → имя (единый порядок карточек витрины) */ ?>
             <p class="product-card__price">
               <?php if ($isSale): ?>
                 <span class="product-card__price--old"><?= formatPrice((int)$p['price']) ?></span>
@@ -196,6 +196,7 @@ function render_occasion_card(array $p): void
                 <?= formatPrice($price) ?>
               <?php endif; ?>
             </p>
+            <a class="product-card__name" href="<?= e($link) ?>"><?= e($p['name']) ?></a>
           </div>
         </article>
     <?php

@@ -71,6 +71,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
         'citybar_text','city_label','search_placeholder','catalog_btn_text',
         'hero_promo_badge','hero_promo_title','hero_promo_text','hero_promo_btn_text','hero_promo_link','hero_promo_image',
         'hero_delivery_title','hero_delivery_text',
+        /* W104-a2: строки specifics в карточке доставки hero (пусто — строка не печатается) */
+        'hero_delivery_point_1','hero_delivery_point_2',
         'chips_price_low','chips_price_high',
         'section_hits_title','section_hits_sub','section_premium_title','section_premium_sub',
         'section_budget_title','section_addons_title','badge_hit_text','badge_premium_text',
@@ -84,6 +86,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
         'premium_title','premium_sub','premium_price_label','premium_cta_text',
         'footer_tagline','hero_ghost_text','hero_ghost_link',
         'section_hits_eyebrow','section_budget_eyebrow',
+        /* W104 (design-system): eyebrow каталога/поводов, oversize-нумералы
+           секций (data-numeral), подписи editorial-спек-чипов страницы товара */
+        'catalog_eyebrow','occasions_eyebrow',
+        'section_numeral_hits','section_numeral_premium','section_numeral_catalog','section_numeral_occasions',
+        'pdp_spec_captions',
         'occasions_title','stores_title','stores_sub',
         'stores_1_title','stores_1_text','stores_2_title','stores_2_text','stores_3_title','stores_3_text',
         'seo_text_title','seo_text_body',
@@ -432,6 +439,9 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
         <input class="input" id="cat-t" name="catalog_title" value="<?= sv('catalog_title', $s) !== '' ? sv('catalog_title', $s) : 'Каталог' ?>" maxlength="40">
         <label class="f" for="cat-s" style="margin-top:8px">Подпись каталога</label>
         <input class="input" id="cat-s" name="catalog_subtitle" value="<?= sv('catalog_subtitle', $s) !== '' ? sv('catalog_subtitle', $s) : 'Соберём и доставим букет в день заказа' ?>" maxlength="90">
+        <?php /* W104: eyebrow + нумерал каталога (единый компонент шапки секции) */ ?>
+        <label class="f" for="cat-eb" style="margin-top:8px">Eyebrow каталога («капс|курсив»)</label>
+        <input class="input" id="cat-eb" name="catalog_eyebrow" value="<?= sv('catalog_eyebrow', $s) !== '' ? sv('catalog_eyebrow', $s) : 'Весь|ассортимент' ?>" maxlength="60">
       </div>
       <div>
         <label class="f" for="ord-t">Заголовок формы заказа</label>
@@ -473,14 +483,14 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
       <div>
         <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
           <input type="checkbox" name="hero_promo_enabled" style="width:auto" <?= sv('hero_promo_enabled', $s) !== '0' ? 'checked' : '' ?>>
-          Жёлтая промо-карточка рядом с фото
+          Тёмная промо-карточка рядом с фото
         </label>
-        <label class="f" for="hp-badge" style="margin-top:8px">Бейдж на промо-карточке</label>
-        <input class="input" id="hp-badge" name="hero_promo_badge" value="<?= sv('hero_promo_badge', $s) !== '' ? sv('hero_promo_badge', $s) : 'Выгодно' ?>" maxlength="30">
-        <label class="f" for="hp-title" style="margin-top:8px">Заголовок промо-карточки</label>
-        <input class="input" id="hp-title" name="hero_promo_title" value="<?= sv('hero_promo_title', $s) !== '' ? sv('hero_promo_title', $s) : 'Цветы по подписке' ?>" maxlength="80">
+        <label class="f" for="hp-badge" style="margin-top:8px">Мета-подпись на промо-карточке (капс)</label>
+        <input class="input" id="hp-badge" name="hero_promo_badge" value="<?= sv('hero_promo_badge', $s) !== '' ? sv('hero_promo_badge', $s) : 'Всегда бесплатно' ?>" maxlength="30">
+        <label class="f" for="hp-title" style="margin-top:8px">Заголовок промо-карточки (Playfair-курсив)</label>
+        <input class="input" id="hp-title" name="hero_promo_title" value="<?= sv('hero_promo_title', $s) !== '' ? sv('hero_promo_title', $s) : 'Открытка в подарок' ?>" maxlength="80">
         <label class="f" for="hp-text" style="margin-top:8px">Текст промо-карточки</label>
-        <textarea class="input" id="hp-text" name="hero_promo_text" rows="2" maxlength="200"><?= sv('hero_promo_text', $s) !== '' ? sv('hero_promo_text', $s) : 'Регулярные букеты со скидкой до 20% — освежайте дом или радуйте близких каждую неделю' ?></textarea>
+        <textarea class="input" id="hp-text" name="hero_promo_text" rows="2" maxlength="200"><?= sv('hero_promo_text', $s) !== '' ? sv('hero_promo_text', $s) : 'Напишем ваш текст от руки и вложим в букет — бесплатно, в каждом заказе' ?></textarea>
         <div style="display:flex;gap:12px;margin-top:8px">
           <div style="flex:1">
             <label class="f" for="hp-btn">Кнопка на карточке</label>
@@ -495,12 +505,17 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
       <div>
         <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
           <input type="checkbox" name="hero_delivery_card_enabled" style="width:auto" <?= sv('hero_delivery_card_enabled', $s) !== '0' ? 'checked' : '' ?>>
-          Карточка «Доставка 1–2 часа» в hero
+          Карточка доставки в hero
         </label>
         <label class="f" for="hd-title" style="margin-top:8px">Заголовок карточки доставки</label>
-        <input class="input" id="hd-title" name="hero_delivery_title" value="<?= sv('hero_delivery_title', $s) !== '' ? sv('hero_delivery_title', $s) : 'Доставка 1–2 часа' ?>" maxlength="60">
+        <input class="input" id="hd-title" name="hero_delivery_title" value="<?= sv('hero_delivery_title', $s) !== '' ? sv('hero_delivery_title', $s) : 'Доставка в день заказа' ?>" maxlength="60">
         <label class="f" for="hd-text" style="margin-top:8px">Текст карточки доставки</label>
-        <textarea class="input" id="hd-text" name="hero_delivery_text" rows="2" maxlength="160"><?= sv('hero_delivery_text', $s) !== '' ? sv('hero_delivery_text', $s) : 'По Санкт-Петербургу в день заказа — оформите до 20:00' ?></textarea>
+        <textarea class="input" id="hd-text" name="hero_delivery_text" rows="2" maxlength="160"><?= sv('hero_delivery_text', $s) !== '' ? sv('hero_delivery_text', $s) : 'По Санкт-Петербургу — оформите до 20:00, привезём сегодня' ?></textarea>
+        <?php /* W104-a2: specifics карточки — 2 строки с amber-маркером (index.php) */ ?>
+        <label class="f" for="hd-p1" style="margin-top:8px">Строка-услуга №1 (с маркером)</label>
+        <input class="input" id="hd-p1" name="hero_delivery_point_1" value="<?= sv('hero_delivery_point_1', $s) !== '' ? sv('hero_delivery_point_1', $s) : 'Привезём сегодня за 2 часа' ?>" maxlength="60">
+        <label class="f" for="hd-p2" style="margin-top:8px">Строка-услуга №2 (с маркером)</label>
+        <input class="input" id="hd-p2" name="hero_delivery_point_2" value="<?= sv('hero_delivery_point_2', $s) !== '' ? sv('hero_delivery_point_2', $s) : 'Фото перед отправкой' ?>" maxlength="60">
         <p style="font-size:.78rem;color:var(--ink-soft);margin:8px 0 0">Ссылка кнопки промо-карточки: <code>#order</code> — к форме заказа, <code>#catalog</code> — к каталогу, или полный адрес страницы.</p>
       </div>
     </div>
@@ -622,6 +637,9 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
     <div style="margin-left:26px">
       <label class="f" for="oc-t">Заголовок блока поводов</label>
       <input class="input" id="oc-t" name="occasions_title" value="<?= sv('occasions_title', $s) !== '' ? sv('occasions_title', $s) : 'Цветы по поводам' ?>" maxlength="60">
+      <?php /* W104: eyebrow поводов (тот же формат «капс|курсив») */ ?>
+      <label class="f" for="oc-eb" style="margin-top:8px">Eyebrow блока поводов</label>
+      <input class="input" id="oc-eb" name="occasions_eyebrow" value="<?= sv('occasions_eyebrow', $s) !== '' ? sv('occasions_eyebrow', $s) : 'Повод|найти просто' ?>" maxlength="60">
       <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Сами плитки-поводы и их лендинги настраиваются в разделе «Поводы».</p>
     </div>
     <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500;margin-top:10px">
@@ -792,6 +810,27 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
         <label class="f" for="eb-budget" style="margin-top:8px">Eyebrow секции «До N ₽»</label>
         <input class="input" id="eb-budget" name="section_budget_eyebrow" value="<?= sv('section_budget_eyebrow', $s) !== '' ? sv('section_budget_eyebrow', $s) : 'Выгодно|каждый день' ?>" maxlength="60">
         <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Формат eyebrow: «капс|курсив» — до <code>|</code> заглавными буквами, после — курсивным серифом. Пустое поле скрывает надпись.</p>
+        <?php /* W104: oversize-нумералы секций (Playfair italic за заголовком) */ ?>
+        <p style="font-size:.85rem;font-weight:600;margin:14px 0 6px">Нумералы секций (крупный индекс за заголовком)</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <div style="flex:1;min-width:110px">
+            <label class="f" for="nm-hits">Хиты</label>
+            <input class="input" id="nm-hits" name="section_numeral_hits" value="<?= sv('section_numeral_hits', $s) !== '' ? sv('section_numeral_hits', $s) : '01' ?>" maxlength="4">
+          </div>
+          <div style="flex:1;min-width:110px">
+            <label class="f" for="nm-prem">Премиум</label>
+            <input class="input" id="nm-prem" name="section_numeral_premium" value="<?= sv('section_numeral_premium', $s) !== '' ? sv('section_numeral_premium', $s) : '02' ?>" maxlength="4">
+          </div>
+          <div style="flex:1;min-width:110px">
+            <label class="f" for="nm-cat">Каталог</label>
+            <input class="input" id="nm-cat" name="section_numeral_catalog" value="<?= sv('section_numeral_catalog', $s) !== '' ? sv('section_numeral_catalog', $s) : '03' ?>" maxlength="4">
+          </div>
+          <div style="flex:1;min-width:110px">
+            <label class="f" for="nm-occ">Поводы</label>
+            <input class="input" id="nm-occ" name="section_numeral_occasions" value="<?= sv('section_numeral_occasions', $s) !== '' ? sv('section_numeral_occasions', $s) : '04' ?>" maxlength="4">
+          </div>
+        </div>
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Полупрозрачные крупные цифры «01»…«04» за заголовками ключевых секций. Очистите поле — нумерал исчезнет.</p>
       </div>
       <div>
         <label class="f" for="ft-tagline">Крупная подпись футера (Playfair-курсив)</label>
@@ -935,6 +974,11 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
         <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 10px 26px">Показывает 3 других букета этой же категории (или случайные) — покупателю есть куда идти дальше, средний чек выше.</p>
         <label class="f" for="m-related-title">Заголовок блока рекомендаций</label>
         <input class="input" id="m-related-title" name="related_title" value="<?= sv('related_title', $s) !== '' ? sv('related_title', $s) : 'С этим берут' ?>" maxlength="60">
+        <?php /* W104: подписи editorial-спек-чипов страницы товара (значение
+               берётся из описания товара, подпись — эти 4 слова) */ ?>
+        <label class="f" for="pdp-caps" style="margin-top:8px">Подписи чипов на странице букета («|» — разделитель)</label>
+        <input class="input" id="pdp-caps" name="pdp_spec_captions" value="<?= sv('pdp_spec_captions', $s) !== '' ? sv('pdp_spec_captions', $s) : 'Размер|Свежесть|Повод|Состав' ?>" maxlength="60">
+        <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Четыре подписи под значениями на карточке букета: размер, свежесть, повод, состав.</p>
         <div style="margin:6px 0 10px 26px">
           <label class="f" for="slots-ta">Интервалы доставки (по одному в строке)</label>
           <textarea class="input" id="slots-ta" name="delivery_slots" rows="3" style="width:100%;font:inherit"><?= e(sv('delivery_slots', $s) !== '' ? sv('delivery_slots', $s) : "Утро 9:00–14:00\nДень 14:00–18:00\nВечер 18:00–22:00") ?></textarea>

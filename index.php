@@ -376,7 +376,7 @@ function render_product_card(array $p, array $ctx): void
                 <svg viewBox="0 0 80 94" style="width:30%;margin:auto;color:var(--blue)" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="40" cy="30" r="11"/><circle cx="26" cy="38" r="8"/><circle cx="54" cy="38" r="8"/><path d="M40 41v20M40 61c-8 6-14 14-16 25M40 61c8 6 14 14 16 25"/></svg>
               <?php endif; ?>
             </a>
-            <?php if ($isSale): $offPct = (int)$p['price'] > 0 ? (int)round((1 - $price / (int)$p['price']) * 100) : 0; ?><span class="product-card__badge product-card__badge--sale"><?= e(setting('badge_sale_text', 'Скидка')) ?><?php if ($offPct > 0): ?> <?= $offPct ?>%<?php endif; ?></span><?php endif; ?>
+            <?php if ($isSale): $offPct = (int)$p['price'] > 0 ? (int)round((1 - $price / (int)$p['price']) * 100) : 0; ?><span class="product-card__badge product-card__badge--sale"><?php if ($offPct > 0): ?><span class="product-card__badge-word"><?= e(setting('badge_sale_text', 'Скидка')) ?> </span>&#8722;<?= $offPct ?>%<?php else: ?><?= e(setting('badge_sale_text', 'Скидка')) ?><?php endif; ?></span><?php endif; ?>
             <?php if ((int)($p['is_urgent'] ?? 0) === 1): ?><span class="product-card__badge product-card__badge--urgent"><?= e(setting('badge_urgent_text', 'Успеть сегодня')) ?></span><?php endif; ?>
             <?php /* Бейджи 5cv: «Хит» (amber) и «Премиум» (ink) — по флагам товара */ ?>
             <?php if ($isHit): ?><span class="product-card__badge product-card__badge--hit"><?= e(setting('badge_hit_text', 'Хит')) ?></span><?php endif; ?>
@@ -393,8 +393,8 @@ function render_product_card(array $p, array $ctx): void
             <?php if ($ctx['featFavorites']): ?><button type="button" class="product-card__fav" data-fav-id="<?= (int)$p['id'] ?>" data-fav-name="<?= e($p['name']) ?>" aria-label="В избранное: <?= e($p['name']) ?>" title="В избранное">♡</button><?php endif; ?>
           </div>
           <div class="product-card__body">
-            <span class="product-card__cat"><?= e($p['category_name'] ?? '') ?></span>
-            <a class="product-card__name" href="<?= e($link) ?>"><?= e($p['name']) ?></a>
+            <?php /* W104: ЦЕНА ПЕРВОЙ (20/800 ink) → имя 13.5/500 — 5cv-принцип
+                   «цена ведёт карточку»; категория из карточки убрана */ ?>
             <p class="product-card__price">
               <?php if ($isSale): ?>
                 <span class="product-card__price--old"><?= formatPrice((int)$p['price']) ?></span>
@@ -403,11 +403,24 @@ function render_product_card(array $p, array $ctx): void
                 <?= formatPrice($price) ?>
               <?php endif; ?>
             </p>
+            <a class="product-card__name" href="<?= e($link) ?>"><?= e($p['name']) ?></a>
             <?php if ((int)($p['is_urgent'] ?? 0) === 1): ?>
-            <p class="product-card__urgent-note">Соберём и доставим в течение дня — количество ограничено</p>
+            <?php /* W104: зелёная строка доставки #1B7A43 с zap-иконкой (стили five.css) */ ?>
+            <p class="product-card__urgent-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>Соберём и доставим в течение дня — количество ограничено</p>
             <?php endif; ?>
           </div>
         </article>
+    <?php
+}
+
+/* W104: eyebrow «капс|Playfair-курсив» — единый компонент шапки секции
+   (render_fc_row + каталог + поводы). Пустая строка — не печатаем. */
+function render_fc_eyebrow(string $eyebrow): void
+{
+    if ($eyebrow === '') return;
+    [$ebCaps, $ebItalic] = array_pad(explode('|', $eyebrow, 2), 2, '');
+    ?>
+    <p class="fc-row__eyebrow"><?= e($ebCaps) ?><?= $ebItalic !== '' ? ' <em>' . e($ebItalic) . '</em>' : '' ?></p>
     <?php
 }
 
@@ -417,7 +430,7 @@ function render_product_card(array $p, array $ctx): void
    W97-fixB3b (B3b-1f): $catSlug — у категорийных каруселей «Смотреть все» ведёт на
    посадочную /category/{slug} (SEO: у категории появился собственный URL),
    data-tab больше не печатается. */
-function render_fc_row(string $title, string $sub, array $items, array $ctx, string $tabId = '', string $chip = '', string $catSlug = '', string $eyebrow = ''): void
+function render_fc_row(string $title, string $sub, array $items, array $ctx, string $tabId = '', string $chip = '', string $catSlug = '', string $eyebrow = '', string $numeral = ''): void
 {
     global $fcProdSeq;
     if ($items === []) return;
@@ -432,13 +445,11 @@ function render_fc_row(string $title, string $sub, array $items, array $ctx, str
     <section class="fc-section<?= $tint ?>"><div class="wrap">
       <div class="fc-row"><div class="fc-row__head">
         <?php /* W103 (F1): обёртка heading — eyebrow над H2 не ломает flex-строку
-               шапки секции (заголовок+подпись группируются в один блок) */ ?>
-        <div class="fc-row__heading">
-        <?php if ($eyebrow !== ''):
-            /* «Капс|курсив»: до | — Montserrat caps, после — Playfair italic */
-            [$ebCaps, $ebItalic] = array_pad(explode('|', $eyebrow, 2), 2, ''); ?>
-        <p class="fc-row__eyebrow"><?= e($ebCaps) ?><?= $ebItalic !== '' ? ' <em>' . e($ebItalic) . '</em>' : '' ?></p>
-        <?php endif; ?>
+               шапки секции (заголовок+подпись группируются в один блок).
+               W104: data-numeral — oversize-индекс секции за заголовком (::before,
+               five.css). */ ?>
+        <div class="fc-row__heading"<?= $numeral !== '' ? ' data-numeral="' . e($numeral) . '"' : '' ?>>
+        <?php render_fc_eyebrow($eyebrow); ?>
         <h2 class="fc-row__title"><?= e($title) ?></h2>
         <?php if ($sub !== ''): ?><p class="fc-row__sub"><?= e($sub) ?></p><?php endif; ?>
         </div>
@@ -865,9 +876,10 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
                 стрелкой — было три конкурирующих кнопочных элемента (критик-1) */ ?>
         <div class="fc-hero__actions">
         <?php if ($heroBtn): ?>
-        <?php /* W97-fixB2 (B2-5в): розовая версия главной CTA — модификатор + база fc-btn
-                (стили придёт волной CSS; текст/ссылку не меняем) */ ?>
-        <a class="fc-btn fc-hero__cta fc-hero__cta--pink" href="<?= e($heroBtnLink) ?>">
+        <?php /* W104: primary CTA на фото-фоне — БЕЛАЯ пилюля с ink-текстом
+                (была розовая градиентная — «дешёвый детский магазин»);
+                магнитный эффект js/five.js (.fc-hero__cta) сохранён */ ?>
+        <a class="fc-btn fc-hero__cta" href="<?= e($heroBtnLink) ?>">
           <?= e($heroBtnText) ?>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </a>
@@ -909,12 +921,41 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
           <a class="fc-hero__promo-btn" href="<?= e(safe_url(setting('hero_promo_link', '#catalog'))) ?>"><?= e(setting('hero_promo_btn_text', 'Выбрать букет')) ?></a>
         </div>
         <?php endif; ?>
-        <?php /* Карточка доставки: сроки по городу (W96-fix1/F4 — без обещания «1–2 часа») */ ?>
+        <?php /* Карточка доставки (W104-a2): ink line-трек «машина → фото → дверь»
+           (мини-диаграмма stroke 1.5, анимация пунктира — five.css под reduced-motion)
+           + 2 строки specifics из настроек hero_delivery_point_1/2 (пусто — строка
+           не печатается). Заголовок/пояснение — прежние hero_delivery_title/text. */ ?>
         <?php if ($heroDeliveryOn): ?>
+        <?php
+        $heroDeliveryPoints = [];
+        for ($hdp = 1; $hdp <= 2; $hdp++) {
+            $hdpVal = trim(setting('hero_delivery_point_' . $hdp, $hdp === 1 ? 'Привезём сегодня за 2 часа' : 'Фото перед отправкой'));
+            if ($hdpVal !== '') {
+                $heroDeliveryPoints[] = $hdpVal;
+            }
+        }
+        ?>
         <div class="fc-hero__delivery">
-          <span class="fc-hero__delivery-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 6h13v9H1zM14 9h4.5L21 12v3h-7z"/><circle cx="5.5" cy="17.5" r="1.8"/><circle cx="17.5" cy="17.5" r="1.8"/></svg></span>
+          <span class="fc-hero__delivery-track" aria-hidden="true"><svg viewBox="0 0 158 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <?php /* машина (сборка) */ ?>
+            <g transform="translate(0,3) scale(.75)"><path d="M14 17V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h1.2"/><path d="M15 18H9.4"/><path d="M18.2 18H21a1 1 0 0 0 1-1v-4.2a1 1 0 0 0-.3-.7l-3.6-3.5a1 1 0 0 0-.7-.3H14"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></g>
+            <path class="fc-hero__delivery-dash" d="M22 12H61"/>
+            <?php /* фото (одобрение) */ ?>
+            <g transform="translate(66,3) scale(.75)"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></g>
+            <path class="fc-hero__delivery-dash" d="M88 12H127"/>
+            <path d="M127 8.8l3.2 3.2-3.2 3.2"/>
+            <?php /* дверь (получатель) */ ?>
+            <g transform="translate(136,3) scale(.75)"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M9 21v-7h6v7"/></g>
+          </svg></span>
           <span class="fc-hero__delivery-body">
           <span class="fc-hero__delivery-title"><?= e(setting('hero_delivery_title', 'Доставка в день заказа')) ?></span>
+          <?php if ($heroDeliveryPoints !== []): ?>
+          <ul class="fc-hero__delivery-points">
+            <?php foreach ($heroDeliveryPoints as $hdpText): ?>
+            <li><?= e($hdpText) ?></li>
+            <?php endforeach; ?>
+          </ul>
+          <?php endif; ?>
           <span class="fc-hero__delivery-text"><?= e(setting('hero_delivery_text', 'По Санкт-Петербургу — оформите до 20:00, привезём сегодня')) ?></span>
           </span>
         </div>
@@ -961,15 +1002,51 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
   </div>
   <?php endif; ?>
 
-  <!-- ЧИПЫ ЦЕН (5cv): Хиты / До N / N–M / От M / Премиум — фильтруют каталог (js/five.js) -->
+  <!-- ЧИПЫ ЦЕН (5cv → W104): пастельные плитки-навигация с счётчиками.
+       Хиты / До N / N–M / От M / Премиум — фильтруют каталог (js/five.js +
+       catalog-filter.js по data-chip; контракт классов не менялся).
+       Счётчики считаем здесь же по тем же правилам, что фильтр: low ≤ N,
+       N ≤ mid ≤ M, high ≥ M (границы принадлежат обоим диапазонам). -->
   <?php if ($featChips): ?>
+  <?php
+  $cntHit = 0; $cntLow = 0; $cntMid = 0; $cntHigh = 0; $cntPremium = 0;
+  foreach ($products as $pc) {
+      $pprice = productPrice($pc);
+      if ((int)($pc['is_hit'] ?? 0) === 1) { $cntHit++; }
+      if ((int)($pc['is_premium'] ?? 0) === 1) { $cntPremium++; }
+      if ($pprice <= $chipsN) { $cntLow++; }
+      if ($pprice >= $chipsN && $pprice <= $chipsM) { $cntMid++; }
+      if ($pprice >= $chipsM) { $cntHigh++; }
+  }
+  $pluralBuket = static function (int $n): string {
+      $n10 = $n % 10; $n100 = $n % 100;
+      if ($n10 === 1 && $n100 !== 11) return 'букет';
+      if ($n10 >= 2 && $n10 <= 4 && ($n100 < 12 || $n100 > 14)) return 'букета';
+      return 'букетов';
+  };
+  ?>
   <div class="wrap">
     <div class="fc-chips" id="fcChips">
-      <button type="button" class="fc-chip" data-chip="hit" aria-pressed="false">Хиты</button>
-      <button type="button" class="fc-chip" data-chip="low" data-max="<?= $chipsN ?>" aria-pressed="false">До <?= formatSum($chipsN) ?> ₽</button>
-      <button type="button" class="fc-chip" data-chip="mid" data-min="<?= $chipsN ?>" data-max="<?= $chipsM ?>" aria-pressed="false"><?= formatSum($chipsN) ?>–<?= formatSum($chipsM) ?> ₽</button>
-      <button type="button" class="fc-chip" data-chip="high" data-min="<?= $chipsM ?>" aria-pressed="false">От <?= formatSum($chipsM) ?> ₽</button>
-      <button type="button" class="fc-chip" data-chip="premium" aria-pressed="false">Премиум</button>
+      <button type="button" class="fc-chip fc-chip--hit" data-chip="hit" aria-pressed="false">
+        <span class="fc-chip__title">Хиты</span>
+        <span class="fc-chip__count"><?= $cntHit ?>&nbsp;<?= e($pluralBuket($cntHit)) ?></span>
+      </button>
+      <button type="button" class="fc-chip fc-chip--low" data-chip="low" data-max="<?= $chipsN ?>" aria-pressed="false">
+        <span class="fc-chip__title">До&nbsp;<?= formatSum($chipsN) ?>&nbsp;₽</span>
+        <span class="fc-chip__count"><?= $cntLow ?>&nbsp;<?= e($pluralBuket($cntLow)) ?></span>
+      </button>
+      <button type="button" class="fc-chip fc-chip--mid" data-chip="mid" data-min="<?= $chipsN ?>" data-max="<?= $chipsM ?>" aria-pressed="false">
+        <span class="fc-chip__title"><?= formatSum($chipsN) ?>–<?= formatSum($chipsM) ?>&nbsp;₽</span>
+        <span class="fc-chip__count"><?= $cntMid ?>&nbsp;<?= e($pluralBuket($cntMid)) ?></span>
+      </button>
+      <button type="button" class="fc-chip fc-chip--high" data-chip="high" data-min="<?= $chipsM ?>" aria-pressed="false">
+        <span class="fc-chip__title">От&nbsp;<?= formatSum($chipsM) ?>&nbsp;₽</span>
+        <span class="fc-chip__count"><?= $cntHigh ?>&nbsp;<?= e($pluralBuket($cntHigh)) ?></span>
+      </button>
+      <button type="button" class="fc-chip fc-chip--premium" data-chip="premium" aria-pressed="false">
+        <span class="fc-chip__title">Премиум</span>
+        <span class="fc-chip__count"><?= $cntPremium ?>&nbsp;<?= e($pluralBuket($cntPremium)) ?></span>
+      </button>
       <span class="fc-chips__count" aria-live="polite" style="flex:none;align-self:center;white-space:nowrap;font-size:.85rem;font-weight:600;color:var(--ink-muted)"></span>
     </div>
   </div>
@@ -983,7 +1060,8 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
     <?php if ($featSectionHits): render_fc_row(
         setting('section_hits_title', 'Хиты продаж'),
         setting('section_hits_sub', 'Букеты, которые выбирают чаще всего'),
-        $hitProducts, $cardCtx, '', 'hit', '', setting('section_hits_eyebrow', 'Выбор|покупателей'));
+        $hitProducts, $cardCtx, '', 'hit', '', setting('section_hits_eyebrow', 'Выбор|покупателей'),
+        setting('section_numeral_hits', '01'));
     endif; ?>
     <?php /* W103 (критик-8 P0-3): H2-модуляция — eyebrow «капс|Playfair-курсив»
        на каждой товарной секции (у хитов/бюджета уже были; здесь — категорийные
@@ -1031,7 +1109,7 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
           </a>
           <?php endforeach; ?>
         </div>
-        <div class="fc-premium__info">
+        <div class="fc-premium__info" data-numeral="<?= e(setting('section_numeral_premium', '02')) ?>">
           <h2 class="fc-premium__title"><?= e(setting('premium_title', 'Для особых случаев')) ?></h2>
           <p class="fc-premium__sub"><?= e(setting('premium_sub', 'Крупные композиции из гортензий, пионов и орхидей — когда впечатление важнее бюджета')) ?></p>
           <p class="fc-premium__price-row">
@@ -1084,9 +1162,16 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
   <?php $fcProdSeq++; ?>
   <section class="fc-section<?= ($fcProdSeq % 2 === 0) ? ' fc-section--tint' : '' ?>" id="catalog">
     <div class="wrap">
+      <?php /* W104: единый компонент шапки товарной секции — eyebrow + H2 +
+             oversize-нумерал (data-numeral), «Смотреть все» здесь не нужен —
+             это сам каталог. */ ?>
       <div class="fc-row__head">
+        <div class="fc-row__heading" data-numeral="<?= e(setting('section_numeral_catalog', '03')) ?>">
+        <?php render_fc_eyebrow(setting('catalog_eyebrow', 'Весь|ассортимент')); ?>
         <h2 class="fc-row__title"><?= e(setting('catalog_title', 'Каталог')) ?></h2>
-        <p class="fc-row__sub"><?= e(setting('catalog_subtitle', 'Соберём и доставим букет в день заказа')) ?></p>
+        <?php $catalogSub = setting('catalog_subtitle', 'Соберём и доставим букет в день заказа'); ?>
+        <?php if ($catalogSub !== ''): ?><p class="fc-row__sub"><?= e($catalogSub) ?></p><?php endif; ?>
+        </div>
       </div>
       <div class="catalog-tabs" id="catalogTabs" role="group" aria-label="Фильтр каталога по категориям">
         <button type="button" class="catalog-tabs__tab is-active" aria-pressed="true" data-category-id="all">Все</button>
@@ -1156,8 +1241,12 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
   <?php if ($occTiles !== []): ?>
   <section class="fc-section" id="occasions">
     <div class="wrap">
+      <?php /* W104: шапка поводов — единый компонент (eyebrow + нумерал за H2) */ ?>
       <div class="fc-row__head">
+        <div class="fc-row__heading" data-numeral="<?= e(setting('section_numeral_occasions', '04')) ?>">
+        <?php render_fc_eyebrow(setting('occasions_eyebrow', 'Повод|найти просто')); ?>
         <h2 class="fc-row__title"><?= e(setting('occasions_title', 'Цветы по поводам')) ?></h2>
+        </div>
       </div>
       <div class="fc-occasions">
         <?php /* W103 (F1): плитки — фото с duotone-эффектом (CSS) или типографические

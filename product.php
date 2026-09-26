@@ -304,22 +304,19 @@ $metaIcons = [
 /* Гарантии: фото → камера, свежесть → цветок, остальное → щит */
 $trustIconKeys = ['camera', 'flower', 'shield'];
 
-/* W103/F3: иконки спек-чипов — lucide-стиль, stroke 2, currentColor (без emoji:
-   «бонусы оформлены emoji — дёшево» из ревью). Размер/цвет — .pdp-specs__icon. */
-$specIcons = [
-    'ruler' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.3 8.7 15.3 2.7a1.1 1.1 0 0 0-1.9-.4L3 12.6a1.1 1.1 0 0 0 .3 1.8l6 3a1.1 1.1 0 0 0 1.4-.3l10-6.4a1.1 1.1 0 0 0 .6-1.9z"/><path d="m7.5 10.5 2 2"/><path d="m10.5 7.5 2 2"/><path d="m13.5 4.5 2 2"/><path d="m4.5 13.5 2 2"/></svg>',
-    'clock' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>',
-    'tag' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></svg>',
-    'sprout' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/></svg>',
-];
+/* W104: соответствие ключа чипа → индекс подписи в pdp_spec_captions */
+$specCaptionKeys = ['ruler' => 0, 'clock' => 1, 'tag' => 2, 'sprout' => 3];
 
-/* W103/F3 (апгрейд PDP): спек-чипы из описания — «состав спрятан в тексте —
-   вынести в чипы» (ревью). Парсинг консервативный: нет устойчивой фразы — нет
-   чипа, никаких заглушек. Диапазон — первая группа «N–M» после ключевого
-   слова; свежесть — «стоит/живёт/цветёт/свежесть N–M дней» (+ «в вазе», если
-   фраза в том же предложении); повод — «Повод: …» (иначе «Подходит для …»,
-   пункты в родительном → чип «Для …»), первые 3 пункта; состав — «Состав: …»,
-   первые 2 пункта (скобочные уточнения срезаем). */
+/* W103/F3 → W104: спек-чипы из описания — editorial-формат: значение
+   Playfair italic + подпись Montserrat caps 10px muted (иконки убраны —
+   «заливные теги» выглядели дёшево). Подписи — setting pdp_spec_captions
+   «Размер|Свежесть|Повод|Состав». Парсинг консервативный: нет устойчивой
+   фразы — нет чипа, никаких заглушек. Диапазон — первая группа «N–M» после
+   ключевого слова; свежесть — «стоит/живёт/цветёт/свежесть N–M дней»
+   (+ «в вазе», если фраза в том же предложении); повод — «Повод: …»
+   (иначе «Подходит для …», пункты в родительном → чип «Для …»), первые
+   3 пункта; состав — «Состав: …», первые 2 пункта (скобочные уточнения
+   срезаем). */
 function pdp_range_norm(string $r): string
 {
     /* «7 - 10» / «7 — 10» → «7–10» (en-dash, без пробелов) */
@@ -466,7 +463,7 @@ function render_related_card(array $rp): void
                 <svg viewBox="0 0 80 94" style="width:30%;margin:auto;color:var(--blue)" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="40" cy="30" r="11"/><circle cx="26" cy="38" r="8"/><circle cx="54" cy="38" r="8"/><path d="M40 41v20M40 61c-8 6-14 14-16 25M40 61c8 6 14 14 16 25"/></svg>
               <?php endif; ?>
             </a>
-            <?php if ($rSale): $rPct = (int)$rp['price'] > 0 ? (int)round((1 - $rPrice / (int)$rp['price']) * 100) : 0; ?><span class="product-card__badge product-card__badge--sale"><?= e(setting('badge_sale_text', 'Скидка')) ?><?php if ($rPct > 0): ?> <?= $rPct ?>%<?php endif; ?></span><?php endif; ?>
+            <?php if ($rSale): $rPct = (int)$rp['price'] > 0 ? (int)round((1 - $rPrice / (int)$rp['price']) * 100) : 0; ?><span class="product-card__badge product-card__badge--sale"><?php if ($rPct > 0): ?><span class="product-card__badge-word"><?= e(setting('badge_sale_text', 'Скидка')) ?> </span>&#8722;<?= $rPct ?>%<?php else: ?><?= e(setting('badge_sale_text', 'Скидка')) ?><?php endif; ?></span><?php endif; ?>
             <?php if ($rUrgent): ?><span class="product-card__badge product-card__badge--urgent"><?= e(setting('badge_urgent_text', 'Успеть сегодня')) ?></span><?php endif; ?>
             <?php if ($rHit): ?><span class="product-card__badge product-card__badge--hit"><?= e(setting('badge_hit_text', 'Хит')) ?></span><?php endif; ?>
             <?php if ($rPremium): ?><span class="product-card__badge product-card__badge--premium"><?= e(setting('badge_premium_text', 'Премиум')) ?></span><?php endif; ?>
@@ -479,7 +476,7 @@ function render_related_card(array $rp): void
             <?php if (setting('feature_favorites', '1') === '1'): ?><button type="button" class="product-card__fav" data-fav-id="<?= (int)$rp['id'] ?>" data-fav-name="<?= e($rp['name']) ?>" aria-label="В избранное: <?= e($rp['name']) ?>" title="В избранное">♡</button><?php endif; ?>
           </div>
           <div class="product-card__body">
-            <a class="product-card__name" href="<?= e($rLink) ?>"><?= e($rp['name']) ?></a>
+            <?php /* W104: цена первой → имя (единый порядок карточек витрины) */ ?>
             <p class="product-card__price">
               <?php if ($rSale): ?>
                 <span class="product-card__price--old"><?= formatPrice((int)$rp['price']) ?></span>
@@ -488,6 +485,7 @@ function render_related_card(array $rp): void
                 <?= formatPrice($rPrice) ?>
               <?php endif; ?>
             </p>
+            <a class="product-card__name" href="<?= e($rLink) ?>"><?= e($rp['name']) ?></a>
           </div>
         </article>
     <?php
@@ -653,7 +651,7 @@ $breadcrumbItems[] = ['@type' => 'ListItem', 'position' => count($breadcrumbItem
           <?php /* Бейджи 5cv в инфо-колонке: те же классы, что на витрине (position:static — пилюли в ряд) */ ?>
           <?php if ($isHit || $isPremium || $isUrgent || $isSale): ?>
           <p style="display:flex;gap:8px;flex-wrap:wrap;margin:0">
-            <?php if ($isSale): ?><span class="product-card__badge product-card__badge--sale" style="position:static"><?= e(setting('badge_sale_text', 'Скидка')) ?><?php if ($offPct > 0): ?> <?= $offPct ?>%<?php endif; ?></span><?php endif; ?>
+            <?php if ($isSale): ?><span class="product-card__badge product-card__badge--sale" style="position:static"><?php if ($offPct > 0): ?><span class="product-card__badge-word"><?= e(setting('badge_sale_text', 'Скидка')) ?> </span>&#8722;<?= $offPct ?>%<?php else: ?><?= e(setting('badge_sale_text', 'Скидка')) ?><?php endif; ?></span><?php endif; ?>
             <?php if ($isHit): ?><span class="product-card__badge product-card__badge--hit" style="position:static"><?= e(setting('badge_hit_text', 'Хит')) ?></span><?php endif; ?>
             <?php if ($isPremium): ?><span class="product-card__badge product-card__badge--premium" style="position:static"><?= e(setting('badge_premium_text', 'Премиум')) ?></span><?php endif; ?>
             <?php if ($isUrgent): ?><span class="product-card__badge product-card__badge--urgent" style="position:static"><?= e(setting('badge_urgent_text', 'Успеть сегодня')) ?></span><?php endif; ?>
@@ -673,9 +671,17 @@ $breadcrumbItems[] = ['@type' => 'ListItem', 'position' => count($breadcrumbItem
                      парсинг без совпадений → блока нет целиком (никаких заглушек) */ ?>
           <?php $specChips = pdp_spec_chips((string)$product['description']); ?>
           <?php if ($specChips !== []): ?>
+          <?php /* W104: editorial-чипы — значение Playfair italic + подпись caps muted
+                     (стили product-extras.css); подписи — setting pdp_spec_captions */ ?>
+          <?php $specCaptions = array_pad(explode('|', setting('pdp_spec_captions', 'Размер|Свежесть|Повод|Состав'), 4), 4, ''); ?>
           <ul class="pdp-specs" aria-label="Ключевые характеристики">
-            <?php foreach ($specChips as [$chipIcon, $chipLabel]): ?>
-            <li class="pdp-specs__chip"><span class="pdp-specs__icon"><?= $specIcons[$chipIcon] ?></span><span><?= e($chipLabel) ?></span></li>
+            <?php foreach ($specChips as [$chipKey, $chipLabel]): ?>
+            <?php $capIdx = $specCaptionKeys[$chipKey] ?? null; ?>
+            <?php $cap = $capIdx !== null ? trim($specCaptions[$capIdx] ?? '') : ''; ?>
+            <li class="pdp-specs__chip">
+              <span class="pdp-specs__value"><?= e($chipLabel) ?></span>
+              <?= $cap !== '' ? '<span class="pdp-specs__caption">' . e($cap) . '</span>' : '' ?>
+            </li>
             <?php endforeach; ?>
           </ul>
           <?php endif; ?>

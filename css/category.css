@@ -46,15 +46,15 @@
 }
 .cat-chip:hover{background:#eceaf0;border-color:var(--ink,#1c1a1e)}
 .cat-chip:active{transform:scale(.97)}
-/* Активный — как у чипов цен главной: розовая рамка + глубокий розовый
-   текст на белом (#cc2f7a на #fff = 4.94:1; рамка #ff4ea2 ≥3 для UI). */
+/* Активный — W104 (chip-система): контур ink 1.5px на белом
+   (та же пара, что у ценовых плиток главной — five.css W104-6). */
 .cat-chip[aria-pressed="true"],.cat-chip.is-active{
-  background:#fff;color:var(--pink-deep,#cc2f7a);border-color:var(--pink,#ff4ea2);
+  background:#fff;color:var(--ink,#1c1a1e);border-color:var(--ink,#1c1a1e);
 }
 .cat-chip[aria-pressed="true"]:hover,.cat-chip.is-active:hover{
-  background:#fff;color:var(--pink-deep,#cc2f7a);border-color:var(--pink,#ff4ea2);
+  background:#fff;color:var(--ink,#1c1a1e);border-color:var(--ink,#1c1a1e);
 }
-.cat-chip:focus-visible{outline:3px solid var(--pink,#ff4ea2);outline-offset:2px}
+.cat-chip:focus-visible{outline:2px solid var(--ink,#1c1a1e);outline-offset:3px}
 
 /* ---------- Сортировка: сегмент-контрол ---------- */
 .cat-sort{display:inline-flex;align-items:center;gap:12px;min-width:0}
@@ -89,8 +89,8 @@
 .cat-sort__btn + .cat-sort__btn{border-left:1px solid var(--line,#e7e5ea)}
 .cat-sort__btn[aria-pressed="true"] + .cat-sort__btn,
 .cat-sort__btn[aria-pressed="true"]{border-left-color:transparent}
-/* Фокус-кольцо внутрь: наружное смещение резалось бы overflow трека */
-.cat-sort__btn:focus-visible{outline:3px solid var(--pink,#ff4ea2);outline-offset:-3px}
+/* Фокус-кольцо внутрь: наружное смещение резалось бы overflow трека (W104: ink) */
+.cat-sort__btn:focus-visible{outline:2px solid var(--ink,#1c1a1e);outline-offset:-3px}
 
 /* ---------- Счётчик + сброс ---------- */
 .cat-toolbar__meta{
@@ -106,8 +106,8 @@
   color:var(--ink,#1c1a1e);font:600 .85rem var(--font-ui,sans-serif);cursor:pointer;
   transition:border-color .15s,color .15s;
 }
-.cat-reset:hover{border-color:var(--pink,#ff4ea2);color:var(--pink-deep,#cc2f7a)}
-.cat-reset:focus-visible{outline:3px solid var(--pink,#ff4ea2);outline-offset:2px}
+.cat-reset:hover{border-color:var(--ink,#1c1a1e);color:var(--ink,#1c1a1e)}
+.cat-reset:focus-visible{outline:2px solid var(--ink,#1c1a1e);outline-offset:3px}
 /* display:flex у .cat-reset перебивает [hidden] — гасим явно */
 .cat-reset[hidden]{display:none}
 

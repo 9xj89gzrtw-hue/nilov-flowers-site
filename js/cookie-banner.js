@@ -37,12 +37,15 @@
     var cfg = window.COOKIE_BANNER_CONFIG || {};
     var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
     var text = cfg.text || 'Сайт использует cookie и Яндекс.Метрику для работы и анализа трафика. Подробнее — в <a href="/policy" target="_blank" rel="noopener">Политике обработки персональных данных</a>.';
-    /* W103 (F4, критик-3 P0-1): компактная белая карточка — ОДНА главная кнопка
-       «Принять» (розовая, стили .cookie-banner__btn в five.css) + тихие
-       текст-ссылки «Настроить» (granular-флоу не изменился) и «Отклонить»
-       (однотапный отказ — не сложнее согласия, 152-ФЗ). Было: три равные
-       кнопки-плитки в тёмной плите. */
+    /* W103 (F4, критик-3 P0-1) → W104-a2: карточка-уголок снизу-слева —
+       заголовок 14/600 (только десктоп: .cookie-banner__title скрыт ≤899px)
+       + ОДНА ink-пилюля «Принять» (стили .cookie-banner__btn в five.css)
+       + тихие текст-ссылки «Настроить» (granular-флоу не изменился) и
+       «Отклонить» (однотапный отказ — не сложнее согласия, 152-ФЗ).
+       cfg.title — редактируемый заголовок (печатается в COOKIE_BANNER_CONFIG
+       витриной; фолбэк здесь — по паттерну text/accept/reject). */
     banner.innerHTML =
+      '<h3 class="cookie-banner__title">' + esc(cfg.title || 'Мы используем cookie') + '</h3>' +
       '<p class="cookie-banner__text">' + text + '</p>' +
       '<span class="cookie-banner__actions">' +
       '<button type="button" class="btn cookie-banner__btn">' + esc(cfg.accept || 'Принять') + '</button>' +

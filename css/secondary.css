@@ -29,7 +29,7 @@
 .page-hero__title{
   --font-display:'Playfair Display','Playfair Fallback',Georgia,'Times New Roman',serif;
   font-family:var(--font-display);
-  font-weight:600;
+  font-weight:500;
   font-size:clamp(2.2rem,4vw,3.25rem);   /* было Montserrat 800 36px */
   line-height:1.12;
   letter-spacing:-.01em;
@@ -57,27 +57,29 @@
 .breadcrumbs{font-size:.8125rem}
 .breadcrumbs [aria-current="page"]{color:var(--ink,#1c1a1e);font-weight:600}
 
-/* ============ 4. H2 СЕКЦИЙ ВНИЗУ СТРАНИЦ (FAQ/SEO/CTA) ============
-   Выровнены с .fc-row__title главной (шаг шкалы после H1-Playfair):
-   Montserrat 800, clamp(1.6rem,2.4vw,2.1rem) — провал 33.6→24
-   (арт-директор, типо-спека) закрыт на вторичках. */
+/* ============ 4. H2 СЕКЦИЙ ВНИЗУ СТРАНИЦ (FAQ/SEO/CTA) — W104 ============
+   Единая H2-шкала W104 всей витрины: Playfair 500,
+   clamp(2rem,3.2vw,2.75rem) — вторички не выпадают из типосистемы
+   (five.css задаёт ту же шкалу для .section-title главной). */
 .section-title{
-  font-size:clamp(1.6rem,2.4vw,2.1rem);
-  font-weight:800;
-  line-height:1.18;
-  letter-spacing:-.015em;
+  --font-display:'Playfair Display','Playfair Fallback',Georgia,'Times New Roman',serif;
+  font-family:var(--font-display);
+  font-weight:500;
+  font-size:clamp(2rem,3.2vw,2.75rem);
+  line-height:1.12;
+  letter-spacing:-.01em;
 }
 
-/* ============ 5. ПЕРЕХОДЫ И ФОКУС ============
+/* ============ 5. ПЕРЕХОДЫ И ФОКУС (W104: ink) ============
    Единая кривая ховеров главной: cubic-bezier(.22,1,.36,1) 300ms.
-   Фокус-кольца --pink 3px — как у тулбара категории (category.css)
-   и интерактива главной. */
+   Фокус-кольца — ink 2px (W104 CTA-система: глобальный :focus-visible
+   в five.css уже ink — здесь дубль для автономности файла). */
 .breadcrumbs a{transition:color .3s cubic-bezier(.22,1,.36,1)}
 .breadcrumbs a:focus-visible,
 .btn--accent:focus-visible,
 .btn--outline:focus-visible{
-  outline:3px solid var(--pink,#ff4ea2);
-  outline-offset:2px;
+  outline:2px solid var(--ink,#1c1a1e);
+  outline-offset:3px;
 }
 
 /* ============ 6. PREFERS-REDUCED-MOTION ============ */

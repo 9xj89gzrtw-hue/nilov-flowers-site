@@ -1,0 +1,87 @@
+/* motion-w104.css — motion-слой W104-c (motion-агент).
+   Владелец файла: motion-агент (W104-c). Дизайн-токены, стрелки каруселей
+   и остальная типографика — css/five.css (агент W104-a), здесь их нет.
+
+   Состав:
+   1. Canvas «Лепестков» — js/petals.js инъектирует canvas в .fc-hero__main.
+   2. Служебные правила Lenis (js/kinetic.js) — официальный набор
+      github.com/darkroomengineering/lenis (html.lenis-классы).
+   3. Кинетическая типографика: line-reveal манифеста/premium-титулов +
+      slide-up H2-акцентов. Скрытые состояния — ТОЛЬКО под
+      html.kinetic-ready (класс ставит js/kinetic.js): без JS тексты видимы.
+   4. prefers-reduced-motion — всё статично. */
+
+/* ============ 1. ЛЕПЕСТКИ (canvas в hero) ============
+   Слой: фото + скрим ::after (z:auto) → canvas .fc-petals (z:1) →
+   .fc-hero__content (z:2) — лепестки летят над фото, текст hero читаем.
+   Инлайн-стили дублируются в js/petals.js (страховка), это — канон. */
+.fc-hero__main > .fc-petals,
+.fc-hero > .fc-petals {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+  display: block;
+}
+
+/* ============ 2. LENIS ============
+   scroll-behavior:auto — только пока Lenis активен: явные
+   scrollIntoView({behavior:'smooth'}) из five.js остаются плавными
+   (явное поведение не зависит от CSS-свойства), якорные клики ведёт
+   Lenis (anchors:true), собственная анимация Lenis не «досглаживается»
+   CSS-smooth'ом. Lenis не активен на таче/reduced-motion — там классов
+   html.lenis нет и нативное поведение не меняется. */
+html.lenis,
+html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-stopped { overflow: hidden; }
+.lenis.lenis-smooth iframe { pointer-events: none; }
+
+/* ============ 3. КИНЕТИЧЕСКАЯ ТИПОГРАФИКА ============
+   .kin-split получает js/kinetic.js после разбивки на строки;
+   .kin-in — при появлении (IO, порог .3, один раз). */
+html.kinetic-ready .kin-split .kin-line {
+  display: block;
+  overflow: hidden;               /* маска строки */
+  padding-bottom: 0.12em;         /* компенсация descender'ов Playfair */
+  margin-bottom: -0.12em;
+}
+html.kinetic-ready .kin-split .kin-line__in {
+  display: block;
+  transform: translateY(115%);    /* спрятана под маской */
+}
+html.kinetic-ready .kin-split.kin-in .kin-line__in {
+  transform: none;
+  transition: transform 720ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: calc(var(--kin-i, 0) * 90ms);  /* stagger 90мс */
+}
+
+/* H2-акценты (eyebrow «КАПС|Playfair-курсив») — slide-up + fade */
+html.kinetic-ready .kin-acc {
+  display: inline-block;          /* transform на inline не работает */
+  opacity: 0;
+  transform: translateY(12px);
+}
+html.kinetic-ready .kin-acc.kin-in {
+  opacity: 1;
+  transform: none;
+  transition: opacity 550ms ease,
+              transform 550ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ============ 4. PREFERS-REDUCED-MOTION ============
+   Всё статично: контент виден сразу (JS-слой тоже не анимирует —
+   petals рисует один статичный кадр, kinetic не активируется;
+   правила ниже — страховка на случай смены системной настройки
+   после загрузки страницы). */
+@media (prefers-reduced-motion: reduce) {
+  html.kinetic-ready .kin-split .kin-line__in,
+  html.kinetic-ready .kin-acc {
+    transform: none !important;
+    opacity: 1 !important;
+    transition: none !important;
+  }
+}

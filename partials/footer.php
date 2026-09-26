@@ -229,6 +229,18 @@ elseif ($__nfIsHome || preg_match('#^/(product|category)(\.php)?(/|$)#', $__nfPa
          убрано, файл в /js оставлен без изменений. */ ?>
 <script src="/js/reveal.js?v=<?= e($__vjs('reveal.js')) ?>"></script>
 <script src="/js/nilov.js?v=<?= e($__vjs('nilov.js')) ?>" defer></script>
+<?php /* W104-c (motion-агент): лепестки — только главная (.fc-hero__main есть
+         только в index.php); стартуют после window load + html.js-ready —
+         не блокируют LCP. Отключение: класс no-petals на <html> (js/petals.js). */ ?>
+<?php if ($__nfIsHome): ?>
+<script src="/js/petals.js?v=<?= e($__vjs('petals.js')) ?>" defer></script>
+<?php endif; ?>
+<?php /* W104-c (motion-агент): Lenis (self-host, MIT) + кинетическая
+         типографика — все страницы. defer: порядок исполнения после
+         nilov.js (js-ready) и sync-скриптов выше (лайтбокс для
+         data-lenis-prevent уже в DOM). Сами отключаются на таче/reduced. */ ?>
+<script src="/js/vendor/lenis.min.js?v=<?= e($__vjs('vendor/lenis.min.js')) ?>" defer></script>
+<script src="/js/kinetic.js?v=<?= e($__vjs('kinetic.js')) ?>" defer></script>
 <script>window.COOKIE_BANNER_CONFIG = {
   text: <?= json_encode(sanitize_rich_text(setting('cookie_banner_text', 'Сайт использует cookie и Яндекс.Метрику для работы и анализа трафика. Подробнее — в <a href="/policy" target="_blank" rel="noopener">Политике обработки персональных данных</a>.'), 260), JSON_UNESCAPED_UNICODE) ?>,
   accept: <?= json_encode(setting('cookie_accept_text', 'Принять'), JSON_UNESCAPED_UNICODE) ?>,

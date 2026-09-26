@@ -199,7 +199,7 @@ function render_product_card(array $p, array $ctx): void
                 <svg viewBox="0 0 80 94" style="width:30%;margin:auto;color:var(--blue)" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="40" cy="30" r="11"/><circle cx="26" cy="38" r="8"/><circle cx="54" cy="38" r="8"/><path d="M40 41v20M40 61c-8 6-14 14-16 25M40 61c8 6 14 14 16 25"/></svg>
               <?php endif; ?>
             </a>
-            <?php if ($isSale): $offPct = (int)$p['price'] > 0 ? (int)round((1 - $price / (int)$p['price']) * 100) : 0; ?><span class="product-card__badge product-card__badge--sale"><?= e(setting('badge_sale_text', 'Скидка')) ?><?php if ($offPct > 0): ?> <?= $offPct ?>%<?php endif; ?></span><?php endif; ?>
+            <?php if ($isSale): $offPct = (int)$p['price'] > 0 ? (int)round((1 - $price / (int)$p['price']) * 100) : 0; ?><span class="product-card__badge product-card__badge--sale"><?php if ($offPct > 0): ?><span class="product-card__badge-word"><?= e(setting('badge_sale_text', 'Скидка')) ?> </span>&#8722;<?= $offPct ?>%<?php else: ?><?= e(setting('badge_sale_text', 'Скидка')) ?><?php endif; ?></span><?php endif; ?>
             <?php if ((int)($p['is_urgent'] ?? 0) === 1): ?><span class="product-card__badge product-card__badge--urgent"><?= e(setting('badge_urgent_text', 'Успеть сегодня')) ?></span><?php endif; ?>
             <?php if ($isHit): ?><span class="product-card__badge product-card__badge--hit"><?= e(setting('badge_hit_text', 'Хит')) ?></span><?php endif; ?>
             <?php if ($isPremium): ?><span class="product-card__badge product-card__badge--premium"><?= e(setting('badge_premium_text', 'Премиум')) ?></span><?php endif; ?>
@@ -213,8 +213,7 @@ function render_product_card(array $p, array $ctx): void
             <?php if ($ctx['featFavorites']): ?><button type="button" class="product-card__fav" data-fav-id="<?= (int)$p['id'] ?>" data-fav-name="<?= e($p['name']) ?>" aria-label="В избранное: <?= e($p['name']) ?>" title="В избранное">♡</button><?php endif; ?>
           </div>
           <div class="product-card__body">
-            <span class="product-card__cat"><?= e($p['category_name'] ?? '') ?></span>
-            <a class="product-card__name" href="<?= e($link) ?>"><?= e($p['name']) ?></a>
+            <?php /* W104: цена первой → имя; категория убрана (5cv-exact) */ ?>
             <p class="product-card__price">
               <?php if ($isSale): ?>
                 <span class="product-card__price--old"><?= formatPrice((int)$p['price']) ?></span>
@@ -223,8 +222,9 @@ function render_product_card(array $p, array $ctx): void
                 <?= formatPrice($price) ?>
               <?php endif; ?>
             </p>
+            <a class="product-card__name" href="<?= e($link) ?>"><?= e($p['name']) ?></a>
             <?php if ((int)($p['is_urgent'] ?? 0) === 1): ?>
-            <p class="product-card__urgent-note">Соберём и доставим в течение дня — количество ограничено</p>
+            <p class="product-card__urgent-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>Соберём и доставим в течение дня — количество ограничено</p>
             <?php endif; ?>
           </div>
         </article>

@@ -12,6 +12,9 @@ $googleVerification = trim(setting('google_site_verification', ''));
 $styleCssV = substr((string)@md5_file(__DIR__ . '/../css/style.css'), 0, 8);
 $nilovCssV = substr((string)@md5_file(__DIR__ . '/../css/nilov.css'), 0, 8);
 $fiveCssV = substr((string)@md5_file(__DIR__ . '/../css/five.css'), 0, 8);
+/* W104-c (motion): motion-слой — лепестки/lenis/кинетика; ПОСЛЕ five.css
+   (слоистость canvas над фото — см. css/motion-w104.css), ДО fonts.css. */
+$motionCssV = substr((string)@md5_file(__DIR__ . '/../css/motion-w104.css'), 0, 8);
 $fontsCssV = substr((string)@md5_file(__DIR__ . '/../css/fonts.css'), 0, 8);
 /* W97-fixB1 (B1-5): twitter-мета — парные к og (тот же источник значения).
    twitter:title: product.php/occasion.php передают $pageTitle == og:title; главная
@@ -71,6 +74,7 @@ if (isset($ogType) && $ogType === 'product' && isset($img) && is_string($img) &&
 <?php /* W96/T2-a: дизайн-система 5cv — ПОСЛЕ nilov.css (перекрывает той же специфичностью),
    ДО fonts.css (токены --font-ui закреплены в five.css на html:root — выше :root из fonts.css). */ ?>
 <link rel="stylesheet" href="/css/five.css?v=<?= e($fiveCssV) ?>">
+<link rel="stylesheet" href="/css/motion-w104.css?v=<?= e($motionCssV) ?>">
 <link rel="stylesheet" href="/css/fonts.css?v=<?= e($fontsCssV) ?>">
 <?php /* W99-fixG (G4): pwa-register.js — с ?v={md5_file 8} как у скриптов
    footer.php (A9): .htaccess отдаёт .js immutable-год, без версии вернувшиеся
