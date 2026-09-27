@@ -111,7 +111,7 @@
      тем же переходом. Только hover+fine и без reduced-motion; тач не
      трогаем (тап по слайду открывает лайтбокс — уже есть), pinch не нужен. */
   if (window.matchMedia
-      && window.matchMedia('(hover: hover) and (pointer: fine)').matches
+      && window.matchMedia('(any-hover: hover) and (pointer: fine)').matches
       && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     var zRaf = 0;
     var zEl = null;

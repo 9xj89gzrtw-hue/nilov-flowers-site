@@ -129,4 +129,66 @@
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && !lightbox.hidden) close();
   });
+
+  /* ============ W104 (C5-D5 P1): zoom/pan в лайтбоксе ============
+     Клик по фото — toggle zoom 1.8 с origin в точке клика; в зуме —
+     перетаскивание (grab/grabbing), выход из зума — клик или Esc.
+     Тач: pinch не делаем (нативный жест страницы не конфликтует —
+     изображение в контейнере overflow:hidden, пан — перетаскиванием).
+     reduced-motion: без transition. Курсор — zoom-in / zoom-out / grab. */
+  var lbImg = lightbox.querySelector('.lightbox__img');
+  var lbFig = lightbox.querySelector('.lightbox__figure');
+  var zoomed = false, panning = false, px = 0, py = 0, ox = 0, oy = 0, moved = 0;
+  var reduced = window.matchMedia
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function applyZoom() {
+    lbImg.style.transformOrigin = ox + '% ' + oy + '%';
+    lbImg.style.transform = zoomed ? 'scale(1.8)' : '';
+    lbImg.style.cursor = zoomed ? (panning ? 'grabbing' : 'grab') : 'zoom-in';
+    lbImg.style.transition = reduced ? 'none' : 'transform .35s cubic-bezier(.22,1,.36,1)';
+  }
+
+  if (lbImg) {
+    lbImg.style.cursor = 'zoom-in';
+    lbImg.addEventListener('click', function (e) {
+      if (moved > 3) { moved = 0; return; } /* пан-жест не toggл-ит зум */
+      var r = lbImg.getBoundingClientRect();
+      ox = Math.max(0, Math.min(100, ((e.clientX - r.left) / r.width) * 100));
+      oy = Math.max(0, Math.min(100, ((e.clientY - r.top) / r.height) * 100));
+      zoomed = !zoomed;
+      if (!zoomed) { px = 0; py = 0; }
+      applyZoom();
+      e.stopPropagation();
+    });
+    lbImg.addEventListener('pointerdown', function (e) {
+      if (!zoomed) return;
+      panning = true; moved = 0; px = e.clientX; py = e.clientY;
+      lbImg.setPointerCapture && lbImg.setPointerCapture(e.pointerId);
+      applyZoom();
+    });
+    lbImg.addEventListener('pointermove', function (e) {
+      if (!panning || !zoomed) return;
+      var dx = e.clientX - px, dy = e.clientY - py;
+      moved += Math.abs(dx) + Math.abs(dy);
+      px = e.clientX; py = e.clientY;
+      /* пан в процентах origin — инверсия направления (тянем фото за курсором) */
+      ox = Math.max(0, Math.min(100, ox - (dx / lbImg.getBoundingClientRect().width) * 100 / 1.8));
+      oy = Math.max(0, Math.min(100, oy - (dy / lbImg.getBoundingClientRect().height) * 100 / 1.8));
+      lbImg.style.transition = 'none';
+      applyZoom();
+    });
+    ['pointerup', 'pointercancel'].forEach(function (ev) {
+      lbImg.addEventListener(ev, function () {
+        if (panning) { panning = false; applyZoom(); }
+      });
+    });
+    /* закрытие лайтбокса сбрасывает зум */
+    var origClose = close;
+    close = function () { zoomed = false; panning = false; px = py = 0; applyZoom(); origClose(); };
+  }
+  /* курсор-подсказка на пустом месте вокруг фото — «клик закрывает» */
+  if (lbFig) lbFig.addEventListener('click', function (e) {
+    if (e.target === lbFig && !e.target.closest('[data-lightbox-close]')) close();
+  });
 })();

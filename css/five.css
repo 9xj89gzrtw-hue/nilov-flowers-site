@@ -2701,12 +2701,14 @@ button,input,select,textarea{font-family:inherit}
 }
 
 /* ============ W104-iota-orch: финиш волны 4 (C4-T4/C4-D4 хвосты) ============ */
+/* C5-T5 P0: мера строки подсказок формы (было ~110ch/793px) */
+.order-form__hint{max-width:560px}
 /* P0-T4: FAQ-ответы — журнальная мера (было 114 зн/строку ~838px) */
 .faq-item__a-wrap{max-width:62ch}
 .faq-item__a{max-width:62ch}
 /* P1-T4: мобильная иерархия — обложка (H1 ~32px) громче секций (H2 → 26px) */
 @media(max-width:899px){
-  .fc-section h2,.fc-row__title,.fc-faq .section__title{font-size:clamp(1.35rem,7.2cqi,1.75rem)}
+  .fc-section h2,.fc-row__title,.fc-faq .section__title{font-size:clamp(1.3rem,6.2cqi,1.6rem)}
 }
 /* P1-T4: цена — тонкий пробел перед ₽ не рвётся переносом */
 .product-card__price,.product-card__price--old,.product-card__price--discount,.fc-premium__card-price{white-space:nowrap}
@@ -2716,4 +2718,4 @@ button,input,select,textarea{font-family:inherit}
 .fc-row__link::after,.site-footer a[href^="/policy"]::after,.site-footer a[href^="/offer"]::after,
 .fc-footer a[href^="/policy"]::after,.fc-footer a[href^="/offer"]::after{content:"";position:absolute;inset:-11px -8px}
 .product-card__name::after{content:"";position:absolute;inset:-6px -4px}
-.product-card__name{position:static}
+.product-card__name{position:relative}

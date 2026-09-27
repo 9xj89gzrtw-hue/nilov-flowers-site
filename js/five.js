@@ -409,7 +409,7 @@
      «прилипший» отклик вместо едва заметного сдвига. */
   function magneticHeroCta() {
     if (reducedMotion()) return;
-    if (!window.matchMedia || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+    if (!window.matchMedia || !window.matchMedia('(any-hover: hover)').matches) return;
     function attach(cta, R) {
       if (!cta.addEventListener) return;
       cta.classList.add('will-magnet');
@@ -448,7 +448,7 @@
      .3s из CSS. Только hover+fine и без reduced-motion. */
   function cardTilt() {
     if (reducedMotion()) return;
-    if (!window.matchMedia || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+    if (!window.matchMedia || !window.matchMedia('(any-hover: hover)').matches) return;
     var boxes = document.querySelectorAll('.fc-carousel, .catalog__grid');
     if (!boxes.length) return;
     var cur = null;

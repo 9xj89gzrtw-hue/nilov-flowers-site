@@ -493,7 +493,7 @@ html.motion-lite .hero__deadline{
    лёгкое активное состояние при касании (:active), переход — базовый
    five.css .35с. В reduce — мгновенный фильтр без анимации (five.css
    transition:none!important) — информация цвета доступна всем. */
-@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
+@media (prefers-reduced-motion: no-preference) and (any-hover: hover) {
   .fc-occasions .fc-occasion--photo img {
     transition: transform .6s cubic-bezier(0.22, 1, 0.36, 1),
                 filter .6s cubic-bezier(0.22, 1, 0.36, 1);
@@ -523,7 +523,7 @@ html.motion-lite .hero__deadline{
    идёт мягко, возврат к 0 (курсор ушёл) — той же кривой. Компакт-рельс
    мини-карточек исключён. Reduced/тач: переменных нет, правило
    скоуплено — transform остаётся базовым. */
-@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
+@media (prefers-reduced-motion: no-preference) and (any-hover: hover) {
   .fc-carousel:not(.fc-carousel--compact) .product-card__media,
   .catalog__grid .product-card__media {
     transform: translate(calc(var(--tx, 0) * 4px), calc(var(--ty, 0) * 3px));
@@ -541,7 +541,7 @@ html.motion-lite .hero__deadline{
    (style.css). Тач не трогаем — тап открывает лайтбокс (уже есть),
    pinch не нужен. Reduced: мгновенные скачки не нужны вовсе — фон
    остаётся на базе. */
-@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
+@media (prefers-reduced-motion: no-preference) and (any-hover: hover) {
   .product-gallery__zoom {
     transition: background-position .18s cubic-bezier(0.22, 1, 0.36, 1);
   }
