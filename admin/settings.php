@@ -391,7 +391,7 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
     <div class="grid2">
       <div>
         <label class="f" for="h-eyebrow">Строка над заголовком (город и подача)</label>
-        <input class="input" id="h-eyebrow" name="hero_eyebrow" value="<?= sv('hero_eyebrow', $s) !== '' ? sv('hero_eyebrow', $s) : 'Санкт-Петербург · доставка в день заказа' ?>" maxlength="60">
+        <input class="input" id="h-eyebrow" name="hero_eyebrow" value="<?= sv('hero_eyebrow', $s) !== '' ? sv('hero_eyebrow', $s) : 'Санкт-Петербург · собираем под ваш заказ' ?>" maxlength="60">
         <label class="f" for="h-title">Заголовок на главной странице (крупный текст сверху)</label>
         <input class="input" id="h-title" name="hero_title" value="<?= sv('hero_title', $s) ?>">
         <label class="f" for="h-sub">Подзаголовок</label>
@@ -431,7 +431,7 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
         <label class="f" for="cat-t">Заголовок каталога</label>
         <input class="input" id="cat-t" name="catalog_title" value="<?= sv('catalog_title', $s) !== '' ? sv('catalog_title', $s) : 'Каталог' ?>" maxlength="40">
         <label class="f" for="cat-s" style="margin-top:8px">Подпись каталога</label>
-        <input class="input" id="cat-s" name="catalog_subtitle" value="<?= sv('catalog_subtitle', $s) !== '' ? sv('catalog_subtitle', $s) : 'Соберём и доставим букет в день заказа' ?>" maxlength="90">
+        <input class="input" id="cat-s" name="catalog_subtitle" value="<?= sv('catalog_subtitle', $s) !== '' ? sv('catalog_subtitle', $s) : 'Выбирайте букет — соберём и привезём сегодня' ?>" maxlength="90">
         <?php /* W104: eyebrow + нумерал каталога (единый компонент шапки секции) */ ?>
         <label class="f" for="cat-eb" style="margin-top:8px">Eyebrow каталога («капс|курсив»)</label>
         <input class="input" id="cat-eb" name="catalog_eyebrow" value="<?= sv('catalog_eyebrow', $s) !== '' ? sv('catalog_eyebrow', $s) : 'Весь|ассортимент' ?>" maxlength="60">
@@ -670,7 +670,7 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
     <div class="grid2">
       <div>
         <label class="f" for="ft-about">Описание магазина в футере</label>
-        <input class="input" id="ft-about" name="footer_about" value="<?= sv('footer_about', $s) !== '' ? sv('footer_about', $s) : 'Свежие букеты с доставкой по Санкт-Петербургу в день заказа' ?>" maxlength="140">
+        <input class="input" id="ft-about" name="footer_about" value="<?= sv('footer_about', $s) !== '' ? sv('footer_about', $s) : 'Свежие букеты с доставкой по всему Санкт-Петербургу' ?>" maxlength="140">
         <label class="f" for="pt-today" style="margin-top:8px">Строка «доставим сегодня» на странице товара</label>
         <input class="input" id="pt-today" name="product_today_text" value="<?= sv('product_today_text', $s) !== '' ? sv('product_today_text', $s) : 'Оформите до 20:00 — доставим сегодня' ?>" maxlength="90">
       </div>
@@ -735,7 +735,7 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
       <div>
         <?php for ($mq = 1; $mq <= 2; $mq++): ?>
         <label class="f" for="mq-<?= $mq ?>"<?= $mq === 2 ? ' style="margin-top:8px"' : '' ?>>Фраза <?= $mq ?> — бегущая строка</label>
-        <input class="input" id="mq-<?= $mq ?>" name="marquee_<?= $mq ?>" value="<?= sv("marquee_{$mq}", $s) !== '' ? sv("marquee_{$mq}", $s) : ['Доставка по Санкт-Петербургу в день заказа', 'Срочная сборка — за 1–2 часа'][$mq - 1] ?>" maxlength="90">
+        <input class="input" id="mq-<?= $mq ?>" name="marquee_<?= $mq ?>" value="<?= sv("marquee_{$mq}", $s) !== '' ? sv("marquee_{$mq}", $s) : ['Оплата при получении — наличными или картой', 'Срочная сборка — за 1–2 часа'][$mq - 1] ?>" maxlength="90">
         <?php endfor; ?>
       </div>
       <div>

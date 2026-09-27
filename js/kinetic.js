@@ -32,6 +32,11 @@
       касание сигнатуры» после hero-канваса и add-to-cart). Кассовый
       бёрст в cart-cta.js не тронут (путь покупки — без регрессии).
 
+   5) СКРОЛЛ-ПОРЫВ ЛЕПЕСТКОВ (W104-κ, C4-D4 P1): скорость скролла →
+      ветер поля лепестков (window.NF_PETALS.wind) — уход с hero =
+      порыв вниз+вбок, возврат = встречный поток. Тач тоже работает,
+      reduced-motion — выключен.
+
    Деградация: скрытые состояния существуют ТОЛЬКО под html.kinetic-ready
    (класс ставит этот скрипт) — без JS/при сбое все тексты видимы;
    prefers-reduced-motion — контент виден сразу, без анимаций. */
@@ -359,4 +364,45 @@
       }
     }
   };
+
+  /* ============ 5. СКРОЛЛ-ПОРЫВ ЛЕПЕСТКОВ (W104-κ, C4-D4 P1
+     «signature-момент»: hero отвечает на уход) ============
+     Скорость скролла → ветер в поле лепестков hero: резкий скролл вниз
+     (пользователь уходит с первого экрана) = порыв ВНИЗ+вбок, возврат —
+     лёгкий встречный поток вверх. Семплер: на каждый scroll-тик — ОДИН
+     rAF-кадр (пассивный слушатель), дельта scrollY за время с прошлого
+     кадра = мгновенная скорость px/ms; мёртвая зона 0.05px/ms — фоновый
+     дрейф/подстройка Lenis не дует. Сглаживание, асимметричный кламп и
+     релакс к базе ~600мс — на стороне petals.js (его rAF уже бежит,
+     пока hero в вьюпорте: эффект живёт ровно в момент ухода/возврата).
+     Работает и на таче (нативные scroll-события; Lenis там не активен),
+     выключен при prefers-reduced-motion. Ленивый lookup NF_PETALS —
+     порядок defer-скриптов не важен. */
+  (function scrollGust() {
+    if (reduced()) return;
+    var lastY = null;
+    var lastT = 0;
+    var raf = 0;
+    function tick() {
+      raf = 0;
+      var y = window.scrollY || window.pageYOffset || 0;
+      var now = performance.now();
+      if (lastY !== null) {
+        var dt = now - lastT;
+        if (dt > 4) {
+          var v = (y - lastY) / dt; /* px/ms: + вниз, − вверх */
+          if (Math.abs(v) > 0.05) {
+            var p = window.NF_PETALS;
+            if (p && typeof p.wind === 'function') p.wind(v);
+          }
+        }
+      }
+      lastY = y;
+      lastT = now;
+    }
+    window.addEventListener('scroll', function () {
+      if (raf) return;
+      raf = requestAnimationFrame(tick);
+    }, { passive: true });
+  })();
 })();

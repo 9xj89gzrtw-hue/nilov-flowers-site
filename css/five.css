@@ -760,45 +760,72 @@ img.product-card__img{background:var(--surface-subtle)}
 .cart-panel__total{font-weight:600}
 .cart-panel__empty{color:var(--ink-muted)}
 
-/* ============ W103 (F4, критик-3 P0-1): cookie-карточка вместо тёмной плиты ============
-   Белая компактная карточка (radius 20, мягкая тень 0 12px 40px .14), ОДНА
-   главная розовая кнопка «Принять» (44px, --pink-deep: белый 4.94:1) + тихие
-   текст-ссылки «Настроить»/«Отклонить» (granular-флоу настроек — прежний,
-   js/cookie-banner.js). Критик-2 называл баннер «самый дешёвый элемент» —
-   теперь нейтральная системная карточка по центру. Разметку рисует JS. */
+/* ============ W104-iota: COOKIE — SLIM-ПОЛОСА (P0-D4 «оверлей-пятно») ============
+   Канонический вид баннера (единый источник; исторические слои W103/W104-a2/γ-4
+   снесены, style.css-легаси нейтрализован, motion-w104 4g перекрыт секцией
+   W104-iota в конце motion-файла). Было: угловая карточка ~340×110 — vision ×4
+   «перекрывает контент первого визита». Теперь: полноширинная строка-полоса
+   внизу высотой 48px (десктоп) / 56px (моб, над таббаром), плотный ink-фон,
+   ОДНА строка: текст 12.5px с ellipsis + «Принять» (белая пилюля 44px) +
+   «Только необходимые» (текст-ссылка 44px) + ✕ (44px, глушит инлайн-стили JS
+   через !important). Контент страницы просто ЗАКАНЧИВАЕТСЯ над полосой —
+   полоса не спорит с карточками. Заголовок и «Настройки» не рендерятся
+   визуально (granular-флоу остаётся в футере — «Настройки cookie»,
+   window.cookieSettings). Разметку рисует js/cookie-banner.js (δ/κ). */
 .cookie-banner{
-  left:50%;right:auto;transform:translateX(-50%);
-  max-width:min(480px,calc(100vw - 32px));
-  background:#fff;color:var(--ink);
-  border:1px solid rgba(28,26,30,.05);
-  border-radius:20px;
-  box-shadow:0 12px 40px rgba(28,26,30,.14);
-  padding:16px 18px;
-  flex-direction:column;align-items:stretch;gap:10px;
-  font-size:13.5px;line-height:1.4;
+  left:0;right:0;bottom:0;transform:none;
+  max-width:none;width:100%;
+  background:var(--ink);color:rgba(255,255,255,.92);
+  border:none;border-radius:0;
+  box-shadow:0 -10px 32px rgba(28,26,30,.16);
+  padding:0 52px 0 16px;gap:10px;
+  flex-direction:row;align-items:center;flex-wrap:nowrap;
+  font-size:12.5px;line-height:1.3;
+  min-height:48px;
 }
-.cookie-banner__text{margin:0;flex:none}
-.cookie-banner__text a{color:var(--pink-deep)}
-.cookie-banner__actions{display:flex;gap:6px;align-items:center;flex-wrap:nowrap}
-/* W103 (6-b, P1): «Принять» — тихая outline-ink, не конкурирует с розовой
-   hero-CTA (критик-5а: розовых кнопок слишком много в первом экране).
-   Модалка «Настройки» наследует — вся система кнопок строже. */
+.cookie-banner__title{display:none}
+.cookie-banner__text{
+  flex:1 1 auto;min-width:0;margin:0;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  padding-block:12px;
+}
+.cookie-banner__text a{
+  color:var(--gold);text-decoration:underline;
+  text-underline-offset:3px;padding-block:12px;
+}
+.cookie-banner__actions{display:flex;gap:4px;align-items:center;flex-wrap:nowrap;flex:none}
+/* «Настройки» не входит в строку-полосу (гейт granular-флоу остаётся:
+   футер-ссылка «Настройки cookie» → window.cookieSettings) */
+.cookie-banner__actions .cookie-banner__link#cookieSettingsBtn{display:none}
+/* «Принять» — та же белая пилюля с ink-текстом, что hero-CTA на фото */
 .cookie-banner__btn{
-  background:#fff;color:var(--ink);border:1.5px solid var(--ink);border-radius:16px;
-  font:600 .875rem var(--font-ui);min-height:44px;padding:11px 22px;
+  background:#fff;color:var(--ink);border:none;border-radius:999px;
+  font:600 13px/1 var(--font-ui);min-height:44px;padding:0 18px;flex:none;
   transition:background .15s,color .15s;
 }
-.cookie-banner__btn:hover{background:var(--ink);color:#fff}
+.cookie-banner__btn:hover{background:var(--amber)}
 .cookie-banner__link{
-  background:transparent;border:none;color:var(--ink-muted);
-  font:600 .82rem var(--font-ui);min-height:44px;padding:0 8px;cursor:pointer;
-  border-radius:10px;display:inline-flex;align-items:center;
-  text-decoration:underline;text-underline-offset:3px;
+  background:transparent;border:none;color:rgba(255,255,255,.85);
+  font:600 12.5px var(--font-ui);min-height:44px;padding:0 10px;cursor:pointer;
+  display:inline-flex;align-items:center;flex:none;
+  text-decoration:underline;text-decoration-color:rgba(255,255,255,.4);
+  text-underline-offset:4px;white-space:nowrap;
 }
-.cookie-banner__link:hover{color:var(--ink);background:transparent;transform:none}
-/* Кнопки модалки «Настройки cookie» (панель белая — style.css): «Сохранить»
-   наследует розовую .cookie-banner__btn, «Закрыть» — контурная (была под
-   тёмный фон карточки — на белом терялась). */
+.cookie-banner__link:hover{color:#fff;text-decoration-color:var(--gold)}
+/* ✕: JS даёт инлайн-стили 34px — глушим !important, тач-зона 44px */
+.cookie-banner__close{
+  position:absolute!important;top:50%!important;right:0!important;
+  width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;
+  transform:translateY(-50%)!important;
+  font-size:1rem!important;opacity:.65;color:#fff!important;
+}
+.cookie-banner__close:hover{opacity:1}
+/* фокус на ink-полосе — белое кольцо (ink из five.css:92 тут невидим) */
+.cookie-banner :focus-visible{outline:2px solid #fff;box-shadow:0 0 0 4px rgba(255,255,255,.25)}
+/* Кнопки модалки «Настройки cookie» (панель белая — style.css): «Сохранить» —
+   ink-заливка (белая пилюля на белом не читается), «Закрыть» — контурная. */
+.cookie-settings .cookie-banner__btn{background:var(--ink);color:#fff}
+.cookie-settings .cookie-banner__btn:hover{background:#33303a}
 .cookie-banner__btn--secondary{
   background:transparent;color:var(--ink);border:1.5px solid var(--line);
 }
@@ -832,7 +859,7 @@ img.product-card__img{background:var(--surface-subtle)}
 /* Карточка товара (контракт T2-d) */
 .fc-product{display:grid;gap:24px}
 @media(min-width:960px){.fc-product{grid-template-columns:1fr 1fr;gap:40px;align-items:start}}
-.fc-product__title{font-weight:800;font-size:clamp(1.5rem,3vw,2rem);line-height:1.15;letter-spacing:-.01em;color:var(--ink);margin:0}
+/* W104-iota (C4-T4 P1.6): мёртвое правило удалено — .fc-product__title/.fc-related__title полностью владеет product-extras.css (грузится только на PDP — единственной странице этих классов) */
 .fc-product__gallery{display:flex;flex-direction:column}
 .fc-product__media{
   position:relative;border-radius:24px;overflow:hidden;
@@ -857,7 +884,7 @@ img.product-card__img{background:var(--surface-subtle)}
   display:grid;place-items:center;flex:none;
 }
 .fc-product__meta-icon svg{width:18px;height:18px;color:var(--pink)}
-.fc-related__title{font-weight:800;font-size:1.3rem;letter-spacing:-.01em;margin:0 0 16px}
+/* W104-iota (C4-T4 P1.6): мёртвое правило удалено — .fc-product__title/.fc-related__title полностью владеет product-extras.css (грузится только на PDP — единственной странице этих классов) */
 
 /* Рестайл старой страницы товара (product.php до волны T2-d) */
 .product-page__name{font-family:var(--font-ui);font-weight:600;font-size:clamp(1.6rem,3.5vw,2.2rem);line-height:1.15;letter-spacing:-.01em}
@@ -1266,63 +1293,28 @@ html{scroll-padding-top:96px}
    W99-fixG2: JS/CSS-фиксы регрессионной волны W99 (H1, H4, H12, H13)
    ================================================================ */
 
-/* --- H1 → W103 (F4b, критик-3 P0-1): компактная белая cookie-карточка на мобиле ---
-   Было: тёмная плита с тремя равными кнопками ≈ 99px. Теперь: белая
-   карточка-плашка над mnav (radius 18, тень 0 12px 40px .14), текст 13px/1.32
-   в 2 строки (line-clamp, W101 — юридический текст должен читаться),
-   ОДНА розовая «Принять» 44px (flex:1) + тихие ссылки «Настроить»/«Отклонить»
-   в одном ряду. Итог ≈ 106px: 12 + 2×17.2 + 6 + 44 + 10. */
+/* --- H1 → W103 → W104-iota: cookie на мобиле = та же slim-полоса ---
+   Канонический вид (блок W104-iota выше) един для всех экранов: строка
+   с ellipsis-текстом. На мобиле полоса 56px живёт НАД таббаром mnav
+   (61px + 5px зазор — прежняя формула), заголовок/«Настройки» скрыты. */
 @media(max-width:899px){
-  .cookie-banner{
-    left:4vw;right:4vw;transform:none;
-    max-width:92vw;
-    padding:12px 12px 10px;gap:6px;
-    border-radius:18px;
-  }
-  .cookie-banner__text{
-    flex:none;margin:0;min-width:0;font-size:13px;
-    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
-    overflow:hidden;line-height:1.32;
-  }
-  /* W70 делал ссылку политики 44px-целью — в две строки с clamp цель
-     недоступна визуально; полная версия на десктопе, «Настройки» на мобиле
-     открывает granular-диалог с пояснением. */
-  .cookie-banner__text a{display:inline;min-height:0;line-height:inherit}
-  .cookie-banner__actions{display:flex!important;gap:6px;flex:none;width:100%;flex-wrap:nowrap;align-items:stretch}
-  .cookie-banner__btn{
-    flex:1 1 auto;min-width:0;min-height:44px;
-    padding:11px 10px;font-size:.9rem;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  }
-  .cookie-banner__link{flex:0 0 auto;min-height:44px;padding:0 8px;font-size:.78rem;white-space:nowrap}
-  /* Порядок на мобиле: Принять → Настроить → Отклонить */
-  .cookie-banner__actions .cookie-banner__btn{order:1}
-  .cookie-banner__actions .cookie-banner__link#cookieSettingsBtn{order:2}
-  .cookie-banner__actions .cookie-banner__link--reject{order:3}
+  .cookie-banner{min-height:56px}
 }
-/* ≤820 над таббаром mnav (~61px + safe-area); 821–899 — таббара нет.
-   W103 (F4b): вплотнее к таббару — 5px зазор вместо 11 (стек читается
-   единой картиной): 61 + 5 = 66. */
 @media(max-width:820px){
   .cookie-banner{bottom:calc(66px + env(safe-area-inset-bottom))}
 }
-/* H1(б) → W103 (F4b) → W104-a2: пока карточка открыта (класс вешает
-   cookie-banner.js), sticky-CTA товара поднимается ВЫШЕ карточки:
-   зона карточки ≈ 191px от низа (66 таббар + 125 карточка — замер
-   W104-a2), CTA — на 205px (зазор 14); (в) cookie-banner.js снимает
-   класс — CTA возвращается на прежние 70px. Перекрывает style.css-
-   правило 190px (five.css ниже). */
+/* Запас прокрутки и подъём sticky-CTA товара над полосой (класс вешает
+   cookie-banner.js): 66 таббар + 56 полоса + 14 зазор ≈ 136 CTA;
+   запас прокрутки 66+56+8 ≈ 130 (+safe-area). */
 @media(max-width:820px){
   body.nf-cookie-open .btn--accent.product-page__cta--sticky{
-    bottom:calc(205px + env(safe-area-inset-bottom));
+    bottom:calc(136px + env(safe-area-inset-bottom));
   }
-  /* Запас прокрутки под поднятую CTA + mnav: 66+125+52+14 ≈ 257 → 262 */
-  body.cookie-visible{padding-bottom:calc(262px + env(safe-area-inset-bottom))}
+  body.cookie-visible{padding-bottom:calc(130px + env(safe-area-inset-bottom))}
 }
-/* W103 (F4): тот же запас для десктопа — карточка по центру ≈ 118px + low 16
-   (style.css давал 130px впритык). */
+/* Десктоп: полоса 48px у нижнего края + воздух 16px */
 @media(min-width:821px){
-  body.cookie-visible{padding-bottom:170px}
+  body.cookie-visible{padding-bottom:64px}
 }
 
 /* --- H4: стрелки галереи товара — disabled на краях
@@ -1340,10 +1332,7 @@ html{scroll-padding-top:96px}
   .fc-header__icon{width:44px;height:44px}
   .fc-header__icon svg{width:20px;height:20px}
 }
-
-/* --- H13(а): related-заголовок на товаре — как товарные секции главной:
-   24px/800 (было 1.3rem ≈ 20.8px). --- */
-.fc-related__title{font-size:24px;font-weight:800}
+/* --- H13(а) → W104-iota (C4-T4 P1.6): мёртвое .fc-related__title 24px/800 удалено — владелец product-extras.css (.fc-related__title = var(--fs-h2)) --- */
 
 /* --- H13(б): секция «Оформление заказа» — тёплый фон #fbf5f8 (surface-warm)
    вместо серого #f6f6f8; scoped на #order — другие subtle-секции не задеты. --- */
@@ -1359,7 +1348,7 @@ html{scroll-padding-top:96px}
 /* --- H13(д): унификация вторичных кнопок — radius 16: cookie-кнопки
    (было 999px/14px), стрелки «Смотреть все» каруселей (было 50%);
    .fc-hero__promo-btn уже 16 (W97-fixC C6). --- */
-.cookie-banner__btn{border-radius:16px}
+/* cookie-кнопка — пилюля 999px из блока W104-iota (был radius 16 от H13(д)) */
 .fc-row__arrow{border-radius:16px}
 
 /* W104-ζ (C3-D3 палитра): исторический розовый sticky-CTA товара (≤820px)
@@ -2466,80 +2455,10 @@ details:not([open]) .faq-item__a-wrap{grid-template-rows:0fr}
 .fc-catalog-btn:hover svg rect:nth-child(3){transform:translate(-1px,1px)}
 .fc-catalog-btn:hover svg rect:nth-child(4){transform:translate(1px,1px)}
 
-/* ---- 3. COOKIE-КАРТОЧКА: снизу-слева, с заголовком, ink-пилюля ----
-   Было: белая карточка ПО ЦЕНТРУ снизу с outline-кнопкой (VLM: «типовое
-   решение из библиотеки»). Теперь: угловая карточка 360px, заголовок
-   14/600 (десктоп; на мобиле карточка остаётся компактной — без
-   заголовка), «Принять» — ink-пилюля, отказ/настройки — текст с
-   underline. Появление — slide-up (JS ждёт 1.2с). */
-.cookie-banner{
-  left:20px;right:auto;bottom:20px;transform:none;
-  max-width:min(360px,calc(100vw - 40px));
-  border-radius:20px;
-  box-shadow:0 16px 48px rgba(28,26,30,.18),0 2px 8px rgba(28,26,30,.06);
-  padding:18px 20px;
-  transform-origin:0 100%;
-  animation:fc-cookie-rise .5s cubic-bezier(.22,1,.36,1) both;
-}
-@keyframes fc-cookie-rise{
-  from{opacity:0;transform:translateY(14px) scale(.985)}
-  to{opacity:1;transform:none}
-}
-.cookie-banner__title{
-  margin:0 0 5px;
-  font:600 14px/1.3 var(--font-ui);color:var(--ink);
-  letter-spacing:-.005em;
-}
-/* Бренд-подпись карточки: короткая amber-линия под заголовком — тот же
-   приём, что у промо-карточки hero (fc-hero__promo-title::after) */
-.cookie-banner__title::after{
-  content:"";display:block;width:24px;height:2px;
-  margin-top:7px;background:var(--amber);
-}
-.cookie-banner__text{font:400 13px/1.5 var(--font-ui);color:var(--ink-muted);margin:9px 0 0}
-.cookie-banner__text a{color:var(--ink);text-decoration-color:var(--amber);text-underline-offset:3px}
-.cookie-banner__actions{gap:10px;margin-top:12px}
-.cookie-banner__btn{
-  background:var(--ink);color:#fff;border:none;border-radius:999px;
-  font:600 14px/1 var(--font-ui);min-height:44px;padding:12px 22px;
-  transition:background .18s,transform .18s cubic-bezier(.22,1,.36,1),box-shadow .18s;
-}
-.cookie-banner__btn:hover{
-  background:#2b2833;color:#fff;
-  transform:translateY(-1px);
-  box-shadow:0 8px 20px rgba(28,26,30,.25);
-}
-.cookie-banner__btn:active{transform:scale(.98)}
-.cookie-banner__link{
-  background:transparent;border:none;color:var(--ink-muted);
-  font:600 13px var(--font-ui);min-height:44px;padding:0 4px;cursor:pointer;
-  border-radius:10px;display:inline-flex;align-items:center;
-  text-decoration:underline;text-decoration-thickness:1.5px;
-  text-decoration-color:rgba(28,26,30,.3);text-underline-offset:3px;
-  transition:color .15s,text-decoration-color .15s;
-}
-.cookie-banner__link:hover{color:var(--ink);background:transparent;transform:none;text-decoration-color:var(--ink)}
-/* Запас прокрутки под карточку (десктоп ≥821: карточка ≈165px + bottom 20) */
-@media(min-width:821px){
-  body.cookie-visible{padding-bottom:192px}
-}
-/* Мобильная карточка остаётся прежней геометрии (над таббаром, без
-   заголовка — экран дорог), но наследует ink-пилюлю и slide-up.
-   Каскад: W104-a2-блок ниже исторических ≤899/≤820-правил (1262+),
-   поэтому компакт-геометрия повторена ЗДЕСЬ (padding/gap/radius/bottom),
-   иначе десктопные значения её перебивают по порядку кода. */
-@media(max-width:899px){
-  .cookie-banner__title{display:none}
-  .cookie-banner__text{margin:0}
-  .cookie-banner{
-    padding:12px 12px 10px;gap:6px;border-radius:18px;
-    animation:fc-cookie-rise .45s cubic-bezier(.22,1,.36,1) both;
-  }
-  .cookie-banner__actions{gap:6px}
-}
-@media(max-width:820px){
-  .cookie-banner{left:4vw;right:4vw;max-width:none;bottom:calc(66px + env(safe-area-inset-bottom))}
-}
+/* ---- 3. COOKIE → W104-iota: исторический блок W104-a2 (угловая карточка
+   360px с заголовком и amber-линией, slide-up) снесён — канонический вид
+   slim-полосы живёт в блоке W104-iota (раздел 18, ~line 763) и секции
+   W104-iota в motion-w104.css (вход/выход). ---- */
 
 /* ---- 4. ЧИПЫ: snap-скролл на мобиле (аффорданс продолжения ряда) ---- */
 .fc-chips{scroll-snap-type:x proximity;scroll-padding-left:20px}
@@ -2683,83 +2602,13 @@ button,input,select,textarea{font-family:inherit}
   max-width:100%;min-height:38px;
 }
 
-/* ============ γ-4. COOKIE: ЗАКРЫВАЕМО + НЕ МЕШАЕТ (C2-D2 P0-1) ============
-   Рестайл поверх W104-a2 (и синхронно с motion-w104 4g): карточка
-   ещё компактнее и ПЛОТНЕЕ — читается как осознанный элемент, а не
-   попап-шум: белый фон с контуром, ≤340px, без заголовка, текст
-   ≤2 строки 12.5px, кнопки в ОДИН ряд, ✕-кнопка (разметку добавит
-   δ в js/cookie-banner.js — класс .cookie-banner__close готов здесь).
-   Мобайл: над таббаром с safe-area (правило ≤820 ниже по каскаду). */
-.cookie-banner{
-  max-width:340px;
-  background:#fff;
-  border:1px solid rgba(28,26,30,.14);
-  border-radius:16px;
-  box-shadow:0 16px 48px rgba(28,26,30,.24),0 2px 8px rgba(28,26,30,.08);
-  padding:12px 14px;
-  gap:8px;
-  flex-direction:column;align-items:stretch;
-}
-.cookie-banner__title{display:none} /* компакт: заголовок не нужен */
-.cookie-banner__text{
-  flex:none;margin:0;padding-right:22px; /* воздух под ✕ (top-right, δ-разметка) */
-  font:400 12.5px/1.45 var(--font-ui);color:var(--ink-muted);
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
-  overflow:hidden;
-}
-.cookie-banner__text a{color:var(--ink);text-decoration-color:var(--amber);text-underline-offset:3px}
-.cookie-banner__actions{
-  display:flex;gap:8px;align-items:center;flex-wrap:nowrap;
-  margin-top:2px;
-}
-.cookie-banner__btn{
-  flex:1 1 auto;min-width:0;
-  font:600 13px/1 var(--font-ui);min-height:40px;padding:10px 16px;
-  border-radius:999px;
-}
-.cookie-banner__link{
-  font:600 12.5px var(--font-ui);min-height:40px;padding:0 6px;
-  white-space:nowrap;
-}
-/* W104-ζ (C3-D3 P2, унификация cookie-кнопок): подпись отказа на ОБОИХ
-   экранах — «Только необходимые» (JS-укорачивание до «Отклонить» на мобиле
-   снимается правкой js/cookie-banner.js — точные строки в worklog W104-ζ).
-   CSS-готовность: на узких экранах (<375px) три подписи в один ряд не
-   влезают — ряд переносится (кнопка на всю ширину), карточка растёт на
-   ~44px — компенсируем запасы прокрутки/sticky-CTA. */
-@media(max-width:374px){
-  .cookie-banner__actions{flex-wrap:wrap}
-  .cookie-banner__btn{flex:1 1 100%}
-  body.cookie-visible{padding-bottom:calc(286px + env(safe-area-inset-bottom))}
-  body.nf-cookie-open .btn--accent.product-page__cta--sticky{
-    bottom:calc(234px + env(safe-area-inset-bottom)); /* 66 таббар + 156 карточка + 12 зазор */
-  }
-}
-/* ✕-кнопка: абсолютный тихий крестик 32px в правом верхнем углу
-   (тап-зона 32px + инсет; разметка — js/cookie-banner.js, δ) */
-.cookie-banner__close{
-  position:absolute;top:4px;right:4px;
-  width:32px;height:32px;min-width:32px;min-height:32px;
-  display:grid;place-items:center;
-  background:transparent;border:none;border-radius:50%;
-  color:var(--ink-muted);font:600 1rem/1 var(--font-ui);
-  cursor:pointer;transition:color .15s,background .15s;
-}
-.cookie-banner__close::after{content:"";position:absolute;inset:-4px;border-radius:50%}
-.cookie-banner__close:hover{color:var(--ink);background:var(--surface-subtle)}
-.cookie-banner__close:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
-/* Запас прокрутки и подъём sticky-CTA под НОВУЮ компакт-карточку
-   (фактическая высота мобайл ≈ 112px: 24 паддинг + 2×18 текст + 6 + 40
-   кнопка + межблочные зазоры; ≈ 100px десктоп) — перекрывает
-   исторические 205/262/192px (замер W104-γ) */
-@media(max-width:820px){
-  body.nf-cookie-open .btn--accent.product-page__cta--sticky{
-    bottom:calc(190px + env(safe-area-inset-bottom)); /* 66 таббар + 112 карточка + 12 зазор */
-  }
-  body.cookie-visible{padding-bottom:calc(242px + env(safe-area-inset-bottom))}
-}
-@media(min-width:821px){
-  body.cookie-visible{padding-bottom:140px}
+/* ============ γ-4. COOKIE → W104-iota: снесён ============
+   Исторический рестайл γ-4 (белая компакт-карточка ≤340px, ✕ 32px,
+   запасы 190/242/286px) удалён — канонический вид slim-полосы живёт
+   в блоке W104-iota (раздел 18, ~line 763): полноширинная ink-строка
+   48/56px, ✕ 44px, эллипсис-текст; запасы/CTA — в H1-блоке W104-iota.
+   Мотивация: C4-D4 P0 — карточка-пятно перекрывала контент первого
+   визита (vision ×4); полоса внизу не спорит с карточками. */
 }
 
 /* ============ γ-5. ВАРИАЦИЯ ЛЭАУТОВ ТОВАРНЫХ РЯДОВ (C2-D2 P1.1) ============
@@ -2850,3 +2699,21 @@ button,input,select,textarea{font-family:inherit}
 @media(prefers-reduced-motion:reduce){
   .cookie-banner__close{transition:none}
 }
+
+/* ============ W104-iota-orch: финиш волны 4 (C4-T4/C4-D4 хвосты) ============ */
+/* P0-T4: FAQ-ответы — журнальная мера (было 114 зн/строку ~838px) */
+.faq-item__a-wrap{max-width:62ch}
+.faq-item__a{max-width:62ch}
+/* P1-T4: мобильная иерархия — обложка (H1 ~32px) громче секций (H2 → 26px) */
+@media(max-width:899px){
+  .fc-section h2,.fc-row__title,.fc-faq .section__title{font-size:clamp(1.35rem,7.2cqi,1.75rem)}
+}
+/* P1-T4: цена — тонкий пробел перед ₽ не рвётся переносом */
+.product-card__price,.product-card__price--old,.product-card__price--discount,.fc-premium__card-price{white-space:nowrap}
+/* P1-D4: тач-зоны ≥44px без визуального роста (паттерн ::after-расширение) */
+.fc-row__link,.site-footer a[href^="/policy"],.site-footer a[href^="/offer"],
+.fc-footer a[href^="/policy"],.fc-footer a[href^="/offer"]{position:relative}
+.fc-row__link::after,.site-footer a[href^="/policy"]::after,.site-footer a[href^="/offer"]::after,
+.fc-footer a[href^="/policy"]::after,.fc-footer a[href^="/offer"]::after{content:"";position:absolute;inset:-11px -8px}
+.product-card__name::after{content:"";position:absolute;inset:-6px -4px}
+.product-card__name{position:static}

@@ -24,7 +24,13 @@
    6. W104-η (C3-M3): hover-lift карточек (специфичность 0,3,0 поверх
       transform:none у .reveal--visible) · правая колонка hero
       (промо/доставка) в входном каскаде.
-   7. prefers-reduced-motion — всё статично. */
+   7. prefers-reduced-motion — всё статично.
+   8. W104-κ (W104-kappa, fix-волна 4, C4-D4 P1 «motion = событие»):
+      поводы duotone→цвет на hover · tilt карточек за курсором ·
+      PDP курсор-зум. (Скролл-порыв лепестков — §5 kinetic.js +
+      petals.js wind(), тут CSS не нужен.)
+   Секции 1–6 — волны W104-c/β/δ/η; §8 — κ. Параллельный агент ι —
+   своей секцией, не смешиваться. */
 
 /* ============ 1. ЛЕПЕСТКИ (canvas в hero) ============
    Слой: фото + скрим ::after (z:auto) → canvas .fc-petals (z:1) →
@@ -460,4 +466,86 @@ html.motion-lite .hero__deadline{
   .cart-item.is-removing { transition: none !important; }
   #cartPanel.is-exiting .cart-panel__drawer,
   #cartPanel.is-exiting .cart-panel__backdrop { transition: none !important; }
+}
+
+/* ================================================================
+   8. W104-κ (W104-kappa) — MOTION-СОБЫТИЯ (fix-волна 4, C4-D4 P1:
+   Creativity 6.0 — «motion = фон, не событие» → три новых события).
+   Все правила — композитные свойства (transform / filter /
+   background-position), каждое скоуплено no-preference (+ pointer:fine
+   у hover-эффектов): в reduce выключены ПОЛНОСТЬЮ — мгновенные
+   состояния остаются из базовых файлов, анимаций нет. Тач-ветки
+   помечены отдельно. Четвёртое событие волны — скролл-порыв лепестков —
+   канвасное (js/petals.js wind() + js/kinetic.js §5), CSS здесь не участвует.
+   Владелец секции: motion-event-agent κ (правки — только с маркером
+   W104-κ; блоки ι/η/δ/β выше не трогать).
+   ================================================================ */
+
+/* --- 8a. ПОВОДЫ: duotone → ЦВЕТ при hover (C4-D4 P1) ---
+   Плитки .fc-occasion--photo живут в приглушённом duotone (grayscale
+   .35 / sepia .12 — five.css W103-F1). Наведение — «момент
+   пробуждения»: полноцвет + zoom 1.04 за .6с системной кривой (было
+   .35с — скорость проскальзывала мимо восприятия, цвет не успевал
+   стать событием). Двухслойный кроссфейд не понадобился:
+   grayscale/sepia — интерполируемые фильтры, механизм уже работал,
+   теперь у него сценическое время. Специфичность 0,3,1 из позднего
+   файла — перекрывает five.css:530-531 (0,2,1). Тач (hover:none):
+   лёгкое активное состояние при касании (:active), переход — базовый
+   five.css .35с. В reduce — мгновенный фильтр без анимации (five.css
+   transition:none!important) — информация цвета доступна всем. */
+@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
+  .fc-occasions .fc-occasion--photo img {
+    transition: transform .6s cubic-bezier(0.22, 1, 0.36, 1),
+                filter .6s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .fc-occasions .fc-occasion--photo:hover img {
+    filter: none;
+    transform: scale(1.04);
+  }
+}
+@media (prefers-reduced-motion: no-preference) and (hover: none) {
+  /* тач: цвет откликается на касание — короткая вспышка цвета, не hover-липание */
+  .fc-occasions .fc-occasion--photo:active img {
+    filter: none;
+    transform: scale(1.02);
+  }
+}
+
+/* --- 8b. TILT КАРТОЧЕК: фото следует за курсором (C4-D4 P1
+   «микровзаимодействия механичные») ---
+   --tx/--ty ∈ −1..1 на .product-card ставит js/five.js (cardTilt,
+   делегированный mousemove на .fc-carousel/.catalog__grid — слушатель
+   один на контейнер). transform ±4/±3px — на РОДИТЕЛЕ-обёртке фото
+   .product-card__media: hover-zoom остаётся на img, lift −6px — на
+   самой карточке: три слоя движения не конфликтуют (разные элементы).
+   НЕ rotate3d — только едва заметный сдвиг, «механично → живо».
+   Сглаживание — transition .3s системной кривой: за курсором карточка
+   идёт мягко, возврат к 0 (курсор ушёл) — той же кривой. Компакт-рельс
+   мини-карточек исключён. Reduced/тач: переменных нет, правило
+   скоуплено — transform остаётся базовым. */
+@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
+  .fc-carousel:not(.fc-carousel--compact) .product-card__media,
+  .catalog__grid .product-card__media {
+    transform: translate(calc(var(--tx, 0) * 4px), calc(var(--ty, 0) * 3px));
+    transition: transform .3s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
+/* --- 8c. PDP-ГАЛЕРЕЯ: курсор-зум крупного плана (C4-D4 P1) ---
+   Слайд «Крупный план» — .product-gallery__zoom с фоном 165%
+   (style.css: это и есть zoom ~1.6). Hover ведёт background-position
+   за курсором: --zx/--zy (%) ставит js/product-gallery.js (rAF-троттл,
+   кламп 0..100). Зум-точка — там, куда смотрит покупатель, а не
+   фиксированные 50% 36%. Плавный «линзовый» догон .18с; mouseleave
+   возвращает базу тем же переходом. Курсор zoom-in уже заявлен
+   (style.css). Тач не трогаем — тап открывает лайтбокс (уже есть),
+   pinch не нужен. Reduced: мгновенные скачки не нужны вовсе — фон
+   остаётся на базе. */
+@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
+  .product-gallery__zoom {
+    transition: background-position .18s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .product-gallery__slide:hover .product-gallery__zoom {
+    background-position: var(--zx, 50%) var(--zy, 36%);
+  }
 }

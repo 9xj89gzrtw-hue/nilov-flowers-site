@@ -53,7 +53,7 @@ $heroDeliveryOn = setting('hero_delivery_card_enabled', '1') === '1';
    (дефолты — «заводские» из settings-history.php). Пустые строки пропускаем. */
 $featMarquee = setting('feature_marquee', '1') === '1';
 $marqueeDefaults = [
-    1 => 'Доставка по Санкт-Петербургу в день заказа',
+    1 => 'Оплата при получении — наличными или картой', /* W104-λ (C4-T4): было «…в день заказа» — эхо hero-бейджа и соседних пунктов ленты */
     2 => 'Срочная сборка — за 1–2 часа', /* W104-γ: пункт 1 дублировал эту мысль («в день заказа» ×2) */
     3 => 'Фото букета перед отправкой',
     4 => 'Заменяем увядшие в день доставки',
@@ -73,7 +73,7 @@ $heroGhost = $heroTextEnabled && $heroGhostText !== '' && $heroGhostLink !== '';
 
 /* W96-fix1 (F8): траст-ряд под hero — те же гарантии, что и на странице товара
    (дефолты — «заводские» из settings-history.php). Гейт — hero_text_enabled. */
-$guaranteeDefaults = ['Фото букета перед отправкой', 'Свежие цветы с утренней поставки', 'Заменяем увядшие в день доставки'];
+$guaranteeDefaults = ['Фото букета перед отправкой', 'Каждый букет — из свежего среза', 'Заменяем увядшие в день доставки']; /* W104-λ (C4-T4): «с утренней поставки» ×17 — вариация вместо дубли */
 $guarantees = [];
 for ($i = 1; $i <= 3; $i++) {
     $guaranteeVal = trim(setting('guarantee_' . $i, $guaranteeDefaults[$i - 1]));
@@ -682,7 +682,7 @@ if (!$featJournal) {
 /* W104-ζ (C3-T3 P1.5): фото-абзац переформулирован — раньше повторял дословно
    ответ FAQ a3 («курьер фотографирует… вы видите то же, что получит адресат»);
    SEO-версия короче и без дубля, обещание то же. */
-$seoTextDefault = "Доставка цветов по Санкт-Петербургу — в день заказа. Работаем по районам Санкт-Петербурга: в пределах КАД привозим букет за 1–2 часа, в пригороды — Пушкин, Павловск, Гатчина, Всеволожск — в согласованный интервал. Оформите заказ до 20:00, и цветы будут у получателя сегодня же.\n\nСвежесть — главное. Цветы приходят к нам с утренней поставки, а не лежат на складе: букет собираем непосредственно перед отправкой. Если какой-то цветок выглядит не идеально, заменим его до доставки.\n\nКаждый заказ сопровождаем фото: вы видите букет до того, как его вручат.\n\nСпособ оплаты выберете при оформлении: наличными или картой курьеру при получении. Поводы бывают разные: букет маме на день рождения, извиниться, поздравить коллегу или сказать «люблю» без повода — подскажем состав под бюджет и характер события. А если сомневаетесь — просто позвоните, соберём букет вместе по телефону.";
+$seoTextDefault = "Доставка цветов по Санкт-Петербургу. Работаем по районам Санкт-Петербурга: в пределах КАД привозим букет за 1–2 часа, в пригороды — Пушкин, Павловск, Гатчина, Всеволожск — в согласованный интервал. Оформите заказ до 20:00, и цветы будут у получателя сегодня же.\n\nСвежесть — главное. Цветы приходят к нам с утренней поставки, а не лежат на складе: букет собираем непосредственно перед отправкой. Если какой-то цветок выглядит не идеально, заменим его до доставки.\n\nКаждый заказ сопровождаем фото: вы видите букет до того, как его вручат.\n\nСпособ оплаты выберете при оформлении: наличными или картой курьеру при получении. Поводы бывают разные: букет маме на день рождения, извиниться, поздравить коллегу или сказать «люблю» без повода — подскажем состав под бюджет и характер события. А если сомневаетесь — просто позвоните, соберём букет вместе по телефону.";
 ?><!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -915,7 +915,7 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
         <?php endif; ?>
         <div class="fc-hero__content">
         <?php if ($heroTextEnabled): ?>
-        <p class="fc-hero__eyebrow"><?= e(setting('hero_eyebrow', 'Санкт-Петербург · доставка в день заказа')) ?></p>
+        <p class="fc-hero__eyebrow"><?= e(setting('hero_eyebrow', 'Санкт-Петербург · собираем под ваш заказ')) /* W104-λ (C4-T4): «доставка в день заказа» — эхо бейджа ниже, сменили на позиционирование */ ?></p>
         <h1 class="fc-hero__title"><?php
         /* W103 (F1): акцентное слово H1 — Playfair italic + amber-мазок (стили в five.css).
            Ищем «цветов» (без пунктуации), иначе — второе слово. NBSP-склейка «по Санкт-…»
@@ -955,7 +955,7 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
                 . '</span></span>';
         }
         ?></h1>
-        <p class="fc-hero__sub"><?= e(setting('hero_subtitle', 'Соберём и доставим букет в течение дня — к празднику или просто так')) ?></p>
+        <p class="fc-hero__sub"><?= e(setting('hero_subtitle', 'К празднику или просто так — повод не обязателен')) /* W104-λ (C4-T4): было «…в течение дня…» — 3-е обещание доставки на 1-м экране */ ?></p>
         <?php endif; ?>
         <?php if ($heroBtn || $heroGhost): ?>
         <?php /* W103 (F1): ОДНА первичная CTA (розовая пилюля) + тихий ghost-текст со
@@ -1243,7 +1243,7 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
      Фон: img/editorial/petals-macro.jpg с тёмным оверлеем (нет файла — чистый ink). */ ?>
   <?php if ($featSectionPremium && $premiumProducts !== [] && $premiumMinPrice > 0): ?>
   <?php $fcProdSeq++; /* участник чередования фонов товарных секций */ ?>
-  <section class="fc-premium reveal" id="premium"<?= is_file(BASE_PATH . '/img/editorial/petals-macro.jpg') ? ' style="background-image:url(\'/img/editorial/petals-macro.jpg\')"' : '' ?>>
+  <section class="fc-premium reveal" id="premium"<?= is_file(BASE_PATH . '/img/editorial/petals-macro.jpg') ? ' style="background-image:url(\'' . e(hero_img_size('img/editorial/petals-macro.jpg', 1024) ?: '/img/editorial/petals-macro.jpg') . '\')"' : '' ?>>
     <div class="wrap">
       <div class="fc-premium__grid">
         <div class="fc-premium__cards">
@@ -1338,7 +1338,7 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
         <div class="fc-row__heading" data-numeral="<?= e(fc_next_numeral()) ?>">
         <?php render_fc_eyebrow(setting('catalog_eyebrow', 'Весь|ассортимент')); ?>
         <h2 class="fc-row__title"><?= e(setting('catalog_title', 'Каталог')) ?></h2>
-        <?php $catalogSub = setting('catalog_subtitle', 'Соберём и доставим букет в день заказа'); ?>
+        <?php $catalogSub = setting('catalog_subtitle', 'Выбирайте букет — соберём и привезём сегодня'); /* W104-λ (C4-T4): было «…в день заказа» — дублировало формулу hero/SEO */ ?>
         <?php if ($catalogSub !== ''): ?><p class="fc-row__sub"><?= e($catalogSub) ?></p><?php endif; ?>
         </div>
       </div>
@@ -1480,7 +1480,7 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
          по умолчанию (display:none); показывает js-волна при пустой корзине. */ ?>
       <div id="orderEmptyState" style="display:none;text-align:center;padding:44px 20px;border:1px dashed var(--line);border-radius:16px;margin-bottom:18px">
         <p style="font-size:1.05rem;font-weight:600;margin-bottom:6px">Корзина пока пуста — выберите букет, и форма появится здесь</p>
-        <p style="color:var(--ink-soft);font-size:.9rem;margin-bottom:16px">В каталоге — свежие букеты с утренней поставки и ценами на любой бюджет</p>
+        <p style="color:var(--ink-soft);font-size:.9rem;margin-bottom:16px">В каталоге — свежие букеты на любой бюджет</p> <?php /* W104-λ: убрано «с утренней поставки» — эхо seo-абзаца ниже */ ?>
         <a class="btn btn--outline" href="#catalog">Перейти в каталог</a>
       </div>
       <form class="order-form" id="orderForm" novalidate>

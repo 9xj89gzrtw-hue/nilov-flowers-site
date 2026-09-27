@@ -6,7 +6,9 @@
    розы/пиона с асимметрией, 8–22px,
    tumble + sin-качание, падение 12–40px/s; палитра бренда с альфой .55–.85
    и вертикальным градиентом. Ветер — sin/cos-noise поля; курсор — порыв
-   (радиус 140px, repulse+swirl, затухает). Перф: DPR cap 2 (motion-lite —
+   (радиус 140px, repulse+swirl, затухает); скролл — порыв поля целиком
+   (W104-κ: скорость скролла → ветер вниз+вбок/встречный поток,
+   window.NF_PETALS.wind из kinetic.js §5). Перф: DPR cap 2 (motion-lite —
    1.5, W104-η), один rAF, пауза
    вне вьюпорта (IO) и в hidden-табе; старт после window load + html.js-ready.
    prefers-reduced-motion — один статичный кадр (13 лепестков).
@@ -36,6 +38,17 @@
   const GUST_VMAX = 160;       /* потолок скорости порыва, px/s */
   const BLOOM_FADE = 0.55;     /* W104-β: рамп альфы одного лепестка, с */
 
+  /* W104-κ (C4-D4 P1 «signature-момент»): СКРОЛЛ-ПОРЫВ — скорость скролла
+     (кинетический семплер в kinetic.js §5) становится ветром всего поля:
+     резкий уход с hero (скролл вниз) = порыв ВНИЗ+вбок, возврат к hero =
+     лёгкий встречный поток вверх. В отличие от курсор-порыва (сила на
+     отдельный лепесток в радиусе) — это FIELD-level сила: один вектор на
+     кадр, каждый лепесток тянет по своей глубине (windK). */
+  const GUST_SCROLL_DOWN = 320;  /* px/s потолок порыва вниз (уход — драматичный) */
+  const GUST_SCROLL_UP = 180;    /* встречный поток мягче (возврат — лёгкий) */
+  const GUST_SCROLL_SIDE = 0.35; /* доля горизонтального сдвига от вертикали */
+  const GUST_SCROLL_TAU = 0.2;   /* релакс к базе: ~600мс до тишины (3τ) */
+
   let host = null;
   let canvas = null;
   let ctx = null;
@@ -52,6 +65,10 @@
   let lastTs = 0;
   let resizeTimer = 0;
   const cursor = { x: 0, y: 0, vx: 0, vy: 0, t: 0, energy: 0, seen: false };
+  /* W104-κ: состояние скролл-порыва — цель (обновляется тиками скролла),
+     текущее значение (атака/релакс в frame()), метка времени последнего
+     тика (wall-clock — переживает паузу rAF вне вьюпорта честно) */
+  const gust = { target: 0, y: 0, t: -1e9 };
 
   const isOff = () => ROOT.classList.contains('no-petals');
 
@@ -209,8 +226,10 @@
     /* координаты курсора в системе canvas (rect нужен только при порыве) */
     let cx = 0;
     let cy = 0;
-    const gust = cursor.energy > 0.01 && cursor.seen;
-    if (gust) {
+    /* W104-κ: локальный флаг курсор-порыва переименован gust→cgust:
+       имя gust теперь занято полем скролл-порыва (объект выше) */
+    const cgust = cursor.energy > 0.01 && cursor.seen;
+    if (cgust) {
       const r = host.getBoundingClientRect();
       cx = cursor.x - r.left;
       cy = cursor.y - r.top;
@@ -219,11 +238,34 @@
     const wind = windAt(time);
     const damp = Math.exp(-2.4 * dt);
 
+    /* W104-κ: скролл-порыв — поле целиком. Пока тики скролла свежие
+       (<250мс) — быстрая атака к цели; скролл замолчал — экспоненциальный
+       релакс к базе τ=0.2с (≈600мс до тишины). ts — wall-clock, поэтому
+       пауза вне вьюпорта не «замораживает» порыв: на возврате он честно
+       додувается и оседает. */
+    if (ts - gust.t < 250) {
+      gust.y += (gust.target - gust.y) * Math.min(1, dt * 14);
+    } else {
+      gust.y *= Math.exp(-dt / GUST_SCROLL_TAU);
+      if (gust.y < 1 && gust.y > -1) gust.y = 0;
+    }
+    const gWindY = gust.y;            /* вертикальная компонента, px/s */
+    const gWindX = gust.y * GUST_SCROLL_SIDE; /* вбок — со знаком потока */
+
+    /* W104-κ (НАЙДЕН П0-БУГ ВОЛНЫ W104-c, жил с первого коммита 5e2673e):
+       frame() рисовал лепестки БЕЗ очистки канваса — clearRect жил только
+       в drawAll(), который вызывается лишь статикой reduced-motion. Каждая
+       рамка доливала краску: канвас копил «шлейф» (замер: 7% через 3с →
+       23% через 10с → 76%+ через минуту — hero-колонка медленно заливалась
+       розовым каша-слоем). Очистка здесь, в начале фазы рисования. */
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+
     for (let i = 0; i < petals.length; i++) {
       const p = petals[i];
 
       /* порыв: repulse от курсора + swirl + толчок по движению курсора */
-      if (gust) {
+      if (cgust) {
         const dx = p.x - cx;
         const dy = p.y - cy;
         const d2 = dx * dx + dy * dy;
@@ -248,11 +290,15 @@
          (до −45% vy), в центре дуги падает полной скоростью. Живая
          биомеханика листа вместо равномерного лифта. */
       const sway = Math.sin(time * p.fr + p.ph);
-      p.baseX += (wind * 16 * p.windK + p.gvx) * dt;
-      p.y += (p.vy * (1 - 0.45 * sway * sway) + p.gvy) * dt;
+      /* W104-κ: + скролл-порыв — глубина сцены отвечает по-разному:
+         ближние (windK→1.6) сносятся сильнее дальних (→0.45), порыв
+         вниз-вбок получает объём, а не конвейер одинаковых скоростей */
+      const gk = 0.5 + 0.8 * p.windK;
+      p.baseX += (wind * 16 * p.windK + p.gvx + gWindX * gk) * dt;
+      p.y += (p.vy * (1 - 0.45 * sway * sway) + p.gvy + gWindY * gk) * dt;
       p.gvx *= damp;
       p.gvy *= damp;
-      p.rot += (p.tum + p.gvx * 0.012) * dt;
+      p.rot += (p.tum + p.gvx * 0.012 + gWindY * 0.004 * p.windK) * dt;
       p.x = p.baseX + sway * p.amp;
 
       /* реcайкл: вышел за нижнюю/боковую/верхнюю границу — родился сверху */
@@ -431,6 +477,19 @@
     get active() { return !tornDown; },
     disable() { ROOT.classList.add('no-petals'); },
     enable() { ROOT.classList.remove('no-petals'); },
+    /* W104-κ (C4-D4 P1): ветер скролла. vy — скорость скролла в px/ms
+       (+ вниз / − вверх); вызывается kinetic.js §5 на каждый rAF-тик
+       скролла. Внутри: px/ms→px/s (×100), асимметричный кламп
+       (вниз 320 / вверх 180), атака/релакс — в frame(). Вызов при
+       reduced-motion/выключенных лепестках безопасен: поле не бежит —
+       цель просто не потребляется. */
+    wind: function (vy) {
+      if (!isFinite(vy)) return;
+      const target = vy * 100;
+      gust.target = target > GUST_SCROLL_DOWN ? GUST_SCROLL_DOWN
+        : target < -GUST_SCROLL_UP ? -GUST_SCROLL_UP : target;
+      gust.t = performance.now();
+    },
     /* диагностика порыва/перфа (только чтение) */
     stats() {
       let g = 0;
@@ -438,13 +497,18 @@
         const v = Math.abs(petals[i].gvx) + Math.abs(petals[i].gvy);
         if (v > g) g = v;
       }
+      /* W104-κ: gustSpeedMax видит и скролл-порыв (поле: |y|+|x| = 1.35|y|),
+         не только курсорные gv* лепестков — метрика остаётся «максимальный
+         ветер поля за вызов» */
+      const sg = Math.abs(gust.y) * (1 + GUST_SCROLL_SIDE);
       return {
         running,
         petals: petals.length,
         /* W104-β: сколько лепестков уже полностью проявились (bloom-волна) */
         bloomed: petals.reduce((n, p) => n + (p.bloom < 0 || time - p.bloom >= BLOOM_FADE ? 1 : 0), 0),
         cursorEnergy: Math.round(cursor.energy * 100) / 100,
-        gustSpeedMax: Math.round(g)
+        gustSpeedMax: Math.round(Math.max(g, sg)),
+        scrollGust: Math.round(gust.y) /* W104-κ: текущий вертикальный порыв, px/s */
       };
     }
   };

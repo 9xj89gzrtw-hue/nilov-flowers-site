@@ -101,4 +101,46 @@
     wheelLock = now;
     go(e.deltaX > 0 ? 1 : -1);
   }, { passive: false });
+
+  /* W104-κ (C4-D4 P1): КУРСОР-ЗУМ крупного плана. mousemove по слайду →
+     --zx/--zy = % координаты курсора; motion-w104.css §8 на hover ведёт
+     background-position за курсором (background-size 165% — это и есть
+     zoom 1.6 с origin по точке курсора). Сглаживание — CSS transition
+     .18s (эффект «линзы»). rAF-троттл: один расчёт на кадр, rect — один.
+     mouseleave — снимаем переменные: фон возвращается к базе 50% 36%
+     тем же переходом. Только hover+fine и без reduced-motion; тач не
+     трогаем (тап по слайду открывает лайтбокс — уже есть), pinch не нужен. */
+  if (window.matchMedia
+      && window.matchMedia('(hover: hover) and (pointer: fine)').matches
+      && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    var zRaf = 0;
+    var zEl = null;
+    var zx = 0;
+    var zy = 0;
+    slides.forEach(function (slide) {
+      var zoom = slide.querySelector('.product-gallery__zoom');
+      if (!zoom) return;
+      slide.addEventListener('mousemove', function (e) {
+        zEl = zoom;
+        zx = e.clientX;
+        zy = e.clientY;
+        if (!zRaf) {
+          zRaf = requestAnimationFrame(function () {
+            zRaf = 0;
+            if (!zEl) return;
+            var r = zEl.getBoundingClientRect();
+            if (!r.width || !r.height) return;
+            /* кламп 0..100: курсор в подписи слайда не должен уводить фон
+               за край (при >100% no-repeat-фон отрывается от границы) */
+            zEl.style.setProperty('--zx', Math.max(0, Math.min(100, ((zx - r.left) / r.width) * 100)).toFixed(1) + '%');
+            zEl.style.setProperty('--zy', Math.max(0, Math.min(100, ((zy - r.top) / r.height) * 100)).toFixed(1) + '%');
+          });
+        }
+      }, { passive: true });
+      slide.addEventListener('mouseleave', function () {
+        zoom.style.removeProperty('--zx');
+        zoom.style.removeProperty('--zy');
+      }, { passive: true });
+    });
+  }
 })();

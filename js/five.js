@@ -1,6 +1,9 @@
 /* five.js — витринная логика редизайна 5cv (W96 / T2-b).
    1) Город-бар: «Да, верно»/крестик → localStorage + скрытие.
    2) Карусели .fc-carousel: стрелки + disabled-состояния по скроллу.
+   2b) TILT карточек (W104-κ, C4-D4): --tx/--ty на .product-card по
+       курсору — делегированный mousemove на .fc-carousel/.catalog__grid
+       (только pointer:fine, без reduced-motion; CSS — motion-w104.css §8).
    3) Чипы цен + поиск #fcSearch: W97-fixA (A2/A3) — здесь ТОЛЬКО DOM-состояние
       (is-active у чипов, значение поля поиска) + вызов общего фильтра
       window.NfCatalogApply() из catalog-filter.js (единый источник истины:
@@ -51,6 +54,7 @@
     rowLinks();
     headerFavLink(); /* W99-fixG2 (H3): сердечко шапки → фильтр избранного */
     magneticHeroCta(); /* W103 (6-b): магнитная hero-CTA (только hover+fine) */
+    cardTilt(); /* W104-κ (C4-D4 P1): tilt карточек — --tx/--ty по курсору (только fine) */
     cartTotalPulse(); /* W103 (6-b, M7): пульс итога корзины при изменении */
     faqSmoothClose(); /* W104-β (C1-M P0): FAQ/SEO-details — плавное закрытие 1fr→0fr */
     marqueePlayback(); /* W104-β (C1-M P0): marquee-лента играет только в вьюпорте */
@@ -429,6 +433,59 @@
     /* мягкий: CTA карточек каталога (кнопки компактнее — 10px) */
     document.querySelectorAll('.product-card__cta')
       .forEach(function (cta) { attach(cta, 10); });
+  }
+
+  /* ---------- 6b. TILT КАРТОЧЕК (W104-κ, C4-D4 P1 «механично → живо») ----------
+     Фото едва-едва следует за курсором: --tx/--ty ∈ −1..1 на карточке,
+     transform ±4/±3px — на РОДИТЕЛЕ-обёртке фото .product-card__media
+     (motion-w104.css §8), hover-zoom остаётся на img — разные элементы,
+     конфликтов нет; hover-lift живёт на самой карточке — тоже мимо.
+     Делегированный mousemove на контейнерах (.fc-carousel, .catalog__grid,
+     включая related на PDP и грид occasion): слушатель ОДИН на контейнер,
+     расчёт — один rAF на кадр, rect — один на кадр. Компакт-рельс
+     (.fc-carousel--compact, мини-карточки 84px) — без tilt. Возврат к 0
+     (mouse уходит с карточки/из контейнера) — той же системной кривой
+     .3s из CSS. Только hover+fine и без reduced-motion. */
+  function cardTilt() {
+    if (reducedMotion()) return;
+    if (!window.matchMedia || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+    var boxes = document.querySelectorAll('.fc-carousel, .catalog__grid');
+    if (!boxes.length) return;
+    var cur = null;
+    var px = 0;
+    var py = 0;
+    var raf = 0;
+    function reset() {
+      if (cur) {
+        cur.style.removeProperty('--tx');
+        cur.style.removeProperty('--ty');
+      }
+      cur = null;
+    }
+    function apply() {
+      raf = 0;
+      if (!cur) return;
+      var r = cur.getBoundingClientRect();
+      if (!r.width || !r.height) return;
+      var tx = Math.max(-1, Math.min(1, ((px - r.left) / r.width) * 2 - 1));
+      var ty = Math.max(-1, Math.min(1, ((py - r.top) / r.height) * 2 - 1));
+      cur.style.setProperty('--tx', tx.toFixed(3));
+      cur.style.setProperty('--ty', ty.toFixed(3));
+    }
+    Array.prototype.forEach.call(boxes, function (box) {
+      if (box.classList.contains('fc-carousel--compact')) return; /* мини-рельс — без tilt */
+      box.addEventListener('mousemove', function (e) {
+        px = e.clientX;
+        py = e.clientY;
+        var card = e.target && e.target.closest ? e.target.closest('.product-card') : null;
+        if (card !== cur) {
+          reset(); /* курсор перешёл на соседнюю карточку/в зазор — прежняя отпускается */
+          cur = card;
+        }
+        if (cur && !raf) raf = requestAnimationFrame(apply);
+      }, { passive: true });
+      box.addEventListener('mouseleave', reset, { passive: true });
+    });
   }
 
   /* ---------- 7. Пульс итога корзины (W103, 6-b — M7; W104-β: кривая/амплитуда — motion-w104.css) ----------

@@ -70,7 +70,7 @@ $__nfIsProduct = (bool)preg_match('#^/product(/|$)#', $__nfPath)
         </svg>
         <?= e($siteName) ?>
       </p>
-      <p class="fc-footer__about"><?= e(setting('footer_about', 'Свежие букеты с доставкой по Санкт-Петербургу в день заказа')) ?></p>
+      <p class="fc-footer__about"><?= e(setting('footer_about', 'Свежие букеты с доставкой по всему Санкт-Петербургу')) /* W104-λ (C4-T4): убрано «в день заказа» — эхо SEO-блока прямо над футером */ ?></p>
       <?php if ($waOn || $tgOn || $vkOn || $maxOn || $igOn || $emailOn): ?>
       <p class="site-footer__messengers">
         <?php if ($waOn): ?><a href="https://wa.me/<?= e(preg_replace('/[^0-9]/', '', $whatsapp)) ?>" target="_blank" rel="noopener">WhatsApp</a><?php endif; ?>
