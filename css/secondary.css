@@ -9,30 +9,47 @@
    • арт-директор: провал шкалы H2 33.6→24 на вторичках → H2 секций
      выровнен с .fc-row__title главной: clamp(1.6rem,2.4vw,2.1rem) 800.
 
-   Подключается ОТДЕЛЬНЫМ <link> в category.php (после category.css)
-   и occasion.php (после partials/head.php → five.css + fonts.css).
+   Подключается ОТДЕЛЬНЫМ <link> в category.php (после category.css),
+   occasion.php, order-thanks.php, policy_new.php, offer_new.php, 404.php
+   (после partials/head.php → five.css + fonts.css).
    Токены var(--pink), var(--ink), var(--ink-muted) живут в five.css;
    --font-display — Playfair-стек (fonts.css :root / five.css html:root).
    Локальное переобъявление --font-display в .page-hero__title — та же
    защита каскада, что у .fc-product__title в product-extras.css.
 
-   Скоуп: только классы вторичек (.page-hero*, .breadcrumbs,
-   .section-title). Главная и PDP этот файл не подключают.
+   W105-b (5-b) — файл расширен до «вторичного ядра»:
+   • читательский масштаб .prose 17px/1.75/66ch (occasion-body + легальные);
+   • body.page-utility (thanks / 404 / policy / offer) — H1 на ступень
+     ниже лендингов, легальный ритм H2, muted-маркеры, scroll-margin;
+   • .toc — оглавление легальных страниц (2 колонки → 1 на мобиле);
+   • .thanks-* — карточка сводки заказа + прорисовка галочки;
+   • .error-code — Playfair-числовой якорь 404.
+
+   W105-c (5-b, проход 2 — синхрон с финальной главной 5-a):
+   • H1-трекинг −1.5% (= H2 главной 5-a), кривая ховеров/переходов —
+     cubic-bezier(.4,0,.2,1) (канон «одна кривая»: 150/300/500ms),
+     фокус-кольца ink 2px/офсет 3px (= глобальный five.css:2145).
+
+   Скоуп: классы вторичек (.page-hero*, .breadcrumbs, .section-title,
+   .prose, .toc*, .thanks*, .error-code, .fc-thanks__steps).
+   Главная и PDP этот файл не подключают.
    ================================================================ */
 
 /* ============ 1. H1 ВТОРИЧНЫХ СТРАНИЦ — PLAYFAIR DISPLAY ============
-   Клоны паттерна .fc-hero__title главной (600, ls -.01em, balance),
+   Клоны паттерна .fc-hero__title главной (500, ls -.015em, balance),
    но в ink-цвете на светлой подложке. Акцентное первое слово —
    <em class="page-hero__accent"> из PHP (разбиение по первому пробелу,
    e() на обе части): Playfair italic + pink-deep — тот же приём, что
-   fc-hero__accent главной, без amber-мазка (на белом он шумит). */
+   fc-hero__accent главной, без amber-мазка (на белом он шумит).
+   W105-b (5-b): верх шкалы 3.25→2.75rem = H1 PDP = H2 главной — вторичная
+   H1 не перекрикивает деньгу (PDP); середина 4vw→3.6vw (критик: «shout»). */
 .page-hero__title{
   --font-display:'Playfair Display','Playfair Fallback',Georgia,'Times New Roman',serif;
   font-family:var(--font-display);
   font-weight:500;
-  font-size:clamp(2.2rem,4vw,3.25rem);   /* было Montserrat 800 36px */
+  font-size:clamp(2.2rem,3.6vw,2.75rem);   /* было clamp(2.2rem,4vw,3.25rem) */
   line-height:1.12;
-  letter-spacing:-.01em;
+  letter-spacing:-.015em;   /* W105-c (5-b/2): display-трекинг H2 главной 5-a (−1.5%) — семейство одной оптической плотности */
   text-wrap:balance;
 }
 .page-hero__accent{
@@ -42,6 +59,16 @@
   font-weight:600;
   color:var(--pink-deep,#cc2f7a);
 }
+
+/* ============ 1b. УТИЛИТАРНЫЕ СТРАНИЦЫ (thanks / 404 / policy / offer) ============
+   W105-b (5-b): подтверждение/легальные страницы получают тот же display-DNA,
+   но на ступень ниже лендингов (приём — five.css делал это для .page-hero__title
+   до подключения этого файла; теперь пара «лендинг > утилита» живёт в одном месте).
+   Класс на <body class="page-utility"> ставит сама страница. */
+.page-utility .page-hero__title{
+  font-size:clamp(1.75rem,3vw,2.25rem);
+}
+.page-utility .page-hero__accent{font-weight:500}
 
 /* ============ 2. ИНТРО-АБЗАЦ ПОД H1 ============
    Комфортное чтение до каталога: 1.05rem muted, строка ≤ 62ch
@@ -73,11 +100,158 @@
   letter-spacing:-.01em;
 }
 
-/* ============ 5. ПЕРЕХОДЫ И ФОКУС (W104: ink) ============
-   Единая кривая ховеров главной: cubic-bezier(.22,1,.36,1) 300ms.
-   Фокус-кольца — ink 2px (W104 CTA-система: глобальный :focus-visible
-   в five.css уже ink — здесь дубль для автономности файла). */
-.breadcrumbs a{transition:color .3s cubic-bezier(.22,1,.36,1)}
+/* ============ 4b. ЧИТАТЕЛЬСКИЙ МАСШТАБ PROSE (W105-b 5-b) ============
+   Спека W104 «читаемая проза 17px»: все вторички с длинным текстом
+   (occasion-body, оферта, политика) — 17px/1.75, строка ≤ 66ch.
+   PDP задаёт свою пару в product-extras.css (60ch) — файлы не пересекаются. */
+.prose{
+  font-size:1.0625rem;
+  line-height:1.75;
+  max-width:66ch;
+}
+
+/* ============ 4c. ЛЕГАЛЬНЫЕ СТРАНИЦЫ (body.page-utility: policy/offer) ============
+   Ритм нумерованных разделов: H2 — Playfair 500 (типосистема витрины,
+   не гротеск-600), воздух 36px сверху (длинный текст дышит разделами);
+   маркеры списков — ink-muted (розовый bullet в плотном юр-тексте —
+   визуальный шум, на витрине остаётся); якорные переходы — под sticky-хедер. */
+.page-utility .prose h2{
+  --font-display:'Playfair Display','Playfair Fallback',Georgia,'Times New Roman',serif;
+  font-family:var(--font-display);
+  font-weight:500;
+  font-size:clamp(1.35rem,1.8vw,1.6rem);
+  line-height:1.2;
+  letter-spacing:-.005em;
+  margin:36px 0 12px;
+}
+.page-utility .prose h2:first-child{margin-top:0}
+.page-utility .prose ul li::marker{color:var(--ink-muted,#6e6a72)}
+.page-utility [id]{scroll-margin-top:120px}
+
+/* ============ 4d. ОГЛАВЛЕНИЕ ЛЕГАЛЬНЫХ СТРАНИЦ (.toc, W105-b 5-b) ============
+   Тихая карточка с hairline-рамкой над текстом: 2 колонки на десктопе,
+   одна на мобиле; ссылки — номер раздела muted + название ink → hover
+   pink-dark (язык .breadcrumbs). Закрывает читателя от «скролла вслепую»
+   по 9–10 разделам оферты/политики. */
+.toc{
+  border:1px solid var(--line,#e7e5ea);
+  border-radius:16px;
+  background:#fff;
+  padding:18px 22px;
+  margin:0 0 28px;
+  max-width:66ch;
+}
+.toc__title{
+  font:600 11px/1.4 var(--font-ui,sans-serif);
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-muted,#6e6a72);
+  margin:0 0 12px;
+}
+.toc__list{
+  list-style:none;margin:0;padding:0;
+  display:grid;grid-template-columns:1fr 1fr;gap:4px 28px;
+}
+.toc__list a{
+  display:inline-flex;align-items:baseline;gap:10px;
+  padding:7px 0;min-height:44px;box-sizing:border-box;
+  color:var(--ink,#1c1a1e);text-decoration:none;
+  font-size:.92rem;line-height:1.45;
+}
+.toc__list a:hover .toc__num{color:var(--pink-dark,#cc2f7a)}
+.toc__num{
+  flex:none;font-size:.8rem;font-weight:600;color:var(--ink-muted,#6e6a72);
+  font-variant-numeric:tabular-nums;
+  transition:color .3s cubic-bezier(.4,0,.2,1);   /* W105-c: кривая главной 5-a */
+}
+.toc__list a:focus-visible{outline:2px solid var(--ink,#1c1a1e);outline-offset:3px;border-radius:6px}
+@media(max-width:640px){
+  .toc{padding:14px 16px;border-radius:14px}
+  .toc__list{grid-template-columns:1fr;gap:0}
+}
+
+/* ============ 4e. СТРАНИЦА БЛАГОДАРНОСТИ (order-thanks, W105-b 5-b) ============
+   Сводка заказа — из инлайн-стилей в токены: hairline-карточка r20,
+   «итого» — якорь веса (700/17px), строки состава — 15px с rhythm-ом.
+   Шаги «Что дальше» — радиус 20 (пара 16/24 семейства), номер-бейдж шага
+   поверх иконки не нужен: иконки уже различимы. Галочка успеха —
+   прорисовка штриха 500ms (превращает «состояние» в «момент»). */
+.thanks-check{
+  display:inline-grid;place-items:center;
+  width:76px;height:76px;border-radius:50%;
+  background:var(--surface-warm,#fbf5f8);
+  margin-bottom:18px;
+}
+.thanks-check path{
+  stroke:var(--pink,#ff4ea2);
+  stroke-dasharray:40;
+  stroke-dashoffset:40;
+  animation:thanks-check-draw .5s cubic-bezier(.4,0,.2,1) .25s forwards;
+}
+@keyframes thanks-check-draw{to{stroke-dashoffset:0}}
+.thanks-summary{
+  border:1px solid var(--line,#e7e5ea);
+  border-radius:20px;
+  background:#fff;
+  text-align:left;
+  margin:0 auto 20px;
+  max-width:440px;
+  padding:20px 22px;
+}
+.thanks-summary__title{
+  font:600 11px/1.4 var(--font-ui,sans-serif);
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-muted,#6e6a72);
+  margin:0 0 12px;
+}
+.thanks-summary__items{margin:0 0 14px;padding:0;list-style:none}
+.thanks-summary__items li{
+  display:flex;justify-content:space-between;gap:14px;
+  font-size:.94rem;line-height:1.5;color:var(--ink,#1c1a1e);
+  padding:7px 0;border-bottom:1px dashed var(--line,#e7e5ea);
+}
+.thanks-summary__items li:last-child{border-bottom:0}
+.thanks-summary__meta{font-size:.88rem;color:var(--ink-muted,#6e6a72);line-height:1.6}
+.thanks-summary__total{
+  margin:12px 0 0;padding-top:12px;border-top:1px solid var(--line,#e7e5ea);
+  font-size:1.0625rem;font-weight:700;
+  font-variant-numeric:tabular-nums;
+}
+.fc-thanks__steps{border-radius:20px}
+.thanks-links{
+  display:flex;justify-content:center;flex-wrap:wrap;gap:6px 26px;
+  margin-top:18px;
+}
+.thanks-links a{
+  display:inline-flex;align-items:center;gap:6px;
+  min-height:44px;
+  color:var(--ink-muted,#6e6a72);text-decoration:none;
+  font-size:.9rem;font-weight:500;
+  transition:color .3s cubic-bezier(.4,0,.2,1);   /* W105-c: кривая главной 5-a */
+}
+.thanks-links a:hover{color:var(--pink-dark,#cc2f7a)}
+.thanks-links a:focus-visible{outline:2px solid var(--ink,#1c1a1e);outline-offset:3px;border-radius:6px}
+
+/* ============ 4f. 404 (W105-b 5-b) ============
+   Числовой якорь — Playfair italic (вместо Montserrat 800): тихий
+   editorial-иероглиф, не «неоновая сигнализация»; H1 — семейный паттерн
+   первого слова-акцента. Лепестки (NF_BURST на load) — сигнатура магазина. */
+.error-code{
+  font-family:'Playfair Display','Playfair Fallback',Georgia,'Times New Roman',serif;
+  font-style:italic;
+  font-weight:500;
+  font-size:clamp(4.5rem,14vw,7.5rem);
+  line-height:1;
+  letter-spacing:-.03em;
+  color:var(--ink,#1c1a1e);
+  margin:0 0 18px;
+}
+
+/* ============ 5. ПЕРЕХОДЫ И ФОКУС (W104: ink; W105-c: кривая 5-a) ============
+   Единая кривая ховеров главной (5-a): cubic-bezier(.4,0,.2,1) 300ms —
+   канон 5cv «одна кривая на весь сайт». Фокус-кольца — ink 2px/офсет 3px
+   (W104 CTA-система = глобальный :focus-visible five.css:2145 — здесь
+   дубль для автономности файла). */
+.breadcrumbs a{transition:color .3s cubic-bezier(.4,0,.2,1)}
 .breadcrumbs a:focus-visible,
 .btn--accent:focus-visible,
 .btn--outline:focus-visible{
@@ -88,4 +262,8 @@
 /* ============ 6. PREFERS-REDUCED-MOTION ============ */
 @media(prefers-reduced-motion:reduce){
   .breadcrumbs a{transition:none}
+  .toc__num{transition:none}
+  .toc__list a:hover .toc__num{color:var(--ink-muted,#6e6a72)}
+  .thanks-links a{transition:none}
+  .thanks-check path{animation:none;stroke-dashoffset:0}
 }

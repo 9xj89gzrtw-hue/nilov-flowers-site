@@ -721,9 +721,11 @@ $breadcrumbItems[] = ['@type' => 'ListItem', 'position' => count($breadcrumbItem
             },{threshold:0.02}).observe(ft);
           });
           </script>
-          <?php /* W99-fixG (G9): заголовок мета-блока для контура заголовков/SR —
-             sr-only класса в css/ нет (проверено), инлайн-приём «визуально скрыто» */ ?>
-          <h2 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap">Доставка и оплата</h2>
+          <?php /* W99-fixG (G9): заголовок мета-блока для контура заголовков/SR.
+             W105-b (5-b): sr-only → ВИДИМЫЙ caps-eyebrow (токен .fc-row__eyebrow
+             главной, стили product-extras.css §2c + hairline над списком):
+             «список-без-начала» получает врезку, контур заголовков сохранён. */ ?>
+          <h2 class="fc-product__meta-title">Доставка и оплата</h2>
           <?php /* Мета-блок 5cv: доставка / самовывоз / оплата + гарантии с иконками */ ?>
           <ul class="fc-product__meta">
             <?php /* W96-fix3b (D6): «доставим сегодня» — первая строка мета-блока.

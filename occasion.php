@@ -292,7 +292,11 @@ $secondaryCssV = substr((string)@md5_file(__DIR__ . '/css/secondary.css'), 0, 8)
       <?php foreach ($faq as $f): ?>
       <details class="faq-item">
         <summary class="faq-item__q"><?= e($f['q']) ?></summary>
-        <p class="faq-item__a"><?= e($f['a']) ?></p>
+        <?php /* W105-c (5-b/2): обёртка .faq-item__a-wrap — как в index.php FAQ:
+           к ней привязана последовательная анимация «крест 220ms → ответ 340ms»
+           (five.css W105-a) и плавное закрытие is-closing (js/five.js faqSmoothClose
+           ранний return БЕЗ обёртки — на поводах FAQ открывался/закрывался рывком). */ ?>
+        <div class="faq-item__a-wrap"><p class="faq-item__a"><?= e($f['a']) ?></p></div>
       </details>
       <?php endforeach; ?>
       </div>

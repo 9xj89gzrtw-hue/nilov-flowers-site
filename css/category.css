@@ -17,15 +17,17 @@
                    #cc2f7a на #fff = 4.94:1 — как чипы цен главной);
    • сортировка  — сегмент-контрол в обводке --line, активный сегмент
                    ink-фон/белый текст (кнопки .card-btn главной);
-   • focus-visible — розовое кольцо (--pink-dark глобально из five.css,
+   • focus-visible — ink-кольцо (глобально из five.css:2145,
                    внутри сегмента — внутреннее, чтобы не резалось
                    overflow:hidden трека).
+   W105-c (5-b/2): кривая — bezier(.4,0,.2,1) 150ms (канон «одна
+   кривая» главной 5-a: 150/300/500ms).
    ================================================================ */
 
 /* ---------- Тулбар под H1/интро категории ---------- */
 .cat-toolbar{
-  margin:6px 0 24px;
-  display:flex;flex-direction:column;gap:12px;
+  margin:10px 0 28px;   /* W105-b (5-b): воздух после интро — ритм fc-section главной */
+  display:flex;flex-direction:column;gap:14px;
 }
 .cat-toolbar__controls{
   display:flex;align-items:center;justify-content:space-between;
@@ -42,7 +44,8 @@
   background:var(--surface-subtle,#f6f6f8);color:var(--ink,#1c1a1e);
   border:1.5px solid transparent;
   font:600 .875rem var(--font-ui,sans-serif);cursor:pointer; /* W104-α J: единая кнопочная шкала 14px */
-  transition:background .15s,color .15s,border-color .15s,transform .1s;
+  /* W105-c (5-b/2): кривая главной 5-a — bezier(.4,0,.2,1), микротайм 150ms */
+  transition:background .15s cubic-bezier(.4,0,.2,1),color .15s cubic-bezier(.4,0,.2,1),border-color .15s cubic-bezier(.4,0,.2,1),transform .1s cubic-bezier(.4,0,.2,1);
 }
 .cat-chip:hover{background:#eceaf0;border-color:var(--ink,#1c1a1e)}
 .cat-chip:active{transform:scale(.97)}
@@ -72,14 +75,15 @@
   white-space:nowrap;min-height:44px;padding:0 18px;border:0;
   background:transparent;color:var(--ink-muted,#6e6a72);
   font:600 .8125rem var(--font-ui,sans-serif);cursor:pointer; /* W104-α J: вторичная шкала 13px */
-  transition:background .15s,color .15s;
+  transition:background .15s cubic-bezier(.4,0,.2,1),color .15s cubic-bezier(.4,0,.2,1),box-shadow .15s cubic-bezier(.4,0,.2,1);   /* W105-c: кривая главной 5-a */
 }
 .cat-sort__btn:hover{background:var(--surface-subtle,#f6f6f8);color:var(--ink,#1c1a1e)}
-/* Активный сегмент — ink-фон/белый текст (как кнопки .card-btn витрины) */
-/* W103 (критик-8 P1): активный сегмент — контурный, не чёрная заливка
-   (ink-плита конкурировала с primary CTA страницы) */
+/* Активный сегмент — контурный (критик-8 P1: ink-плита конкурировала
+   с primary CTA). W105-b (5-b): ring 1.5px ink + вес 600 (был 700 — двойное
+   ударение кольцо+жирный делало сегмент «тяжёлым»); ring через box-shadow
+   с мягкой кривой — переключение читается, не лязгает. */
 .cat-sort__btn[aria-pressed="true"],.cat-sort__btn.is-active{
-  background:#fff;color:var(--ink,#1c1a1e);font-weight:700;
+  background:#fff;color:var(--ink,#1c1a1e);font-weight:600;
   box-shadow:inset 0 0 0 1.5px var(--ink,#1c1a1e);
 }
 .cat-sort__btn[aria-pressed="true"]:hover,.cat-sort__btn.is-active:hover{
@@ -104,7 +108,7 @@
   min-height:44px;padding:0 18px;border-radius:999px;
   border:1.5px solid var(--line,#e7e5ea);background:#fff;
   color:var(--ink,#1c1a1e);font:600 .8125rem var(--font-ui,sans-serif);cursor:pointer; /* W104-α J: вторичная шкала 13px */
-  transition:border-color .15s,color .15s;
+  transition:border-color .15s cubic-bezier(.4,0,.2,1),color .15s cubic-bezier(.4,0,.2,1);   /* W105-c: кривая главной 5-a */
 }
 .cat-reset:hover{border-color:var(--ink,#1c1a1e);color:var(--ink,#1c1a1e)}
 .cat-reset:focus-visible{outline:2px solid var(--ink,#1c1a1e);outline-offset:3px}

@@ -76,24 +76,32 @@ if (mb_strlen($__cardText) > 80) $__cardShort .= '…';
 
 $canonicalUrl = 'https://flowers.interfood-catering.ru/order-thanks';
 $pageTitle = 'Заказ № ' . $orderId . ' принят — ' . $siteName;
+/* W105-b (5-b): display-ДНК вторичек (H1/прза/сводка) — общий файл
+   category+occasion (версия — md5-хэш, паттерн product.php) */
+$secondaryCssV = substr((string)@md5_file(__DIR__ . '/css/secondary.css'), 0, 8);
 ?><!DOCTYPE html>
 <html lang="ru">
 <head>
 <title>Заказ № <?= $orderId ?> принят — <?= e($siteName) ?></title>
 <meta name="robots" content="noindex">
 <?php require __DIR__ . '/partials/head.php'; ?>
+<link rel="stylesheet" href="/css/secondary.css?v=<?= e($secondaryCssV) ?>">
 </head>
-<body>
+<body class="page-utility">
 <?php require __DIR__ . '/partials/header.php'; ?>
 
 <main id="main" tabindex="-1">
   <section class="fc-section">
     <div class="wrap" style="max-width:560px;text-align:center">
-      <?php /* Галочка в круге (5cv): тёплая подложка + розовый штрих */ ?>
-      <span aria-hidden="true" style="display:inline-grid;place-items:center;width:72px;height:72px;border-radius:50%;background:var(--surface-warm);margin-bottom:18px">
+      <?php /* Галочка в круге (5cv): тёплая подложка + розовый штрих;
+         W105-b (5-b): прорисовка штриха 500ms (secondary.css) — «состояние»
+         становится моментом; reduced-motion — статика */ ?>
+      <span class="thanks-check" aria-hidden="true">
         <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="var(--pink,#ff4ea2)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
       </span>
-      <h1 class="page-hero__title">Спасибо! Заказ № <?= $orderId ?> принят</h1>
+      <?php /* W105-b (5-b): «Спасибо!» — курсив-акцент (паттерн первого слова
+         лендингов): эмоциональное слово выделено, номер — рабочая информация */ ?>
+      <h1 class="page-hero__title"><em class="page-hero__accent">Спасибо!</em> Заказ № <?= $orderId ?> принят</h1>
       <?php /* W96-fix3b (D8): конкретное обещание звонка — настройка thanks_call_text
          (пустое значение в БД скрывает строку, отсутствующий ключ — дефолт) */ ?>
       <?php $thanksCall = trim(setting('thanks_call_text', 'Мы позвоним в течение 15 минут для подтверждения')); ?>
@@ -113,24 +121,25 @@ $pageTitle = 'Заказ № ' . $orderId . ' принят — ' . $siteName;
         <?php if ($deliveryLine !== ''): ?><br><?= e($deliveryLine) ?><?php endif; ?>
       </p>
       <?php /* W99-fixG (G15б): сводка заказа — состав × количество, дата+интервал
-         доставки, район и сумма к оплате. Карточка по образцу существующих блоков
-         (border/16px/#fff, как .track-card), компактно. */ ?>
+         доставки, район и сумма к оплате. W105-b (5-b): инлайн-стили → токены
+         .thanks-summary (secondary.css §4e) — hairline r20, разделители строк,
+         «итого» якорем веса. */ ?>
       <?php if ($__items !== []): ?>
-      <div style="border:1.5px solid var(--line,#e7e5ea);border-radius:16px;padding:16px 18px;background:#fff;text-align:left;margin:0 auto 20px;max-width:440px">
-        <p style="font-weight:700;margin:0 0 8px;font-size:.95rem">Ваш заказ</p>
-        <ul style="margin:0 0 10px;padding-left:18px;font-size:.9rem;line-height:1.6">
+      <div class="thanks-summary">
+        <p class="thanks-summary__title">Ваш заказ</p>
+        <ul class="thanks-summary__items">
           <?php foreach ($__items as $__it): ?>
-          <li><?= e($__it['name']) ?> — <?= (int)$__it['qty'] ?> × <?= formatPrice((int)$__it['price']) ?></li>
+          <li><span><?= e($__it['name']) ?></span><span><?= (int)$__it['qty'] ?> × <?= formatPrice((int)$__it['price']) ?></span></li>
           <?php endforeach; ?>
         </ul>
-        <p style="margin:0 0 4px;font-size:.88rem;color:var(--ink-soft,#6e6a72)">
+        <p class="thanks-summary__meta">
           <?php if ($__zoneName !== ''): ?>Доставка: <?= e($__zoneName) ?><?php else: ?>Самовывоз<?php endif; ?><?= trim((string)$__order['delivery_date']) !== '' ? ' · ' . e($__order['delivery_date']) : '' ?><?= trim((string)$__order['delivery_slot']) !== '' ? ' · ' . e($__order['delivery_slot']) : '' ?>
         </p>
         <?php /* K7 (W101): текст открытки — строкой в сводке (непустой гейт, 80 симв.) */ ?>
         <?php if ($__cardShort !== ''): ?>
-        <p style="margin:0 0 4px;font-size:.88rem;color:var(--ink-soft,#6e6a72)">Открытка: «<?= e($__cardShort) ?>»</p>
+        <p class="thanks-summary__meta">Открытка: «<?= e($__cardShort) ?>»</p>
         <?php endif; ?>
-        <p style="margin:0;font-size:.95rem;font-weight:700">
+        <p class="thanks-summary__total">
           <?= ($__order['payment_method'] ?? 'cash') === 'cash' ? 'К оплате при получении: ' : 'Итого: ' ?><?= formatPrice((int)$__order['total']) ?>
         </p>
       </div>
@@ -175,15 +184,21 @@ $pageTitle = 'Заказ № ' . $orderId . ' принят — ' . $siteName;
         </ol>
         <?php endif; ?>
       </div>
+      <?php /* W105-b (5-b): CTA-иерархия подтверждения — «На главную» (акцент,
+         миссия 5-b) + «Выбрать ещё букеты» (outline); отслеживание и телефон —
+         тихими текстовыми ссылками ниже (не три конкурирующих пилюли). */ ?>
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:24px">
-        <a class="btn btn--accent" href="/#catalog">Выбрать ещё букеты</a>
+        <a class="btn btn--accent" href="/">На главную</a>
+        <a class="btn btn--outline" href="/#catalog">Выбрать ещё букеты</a>
+      </div>
+      <p class="thanks-links">
         <?php if (setting('feature_track_link', '1') === '1'): ?>
-        <a class="btn btn--outline" href="/track">Отследить заказ</a>
+        <a href="/track">Отследить заказ</a>
         <?php endif; ?>
         <?php if ($phone !== ''): ?>
-        <a class="btn btn--outline" href="tel:+<?= e($phoneDigits) ?>">Позвонить нам: <?= e($phone) ?></a>
+        <a href="tel:+<?= e($phoneDigits) ?>">Позвонить нам: <?= e($phone) ?></a>
         <?php endif; ?>
-      </div>
+      </p>
     </div>
   </section>
 </main>

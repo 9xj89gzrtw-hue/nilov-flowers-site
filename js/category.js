@@ -17,8 +17,9 @@
      • URL-синхронизация ?price=…&sort=… (history.replaceState — без записей
        в истории) для шаринга/SEO-ссылок; при загрузке применяется из URL.
        Canonical страницы чистый (без query) — фильтрные URL не плодят дубли.
-   Видимость карточек — класс .is-hidden (глобальный .product-card.is-hidden
-   {display:none} из style.css, как у вкладок каталога главной). Слушатели
+   Видимость карточек — класс .is-hidden + инлайн display (как у ценового
+   apply() главной: фич-плитка five.css (0,4,0) перебивает .is-hidden
+   из style.css — W105-c). Слушатели
    cart-cta.js (прямые на кнопках «+») и nilov.js (сердечки) переживают
    appendChild: узлы перемещаются внутри того же #catGrid. */
 (function () {
@@ -128,6 +129,17 @@
       var p = cardPrice(card);
       var ok = (min === null || p > min) && (max === null || p <= max);
       card.classList.toggle('is-hidden', !ok);
+      /* W105-c (5-b/2): инлайн display — как ценовой apply() главной
+         (catalog-filter.js). Причина: фич-плитка последней карточки
+         five.css `.catalog__grid > .product-card:nth-last-child(1):nth-child(4n+1)`
+         ставит display:grid со специфичностью (0,4,0) — перебивает
+         `.product-card.is-hidden` (0,2,0) из style.css, и отфильтрованная
+         последняя карточка ОСТАВАЛАСЬ видимой широкой плиткой
+         (живой репро: ?price=low на /category/rozy — «Показано 2 из 5»,
+         а 5-я карточка 6 900 ₽ на экране). Инлайн-стиль бьёт любую
+         специфичность; при ok — пустая строка возвращает CSS-каскад
+         (фич-плитка/грид как было). */
+      card.style.display = ok ? '' : 'none';
       if (ok) visible++;
     });
 

@@ -154,14 +154,17 @@ html.js-ready details.fc-seo__more.is-closing > .faq-item__a-wrap {
 /* --- 4e. Карточки: idle-тень долой, transition на системную кривую ---
    C1-M P0-2(а): box-shadow 0 1px 2px на каждой из 55 карточек рендерился
    постоянно (на скролле — лишняя работа растеризатору); тень теперь
-   только hover-состояние. Голый ease в transition → системная кривая. */
+   только hover-состояние. Голый ease в transition → системная кривая.
+   W105 (5-a): hover-тень убрана вовсе — 5cv flat-язык; вместо неё
+   волосяная линия на фото-плитке (five.css W105-2, ::after-кольцо);
+   физику подъёма карточки см. 6b. */
 .product-card {
   box-shadow: none;
   transition: transform .25s cubic-bezier(0.22, 1, 0.36, 1),
               box-shadow .25s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .product-card:hover {
-  box-shadow: 0 24px 48px rgba(28, 26, 30, 0.16);
+  box-shadow: none;
 }
 
 /* --- 4f. Marquee: играет только в вьюпорте ---
@@ -422,9 +425,15 @@ html.motion-lite .hero__deadline{
    Вход fc-card-in (0.55s backwards) во время проигрывания сильнее
    каскада — но он конечен и не forwards, после него лифт живой. */
 @media (prefers-reduced-motion: no-preference) {
+  /* W105 (5-a): подъём −4px (было −6 — амплитуда спорила с зумом и кольцом);
+     тайминг синхронизирован с зумом фото: оба жеста — .5s bezier(.4,0,.2,1)
+     (канон 5cv). Карточка и фото дышат одним движением, без «двух скоростей».
+     Уход с hover чуть быстрее (.4s) — отклик не вязнет. Тень не участвует
+     (flat 5cv — линия на фото-плитке). */
   .fc-carousel .product-card:hover,
   .catalog__grid .product-card:hover {
-    transform: translateY(-6px);
+    transform: translateY(-4px);
+    transition: transform .5s cubic-bezier(0.4, 0, 0.2, 1);
   }
   /* Плавность лифта: `.fc-carousel .reveal { transition:none }` (five.css M5,
      0,2,0 — нужно самому reveal-механизму) заодно убивал hover-переходы
@@ -437,9 +446,22 @@ html.motion-lite .hero__deadline{
      остаётся сильнее — переходов нет. */
   .fc-carousel .product-card,
   .catalog__grid .product-card {
-    transition: transform .25s cubic-bezier(0.22, 1, 0.36, 1),
-                box-shadow .25s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: transform .4s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow .4s cubic-bezier(0.4, 0, 0.2, 1);
   }
+}
+
+/* --- 6c (W105 5-a). КОМПАКТ-РЕЛЬС: hover без лифта/зума — только
+   волосяная линия на самой карточке (мини-карточки «Дополните букет» —
+   тихий жест ряда; 0,3,0 из более позднего файла гасит 6b-лифт).
+   Вне no-preference-медиа: в motion-lite переход линии тоже нужен;
+   в reduce его глушит !important из five.css W104-8/W105-8. --- */
+.fc-carousel--compact .product-card {
+  transition: border-color .25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.fc-carousel--compact .product-card:hover {
+  transform: none;
+  transition: border-color .25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ============ 7. PREFERS-REDUCED-MOTION ============
@@ -495,8 +517,9 @@ html.motion-lite .hero__deadline{
    transition:none!important) — информация цвета доступна всем. */
 @media (prefers-reduced-motion: no-preference) {
   .fc-occasions .fc-occasion--photo img {
-    transition: transform .6s cubic-bezier(0.22, 1, 0.36, 1),
-                filter .6s cubic-bezier(0.22, 1, 0.36, 1);
+    /* W105: единая кривая сайта (дизайн-канон bezier(.4,0,.2,1)) */
+    transition: transform .6s cubic-bezier(.4, 0, .2, 1),
+                filter .6s cubic-bezier(.4, 0, .2, 1);
   }
   .fc-occasions .fc-occasion--photo:hover img {
     filter: none;
@@ -552,7 +575,7 @@ html.motion-lite .hero__deadline{
 
 /* ============ W104-fix6-orch: лайтбокс-навигация + хвосты C6 ============ */
 .lightbox__nav{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:14px;z-index:3}
-.lightbox__arrow{width:44px;height:44px;border-radius:999px;border:1px solid rgba(255,255,255,.35);background:rgba(28,26,30,.55);color:#fff;font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s cubic-bezier(.22,1,.36,1),transform .2s cubic-bezier(.22,1,.36,1)}
+.lightbox__arrow{width:44px;height:44px;border-radius:999px;border:1px solid rgba(255,255,255,.35);background:rgba(28,26,30,.55);color:#fff;font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s cubic-bezier(.4,0,.2,1),transform .2s cubic-bezier(.4,0,.2,1)}
 .lightbox__arrow:hover{background:rgba(28,26,30,.85);transform:translateY(-1px)}
 .lightbox__arrow:focus-visible{outline:2px solid #fff;outline-offset:2px}
 .lightbox__counter{color:rgba(255,255,255,.85);font:500 13px/1 var(--font-ui,'Golos Text',sans-serif);letter-spacing:.08em;font-variant-numeric:tabular-nums}
@@ -572,5 +595,5 @@ html.motion-lite .hero__deadline{
 .fc-occasions .fc-occasion--photo:hover img{transform:scale(1.06)}
 .fc-occasions .fc-occasion--photo .fc-occasion__label,
 .fc-occasions .fc-occasion--photo figcaption,
-.fc-occasions .fc-occasion--photo [class*=label]{transition:background .45s cubic-bezier(.22,1,.36,1),color .45s cubic-bezier(.22,1,.36,1)}
+.fc-occasions .fc-occasion--photo [class*=label]{transition:background .45s cubic-bezier(.4,0,.2,1),color .45s cubic-bezier(.4,0,.2,1)}
 .fc-occasions .fc-occasion--photo:hover [class*=label]{background:var(--ink,#1c1a1e);color:#fff}

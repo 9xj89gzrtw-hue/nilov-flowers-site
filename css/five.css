@@ -1277,18 +1277,18 @@ html{scroll-padding-top:96px}
 .order-form__checkbox input{margin-top:1px}
 
 /* --- C12: кнопка ♥ рядом с CTA товара — класс вместо инлайн-стилей
-   (product.php теперь печатает .fc-fav-inline). Круг 52px под высоту
-   CTA, бордер line, active — розовое заполнение. nilov.js синхронно
-   красит её инлайном (color/borderColor — файл вне списка волны),
+   (product.php теперь печатает .fc-fav-inline). Круг 56px под высоту
+   CTA (W105: CTA 56px — пара), бордер line, active — розовое заполнение.
+   nilov.js синхронно красит её инлайном (color/borderColor — файл вне списка волны),
    поэтому color/border-color с !important: класс — единственный
    источник истины вида. */
 .fc-fav-inline{
-  flex:none;width:52px;min-height:52px;border-radius:999px;
+  flex:none;width:56px;min-height:56px;border-radius:999px;
   border:1.5px solid var(--line)!important;
   background:#fff;color:var(--ink)!important;
   font-size:1.15rem;line-height:1;cursor:pointer;
   display:inline-flex;align-items:center;justify-content:center;
-  transition:color .18s cubic-bezier(.22,1,.36,1),border-color .18s cubic-bezier(.22,1,.36,1),background .18s cubic-bezier(.22,1,.36,1);
+  transition:color .18s cubic-bezier(.4,0,.2,1),border-color .18s cubic-bezier(.4,0,.2,1),background .18s cubic-bezier(.4,0,.2,1);
 }
 .fc-fav-inline:hover{border-color:var(--pink)!important;color:var(--pink-deep)!important}
 .fc-fav-inline:active{transform:scale(.94)}
@@ -2729,3 +2729,159 @@ button,input,select,textarea{font-family:inherit}
 .fc-footer a[href^="/policy"]::after,.fc-footer a[href^="/offer"]::after{content:"";position:absolute;inset:-11px -8px}
 .product-card__name::after{content:"";position:absolute;inset:-6px -4px}
 .product-card__name{position:relative}
+
+/* ================================================================
+   W105 (5-a, design-home): CRAFT ELEVATION — типографика, карточки,
+   ритм 3 ступени, микродетали. Хирургический слой поверх волн W96–W104
+   (ничего не переписано — только уточнения по awwwards-2026 recipe
+   из рекон 2-d). Работающие системы (reveal/motion-lite/admin/тайтсы
+   W105 3-a/4-a) не тронуты. JS-контракты без изменений.
+   ================================================================ */
+
+/* ---- 1. ТИПОГРАФИКА: плотнее H2, баланс строк, один курсив на секцию ---- */
+/* Display-трекинг −1.5% (H1 уже −2%) + text-wrap:balance — двухстрочные
+   H2 не оставляют сироту в конце; однострочные не меняются */
+.fc-row__title,
+.section-title{
+  letter-spacing:-.015em;
+  text-wrap:balance;
+}
+.fc-premium__title{letter-spacing:-.015em;text-wrap:balance}
+.fc-seo__title{letter-spacing:-.015em;text-wrap:balance}
+/* Абзацы-подписи — pretty (без сирот внутри абзаца) */
+.fc-row__sub{text-wrap:pretty}
+.fc-hero__sub{text-wrap:pretty}
+.fc-premium__sub{text-wrap:pretty}
+/* One-italic-per-section: hero уже несёт курсив-акцент H1 (<em> + amber-мазок);
+   заголовок ink-промо-карточки — прямое начертание (сериф остаётся,
+   дубль-курсива в одном первом экране уходит) */
+.fc-hero__promo-title{font-style:normal}
+/* Нумералы 01–09: единая оптическая позиция (премиум висел на .08em выше
+   рядовых секций); лайтовый кернинг Playfair-цифр — авторский (tnum в
+   шрифте нет, проверено замером: 93.6/111.1px при 01/09 — левый край
+   единый, разница ширин на 7%-призраке не читается) */
+.fc-premium__info[data-numeral]::before{top:-.34em;left:-.05em}
+
+/* ---- 2. КАРТОЧКИ: 5cv-exact hover (зум 1.03 / 500ms / плоская линия) ----
+   Единая пара зума для ВСЕХ контекстов (каталог, карусель, фича, премиум):
+   5cv group-hover:scale-[1.03] за 500ms bezier(.4,0,.2,1) — вместо трёх
+   разных амплитуд (1.07→1.05) и двух таймингов (.5/.6s) */
+.product-card__img,
+.product-card__media img{transition:transform .5s cubic-bezier(.4,0,.2,1)}
+.product-card:hover .product-card__img,
+.product-card:hover .product-card__media img{transform:scale(1.03)}
+.fc-premium__photo img{transition:transform .5s cubic-bezier(.4,0,.2,1)}
+.fc-premium__card:hover .fc-premium__photo img{transform:scale(1.03)}
+/* Волосная линия вместо тени (5cv flat): кольцо на ::after фото-плитки —
+   border-radius:inherit следует за скруглением 22px, рисуется над img,
+   layout не сдвигается */
+.product-card__media::after{
+  content:"";position:absolute;inset:0;z-index:2;
+  border-radius:inherit;border:1px solid transparent;background:none; /* W4-градиент nilov.css не возвращаем */
+  pointer-events:none;
+  transition:border-color .3s cubic-bezier(.4,0,.2,1);
+}
+.product-card:hover .product-card__media::after{border-color:rgba(28,26,30,.18)}
+.product-card:hover{box-shadow:none}
+/* Компакт-рельс: своя линия на самой карточке (мини-медиа без кольца).
+   Переход border-color живёт в motion-w104.css 6c — там же снимается
+   6b-лифт для мини-карточек (каскад позднего файла) */
+.fc-carousel--compact .product-card__media::after{content:none}
+.fc-carousel--compact .product-card:hover{border-color:rgba(28,26,30,.28)}
+
+/* ---- 3. HERO: CTA 56px десктоп (5cv h-56), дыхание подзаголовка ---- */
+@media(min-width:900px){
+  .fc-hero__cta,.fc-premium__cta{min-height:56px;padding:0 32px}
+}
+.fc-hero__content{gap:16px}
+/* W105 (5-a): подзаголовок на фото — вес 500 (VLM-критика: 400 «терялся»
+   на пёстром фоне); тень уже есть (T3-3) */
+.fc-hero__sub{font-weight:500}
+
+/* ---- 4. MARQUEE: премиальный темп (81 → 54px/s на 1440) ---- */
+.fc-marquee__track{animation-duration:96s}
+
+/* ---- 4b. HERO-ФОТО: тёплый принт (5cv-грейд) ----
+   Тот же лёгкий грейд, что и у карточек (nilov.css W4): насыщенность
+   + оптическая плотность — фото выглядит снятым, а не «цифровым стоком».
+   Фильтр статичен (не в анимации — fc-hero-zoom крутит только transform) */
+.fc-hero__img{filter:saturate(1.05) contrast(1.03)}
+
+/* ---- 4c. FAQ: последовательность плюс→крест → ответ ----
+   Крест доигрывает свой поворот ДО того, как начинает течь ответ
+   (220мс < 340мс): читается как «щелчок → раскрытие», а не один ком.
+   Кривая — канон 5cv bezier(.4,0,.2,1); ответ на 40мс позже креста */
+.faq-item__q::after,
+.fc-seo__more summary::after{
+  transition:transform .22s cubic-bezier(.4,0,.2,1),color .2s;
+}
+.faq-item__a-wrap{
+  transition:grid-template-rows .34s cubic-bezier(.4,0,.2,1) .04s;
+}
+/* SEO-колофон: своя база (0,2,0 выше по файлу) — переопределяем парой */
+.fc-seo__more .faq-item__a-wrap{
+  transition:grid-template-rows .34s cubic-bezier(.4,0,.2,1) .04s;
+}
+html.js-ready details.faq-item.is-closing > .faq-item__a-wrap,
+html.js-ready details.fc-seo__more.is-closing > .faq-item__a-wrap{
+  transition:grid-template-rows .26s cubic-bezier(.4,0,.2,1);
+}
+
+/* ---- 5. РИТМ: 3-ступенчатая шкала — десктоп: editorial-паузы 32/48 ·
+   стандартные секции 96 · каталог-major 120 (мобайл: 20 · 60 · 76).
+   Все товарные/контентные секции ездят на .fc-section — одна система;
+   фулл-блиды (манифест/премиум/тэглайн) сходятся клампами на ступень 96. ---- */
+.fc-section{padding:96px 0}
+#catalog.fc-section{padding:120px 0}
+@media(max-width:899px){
+  .fc-section{padding:60px 0}
+  #catalog.fc-section{padding:76px 0}
+}
+/* Full-bleed секции: внутренние клампы сходятся на ту же ступень 96 */
+.fc-manifesto__content{padding:clamp(48px,7vw,96px) clamp(20px,9vw,120px)}
+.fc-premium .wrap{padding-top:clamp(48px,6vw,96px);padding-bottom:clamp(48px,6vw,96px)}
+.fc-footer-tagline{padding:clamp(48px,7vw,96px) 0 16px}
+.fc-editorial{padding:32px 0 24px}
+@media(max-width:899px){.fc-editorial{padding:20px 0 16px}} /* мобильная пауза остаётся плотной */
+
+/* ---- 6. ФУТЕР: ink-зона с радиусом 5cv (rounded-t-28) ---- */
+.fc-footer-tagline{border-radius:28px 28px 0 0;overflow:clip} /* clip: без scroll-контейнера — view()-таймлайны reveal не ломаются */
+.site-footer__phone{font-size:1.02rem;letter-spacing:.01em} /* телефон — самый громкий контакт колонки */
+
+/* ---- 6b. МЕРА СТРОКИ: лид-подзаголовки 60ch (60–70 по брифу; было 58) ---- */
+.fc-row__sub{max-width:60ch}
+
+/* ---- 6c. КОМПАКТ-РЕЛЬС: медиа 3:4 + radius 22 (единый карточный язык:
+   сетка/карусели/компакт — один аспект и один радиус; квадратные 96px
+   миниатюры резали букеты по диагонали). База γ-5 — align-items:center,
+   тело центрируется автоматически) ---- */
+.fc-carousel--compact .product-card__media{
+  aspect-ratio:3/4;width:96px;height:auto;border-radius:22px;
+}
+@media(max-width:899px){
+  .fc-carousel--compact .product-card__media{width:84px;border-radius:18px} /* 18/84 = 5cv-пропорция миниатюры */
+}
+
+/* ---- 6d. ПРЕМИУМ-КАРТОЧКИ: кривая канона 5cv (была .22,1,.36,1) —
+   зум/подъём/фоны дышат одной кривой bezier(.4,0,.2,1) ---- */
+.fc-premium__card{
+  transition:transform .5s cubic-bezier(.4,0,.2,1),background .3s cubic-bezier(.4,0,.2,1);
+}
+
+/* ---- 6e. EDITORIAL-ПАУЗЫ: баланс двухстрочных цитат (display-кегль) ---- */
+.fc-editorial p{text-wrap:balance}
+
+/* ---- 7. ФОКУС: единый оффсет кольца 3px (карусель-регион был 4px) ---- */
+.fc-carousel:focus-visible{outline-offset:3px}
+
+/* ---- 8. PREFERS-REDUCED-MOTION: новые переходы волны выключены ---- */
+@media(prefers-reduced-motion:reduce){
+  .product-card__media::after,
+  .fc-carousel--compact .product-card,
+  .faq-item__q::after,
+  .fc-seo__more summary::after,
+  .faq-item__a-wrap,
+  .fc-seo__more .faq-item__a-wrap,
+  .fc-premium__card{transition:none!important}
+  /* Грейд hero — статичная обработка фото (не движение): остаётся */
+}
