@@ -528,7 +528,7 @@ img.product-card__img{background:var(--surface-subtle)}
 .fc-occasion img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .35s cubic-bezier(.22,1,.36,1),filter .35s cubic-bezier(.22,1,.36,1)}
 /* W103 (F1): duotone-плитка — приглушённое фото «просыпается» цветом на hover */
 .fc-occasion--photo img{filter:grayscale(.35) sepia(.12)}
-.fc-occasion--photo:hover img{filter:none;transform:scale(1.03)}
+.fc-occasion--photo:hover img{filter:none;transform:scale(1.06)} /* W104-fix7: синхрон с motion-w104 1.06 (дубль-конфликт C7-M7 P1.4) */
 .fc-occasion--photo::after{
   content:"";position:absolute;inset:0;
   background:linear-gradient(180deg,transparent 40%,rgba(28,26,30,.65));

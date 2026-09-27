@@ -526,7 +526,7 @@ html.motion-lite .hero__deadline{
 @media (prefers-reduced-motion: no-preference) {
   .fc-carousel:not(.fc-carousel--compact) .product-card__media,
   .catalog__grid .product-card__media {
-    transform: translate(calc(var(--tx, 0) * 4px), calc(var(--ty, 0) * 3px));
+    transform: translate(calc(var(--tx, 0) * 8px), calc(var(--ty, 0) * 6px));
     transition: transform .3s cubic-bezier(0.22, 1, 0.36, 1);
   }
 }

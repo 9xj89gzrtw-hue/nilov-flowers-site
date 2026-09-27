@@ -158,7 +158,11 @@
   function updateNav() {
     var list = lbSources();
     var idx = list.findIndex(function (s) { return img && s.src === img.getAttribute('src'); });
-    navWrap.style.display = list.length > 1 ? '' : 'none';
+    /* W104-fix7 (C7-M7 P0): у товара одно фото (главный + zoom-слайд дублируют src) —
+       стрелки по одинаковым изображениям бессмысленны; показываем навигацию
+       только когда УНИКАЛЬНЫХ src больше одного */
+    var uniq = list.map(function (s) { return s.src; }).filter(function (v, i, a) { return a.indexOf(v) === i; });
+    navWrap.style.display = uniq.length > 1 ? '' : 'none';
     navWrap.querySelector('.lightbox__counter').textContent = (idx + 1) + ' из ' + list.length;
   }
   function navStep(dir) {
@@ -174,12 +178,14 @@
   navWrap.querySelector('.lightbox__arrow--prev').addEventListener('click', function (e) { e.stopPropagation(); navStep(-1); });
   navWrap.querySelector('.lightbox__arrow--next').addEventListener('click', function (e) { e.stopPropagation(); navStep(1); });
 
-  function zApply() {
+  function zApply(skipTransition) {
     if (!img) return;
     img.style.transformOrigin = zState.ox + '% ' + zState.oy + '%';
     img.style.transform = zState.zoomed ? 'scale(1.8)' : '';
     img.style.cursor = zState.zoomed ? (zState.panning ? 'grabbing' : 'grab') : 'zoom-in';
-    img.style.transition = reduced ? 'none' : 'transform .35s cubic-bezier(.22,1,.36,1)';
+    /* W104-fix7 (C7-D7 P0): пан НЕ должен пере-включать transition каждый кадр —
+       иначе transform-origin анимируется с задержкой .35s и drag выглядит мёртвым */
+    img.style.transition = (reduced || skipTransition) ? 'none' : 'transform .35s cubic-bezier(.22,1,.36,1)';
   }
   function zReset() { zState.zoomed = false; zState.panning = false; zState.moved = 0; zApply(); }
 
@@ -213,8 +219,7 @@
     var r = img.getBoundingClientRect();
     zState.ox = Math.max(0, Math.min(100, zState.ox - (dx / r.width) * 100 / 1.8));
     zState.oy = Math.max(0, Math.min(100, zState.oy - (dy / r.height) * 100 / 1.8));
-    img.style.transition = 'none';
-    zApply();
+    zApply(true); /* пан — без transition */
   });
   ['pointerup', 'pointercancel'].forEach(function (ev) {
     figure.addEventListener(ev, function () {
