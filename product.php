@@ -579,7 +579,10 @@ $breadcrumbItems[] = ['@type' => 'ListItem', 'position' => count($breadcrumbItem
 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>
 </script>
 </head>
-<body>
+<?php /* W105-6fix1 (P1 PDP-хром 212px): класс страницы — на мобиле ≤899
+       глобальный таббар mnav скрыт (у товара своя sticky-CTA), запасы
+       тела/cookie-полосы перестроены (five.css, слой W105-6fix1) */ ?>
+<body class="page-product">
 <?php require __DIR__ . '/partials/header.php'; ?>
 
 <main id="main" tabindex="-1">

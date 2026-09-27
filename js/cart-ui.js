@@ -59,7 +59,7 @@
         '<div class="cart-item__media">' + media + '</div>' +
         '<div class="cart-item__info">' +
           '<p class="cart-item__name">' + escapeHtml(item.name || '') + '</p>' +
-          '<p class="cart-item__price">' + formatPrice(item.price) + ' ₽ / шт' + (item.qty > 1 ? ' · ' + item.qty + ' шт' : '') + '</p>' +
+          '<p class="cart-item__price">' + formatPrice(item.price) + '\u00A0₽ / шт' + (item.qty > 1 ? ' · ' + item.qty + ' шт' : '') + '</p>' +
           (isUnavailable ? '<p class="cart-item__error">Этот товар больше недоступен</p>' : '') +
           '<div class="cart-item__qty">' +
             '<button type="button" class="cart-item__qtybtn" data-action="dec" aria-label="Уменьшить количество">−</button>' +
@@ -163,7 +163,7 @@
           promoClear(true);
           if (res && res.error === 'min_order' && res.min) { promoState.lastCode = code.trim().toUpperCase(); promoState.minOrder = res.min | 0; } /* W86: регистр как на success */ /* W80: рост корзины → зелёная подсказка вместо залипшего красного */
           const msg = res && res.error === 'min_order' && res.min
-            ? 'Промокод действует от ' + formatPrice(res.min) + ' ₽'
+            ? 'Промокод действует от ' + formatPrice(res.min) + '\u00A0₽'
             : 'Такого промокода нет или он истёк';
           promoFeedback(msg, true);
           promoState.code = ''; promoState.discount = 0;
@@ -192,7 +192,7 @@
      и не оставляем «0 ₽» в DOM. */
     const totalRow = totalEl.closest ? totalEl.closest('.cart-panel__total') : null;
     if (totalRow) totalRow.hidden = items.length === 0;
-    totalEl.textContent = items.length === 0 ? '' : formatPrice(window.cart.getTotal()) + ' ₽';
+    totalEl.textContent = items.length === 0 ? '' : formatPrice(window.cart.getTotal()) + '\u00A0₽';
     /* A7: анонс итога — по факту изменения (учитывает промо-скидку ниже) */
     let payable = window.cart.getTotal();
     /* W81 (владелец OPEN_NEW-1): пустая корзина — блок промо и его сообщения глушим
@@ -211,7 +211,7 @@
       if (promoState.code && window.cart.getTotal() < promoState.minOrder) {
         promoState.code = ''; promoState.discount = 0;
         promoState.kind = ''; promoState.val = 0;
-        promoMsgEl.textContent = 'Промокод ' + promoState.lastCode + ' действует от ' + formatPrice(promoState.minOrder) + ' ₽ — добавьте ещё цветов';
+        promoMsgEl.textContent = 'Промокод ' + promoState.lastCode + ' действует от ' + formatPrice(promoState.minOrder) + '\u00A0₽ — добавьте ещё цветов';
         promoMsgEl.style.color = 'var(--err,#d64545)';
       } else if (!promoState.code && promoState.lastCode && window.cart.getTotal() >= promoState.minOrder) {
         /* W79 (владелец OPEN_NEW-1): корзина снова выше порога — залипшее красное
@@ -223,12 +223,12 @@
            (Совпадение с серверной формулой /api/orders гарантировано той же функцией.) */
         promoState.discount = serverDiscount(window.cart.getTotal());
         promoFeedback((promoState.kind === 'fixed'
-          ? '−' + formatPrice(promoState.discount) + ' ₽'
+          ? '−' + formatPrice(promoState.discount) + '\u00A0₽'
           : '−' + promoState.val + '%') + ' по промокоду ' + promoState.code, false);
       }
     }
     if (promoState.code && promoState.discount > 0) {
-      totalEl.innerHTML = '<s style="opacity:.55;margin-right:6px">' + formatPrice(window.cart.getTotal()) + ' ₽</s>' + formatPrice(Math.max(0, window.cart.getTotal() - promoState.discount)) + ' ₽';
+      totalEl.innerHTML = '<s style="opacity:.55;margin-right:6px">' + formatPrice(window.cart.getTotal()) + '\u00A0₽</s>' + formatPrice(Math.max(0, window.cart.getTotal() - promoState.discount)) + '\u00A0₽';
       payable = Math.max(0, window.cart.getTotal() - promoState.discount);
     }
     /* H7 (W99-fixG2): пустая корзина — «Итого» не на экране, SR тоже молчит;
@@ -236,14 +236,14 @@
     if (items.length === 0) {
       if (liveEl) liveEl.removeAttribute('data-cartTotal');
     } else {
-      announce('cartTotal', 'Итого: ' + formatPrice(payable) + ' ₽');
+      announce('cartTotal', 'Итого: ' + formatPrice(payable) + '\u00A0₽');
     }
     checkoutBtn.disabled = items.length === 0;
 
     if (orderSelected) {
       orderSelected.textContent =
         items.length > 0
-          ? 'В заказе: ' + items.length + ' ' + itemsWord(items.length) + ' на ' + formatPrice(window.cart.getTotal()) + ' ₽'
+          ? 'В заказе: ' + items.length + ' ' + itemsWord(items.length) + ' на ' + formatPrice(window.cart.getTotal()) + '\u00A0₽'
           : '';
     }
     announce('orderSelected', items.length > 0
@@ -371,7 +371,7 @@
         media +
         '<div class="cart-upsell-item__info">' +
           '<p class="cart-upsell-item__name">' + escapeHtml(item.name) + '</p>' +
-          '<p class="cart-upsell-item__price">' + formatPrice(item.price) + ' ₽</p>' +
+          '<p class="cart-upsell-item__price">' + formatPrice(item.price) + '\u00A0₽</p>' +
         '</div>' +
         '<button type="button" class="cart-upsell-item__add" data-upsell-add' +
           ' data-id="' + escapeHtml(item.id) + '" data-name="' + escapeHtml(item.name) + '"' +

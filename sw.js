@@ -1,5 +1,5 @@
 /* Service worker — Nilov Flowers. VERSION менять при каждом деплое. */
-const VERSION = 'w105c';
+const VERSION = 'w105e'; /* W105-6fix2: типографическая волна 6-fix2 — бейджи/шкала/трекинг/склейка ₽ (js/glue.js, PHP formatPrice NBSP) */
 const STATIC_CACHE = `static-${VERSION}`;
 const PAGE_CACHE = `pages-${VERSION}`;
 const OFFLINE_URL = '/offline.html';

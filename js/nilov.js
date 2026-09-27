@@ -381,7 +381,7 @@
     if (m) {
       var price = parseInt(m.getAttribute('data-price'), 10) || 0;
       out.style.color = 'var(--ink)';
-      out.textContent = price === 0 ? '✓ 0 ₽' : price + ' ₽';
+      out.textContent = price === 0 ? '✓ 0\u00A0₽' : price + '\u00A0₽';
       if (sel) sel.value = m.value; // подстановка в чекаут
       lastMatched = m.value;
     } else {

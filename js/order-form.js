@@ -251,17 +251,17 @@
     const byThreshold = th > 0 && zonePrice > 0 && items >= th;
     if (hintEl) {
       hintEl.textContent = (th > 0 && items < th && zonePrice > 0)
-        ? 'Добавьте ещё ' + formatRub(th - items) + ' ₽ — и доставка станет бесплатной!'
+        ? 'Добавьте ещё ' + formatRub(th - items) + '\u00A0₽ — и доставка станет бесплатной!'
         : hintEl.dataset.origText;
     }
     totalEl.textContent = delivery
-      ? 'К оплате: ' + formatRub(items + delivery) + ' ₽ (букеты ' + formatRub(items) + ' ₽ + доставка ' + formatRub(delivery) + ' ₽)'
-      : 'К оплате: ' + formatRub(items) + ' ₽' + (byThreshold ? ' — доставка бесплатная 🎉' : '');
+      ? 'К оплате: ' + formatRub(items + delivery) + '\u00A0₽ (букеты ' + formatRub(items) + '\u00A0₽ + доставка ' + formatRub(delivery) + '\u00A0₽)'
+      : 'К оплате: ' + formatRub(items) + '\u00A0₽' + (byThreshold ? ' — доставка бесплатная 🎉' : '');
     /* W97-fixA (A7): анонс «К оплате» в общий live-регион #nfSrLive
        (создаёт cart-ui.js; здесь — короткая версия без разбивки).
        Пишем только при изменении суммы — не спамим. */
     if (typeof window.nfAnnounce === 'function') {
-      window.nfAnnounce('orderTotal', 'К оплате: ' + formatRub(items + delivery) + ' ₽');
+      window.nfAnnounce('orderTotal', 'К оплате: ' + formatRub(items + delivery) + '\u00A0₽');
     }
   }
 

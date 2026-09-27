@@ -359,7 +359,9 @@ function render_product_card(array $p, array $ctx): void
        600w и ретина получала ~80% пикселей). */
     $sizes = $isCarousel
         ? '(max-width:899px) 72vw, 280px'
-        : '(max-width:359px) 92vw, (max-width:819px) 46vw, 372px';
+        /* W105-6fix1: сетка каталога 5/4/3/2 — sizes по фактическим слотам
+           (5 кол wrap-1200 → ~227px, ultra ≥1700 → ~275px) */
+        : '(max-width:359px) 92vw, (max-width:767px) 46vw, (max-width:1023px) 32vw, (max-width:1279px) 25vw, (max-width:1699px) 20vw, 276px';
     $link = '/product/' . rawurlencode($p['slug']);
     $searchIndex = $isCarousel ? '' : mb_strtolower(trim($p['name'] . ' ' . ($p['category_name'] ?? '') . ' ' . ($p['description'] ?? '')));
     /* K10 (W101): data-upsell="1" (show_in_upsell) — приоритетный источник апсейла
@@ -1264,7 +1266,7 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
           <p class="fc-premium__sub"><?= e(setting('premium_sub', 'Крупные композиции из гортензий, пионов и орхидей — когда впечатление важнее бюджета')) ?></p>
           <p class="fc-premium__price-row">
             <span class="fc-premium__price-label"><?= e(setting('premium_price_label', 'Букеты от')) ?></span>
-            <span class="fc-premium__price"><?= formatSum($premiumMinPrice) ?> <span class="fc-premium__price-cur">&#8381;</span></span>
+            <span class="fc-premium__price"><?= formatSum($premiumMinPrice) ?><?= "\u{00A0}" /* W105-6fix2: NBSP и перед знаком валюты — ₽ в дочернем спане, текстовый проход js/glue.js его не видит (кросс-узловая граница) */ ?><span class="fc-premium__price-cur">&#8381;</span></span>
           </p>
           <a class="fc-btn fc-premium__cta" href="#catalog" data-chip="premium"><?= e(setting('premium_cta_text', 'Смотреть премиум')) ?><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
         </div>
@@ -1391,6 +1393,22 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
       <?php endif; ?>
       <div class="catalog__grid" id="catalogGrid">
         <?php foreach ($products as $p) { render_product_card($p, $cardCtx); } ?>
+        <?php /* W105-6fix1: хвост ряда — CTA-плитка дозаполняет последний ряд
+               (23 SKU → 4×5 + 3 + плитка span 2; span под остаток ставит
+               js/grid-tail.js после каждого фильтра и на resize). ink-плитка
+               в языке поводов/премиума; без JS — статический span 2. */ ?>
+        <?php
+        $tailTitle = trim((string)setting('catalog_tail_title', 'Соберём|на заказ'));
+        [$tailT1, $tailT2] = array_pad(explode('|', $tailTitle, 2), 2, '');
+        if ($tailT1 !== ''):
+        ?>
+        <a class="catalog-tail reveal" href="#order" data-grid-tail aria-label="Собрать букет на заказ">
+          <span class="catalog-tail__kicker"><?= e(setting('catalog_tail_kicker', 'Не нашли нужный букет?')) ?></span>
+          <span class="catalog-tail__title"><?= e($tailT1) ?><?= $tailT2 !== '' ? ' <em>' . e($tailT2) . '</em>' : '' ?></span>
+          <span class="catalog-tail__text"><?= e(setting('catalog_tail_text', 'Под ваш повод, палитру и бюджет — фото готового букета пришлём перед доставкой')) ?></span>
+          <span class="catalog-tail__arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </a>
+        <?php endif; ?>
       </div>
       <?php /* Empty-state (критик P2): при 0 карточек от фильтров — подсказка + сброс. Тексты редактируются (критерий 16).
          W104-α (L2): без эмодзи и канцелярита — короткая строка-титул + подсказка-действие. */ ?>
@@ -1512,7 +1530,7 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
                  (с фолбэком на shop_address), иначе город без улицы. */
               $pickupAddr = trim(setting('pickup_address', '')) ?: trim(setting('shop_address', ''));
               ?>
-              <option value="0" data-price="0" selected><?= e(setting('pickup_option_text', 'Самовывоз · 0 ₽')) ?></option>
+              <option value="0" data-price="0" selected><?= e(setting('pickup_option_text', 'Самовывоз · 0' . "\u{00A0}" . '₽')) ?></option>
               <?php /* W70 (obvious-витрина NEW-1): native select режет длинные имена зон на 390
                      (366px в 220px-бокс без эллипсиса). Корень — метка: «район»→«р-н»,
                      пояснение в скобках и цена уходят в title/hint (цена есть в «К оплате»). */

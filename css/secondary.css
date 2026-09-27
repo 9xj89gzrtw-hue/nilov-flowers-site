@@ -47,7 +47,7 @@
   --font-display:'Playfair Display','Playfair Fallback',Georgia,'Times New Roman',serif;
   font-family:var(--font-display);
   font-weight:500;
-  font-size:clamp(2.2rem,3.6vw,2.75rem);   /* было clamp(2.2rem,4vw,3.25rem) */
+  font-size:clamp(2.2rem,3.4vw,2.5rem);   /* W105-6fix2 (критик 6-b F): 40px @1440 — единый кегль с утилитарными страницами (было 44 у категорий / 36 у политики — одна разметка, два кегля) */
   line-height:1.12;
   letter-spacing:-.015em;   /* W105-c (5-b/2): display-трекинг H2 главной 5-a (−1.5%) — семейство одной оптической плотности */
   text-wrap:balance;
@@ -66,7 +66,7 @@
    до подключения этого файла; теперь пара «лендинг > утилита» живёт в одном месте).
    Класс на <body class="page-utility"> ставит сама страница. */
 .page-utility .page-hero__title{
-  font-size:clamp(1.75rem,3vw,2.25rem);
+  font-size:clamp(2.2rem,3.4vw,2.5rem); /* W105-6fix2: один кегль H1 вторичек (модификатор оставлен для веса акцента ниже) */
 }
 .page-utility .page-hero__accent{font-weight:500}
 
@@ -74,7 +74,7 @@
    Комфортное чтение до каталога: 1.05rem muted, строка ≤ 62ch
    (типо-спека: интро — не маркетинговый крик, а подводка). */
 .page-hero .section-sub{
-  font-size:1.05rem;
+  font-size:1.0625rem; /* W105-6fix2: 16.8→17 — читательская пара .prose */
   line-height:1.6;
   color:var(--ink-muted,#6e6a72);
   max-width:62ch;
@@ -97,7 +97,7 @@
   font-weight:500;
   font-size:clamp(2rem,3.2vw,2.75rem);
   line-height:1.12;
-  letter-spacing:-.01em;
+  letter-spacing:-.015em; /* W105-6fix2 (критик 6-b D): Playfair ≥24 — единый display-трекинг (был −.01em; файл грузится ПОСЛЕ five.css — его W105-слой перекрывал) */
 }
 
 /* ============ 4b. ЧИТАТЕЛЬСКИЙ МАСШТАБ PROSE (W105-b 5-b) ============
@@ -121,7 +121,7 @@
   font-weight:500;
   font-size:clamp(1.35rem,1.8vw,1.6rem);
   line-height:1.2;
-  letter-spacing:-.005em;
+  letter-spacing:-.015em; /* W105-6fix2: −.005 → −.015em — display ≥24 единым трекингом (25.6 — ступень читательских H2 легальных текстов) */
   margin:36px 0 12px;
 }
 .page-utility .prose h2:first-child{margin-top:0}
@@ -155,7 +155,7 @@
   display:inline-flex;align-items:baseline;gap:10px;
   padding:7px 0;min-height:44px;box-sizing:border-box;
   color:var(--ink,#1c1a1e);text-decoration:none;
-  font-size:.92rem;line-height:1.45;
+  font-size:.875rem;line-height:1.45; /* W105-6fix2: 14.72→14 */
 }
 .toc__list a:hover .toc__num{color:var(--pink-dark,#cc2f7a)}
 .toc__num{
@@ -206,11 +206,11 @@
 .thanks-summary__items{margin:0 0 14px;padding:0;list-style:none}
 .thanks-summary__items li{
   display:flex;justify-content:space-between;gap:14px;
-  font-size:.94rem;line-height:1.5;color:var(--ink,#1c1a1e);
+  font-size:.9375rem;line-height:1.5;color:var(--ink,#1c1a1e); /* W105-6fix2: 15.04→15 */
   padding:7px 0;border-bottom:1px dashed var(--line,#e7e5ea);
 }
 .thanks-summary__items li:last-child{border-bottom:0}
-.thanks-summary__meta{font-size:.88rem;color:var(--ink-muted,#6e6a72);line-height:1.6}
+.thanks-summary__meta{font-size:.875rem;color:var(--ink-muted,#6e6a72);line-height:1.6} /* W105-6fix2: 14.08→14 */
 .thanks-summary__total{
   margin:12px 0 0;padding-top:12px;border-top:1px solid var(--line,#e7e5ea);
   font-size:1.0625rem;font-weight:700;
@@ -225,7 +225,7 @@
   display:inline-flex;align-items:center;gap:6px;
   min-height:44px;
   color:var(--ink-muted,#6e6a72);text-decoration:none;
-  font-size:.9rem;font-weight:500;
+  font-size:.875rem;font-weight:500; /* W105-6fix2: 14.4→14 */
   transition:color .3s cubic-bezier(.4,0,.2,1);   /* W105-c: кривая главной 5-a */
 }
 .thanks-links a:hover{color:var(--pink-dark,#cc2f7a)}
@@ -241,7 +241,7 @@
   font-weight:500;
   font-size:clamp(4.5rem,14vw,7.5rem);
   line-height:1;
-  letter-spacing:-.03em;
+  letter-spacing:-.015em; /* W105-6fix2 (критик 6-b D): Playfair ≥24 — единый display-трекинг (был −.03em) */
   color:var(--ink,#1c1a1e);
   margin:0 0 18px;
 }

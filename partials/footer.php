@@ -205,6 +205,12 @@ elseif ($__nfIsHome || preg_match('#^/(product|category)(\.php)?(/|$)#', $__nfPa
   </aside>
 </div>
 
+<?php /* W105-6fix1: хвост ряда каталога — ДОПОЛНИТЕЛЬ последней строки грида
+       (.is-tail-feature / CTA-плитка [data-grid-tail]). Грузится на всех
+       витрин-страницах до catalog-filter.js (синхронный вызов из его apply())
+       и до category.js (defer, ниже по документу); без [data-grid-tail] в
+       гриде — no-op. */ ?>
+<script src="/js/grid-tail.js?v=<?= e($__vjs('grid-tail.js')) ?>"></script>
 <script src="/js/cart.js?v=<?= e($__vjs('cart.js')) ?>"></script>
 <script>window.UPSELL_LIMIT = <?= max(1, min(6, (int) setting('upsell_limit', '3'))) ?>; window.UPSELL_ENABLED = <?= setting('upsell_enabled', '1') === '1' ? 1 : 0 ?>; window.UPSELL_CATEGORIES = <?= json_encode(array_filter(array_map('trim', explode(',', setting('upsell_categories', ''))))) ?>;</script>
 <script src="/js/cart-ui.js?v=<?= e($__vjs('cart-ui.js')) ?>"></script>
@@ -242,6 +248,9 @@ elseif ($__nfIsHome || preg_match('#^/(product|category)(\.php)?(/|$)#', $__nfPa
 <script src="/js/kinetic.js?v=<?= e($__vjs('kinetic.js')) ?>" defer></script>
 <script src="/js/reveal.js?v=<?= e($__vjs('reveal.js')) ?>" defer></script>
 <script src="/js/nilov.js?v=<?= e($__vjs('nilov.js')) ?>" defer></script>
+<?php /* W105-6fix2: NBSP-склейка «2 500 ₽» + предлоги — после nilov.js, до лепестков
+       (админ не подключает footer.php — там склейка не нужна) */ ?>
+<script src="/js/glue.js?v=<?= e($__vjs('glue.js')) ?>" defer></script>
 <?php /* W104-c (motion-агент): лепестки — только главная (.fc-hero__main есть
          только в index.php); стартуют после window load + html.js-ready —
          не блокируют LCP. Отключение: класс no-petals на <html> (js/petals.js). */ ?>

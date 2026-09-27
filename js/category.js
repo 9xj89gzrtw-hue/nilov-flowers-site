@@ -156,6 +156,11 @@
 
     /* Пустое состояние фильтра */
     if (emptyBox) emptyBox.hidden = visible > 0;
+
+    /* W105-6fix1: хвост ряда — последняя видимая карточка/CTA-плитка
+       (js/grid-tail.js из footer.php; сам ставит плитку последним
+       ребёнком — после нашей перестановки appendChild) */
+    if (window.NfGridTail) window.NfGridTail(grid);
     return visible;
   }
 

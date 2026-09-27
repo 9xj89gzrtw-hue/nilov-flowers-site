@@ -177,20 +177,26 @@ html.js-ready details.fc-seo__more.is-closing > .faq-item__a-wrap {
   animation-play-state: paused;
 }
 
-/* --- 4g. Cookie-баннер: компактная карточка bottom-left (C1-D1 P0) ---
-   Было 360×214px по центру с заголовком и полным абзацем. Теперь
-   (десктоп): угловая карточка ≤340px, без заголовка, текст 2 строки
-   (line-clamp; ссылка политики остаётся на второй), кнопки в один ряд.
-   Мобильная версия (≤899px) уже компактна (five.css). */
+/* --- 4g. Cookie-баннер: компактная ПИЛЮЛЯ по центру (C1-D1 P0 → W105-6fix1) ---
+   Было (W104 4g): угловая карточка ≤340px bottom-left — перекрывала USP-ряд
+   и контент первого визита (слепой арт-директор W105: «pill 340×76 висит
+   над контентом без опоры»). Теперь (десктоп ≥900px): пилюля по центру
+   нижнего края, ≤480px, полупрозрачный ink + blur (тише), радиус 999 —
+   шкала 20+999. Мобайл (≤899px) — прежняя полноширинная slim-полоса
+   (five.css W104-iota) над таббаром/PDP-CTA. */
 @media (min-width: 900px) {
   .cookie-banner {
-    left: 16px;
+    left: 50%;
     right: auto;
-    transform: none;
-    max-width: 340px;
-    padding: 12px 14px;
+    bottom: 16px;
+    transform: translateX(-50%);
+    max-width: min(480px, calc(100vw - 32px));
+    padding: 12px 52px 12px 22px;
     gap: 8px;
-    border-radius: 16px;
+    border-radius: 999px;
+    background: rgba(28, 26, 30, .88);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
   }
   .cookie-banner__title { display: none; }
   .cookie-banner__text {
@@ -200,6 +206,7 @@ html.js-ready details.fc-seo__more.is-closing > .faq-item__a-wrap {
     overflow: hidden;
     font-size: 12.5px;
     line-height: 1.35;
+    white-space: normal;
   }
 }
 

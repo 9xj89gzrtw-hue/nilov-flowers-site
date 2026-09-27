@@ -264,6 +264,10 @@
     try {
       window.dispatchEvent(new CustomEvent('fc:filter', { detail: { visible: visible } }));
     } catch (err) { /* старые браузеры без CustomEvent-конструктора — молча */ }
+
+    /* W105-6fix1: хвост ряда — последняя видимая карточка/CTA-плитка
+       (js/grid-tail.js, грузится в footer.php до этого файла) */
+    if (window.NfGridTail) window.NfGridTail(grid);
     return visible;
   }
 

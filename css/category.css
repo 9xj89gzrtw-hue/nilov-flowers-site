@@ -62,7 +62,7 @@
 /* ---------- Сортировка: сегмент-контрол ---------- */
 .cat-sort{display:inline-flex;align-items:center;gap:12px;min-width:0}
 .cat-sort__label{
-  font-size:.85rem;font-weight:600;color:var(--ink-muted,#6e6a72);white-space:nowrap;
+  font-size:.8125rem;font-weight:600;color:var(--ink-muted,#6e6a72);white-space:nowrap; /* W105-6fix2: 13.6→13 */
 }
 .cat-sort__group{
   display:inline-flex;max-width:100%;overflow-x:auto;scrollbar-width:none;
@@ -101,7 +101,7 @@
   display:flex;align-items:center;gap:14px;flex-wrap:wrap;min-height:26px;
 }
 .cat-count{
-  font-size:.85rem;font-weight:600;color:var(--ink-muted,#6e6a72);
+  font-size:.8125rem;font-weight:600;color:var(--ink-muted,#6e6a72); /* W105-6fix2: 13.6→13 */
 }
 .cat-reset{
   flex:none;display:inline-flex;align-items:center;white-space:nowrap;
@@ -122,10 +122,10 @@
 }
 .cat-empty[hidden]{display:none}
 .cat-empty__title{
-  font-size:1.05rem;font-weight:700;color:var(--ink,#1c1a1e);margin:0 0 6px;
+  font-size:1rem;font-weight:700;color:var(--ink,#1c1a1e);margin:0 0 6px; /* W105-6fix2: 16.8→16 */
 }
 .cat-empty__hint{
-  font-size:.9rem;color:var(--ink-muted,#6e6a72);margin:0 0 16px;
+  font-size:.875rem;color:var(--ink-muted,#6e6a72);margin:0 0 16px; /* W105-6fix2: 14.4→14 */
 }
 
 /* ---------- Мобильный (≤899px): чипы и сортировка по ряду ---------- */
@@ -143,7 +143,7 @@
      «Сначала популярные / Дешевле / Дороже» и так влезают в 390px */
   .cat-sort__label{display:none}
   .cat-sort{justify-content:flex-start}
-  .cat-sort__btn{padding:0 14px;font-size:.82rem}
+  .cat-sort__btn{padding:0 14px;font-size:.8125rem} /* W105-6fix2: 13.12→13 */
 }
 
 /* prefers-reduced-motion: переходы контролам не нужны */

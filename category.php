@@ -184,8 +184,8 @@ function render_product_card(array $p, array $ctx): void
         $srcset = '';
     }
     /* W104-ζ (C3-D3): sizes по реальной сетке .catalog__grid (как index.php) —
-       было «(max-width:899px) 45vw, 300px» с занижением десктоп-слота на 72px */
-    $sizes = '(max-width:359px) 92vw, (max-width:819px) 46vw, 372px';
+       W105-6fix1: сетка 5/4/3/2 колонки, слоты обновлены (5 кол → ~227px) */
+    $sizes = '(max-width:359px) 92vw, (max-width:767px) 46vw, (max-width:1023px) 32vw, (max-width:1279px) 25vw, (max-width:1699px) 20vw, 276px';
     $link = '/product/' . rawurlencode($p['slug']);
     $searchIndex = mb_strtolower(trim($p['name'] . ' ' . ($p['category_name'] ?? '') . ' ' . ($p['description'] ?? '')));
     ?>
@@ -396,6 +396,23 @@ $secondaryCssV = substr((string)@md5_file(__DIR__ . '/css/secondary.css'), 0, 8)
              поиск из шапки уводит на /?q=…#catalog — как у occasion/product. */ ?>
       <div class="catalog__grid" id="catGrid">
         <?php foreach ($products as $p) { render_product_card($p, $cardCtx); } ?>
+        <?php /* W105-6fix1: хвост ряда — та же CTA-плитка, что в каталоге
+               главной (общий класс .catalog__grid — общий хвост); span под
+               остаток ряда ставит js/grid-tail.js (вызывается из apply()
+               category.js — в т.ч. после сортировки appendChild-ом, плитка
+               сама возвращается последним ребёнком). */ ?>
+        <?php
+        $tailTitle = trim((string)setting('catalog_tail_title', 'Соберём|на заказ'));
+        [$tailT1, $tailT2] = array_pad(explode('|', $tailTitle, 2), 2, '');
+        if ($tailT1 !== ''):
+        ?>
+        <a class="catalog-tail reveal" href="/#order" data-grid-tail aria-label="Собрать букет на заказ">
+          <span class="catalog-tail__kicker"><?= e(setting('catalog_tail_kicker', 'Не нашли нужный букет?')) ?></span>
+          <span class="catalog-tail__title"><?= e($tailT1) ?><?= $tailT2 !== '' ? ' <em>' . e($tailT2) . '</em>' : '' ?></span>
+          <span class="catalog-tail__text"><?= e(setting('catalog_tail_text', 'Под ваш повод, палитру и бюджет — фото готового букета пришлём перед доставкой')) ?></span>
+          <span class="catalog-tail__arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </a>
+        <?php endif; ?>
       </div>
       <?php /* W103/F2: пустое состояние фильтра — 0 карточек в диапазоне (тексты —
              settings с дефолтами, паттерн catalog_empty_* главной) */ ?>

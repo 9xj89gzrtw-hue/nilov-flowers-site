@@ -65,7 +65,7 @@
    «жирная перечёрка» уходит). */
 .fc-product__price{font-size:1.75rem;font-weight:700}
 .fc-product__price > span{white-space:nowrap}
-.fc-product__price--old{font-size:1.05rem;font-weight:500;text-decoration-color:rgba(110,106,114,.55)}
+.fc-product__price--old{font-size:1rem;font-weight:500;text-decoration-color:rgba(110,106,114,.55)} /* W105-6fix2: 16.8→16 */
 .fc-product__price--discount{font-size:1.75rem;font-weight:700;color:var(--pink-deep,#cc2f7a)}
 
 /* Категория-крошка над заголовком: 11.2 → 12.5px (читаемая, не кричащая) */
@@ -78,8 +78,11 @@
 /* ============ 2. СПЕК-ЧИПЫ (размер / свежесть / повод / состав) ============
    W104 (design-system): editorial-чипы вместо заливных капсул —
    прозрачный фон, тонкий контур rgba(28,26,30,.15), внутри значение
-   Playfair italic + подпись Montserrat caps 10px muted. Разметка —
-   product.php (.pdp-specs__value/.pdp-specs__caption). */
+   + подпись Montserrat caps 10px muted. Разметка —
+   product.php (.pdp-specs__value/.pdp-specs__caption).
+   W105-6fix2 (критик 6-b G): значение — Golos 500 + tabular-nums
+   (был Playfair-курсив 15px): числовая система единая с ценами
+   (цифры гротеском на всей витрине). */
 .pdp-specs{
   display:flex;flex-wrap:wrap;gap:10px;
   list-style:none;margin:16px 0 18px;padding:0;
@@ -93,8 +96,8 @@
 }
 .pdp-specs__chip:hover{border-color:rgba(28,26,30,.4);background:rgba(251,245,248,.6)}
 .pdp-specs__value{
-  --font-display:'Playfair Display','Playfair Fallback',Georgia,'Times New Roman',serif;
-  font:italic 500 15px/1.25 var(--font-display);
+  font:500 15px/1.35 var(--font-ui,sans-serif); /* W105-6fix2: Playfair-курсив → Golos 500 (числа = система цен); кегль 15 сохранён */
+  font-variant-numeric:tabular-nums;
   color:var(--ink,#1c1a1e);
 }
 .pdp-specs__caption{
@@ -173,7 +176,7 @@
 .product-gallery__zoom,
 .fc-product__media{
   background:var(--surface-warm,#fbf5f8);
-  border-radius:22px;
+  border-radius:20px;   /* W105-6fix1: 22→20 — единая шкала радиусов 20+999 */
 }
 .product-gallery__zoom{aspect-ratio:3/4}
 .product-gallery__slide{cursor:zoom-in}

@@ -280,7 +280,9 @@ function migrateSchema(PDO $pdo): void
     $pdo->exec("UPDATE settings SET value='Отзывы о нас на Яндекс Картах' WHERE key='reviews_title' AND value=''");
     /* W65 (obvious NEW-1): нативный select режет длинные подписи зон на 390px без «…» —
        короткие подписи; старое длинное дефолтное значение самовывоза мигрируем. */
-    $pdo->exec("UPDATE settings SET value='Самовывоз · 0 ₽' WHERE key='pickup_option_text' AND value='Самовывоз — бесплатно'");
+    $pdo->exec("UPDATE settings SET value='Самовывоз · 0\u{00A0}₽' WHERE key='pickup_option_text' AND value='Самовывоз — бесплатно'");
+    /* W105-6fix2: ₽ не отрывается от числа (option — вне DOM-скоупа js/glue.js) */
+    $pdo->exec("UPDATE settings SET value='Самовывоз · 0\u{00A0}₽' WHERE key='pickup_option_text' AND value='Самовывоз · 0 ₽'");
     $pdo->exec("UPDATE settings SET value='Реальные отзывы покупателей — на карте города' WHERE key='reviews_sub' AND value=''");
 
     $orderCols = array_column($pdo->query("PRAGMA table_info(orders)")->fetchAll(), 'name');
