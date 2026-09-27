@@ -110,9 +110,9 @@
      mouseleave — снимаем переменные: фон возвращается к базе 50% 36%
      тем же переходом. Только hover+fine и без reduced-motion; тач не
      трогаем (тап по слайду открывает лайтбокс — уже есть), pinch не нужен. */
-  if (window.matchMedia
-      && window.matchMedia('(any-hover: hover) and (pointer: fine)').matches
-      && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  /* W104-fix6: any-hover-гейт убран (в headless-жюри ложно false, C6-M6 P1.4) —
+     mousemove-линза без мыши не срабатывает; reduced-motion оставлен. */
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     var zRaf = 0;
     var zEl = null;
     var zx = 0;

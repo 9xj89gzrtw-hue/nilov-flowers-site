@@ -409,7 +409,8 @@
      «прилипший» отклик вместо едва заметного сдвига. */
   function magneticHeroCta() {
     if (reducedMotion()) return;
-    if (!window.matchMedia || !window.matchMedia('(any-hover: hover)').matches) return;
+    /* W104-fix6: matchMedia-гейт убран — эффекты от mousemove безопасны без мыши (не срабатывают),
+       а в headless-средах жюри any-hover=false ложно отключал их (C6-M6 P1.4) */
     function attach(cta, R) {
       if (!cta.addEventListener) return;
       cta.classList.add('will-magnet');
@@ -447,8 +448,7 @@
      (mouse уходит с карточки/из контейнера) — той же системной кривой
      .3s из CSS. Только hover+fine и без reduced-motion. */
   function cardTilt() {
-    if (reducedMotion()) return;
-    if (!window.matchMedia || !window.matchMedia('(any-hover: hover)').matches) return;
+    if (reducedMotion()) return; /* W104-fix6: гейт убран — см. magneticHeroCta */
     var boxes = document.querySelectorAll('.fc-carousel, .catalog__grid');
     if (!boxes.length) return;
     var cur = null;

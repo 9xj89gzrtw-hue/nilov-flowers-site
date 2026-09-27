@@ -493,7 +493,7 @@ html.motion-lite .hero__deadline{
    лёгкое активное состояние при касании (:active), переход — базовый
    five.css .35с. В reduce — мгновенный фильтр без анимации (five.css
    transition:none!important) — информация цвета доступна всем. */
-@media (prefers-reduced-motion: no-preference) and (any-hover: hover) {
+@media (prefers-reduced-motion: no-preference) {
   .fc-occasions .fc-occasion--photo img {
     transition: transform .6s cubic-bezier(0.22, 1, 0.36, 1),
                 filter .6s cubic-bezier(0.22, 1, 0.36, 1);
@@ -523,7 +523,7 @@ html.motion-lite .hero__deadline{
    идёт мягко, возврат к 0 (курсор ушёл) — той же кривой. Компакт-рельс
    мини-карточек исключён. Reduced/тач: переменных нет, правило
    скоуплено — transform остаётся базовым. */
-@media (prefers-reduced-motion: no-preference) and (any-hover: hover) {
+@media (prefers-reduced-motion: no-preference) {
   .fc-carousel:not(.fc-carousel--compact) .product-card__media,
   .catalog__grid .product-card__media {
     transform: translate(calc(var(--tx, 0) * 4px), calc(var(--ty, 0) * 3px));
@@ -541,7 +541,7 @@ html.motion-lite .hero__deadline{
    (style.css). Тач не трогаем — тап открывает лайтбокс (уже есть),
    pinch не нужен. Reduced: мгновенные скачки не нужны вовсе — фон
    остаётся на базе. */
-@media (prefers-reduced-motion: no-preference) and (any-hover: hover) {
+@media (prefers-reduced-motion: no-preference) {
   .product-gallery__zoom {
     transition: background-position .18s cubic-bezier(0.22, 1, 0.36, 1);
   }
@@ -549,3 +549,28 @@ html.motion-lite .hero__deadline{
     background-position: var(--zx, 50%) var(--zy, 36%);
   }
 }
+
+/* ============ W104-fix6-orch: лайтбокс-навигация + хвосты C6 ============ */
+.lightbox__nav{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:14px;z-index:3}
+.lightbox__arrow{width:44px;height:44px;border-radius:999px;border:1px solid rgba(255,255,255,.35);background:rgba(28,26,30,.55);color:#fff;font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s cubic-bezier(.22,1,.36,1),transform .2s cubic-bezier(.22,1,.36,1)}
+.lightbox__arrow:hover{background:rgba(28,26,30,.85);transform:translateY(-1px)}
+.lightbox__arrow:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.lightbox__counter{color:rgba(255,255,255,.85);font:500 13px/1 var(--font-ui,'Golos Text',sans-serif);letter-spacing:.08em;font-variant-numeric:tabular-nums}
+
+/* C6-M6 P1: манифест-параллакс оживает — overflow:hidden делал секцию
+   scroll-контейнером и замораживал view()-таймлайн (clip не создаёт контейнер) */
+.fc-manifesto{overflow:clip}
+.fc-premium{overflow:clip}
+
+/* C6-T6 P1.1: премиум-титул на мобиле не равен H1 (иерархия) */
+@media(max-width:899px){
+  .fc-premium__title{font-size:clamp(1.3rem,6.2cqi,1.6rem)}
+  .prose{font-size:17px;max-width:60ch}
+}
+
+/* C6-D6 P1.2: плитки поводов — событие заметнее (zoom 1.06 + лейбл-заливка) */
+.fc-occasions .fc-occasion--photo:hover img{transform:scale(1.06)}
+.fc-occasions .fc-occasion--photo .fc-occasion__label,
+.fc-occasions .fc-occasion--photo figcaption,
+.fc-occasions .fc-occasion--photo [class*=label]{transition:background .45s cubic-bezier(.22,1,.36,1),color .45s cubic-bezier(.22,1,.36,1)}
+.fc-occasions .fc-occasion--photo:hover [class*=label]{background:var(--ink,#1c1a1e);color:#fff}

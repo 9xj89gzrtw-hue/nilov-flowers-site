@@ -189,10 +189,25 @@
         tt.setAttribute('role', 'status');
         document.body.appendChild(tt);
       }
-      tt.textContent = (productName || 'Букет') + ' — в корзине' + (c ? ' (' + c + ' ' + w + ')' : '');
+      /* W104-fix6 (C6-D6 P1.3): тост с действием — «Перейти в корзину» открывает drawer
+         (кнопка внутри тоста; тост больше не pointer-events:none пока виден) */
+      tt.innerHTML = '';
+      var ttTxt = document.createElement('span');
+      ttTxt.textContent = (productName || 'Букет') + ' — в корзине' + (c ? ' (' + c + ' ' + w + ')' : '');
+      var ttBtn = document.createElement('button');
+      ttBtn.type = 'button';
+      ttBtn.className = 'cart-toast__go';
+      ttBtn.textContent = 'Перейти в корзину';
+      ttBtn.addEventListener('click', function () {
+        tt.classList.remove('is-visible');
+        var open = document.getElementById('cartToggle');
+        if (open) open.click();
+      });
+      tt.appendChild(ttTxt);
+      tt.appendChild(ttBtn);
       tt.classList.add('is-visible');
       clearTimeout(tt._hideT);
-      tt._hideT = setTimeout(function () { tt.classList.remove('is-visible'); }, 1800);
+      tt._hideT = setTimeout(function () { tt.classList.remove('is-visible'); }, 2600);
     });
   });
 })();

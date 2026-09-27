@@ -130,65 +130,106 @@
     if (e.key === 'Escape' && !lightbox.hidden) close();
   });
 
-  /* ============ W104 (C5-D5 P1): zoom/pan в лайтбоксе ============
-     Клик по фото — toggle zoom 1.8 с origin в точке клика; в зуме —
-     перетаскивание (grab/grabbing), выход из зума — клик или Esc.
-     Тач: pinch не делаем (нативный жест страницы не конфликтует —
-     изображение в контейнере overflow:hidden, пан — перетаскиванием).
-     reduced-motion: без transition. Курсор — zoom-in / zoom-out / grab. */
-  var lbImg = lightbox.querySelector('.lightbox__img');
-  var lbFig = lightbox.querySelector('.lightbox__figure');
-  var zoomed = false, panning = false, px = 0, py = 0, ox = 0, oy = 0, moved = 0;
+  /* ============ W104-fix6 (C6-M6 P0 + C6-D6 P1): zoom/pan + навигация ============
+     П0-урок волны 5: обработчики, привязанные к .lightbox__img при инициализации,
+     мертвы — img создаётся лениво в open(). Теперь ВСЁ через делегирование на
+     .lightbox__figure (живёт с инициализации): клик по фото — toggle zoom 1.8
+     с origin в точке клика; в зуме — drag-пан (grab/grabbing); пан-жест (>3px)
+     не toggл-ит зум. Стрелки ←/→ и счётчик «N из M» — навигация по триггерам
+     страницы (стрелки клавиатуры тоже). reduced-motion — без transition. */
+  var zState = { zoomed: false, panning: false, px: 0, py: 0, ox: 50, oy: 50, moved: 0 };
   var reduced = window.matchMedia
     && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  function applyZoom() {
-    lbImg.style.transformOrigin = ox + '% ' + oy + '%';
-    lbImg.style.transform = zoomed ? 'scale(1.8)' : '';
-    lbImg.style.cursor = zoomed ? (panning ? 'grabbing' : 'grab') : 'zoom-in';
-    lbImg.style.transition = reduced ? 'none' : 'transform .35s cubic-bezier(.22,1,.36,1)';
-  }
+  /* Навигация: стрелки + счётчик (только если триггеров > 1) */
+  var navWrap = document.createElement('div');
+  navWrap.className = 'lightbox__nav';
+  navWrap.innerHTML = '<button type="button" class="lightbox__arrow lightbox__arrow--prev" aria-label="Предыдущее фото">&#8592;</button>'
+    + '<span class="lightbox__counter" aria-live="polite"></span>'
+    + '<button type="button" class="lightbox__arrow lightbox__arrow--next" aria-label="Следующее фото">&#8594;</button>';
+  figure.appendChild(navWrap);
 
-  if (lbImg) {
-    lbImg.style.cursor = 'zoom-in';
-    lbImg.addEventListener('click', function (e) {
-      if (moved > 3) { moved = 0; return; } /* пан-жест не toggл-ит зум */
-      var r = lbImg.getBoundingClientRect();
-      ox = Math.max(0, Math.min(100, ((e.clientX - r.left) / r.width) * 100));
-      oy = Math.max(0, Math.min(100, ((e.clientY - r.top) / r.height) * 100));
-      zoomed = !zoomed;
-      if (!zoomed) { px = 0; py = 0; }
-      applyZoom();
-      e.stopPropagation();
-    });
-    lbImg.addEventListener('pointerdown', function (e) {
-      if (!zoomed) return;
-      panning = true; moved = 0; px = e.clientX; py = e.clientY;
-      lbImg.setPointerCapture && lbImg.setPointerCapture(e.pointerId);
-      applyZoom();
-    });
-    lbImg.addEventListener('pointermove', function (e) {
-      if (!panning || !zoomed) return;
-      var dx = e.clientX - px, dy = e.clientY - py;
-      moved += Math.abs(dx) + Math.abs(dy);
-      px = e.clientX; py = e.clientY;
-      /* пан в процентах origin — инверсия направления (тянем фото за курсором) */
-      ox = Math.max(0, Math.min(100, ox - (dx / lbImg.getBoundingClientRect().width) * 100 / 1.8));
-      oy = Math.max(0, Math.min(100, oy - (dy / lbImg.getBoundingClientRect().height) * 100 / 1.8));
-      lbImg.style.transition = 'none';
-      applyZoom();
-    });
-    ['pointerup', 'pointercancel'].forEach(function (ev) {
-      lbImg.addEventListener(ev, function () {
-        if (panning) { panning = false; applyZoom(); }
-      });
-    });
-    /* закрытие лайтбокса сбрасывает зум */
-    var origClose = close;
-    close = function () { zoomed = false; panning = false; px = py = 0; applyZoom(); origClose(); };
+  function lbSources() {
+    /* W104-fix6b: triggers — NodeList, у него нет .map (TypeError глухил
+       updateNav — счётчик молча оставался пустым; поймано живым прогоном) */
+    return Array.prototype.slice.call(triggers).map(function (t) { return { src: t.dataset.lightboxSrc, alt: t.dataset.lightboxAlt || '' }; })
+      .filter(function (s) { return s.src; });
   }
-  /* курсор-подсказка на пустом месте вокруг фото — «клик закрывает» */
-  if (lbFig) lbFig.addEventListener('click', function (e) {
-    if (e.target === lbFig && !e.target.closest('[data-lightbox-close]')) close();
+  function updateNav() {
+    var list = lbSources();
+    var idx = list.findIndex(function (s) { return img && s.src === img.getAttribute('src'); });
+    navWrap.style.display = list.length > 1 ? '' : 'none';
+    navWrap.querySelector('.lightbox__counter').textContent = (idx + 1) + ' из ' + list.length;
+  }
+  function navStep(dir) {
+    var list = lbSources();
+    if (list.length < 2 || !img) return;
+    var idx = list.findIndex(function (s) { return s.src === img.getAttribute('src'); });
+    var next = list[(idx + dir + list.length) % list.length];
+    zReset();
+    img.src = next.src;
+    img.alt = next.alt;
+    updateNav();
+  }
+  navWrap.querySelector('.lightbox__arrow--prev').addEventListener('click', function (e) { e.stopPropagation(); navStep(-1); });
+  navWrap.querySelector('.lightbox__arrow--next').addEventListener('click', function (e) { e.stopPropagation(); navStep(1); });
+
+  function zApply() {
+    if (!img) return;
+    img.style.transformOrigin = zState.ox + '% ' + zState.oy + '%';
+    img.style.transform = zState.zoomed ? 'scale(1.8)' : '';
+    img.style.cursor = zState.zoomed ? (zState.panning ? 'grabbing' : 'grab') : 'zoom-in';
+    img.style.transition = reduced ? 'none' : 'transform .35s cubic-bezier(.22,1,.36,1)';
+  }
+  function zReset() { zState.zoomed = false; zState.panning = false; zState.moved = 0; zApply(); }
+
+  /* Делегирование на figure: клики */
+  figure.addEventListener('click', function (e) {
+    if (e.target.closest('[data-lightbox-close]')) { close(); return; }
+    if (e.target.closest('.lightbox__arrow')) return;
+    if (e.target === img && img) {
+      if (zState.moved > 3) { zState.moved = 0; return; } /* пан-жест не toggл-ит */
+      var r = img.getBoundingClientRect();
+      zState.ox = Math.max(0, Math.min(100, ((e.clientX - r.left) / r.width) * 100));
+      zState.oy = Math.max(0, Math.min(100, ((e.clientY - r.top) / r.height) * 100));
+      zState.zoomed = !zState.zoomed;
+      zApply();
+      e.stopPropagation();
+      return;
+    }
+    if (e.target === figure) close(); /* пустое место вокруг фото — закрыть */
   });
+  /* Делегирование: пан (pointer events на img через figure) */
+  figure.addEventListener('pointerdown', function (e) {
+    if (e.target !== img || !img || !zState.zoomed) return;
+    zState.panning = true; zState.moved = 0; zState.px = e.clientX; zState.py = e.clientY;
+    zApply();
+  });
+  figure.addEventListener('pointermove', function (e) {
+    if (!zState.panning || !img) return;
+    var dx = e.clientX - zState.px, dy = e.clientY - zState.py;
+    zState.moved += Math.abs(dx) + Math.abs(dy);
+    zState.px = e.clientX; zState.py = e.clientY;
+    var r = img.getBoundingClientRect();
+    zState.ox = Math.max(0, Math.min(100, zState.ox - (dx / r.width) * 100 / 1.8));
+    zState.oy = Math.max(0, Math.min(100, zState.oy - (dy / r.height) * 100 / 1.8));
+    img.style.transition = 'none';
+    zApply();
+  });
+  ['pointerup', 'pointercancel'].forEach(function (ev) {
+    figure.addEventListener(ev, function () {
+      if (zState.panning) { zState.panning = false; zApply(); }
+    });
+  });
+  /* Клавиатура: стрелки — навигация (когда лайтбокс открыт) */
+  document.addEventListener('keydown', function (e) {
+    if (lightbox.hidden) return;
+    if (e.key === 'ArrowLeft') { e.preventDefault(); navStep(-1); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); navStep(1); }
+  });
+  /* Открытие: курсор + счётчик + сброс зума; закрытие — сброс */
+  var origOpen = open;
+  open = function (t) { origOpen(t); if (img) { img.style.cursor = 'zoom-in'; } zReset(); updateNav(); };
+  var origClose2 = close;
+  close = function () { zReset(); origClose2(); };
 })();

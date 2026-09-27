@@ -394,7 +394,12 @@ html{scroll-padding-bottom:230px}
 
 /* ============ REVEAL ANIMATION ============ */
 /* W67: тост добавления в корзину (desktop-фидбек, NEW-6) */
-#cartToast{position:fixed;left:50%;bottom:calc(80px + env(safe-area-inset-bottom));transform:translate(-50%,8px);z-index:80;background:var(--ink);color:#fff;border-radius:999px;padding:10px 18px;font:600 .85rem var(--font-ui);box-shadow:0 12px 30px -12px rgba(43,45,47,.5);opacity:0;pointer-events:none;transition:opacity .25s cubic-bezier(.22,1,.36,1),transform .25s cubic-bezier(.22,1,.36,1);max-width:calc(100vw - 40px);text-align:center}
+#cartToast{position:fixed;left:50%;bottom:calc(80px + env(safe-area-inset-bottom));transform:translate(-50%,8px);z-index:80;background:var(--ink);color:#fff;border-radius:999px;padding:10px 18px;font:600 .85rem var(--font-ui);box-shadow:0 12px 30px -12px rgba(43,45,47,.5);opacity:0;pointer-events:none;transition:opacity .25s cubic-bezier(.22,1,.36,1),transform .25s cubic-bezier(.22,1,.36,1);max-width:calc(100vw - 40px);text-align:center;display:flex;align-items:center;gap:10px}
+/* W104-fix6: тост с действием — кнопка кликабельна пока тост виден */
+#cartToast.is-visible{pointer-events:auto}
+#cartToast .cart-toast__go{border:0;background:rgba(255,255,255,.14);color:#fff;border-radius:999px;padding:6px 12px;font:600 .8rem var(--font-ui);cursor:pointer;white-space:nowrap;transition:background .2s cubic-bezier(.22,1,.36,1)}
+#cartToast .cart-toast__go:hover{background:rgba(255,255,255,.26)}
+#cartToast .cart-toast__go:focus-visible{outline:2px solid #fff;outline-offset:2px}
 #cartToast.is-visible{opacity:1;transform:translate(-50%,0)}
 body.cookie-visible #cartToast{bottom:calc(258px + env(safe-area-inset-bottom))} /* W80: 246 давало box-cover 22% на 375×812 */
 @media(min-width:821px){body.cookie-visible #cartToast{bottom:130px}} /* W72 (obvious NEW): тост не под cookie-баннером (z80<z90, 100% cover) */
