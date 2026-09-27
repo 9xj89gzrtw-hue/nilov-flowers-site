@@ -302,7 +302,10 @@ adminHeader('Настройки', 'settings');
 flash();
 ?>
 <h1>Настройки магазина</h1>
-<style>.card[id]{scroll-margin-top:120px}</style>
+<style>
+.card[id]{scroll-margin-top:120px}
+@media(max-width:700px){.card[id]{scroll-margin-top:140px}} /* W105 (4-b): якоря секций чистят стек шапка(~64)+чипы(~60) */
+</style>
 
 <?php /* W98-fixD (D8): поиск по настройкам — фильтрует строки полей (label/placeholder)
        во всех разделах, чипы разделов и scrollspy не трогаем; пустой запрос = показать всё */ ?>
@@ -315,8 +318,11 @@ flash();
 </div>
 
 <?php /* Оглавление настроек (критик-владелец: «9 секций на одной простыне — листать всё»).
-       Якоря-чипы, прыжок в один клик, sticky — всегда под рукой. */ ?>
-<nav id="top-nav" class="dash-ranges settings-nav" aria-label="Разделы настроек">
+       Якоря-чипы, прыжок в один клик, sticky — всегда под рукой.
+       W105 (4-b): обёртка .settings-nav (sticky) + внутренний скролл-ряд #top-nav —
+       чип-подсказка «↔» живёт в обёртке: не маскируется и не уезжает вместе с рядом */ ?>
+<div class="settings-nav">
+<nav id="top-nav" class="dash-ranges" aria-label="Разделы настроек">
   <a href="#s-common">Общие</a>
   <a href="#s-main">Главная</a>
   <a href="#s-5cv">Витрина 5cv</a>
@@ -330,6 +336,7 @@ flash();
   <a href="#s-pay">Оплата</a>
   <a href="#s-guarantees">Гарантии</a>
 </nav>
+</div>
 <script>
 /* Критик-владелец W36 B5: scrollspy — подсвечиваем чип активной секции,
    новичок видит, где он в простыне настроек.
@@ -345,6 +352,10 @@ function nilovInitSpy() {
       a.style.color = on ? '#fff' : '';
       if (on) { a.setAttribute('aria-current', 'true'); } else { a.removeAttribute('aria-current'); }
     });
+    /* W105 (4-b): активный чип приезжает в кадр (3/12 видимых на телефоне —
+       без этого spy подсвечивал невидимый чип). block:nearest — страницу не дёргает. */
+    var cur = document.querySelector('#top-nav a[aria-current]');
+    if (cur && cur.scrollIntoView) { try { cur.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'auto' }); } catch (e) {} }
   }
   var sections = links.map(function (a) { return a.getAttribute('href').slice(1); });
   function pick() {

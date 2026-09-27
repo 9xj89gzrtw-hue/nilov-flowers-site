@@ -41,7 +41,7 @@ function adminHeader(string $title, string $active = ''): void
   --radius:14px; --radius-lg:22px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--font-ui);color:var(--ink);background:var(--bg);line-height:1.55}
+body{font-family:var(--font-ui);color:var(--ink);background:var(--bg);line-height:1.55;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 a{color:inherit;text-decoration:none}
 .wrap{max-width:1100px;margin:0 auto;padding:0 20px}
 .admin-top{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50} /* W68 (obvious NEW-6): sticky на всех брейках — desktop-оглавление top:64 теперь опирается на реальную шапку */
@@ -55,15 +55,36 @@ a{color:inherit;text-decoration:none}
 .admin-nav a{padding:8px 14px;border-radius:999px;font-size:.9rem;font-weight:500;color:var(--ink-soft);display:inline-flex;align-items:center;min-height:44px}
 .admin-nav a.active{background:var(--rose);color:var(--ink);box-shadow:inset 0 0 0 1.5px rgba(174,74,113,.55)}
 .admin-top .spacer{flex:1}
-/* Мобильная админка (W4): шапка не рвётся, nav скроллится горизонтально внутри себя */
+/* W105 (4-b): бургер и иконка «Открыть сайт» — включаются только на ≤700px,
+   десктоп их не видит (навигация — прежний единственный ряд) */
+.admin-burger{display:none}
+.admin-open-site__icon{display:none}
+/* Мобильная админка (W4 → W105 4-b): шапка = один ряд (лого + «Открыть сайт» +
+   «Выйти» + бургер 44×44), все 10 разделов — в выпадающей панели под шапкой
+   (строки 48px, закрывается тапом по ссылке/вне/Escape, фон заблокирован).
+   Было: nowrap-полоса со скрытым скроллбаром — 4/10 ссылок @390, 2/10 @360. */
 @media(max-width:700px){
-  .admin-top .wrap{gap:10px;padding:10px 16px;min-height:0}
-  .admin-logo{font-size:1rem}
-  .admin-nav{order:3;width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-wrap:nowrap;padding-bottom:2px}
-  .admin-nav::-webkit-scrollbar{display:none}
-  .admin-nav a{white-space:nowrap;padding:8px 12px;font-size:.88rem}
-  .admin-top{position:sticky;top:0;z-index:50} /* единственный sticky: выше карточек и таблиц */
+  .admin-top{position:sticky;top:0;z-index:50}
+  .admin-top .wrap{gap:8px;padding:10px 14px;min-height:0;flex-wrap:nowrap}
+  .admin-logo{font-size:1rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .admin-top .btn{padding:9px 12px;flex:0 0 auto}
+  .admin-burger{display:inline-flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;width:44px;height:44px;min-width:44px;padding:0;border:1.5px solid var(--line);border-radius:12px;background:#fff;cursor:pointer;flex:0 0 auto}
+  .admin-burger__bar{display:block;width:20px;height:2px;border-radius:2px;background:var(--ink);transition:transform .25s ease,opacity .2s ease}
+  .admin-top.nav-open .admin-burger__bar:nth-child(1){transform:translateY(7px) rotate(45deg)}
+  .admin-top.nav-open .admin-burger__bar:nth-child(2){opacity:0}
+  .admin-top.nav-open .admin-burger__bar:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+  .admin-top .admin-nav{position:absolute;top:100%;left:0;right:0;flex:none;flex-direction:column;gap:2px;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 24px 44px -24px rgba(43,45,47,.5);max-height:0;visibility:hidden;overflow:hidden;padding:0 12px;white-space:normal;-webkit-mask-image:none;mask-image:none;z-index:60;transition:max-height .28s ease,visibility 0s linear .28s}
+  .admin-top.nav-open .admin-nav{max-height:calc(100vh - 76px);max-height:calc(100dvh - 76px);visibility:visible;overflow-y:auto;padding:10px 12px 14px;transition:max-height .28s ease}
+  .admin-nav a{display:flex;align-items:center;width:100%;min-height:48px;padding:12px 14px;border-radius:12px;font-size:1rem;white-space:normal}
+  html.admin-nav-lock{overflow:hidden} /* фон не скроллится, пока меню открыто */
   main.wrap{padding:16px 16px 80px}
+}
+/* W105 (4-b): на самом узком «Открыть сайт» не влезает текстом в ряд с «Выйти» и
+   бургером — остаётся иконка-стрелка (имя кнопки держит aria-label) */
+@media(max-width:460px){
+  .admin-open-site__icon{display:inline-flex}
+  .admin-top .admin-open-site .admin-open-site__text{display:none}
+  .admin-top .admin-open-site{min-width:44px;justify-content:center} /* тач-цель 44×44 и в иконночном виде */
 }
 .btn{display:inline-flex;align-items:center;gap:8px;min-height:42px;border:none;border-radius:999px;padding:9px 18px;font:600 .85rem var(--font-ui);cursor:pointer;background:var(--ink);color:#fff;transition:background .15s ease,transform .12s ease,box-shadow .15s ease}
 .btn:hover{transform:translateY(-1px)}
@@ -202,6 +223,14 @@ table tr.row-flash{animation:rowFlash 2.5s ease-out 1}
   .chip,label.f input[type=checkbox]{min-height:40px}
   .f,.field-hint,p[style*=".78rem"],p[style*=".8rem"]{font-size:.9rem !important}
 }
+/* W105 (4-b): iOS не зумит фокус на полях/кнопках мельче 16px (инлайн-стили
+   компактных bulk-кнопок products.php перекрываем через !important);
+   чек-лист дашборда — ссылки 17px → нормальные 44px строки */
+@media(max-width:700px){
+  button,.btn,.linklike,.row-actions a,.row-actions button,.card form button[type=submit]:not(.primary-action):not(.btn):not(.danger),button.primary-action,a.primary-action,input[type=file],input[type=file]::file-selector-button{font-size:16px !important}
+  #launch-check a{display:inline-flex;align-items:center;min-height:44px}
+  .filters-bar input,.filters-bar select,.filters-bar button,.filters-bar a.btn{min-height:44px} /* W105 (4-b): 42px из базового правила → 44 на таче */
+}
 /* --- Дашборд «Статистика» --- */
 /* Статистика — контент, а не тулбар: sticky убран (перекрывал таблицы на мобиле).
    Шапка .admin-top — единственный sticky на странице. */
@@ -215,10 +244,21 @@ table tr.row-flash{animation:rowFlash 2.5s ease-out 1}
 #top-nav::-webkit-scrollbar{display:none}
 #top-nav a{white-space:nowrap;flex:0 0 auto}
 .dash-ranges{-webkit-mask-image:linear-gradient(90deg,#000 92%,transparent);mask-image:linear-gradient(90deg,#000 92%,transparent)}
+/* W105 (4-b): аффорданс горизонтального скролла — таблицы и чипы настроек:
+   правый фейд + чип «↔», гаснущий после первого скролла. Класс .is-scrollable
+   вешает JS (фейд только когда контент реально обрезан); десктоп ≥701px не тронут. */
+.scroll-hint{display:none}
+@media(max-width:700px){
+  .table-scroll.is-scrollable,#top-nav.is-scrollable{-webkit-mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 34px),transparent 100%);mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 34px),transparent 100%)}
+  .hint-anchor{position:relative}
+  .scroll-hint{display:inline-flex;align-items:center;justify-content:center;position:absolute;right:8px;width:30px;height:30px;border-radius:999px;background:#fff;border:1px solid var(--line);box-shadow:0 8px 20px -10px rgba(43,45,47,.55);font-size:1rem;line-height:1;color:var(--ink-soft);pointer-events:none;z-index:5;animation:scrollHintNudge 1.6s ease-in-out 2;transition:opacity .35s ease,visibility 0s linear .35s}
+  .scroll-hint--off{opacity:0;visibility:hidden}
+}
+@keyframes scrollHintNudge{0%,100%{transform:translateX(0)}50%{transform:translateX(4px)}}
 /* W65 (статич. выверка #3): sticky-оглавление настроек пряталось под двухстрочную
    моб-шапку (inline top:64px < фактические ~90px шапки на ≤700). Класс вместо inline. */
 .settings-nav{margin-bottom:16px;position:sticky;top:64px;z-index:30;background:var(--bg,#F6F1E6);padding:8px 0;border-radius:0 0 12px 12px}
-@media(max-width:700px){.settings-nav{top:122px}}
+@media(max-width:700px){.settings-nav{top:64px}} /* W105 (4-b): шапка стала одним рядом (~64px) — стек шапка+чипы 181px→~124px */
 .dash-ranges a{padding:5px 12px;border-radius:999px;font-size:.8rem;font-weight:600;color:var(--ink-soft);background:var(--bg);transition:background .15s ease,color .15s ease}
 .dash-ranges a:hover{color:var(--ink)}
 .dash-ranges a.active{background:var(--rose);color:var(--ink)}
@@ -261,15 +301,23 @@ table tr.row-flash{animation:rowFlash 2.5s ease-out 1}
 <header class="admin-top">
   <div class="wrap">
     <span class="admin-logo">Админ-панель</span>
-    <nav class="admin-nav">
+    <nav class="admin-nav" id="admin-nav" aria-label="Разделы админ-панели">
       <?php foreach ($nav as $key => $label): ?>
         <?php if ($key === 'users' && !$navIsOwner) { continue; } /* W100-fixH2 (J6) */ ?>
         <a href="/admin/<?= e($key) ?>.php" class="<?= $active === $key ? 'active' : '' ?>"><?= e($label) ?></a>
       <?php endforeach; ?>
     </nav>
     <span class="spacer"></span>
-    <a href="/" target="_blank" class="btn btn--ghost">Открыть сайт</a>
+    <a href="/" target="_blank" rel="noopener" class="btn btn--ghost admin-open-site" aria-label="Открыть сайт (в новой вкладке)">
+      <span class="admin-open-site__icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2v-2"/><path d="M10 1.5h4.5V6"/><path d="M14.5 1.5 8 8"/></svg></span>
+      <span class="admin-open-site__text">Открыть сайт</span>
+    </a>
     <a href="/admin/logout.php?t=<?= e(csrf_token()) ?>" class="btn btn--ghost">Выйти</a>
+    <button class="admin-burger" type="button" aria-expanded="false" aria-controls="admin-nav" aria-label="Открыть меню разделов">
+      <span class="admin-burger__bar" aria-hidden="true"></span>
+      <span class="admin-burger__bar" aria-hidden="true"></span>
+      <span class="admin-burger__bar" aria-hidden="true"></span>
+    </button>
   </div>
 </header>
 <main class="wrap">
@@ -286,6 +334,76 @@ function adminFooter(): void
     var el = location.hash ? document.getElementById(location.hash.slice(1)) : null;
     if (el) { el.classList.add('row-flash'); el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
   } catch (e) {}
+})();
+/* W105 (4-b): мобильное меню шапки — открытие бургером, закрытие тапом по ссылке,
+   по Escape и по тапу вне шапки; фон заблокирован, пока меню открыто */
+(function () {
+  var top = document.querySelector('.admin-top');
+  var burger = top ? top.querySelector('.admin-burger') : null;
+  var nav = document.getElementById('admin-nav');
+  if (!top || !burger || !nav) return;
+  function setOpen(open) {
+    top.classList.toggle('nav-open', open);
+    burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    burger.setAttribute('aria-label', open ? 'Закрыть меню' : 'Открыть меню разделов');
+    document.documentElement.classList.toggle('admin-nav-lock', open);
+  }
+  burger.addEventListener('click', function (e) {
+    e.stopPropagation();
+    setOpen(!top.classList.contains('nav-open'));
+  });
+  nav.addEventListener('click', function (e) { if (e.target.closest('a')) setOpen(false); });
+  document.addEventListener('click', function (e) {
+    if (top.classList.contains('nav-open') && !e.target.closest('.admin-top')) setOpen(false);
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setOpen(false); });
+  var mq = window.matchMedia('(min-width:701px)');
+  if (mq.addEventListener) { mq.addEventListener('change', function (m) { if (m.matches) setOpen(false); }); }
+})();
+/* W105 (4-b): аффорданс скролла — у .table-scroll и чипов настроек #top-nav:
+   класс .is-scrollable (правый фейд) + чип «↔», гаснущий после первого скролла.
+   Плюс активный чип настроек приезжает в кадр после scrollspy */
+(function () {
+  var items = [];
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function decorate(sc) {
+    var host = sc.parentElement;
+    if (!host) return;
+    var hint = null, dismissed = false;
+    function place() {
+      if (!hint) return;
+      hint.style.top = Math.round(sc.getBoundingClientRect().top - host.getBoundingClientRect().top + 8) + 'px';
+    }
+    function sync() {
+      var over = sc.scrollWidth - sc.clientWidth > 8;
+      sc.classList.toggle('is-scrollable', over);
+      if (!hint && over && !dismissed && window.matchMedia('(max-width:700px)').matches) {
+        hint = document.createElement('span');
+        hint.className = 'scroll-hint';
+        hint.setAttribute('aria-hidden', 'true');
+        hint.textContent = '↔';
+        host.classList.add('hint-anchor');
+        host.appendChild(hint);
+      }
+      if (hint) { hint.classList.toggle('scroll-hint--off', !over || dismissed); place(); }
+    }
+    sc.addEventListener('scroll', function () {
+      dismissed = true;
+      if (hint) hint.classList.add('scroll-hint--off');
+    }, { passive: true });
+    sync();
+    items.push(sync);
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.table-scroll, #top-nav'), decorate);
+  var rt = null;
+  function resync() { items.forEach(function (fn) { fn(); }); }
+  window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(resync, 150); });
+  window.addEventListener('load', resync);
+  /* активный чип настроек — в кадр (после того как scrollspy отметит aria-current) */
+  setTimeout(function () {
+    var a = document.querySelector('#top-nav a[aria-current]');
+    if (a && a.scrollIntoView) { try { a.scrollIntoView({ block: 'nearest', inline: 'center', behavior: reduce ? 'auto' : 'smooth' }); } catch (e) {} }
+  }, 400);
 })();
 </script></body></html><?php
 }

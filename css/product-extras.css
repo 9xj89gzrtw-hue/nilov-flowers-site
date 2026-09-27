@@ -77,7 +77,7 @@
   list-style:none;margin:16px 0 18px;padding:0;
 }
 .pdp-specs__chip{
-  display:inline-flex;flex-direction:column;align-items:flex-start;gap:3px;
+  display:inline-flex;flex-direction:column;align-items:flex-start;gap:6px;
   border:1px solid rgba(28,26,30,.15);border-radius:12px;
   padding:9px 14px;
   background:transparent;

@@ -1693,9 +1693,14 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
            без «узкой газетной» колонки; длинные вопросы не переносятся в 3 строки */ ?>
     <div class="wrap" style="max-width:880px">
       <?php /* W104-α (M): FAQ — завершающий нумерал оглавления главной (09);
-             обёртка fc-row__heading включает тот же oversize-индекс за H2 */ ?>
+             обёртка fc-row__heading включает тот же oversize-индекс за H2.
+             W105 (4-a): обёртка fc-row__head — тот же механизм отступа
+             «H2 → контент», что у остальных секций (margin-bottom 26px);
+             без неё FAQ-заголовок прилипал к первому вопросу. */ ?>
+      <div class="fc-row__head">
       <div class="fc-row__heading" data-numeral="<?= e(fc_next_numeral()) ?>">
       <h2 class="section-title"><?= e(setting('faq_title', 'Частые вопросы')) ?></h2>
+      </div>
       </div>
       <?php
       /* FAQ редактируется из админки (критерий 16): 4 пары вопрос-ответ.

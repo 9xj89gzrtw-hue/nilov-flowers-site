@@ -36,7 +36,7 @@ if (isAdmin()) {
 :root{--rose:#F4A9BE;--rose-deep:#E2799C;--bg:#F6F1E6;--bg-alt:#EFE7D8;--ink:#2B2D2F;--ink-soft:#6E6A61;--line:rgba(43,45,47,.12);--err:#C43A3A;
 --font-display:'Playfair Display','Playfair Fallback',Georgia,serif;--font-ui:'Golos Text','Golos Fallback',system-ui,sans-serif}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--font-ui);color:var(--ink);background:var(--bg);min-height:100vh;display:grid;place-items:center;padding:20px}
+body{font-family:var(--font-ui);color:var(--ink);background:var(--bg);min-height:100vh;display:grid;place-items:center;padding:20px;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 .login{background:#fff;border-radius:26px;padding:36px;width:100%;max-width:380px;box-shadow:0 20px 50px -30px rgba(43,45,47,.4)}
 h1{font-family:var(--font-display);font-weight:600;font-size:1.5rem;margin-bottom:6px}
 p.sub{color:var(--ink-soft);font-size:.85rem;margin-bottom:20px}
@@ -50,6 +50,8 @@ button:hover{background:#9E4062}
 .back-link{display:block;margin-top:10px;text-align:center;font-size:.85rem;color:var(--ink-soft);text-decoration:none}
 .back-link:hover,.back-link:focus-visible{color:var(--rose-deep);text-decoration:underline}
 @media(hover:none),(pointer:coarse){.forgot-link,.back-link{min-height:44px;display:flex !important;align-items:center;justify-content:center}} /* W76 */
+/* W105 (4-b): поля/кнопки мельче 16px — iOS авто-зумит экран при фокусе */
+@media(max-width:820px){input,button{font-size:16px}}
 </style>
 </head>
 <body>
