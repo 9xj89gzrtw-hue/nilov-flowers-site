@@ -30,6 +30,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
     exit;
 }
 
+/* W105 (3-b, «фото боком»): ручной поворот уже загруженного фото — кнопки
+   ⟲ ⟳ ↕ в форме редактирования. Для фото, залитых до EXIF-фикса: их тег
+   ориентации срезан GD-перекодировкой необратимо, автоматика невозможна.
+   rotateStoredImage крутит пиксели и сносит webp-сиблинг + thumbs/*.webp —
+   витрина пересоберёт превью из новых пикселей. */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'rotate_img') {
+    $id = (int)($_POST['id'] ?? 0);
+    $stmt = $pdo->prepare('SELECT image FROM products WHERE id = :i');
+    $stmt->execute([':i' => $id]);
+    $img = trim((string)$stmt->fetchColumn());
+    if ($img === '' || str_contains($img, '/') || !is_file(IMG_PRODUCTS_DIR . '/' . $img)) {
+        flash('У товара нет загруженного фото — поворачивать нечего', true);
+    } elseif (rotateStoredImage(IMG_PRODUCTS_DIR . '/' . $img, (string)($_POST['rot'] ?? ''))) {
+        flash('Фото повёрнуто — витрина пересоберёт превью сама');
+    } else {
+        flash('Не удалось повернуть фото (формат не поддержан)', true);
+    }
+    /* возврат в форму редактирования с сохранением фильтров/страницы списка */
+    $bq = trim((string)($_POST['back_qs'] ?? ''));
+    if (!preg_match('/(^|&)edit=\d+/', $bq)) {
+        $bq = ($bq !== '' ? $bq . '&' : '') . 'edit=' . $id;
+    }
+    header('Location: /admin/products.php' . ($bq !== '' ? '?' . $bq : ''));
+    exit;
+}
+
 // Сохранение (создание/редактирование)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save') {
     $id = (int)($_POST['id'] ?? 0);
@@ -368,7 +394,12 @@ flash();
         <label class="f" for="p-img">Фото <?= $editing && $editing['image'] !== '' ? '(заменить)' : '' ?></label>
         <input class="input" id="p-img" name="image" type="file" accept="image/*">
         <?php if ($editing && $editing['image'] !== ''): ?>
-          <img class="thumb" style="margin-top:8px" src="/img/products/<?= e($editing['image']) ?>" alt="">
+          <?php /* W105 (3-b): ?v= — после ручного поворота превью не показывается
+             из кэша браузера старым боком (паттерн логотипа в settings.php) */ ?>
+          <?php $__editImg = IMG_PRODUCTS_DIR . '/' . $editing['image']; ?>
+          <img class="thumb" style="margin-top:8px;width:120px;height:90px;object-fit:cover" src="/img/products/<?= e($editing['image']) ?>?v=<?= is_file($__editImg) ? substr((string)md5_file($__editImg), 0, 8) : '0' ?>" alt="Фото товара">
+          <?php /* W105 (3-b): ⟲ против часовой · ⟳ по часовой · ↕ 180° */ ?>
+          <?php rotateControlsButtons('rotateImgForm'); ?>
         <?php endif; ?>
         <label class="f" for="p-sort">Позиция в каталоге (1 — первым)</label>
         <input class="input" id="p-sort" name="sort" type="number" value="<?= $editing ? (int)$editing['sort'] : 0 ?>">
@@ -399,6 +430,11 @@ flash();
       <?php if ($editing): ?><a class="btn btn--ghost" href="/admin/products.php?edit=0<?= e($ctxQ) ?>">Отмена</a><?php endif; ?>
     </div>
   </form>
+  <?php /* W105 (3-b): форма-носитель кнопок поворота — вне формы редактирования
+         (вложенность <form> запрещена; кнопки выше привязаны через form=) */ ?>
+  <?php if ($editing && $editing['image'] !== '') {
+      rotateControlsForm('rotateImgForm', ['action' => 'rotate_img', 'id' => (int)$editing['id'], 'back_qs' => (string)($_SERVER['QUERY_STRING'] ?? '')]);
+  } ?>
 </div>
 
 <div class="card">

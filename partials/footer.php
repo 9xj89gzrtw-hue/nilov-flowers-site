@@ -227,7 +227,20 @@ elseif ($__nfIsHome || preg_match('#^/(product|category)(\.php)?(/|$)#', $__nfPa
 <?php /* W97-fixA (A9): js/lazy-images.js — dead code (ищет img[data-src], которых
          нет нигде в репо — проверено rg "data-src" перед удалением); подключение
          убрано, файл в /js оставлен без изменений. */ ?>
-<script src="/js/reveal.js?v=<?= e($__vjs('reveal.js')) ?>"></script>
+<?php /* W105 (3-a, P0 «половина сайта невидима»): ПОРЯДОК DEFER-ЦЕПОЧКИ —
+         lenis + kinetic ПЕРВЫМИ, reveal.js СРАЗУ ПОСЛЕ НИХ (тоже defer):
+         kinetic.js ставит html.motion-lite (≤4 ядра) ДО решения reveal.js.
+         Раньше reveal.js был sync и завершался раньше kinetic → на ≤4 ядрах
+         motion-w104.css гасил view()-таймлайны, а IO уже не ставился →
+         секции и карточки навсегда в opacity:0. Defer-скрипты исполняются
+         в порядке документа; nilov.js (js-ready) и petals следом — своей
+         логики порядка с reveal/kinetic не имеют (petals сам ждёт
+         load + js-ready). reveal.js синхронно открывает вышефолдные
+         элементы ДО nilov.js — без кадра невидимости при погашении
+         safety-net. */ ?>
+<script src="/js/vendor/lenis.min.js?v=<?= e($__vjs('vendor/lenis.min.js')) ?>" defer></script>
+<script src="/js/kinetic.js?v=<?= e($__vjs('kinetic.js')) ?>" defer></script>
+<script src="/js/reveal.js?v=<?= e($__vjs('reveal.js')) ?>" defer></script>
 <script src="/js/nilov.js?v=<?= e($__vjs('nilov.js')) ?>" defer></script>
 <?php /* W104-c (motion-агент): лепестки — только главная (.fc-hero__main есть
          только в index.php); стартуют после window load + html.js-ready —
@@ -235,12 +248,6 @@ elseif ($__nfIsHome || preg_match('#^/(product|category)(\.php)?(/|$)#', $__nfPa
 <?php if ($__nfIsHome): ?>
 <script src="/js/petals.js?v=<?= e($__vjs('petals.js')) ?>" defer></script>
 <?php endif; ?>
-<?php /* W104-c (motion-агент): Lenis (self-host, MIT) + кинетическая
-         типографика — все страницы. defer: порядок исполнения после
-         nilov.js (js-ready) и sync-скриптов выше (лайтбокс для
-         data-lenis-prevent уже в DOM). Сами отключаются на таче/reduced. */ ?>
-<script src="/js/vendor/lenis.min.js?v=<?= e($__vjs('vendor/lenis.min.js')) ?>" defer></script>
-<script src="/js/kinetic.js?v=<?= e($__vjs('kinetic.js')) ?>" defer></script>
 <script>window.COOKIE_BANNER_CONFIG = {
   text: <?= json_encode(sanitize_rich_text(setting('cookie_banner_text', 'Сайт использует cookie и Яндекс.Метрику для работы и анализа трафика. Подробнее — в <a href="/policy" target="_blank" rel="noopener">Политике обработки персональных данных</a>.'), 260), JSON_UNESCAPED_UNICODE) ?>,
   accept: <?= json_encode(setting('cookie_accept_text', 'Принять'), JSON_UNESCAPED_UNICODE) ?>,

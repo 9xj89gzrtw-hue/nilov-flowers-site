@@ -224,7 +224,11 @@ function saveUpload(array $file, string $dir): string
    2) +brightness 4 / контраст мягкий — телефонные фото часто тёмные и серые;
    3) +7 синего — гасит жёлтую тональность ламп накаливания;
    4) webp-копия рядом — карточки каталога подхватывают через <picture>.
-   Идемпотентно: сбой GD → исходный файл не трогаем. */
+   Идемпотентно: сбой GD → исходный файл не трогаем.
+   W105 (3-b, баг «фото боком»): ДО ресайза применяется EXIF-ориентация
+   (applyExifOrientation) — поворот меняет W/H, а GD-сохранение срезает EXIF,
+   поэтому без этого шага все производные (webp-сиблинг, thumbs) наследовали
+   лежащие боком пиксели навсегда. */
 function normalizeUpload(string $path, string $ext): void
 {
     if (!function_exists('imagecreatefromjpeg')) {
@@ -239,6 +243,9 @@ function normalizeUpload(string $path, string $ext): void
     if ($src === false) {
         return;
     }
+    /* W105 (3-b): EXIF-ориентация ДО ресайза (rotate меняет W/H). Дешёвый
+       guard для webp/png: exif_read_data там не читается → вернётся как есть. */
+    $src = applyExifOrientation($src, $path);
     $w = imagesx($src);
     $h = imagesy($src);
     $maxSide = 1400;
@@ -247,6 +254,13 @@ function normalizeUpload(string $path, string $ext): void
         $nw = (int)round($w * $scale);
         $nh = (int)round($h * $scale);
         $dst = imagecreatetruecolor($nw, $nh);
+        if ($ext === 'png' || $ext === 'webp') {
+            /* W105 (3-b): альфа PNG/WebP не должна заливаться чёрным
+               при перекодировке через truecolor-ресайз */
+            imagealphablending($dst, false);
+            imagesavealpha($dst, true);
+            imagefill($dst, 0, 0, imagecolorallocatealpha($dst, 0, 0, 0, 127));
+        }
         imagecopyresampled($dst, $src, 0, 0, 0, 0, $nw, $nh, $w, $h);
         imagedestroy($src);
         $src = $dst;
@@ -264,6 +278,157 @@ function normalizeUpload(string $path, string $ext): void
         @imagewebp($src, preg_replace('/\.(jpe?g|png)$/i', '.webp', $path), 80);
     }
     /* PHP 8.0+: imagedestroy() не нужен и deprecated с 8.5 — опускаем. */
+}
+
+/* W105 (3-b, «фото грузятся повёрнутыми»): EXIF-ориентация телефонных фото
+   (iPhone/Android пишут Orientation 6/8/3 и повёрнутые пиксели) — применяется
+   к ХРАНЯЩИМСЯ пикселям ДО ресайза и ДО GD-сохранения (GD срезает EXIF, тег
+   ориентации теряется безвозвратно). Возвращает уже выпрямленный GdImage,
+   уничтожая исходный ресурс при повороте (imagerotate возвращает НОВУЮ картинку).
+   Карта тегов (что сделать с пикселями, чтобы встали прямо):
+     2 — зеркально по горизонтали          5 — на 90° по часовой + зеркально
+     3 — на 180°                          6 — на 90° по часовой
+     4 — зеркально по вертикали           7 — на 90° против часовой + зеркально
+                                          8 — на 90° против часовой
+   imagerotate() в GD крутит ПРОТИВ часовой стрелки, поэтому «-90» = по часовой.
+   PNG/WebP/GIF без читаемого EXIF проходят насквозь без изменений. */
+function applyExifOrientation(GdImage $img, string $path): GdImage
+{
+    if (!function_exists('exif_read_data')) {
+        return $img;
+    }
+    $exif = @exif_read_data($path, 'IFD0', false);
+    if (!is_array($exif)) {
+        return $img;
+    }
+    $o = (int)($exif['Orientation'] ?? 1);
+    if ($o < 2 || $o > 8) {
+        return $img;
+    }
+    $angle = match ($o) {
+        3 => 180,
+        5, 6 => -90,
+        7, 8 => 90,
+        default => 0, /* 2 и 4 — только зеркалим, без поворота */
+    };
+    if ($angle !== 0) {
+        /* прозрачный фон: у 90/180/270 покрытие полное и он не виден, но
+           альфа-канал PNG/WebP не заливается чёрным при пересборке */
+        $bg = @imagecolorallocatealpha($img, 0, 0, 0, 127);
+        $rotated = $bg === false ? false : @imagerotate($img, $angle, $bg);
+        if ($rotated instanceof GdImage) {
+            imagealphablending($rotated, false);
+            imagesavealpha($rotated, true);
+            imagedestroy($img);
+            $img = $rotated;
+        }
+    }
+    if (in_array($o, [2, 5, 7], true)) {
+        @imageflip($img, IMG_FLIP_HORIZONTAL);
+    } elseif ($o === 4) {
+        @imageflip($img, IMG_FLIP_VERTICAL);
+    }
+    return $img;
+}
+
+/* W105 (3-b): ручной поворот УЖЕ сохранённого файла (админ-кнопки ⟲ ⟳ ↕) —
+   для фото, загруженных до фикса EXIF: их ориентационный тег срезан старой
+   GD-перекодировкой, авторотация невозможна — крутим пиксели руками.
+   Сохраняет в тот же файл (JPEG q92), затем сносит производные от старых
+   пикселей: webp-сиблинг рядом ({base}.webp) и thumbs/{base}-*.webp —
+   витрина лениво перегенерирует их из повёрнутого оригинала.
+   $rot: 'ccw' — против часовой, 'cw' — по часовой, 'half' — 180°. */
+function rotateStoredImage(string $path, string $rot): bool
+{
+    $angle = match ($rot) {
+        'ccw' => 90,
+        'cw' => -90,
+        'half' => 180,
+        default => 0,
+    };
+    if ($angle === 0 || !function_exists('imagecreatefromjpeg')) {
+        return false;
+    }
+    if (!is_file($path)) {
+        return false;
+    }
+    $ext = strtolower((string)pathinfo($path, PATHINFO_EXTENSION));
+    $src = match ($ext) {
+        'jpg', 'jpeg' => function_exists('imagecreatefromjpeg') ? @imagecreatefromjpeg($path) : false,
+        'png' => function_exists('imagecreatefrompng') ? @imagecreatefrompng($path) : false,
+        'webp' => function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($path) : false,
+        'gif' => function_exists('imagecreatefromgif') ? @imagecreatefromgif($path) : false,
+        default => false,
+    };
+    if (!($src instanceof GdImage)) {
+        return false;
+    }
+    $alpha = in_array($ext, ['png', 'webp', 'gif'], true);
+    $bg = $alpha ? @imagecolorallocatealpha($src, 0, 0, 0, 127) : @imagecolorallocate($src, 0, 0, 0);
+    $rotated = $bg === false ? false : @imagerotate($src, $angle, $bg);
+    imagedestroy($src);
+    if (!($rotated instanceof GdImage)) {
+        return false;
+    }
+    if ($alpha) {
+        /* логотип/favicon в PNG — прозрачность обязана пережить поворот */
+        imagealphablending($rotated, false);
+        imagesavealpha($rotated, true);
+    }
+    $ok = match ($ext) {
+        'jpg', 'jpeg' => @imagejpeg($rotated, $path, 92),
+        'png' => @imagepng($rotated, $path, 6),
+        'webp' => function_exists('imagewebp') ? @imagewebp($rotated, $path, 92) : false,
+        'gif' => @imagegif($rotated, $path),
+        default => false,
+    };
+    imagedestroy($rotated);
+    if (!$ok) {
+        return false;
+    }
+    /* производные от старых пикселей больше не годятся */
+    $base = (string)(preg_replace('/\.[^.]+$/', '', basename($path)) ?? basename($path));
+    $dir = dirname($path);
+    if ($ext !== 'webp') {
+        @unlink($dir . '/' . $base . '.webp');
+    }
+    foreach (glob($dir . '/thumbs/' . $base . '-*.webp') ?: [] as $stale) {
+        @unlink($stale);
+    }
+    return true;
+}
+
+/* W105 (3-b, админ): группа кнопок ручного поворота уже загруженного фото.
+   Вызывается в admin/products.php и admin/settings.php рядом с превью.
+   Кнопки привязываются к ОТДЕЛЬНОЙ форме через атрибут form= (вложенность
+   <form> в HTML запрещена, а кнопки лежат внутри большой формы редактирования;
+   паттерн уже используется bulk-формой в admin/products.php). Сама форма
+   печатается отдельно — rotateControlsForm() — вне основной формы страницы. */
+function rotateControlsButtons(string $formId): void
+{
+    $btn = static function (string $rot, string $label, string $title) use ($formId): string {
+        return '<button type="submit" form="' . e($formId) . '" name="rot" value="' . e($rot)
+            . '" class="btn btn--ghost" title="' . e($title) . '" aria-label="' . e($title)
+            . '" style="min-width:44px;min-height:44px;font-size:1.05rem;line-height:1;padding:6px 12px">'
+            . $label . '</button>';
+    };
+    echo '<div style="display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:8px">'
+        . '<span style="font-size:.78rem;color:var(--ink-soft)">Фото боком? Повернуть:</span>'
+        . $btn('ccw', '⟲', 'Повернуть на 90° против часовой стрелки')
+        . $btn('cw', '⟳', 'Повернуть на 90° по часовой стрелке')
+        . $btn('half', '↕', 'Развернуть на 180°')
+        . '</div>';
+}
+
+/* W105 (3-b, админ): невидимая форма-носитель для rotateControlsButtons().
+   $hidden — скрытые поля (action=rotate_img + id товара или key настройки). */
+function rotateControlsForm(string $formId, array $hidden): void
+{
+    $h = csrf_field();
+    foreach ($hidden as $k => $v) {
+        $h .= '<input type="hidden" name="' . e($k) . '" value="' . e((string)$v) . '">';
+    }
+    echo '<form method="post" id="' . e($formId) . '" style="display:none">' . $h . '</form>';
 }
 
 function deleteImage(string $name, string $dir): void

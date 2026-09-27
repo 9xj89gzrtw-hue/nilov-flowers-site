@@ -22,7 +22,28 @@ $pdo = db();
 $me = currentAdmin();
 $isOwner = $me !== null && (string)($me['role'] ?? 'owner') === 'owner';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !isset($_POST['hist_action'])) {
+/* W105 (3-b, «фото боком»): ручной поворот загруженных картинок настроек
+   (hero/логотип/favicon/обложки журнала) — кнопки ⟲ ⟳ ↕ у превью.
+   Крутит ТОЛЬКО файлы, реально лежащие в img/uploads (админ-аплоады):
+   посевочные img/editorial/* трекаются в git — поворот откатится при деплое;
+   svg GD не читает. rotateStoredImage сносит webp-сиблинг + thumbs/*.webp. */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'rotate_img') {
+    $anchors = ['hero_image' => 's-main', 'logo_image' => 's-common', 'site_favicon' => 's-look',
+        'journal_1_image' => 's-5cv', 'journal_2_image' => 's-5cv', 'journal_3_image' => 's-5cv'];
+    $key = (string)($_POST['key'] ?? '');
+    $file = trim((string)setting($key));
+    if (!isset($anchors[$key]) || $file === '' || str_contains($file, '/') || !is_file(IMG_UPLOADS_DIR . '/' . $file)) {
+        flash('Файл картинки не найден в загруженных — поворачивать нечего', true);
+    } elseif (rotateStoredImage(IMG_UPLOADS_DIR . '/' . $file, (string)($_POST['rot'] ?? ''))) {
+        flash('Картинка повёрнута — витрина пересоберёт превью сама');
+    } else {
+        flash('Не удалось повернуть картинку (формат не поддержан)', true);
+    }
+    header('Location: /admin/settings.php' . (isset($anchors[$key]) ? '#' . $anchors[$key] : ''));
+    exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !isset($_POST['hist_action']) && ($_POST['action'] ?? '') !== 'rotate_img') {
     $keys = ['shop_name','shop_phone','shop_address','site_url','pickup_address','hero_title','hero_subtitle',
         'hero_button_text','hero_button_link','hero_image_alt','steps_title','step_1','step_2','step_3',
         'guarantees_title','guarantee_1','guarantee_2','guarantee_3',
@@ -259,6 +280,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['hist_action'])) {
 $s = allSettings();
 function sv(string $k, array $s): string { return e($s[$k] ?? ''); }
 
+/* W105 (3-b): показываем кнопки поворота только у файлов, реально лежащих
+   в img/uploads с GD-читаемым расширением (svg/посевные пути — нет) */
+$rotKeys = ['hero_image', 'logo_image', 'site_favicon', 'journal_1_image', 'journal_2_image', 'journal_3_image'];
+$rotatable = static function (string $key) use ($s): bool {
+    $f = trim((string)($s[$key] ?? ''));
+    if ($f === '' || str_contains($f, '/')) { return false; }
+    $p = IMG_UPLOADS_DIR . '/' . $f;
+    if (!is_file($p)) { return false; }
+    return in_array(strtolower((string)pathinfo($p, PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png', 'webp', 'gif'], true);
+};
+/* W105 (3-b): версия превью по md5 файла — после поворота превью в админке
+   не показывается из кэша браузера старыми пикселями */
+$imgVer = static function (string $key) use ($s): string {
+    $f = trim((string)($s[$key] ?? ''));
+    $p = IMG_UPLOADS_DIR . '/' . $f;
+    return $f !== '' && is_file($p) ? substr((string)md5_file($p), 0, 8) : '0';
+};
+
 adminHeader('Настройки', 'settings');
 flash();
 ?>
@@ -370,6 +409,7 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
         <?php if (($s['logo_image'] ?? '') !== ''): ?>
           <?php $logoPath = (__DIR__) . '/../img/uploads/' . $s['logo_image']; $logoVer = is_file($logoPath) ? substr(md5_file($logoPath), 0, 8) : '0'; ?>
           <img class="thumb" style="margin-top:8px" src="/img/uploads/<?= e($s['logo_image']) ?>?v=<?= $logoVer ?>" alt="">
+          <?php if ($rotatable('logo_image')) { rotateControlsButtons('rot-logo_image'); } ?>
           <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:.9rem;cursor:pointer;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg-alt,#faf6f0)">
             <input type="checkbox" name="logo_enabled" value="1" <?= sv('logo_enabled', $s) !== '0' ? 'checked' : '' ?>>
             Показывать картинку-логотип рядом с названием.
@@ -411,7 +451,9 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
         <label class="f" for="h-img">Фото для главной (заменить)</label>
         <input class="input" id="h-img" name="hero_image" type="file" accept="image/*">
         <?php if (($s['hero_image'] ?? '') !== ''): ?>
-          <img class="thumb" style="margin-top:8px;width:120px;height:80px" src="/img/uploads/<?= e($s['hero_image']) ?>" alt="">
+          <?php /* W105 (3-b): ?v= по md5 — поворот виден сразу, не из кэша */ ?>
+          <img class="thumb" style="margin-top:8px;width:120px;height:80px;object-fit:cover" src="/img/uploads/<?= e($s['hero_image']) ?>?v=<?= $imgVer('hero_image') ?>" alt="Текущее фото главной">
+          <?php if ($rotatable('hero_image')) { rotateControlsButtons('rot-hero_image'); } ?>
         <?php endif; ?>
         <?php /* W97-fixB3a (B3a-3): alt hero-фото — ключ читается витриной с дефолтом из кода
            (index.php), здесь нужен только для редактирования владельцем. */ ?>
@@ -706,12 +748,13 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
         <label class="f" for="jr<?= $jr ?>-img" style="margin-top:8px">Статья <?= $jr ?> — обложка</label>
         <input class="input" id="jr<?= $jr ?>-img" name="journal_<?= $jr ?>_image" type="file" accept="image/*">
         <?php if (($s["journal_{$jr}_image"] ?? '') !== ''): ?>
-          <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
-            <img class="thumb" style="width:64px;height:48px;object-fit:cover" src="/img/uploads/<?= e($s["journal_{$jr}_image"]) ?>" alt="Обложка статьи <?= $jr ?>">
+          <div style="display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap">
+            <img class="thumb" style="width:64px;height:48px;object-fit:cover" src="/img/uploads/<?= e($s["journal_{$jr}_image"]) ?>?v=<?= $imgVer("journal_{$jr}_image") ?>" alt="Обложка статьи <?= $jr ?>">
             <label class="f" style="display:flex;gap:6px;align-items:center;font-weight:400;font-size:.85rem;margin:0">
               <input type="checkbox" name="journal_<?= $jr ?>_image_remove" value="1" style="width:auto">
               Удалить обложку
             </label>
+            <?php if ($rotatable("journal_{$jr}_image")) { rotateControlsButtons('rot-journal_' . $jr . '_image'); } ?>
           </div>
         <?php endif; ?>
       </div>
@@ -846,12 +889,13 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
         <label class="f" for="s-favicon">Картинка-значок сайта (иконка во вкладке браузера)</label>
         <input class="input" id="s-favicon" name="site_favicon" type="file" accept="image/png,image/jpeg,image/webp,image/x-icon,image/svg+xml">
         <?php if (($s['site_favicon'] ?? '') !== ''): ?>
-          <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
-            <img class="thumb" style="width:32px;height:32px" src="/img/uploads/<?= e($s['site_favicon']) ?>" alt="Текущий favicon">
+          <div style="display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap">
+            <img class="thumb" style="width:32px;height:32px" src="/img/uploads/<?= e($s['site_favicon']) ?>?v=<?= $imgVer('site_favicon') ?>" alt="Текущий favicon">
             <label class="f" style="display:flex;gap:6px;align-items:center;font-weight:400;font-size:.85rem;margin:0">
               <input type="checkbox" name="site_favicon_remove" value="1" style="width:auto">
               Удалить favicon
             </label>
+            <?php if ($rotatable('site_favicon')) { rotateControlsButtons('rot-site_favicon'); } ?>
           </div>
         <?php endif; ?>
       </div>
@@ -1370,6 +1414,13 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
   })();
   </script>
 </form>
+
+<?php /* W105 (3-b): формы-носители кнопок поворота картинок настроек — вне
+       основной формы (вложенность <form> запрещена; кнопки в секциях выше
+       привязаны через form=). */ ?>
+<?php foreach ($rotKeys as $rk): if ($rotatable($rk)) {
+    rotateControlsForm('rot-' . $rk, ['action' => 'rotate_img', 'key' => $rk]);
+} endforeach; ?>
 
 <form method="post" style="margin-top:12px">
   <?= csrf_field() ?>
