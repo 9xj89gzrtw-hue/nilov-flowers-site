@@ -1,7 +1,14 @@
 /* Лайтбокс — увеличение фото товара по тапу/клику. Тот же паттерн
    открытия/закрытия, что и у панели корзины (cart-ui.js): backdrop-клик,
    Escape, блокировка скролла body (переиспользует .no-scroll), возврат
-   фокуса на элемент, с которого лайтбокс был открыт. */
+   фокуса на элемент, с которого лайтбокс был открыт.
+   W104-δ (C2-M2 P1.2 «лайтбокс без анимации»): открытие — backdrop
+   fade .24s + figure scale(.96)→1 .32s системной кривой (@starting-style
+   + allow-discrete — motion-w104.css), закрытие — обратный ход .18s
+   ease-in; hidden ставится CSS-переходом display, картинка снимается и
+   фокус возвращается ПОСЛЕ анимации (260мс-страховка). Браузеры без
+   allow-discrete: открытие — keyframes, закрытие мгновенное (как было).
+   prefers-reduced-motion — всё мгновенно. */
 (function () {
   const triggers = document.querySelectorAll('[data-lightbox-trigger]');
   if (!triggers.length) return;
@@ -26,29 +33,61 @@
   const figure = lightbox.querySelector('.lightbox__figure');
   let img = null;
   let lastTrigger = null;
+  let closing = false;
+  let closeTimer = 0;
 
   function open(trigger) {
     const src = trigger.dataset.lightboxSrc;
     if (!src) return;
-    img = document.createElement('img');
-    img.className = 'lightbox__img';
-    img.src = src;
-    img.alt = trigger.dataset.lightboxAlt || '';
-    figure.insertBefore(img, figure.firstChild);
+    /* W104-δ: переоткрытие во время закрытия — переиспользуем живой <img>
+     (finishClose не успел снять — он гардится снятым hidden) */
+    closing = false;
+    clearTimeout(closeTimer);
+    if (img && img.isConnected) {
+      img.src = src;
+      img.alt = trigger.dataset.lightboxAlt || '';
+    } else {
+      img = document.createElement('img');
+      img.className = 'lightbox__img';
+      img.src = src;
+      img.alt = trigger.dataset.lightboxAlt || '';
+      figure.insertBefore(img, figure.firstChild);
+    }
     lastTrigger = trigger;
     lightbox.hidden = false;
+    void lightbox.offsetWidth; /* коммит @starting-style (scale .96) до первого кадра */
     document.body.classList.add('no-scroll');
     lightbox.querySelector('.lightbox__close').focus();
   }
 
-  function close() {
-    lightbox.hidden = true;
-    document.body.classList.remove('no-scroll');
+  function finishClose() {
+    closing = false;
+    clearTimeout(closeTimer);
+    if (!lightbox.hidden) return; /* успели переоткрыть — картинка ещё нужна */
     if (img) {
       img.remove();
       img = null;
     }
-    if (lastTrigger) lastTrigger.focus();
+    if (lastTrigger) {
+      lastTrigger.focus();
+      lastTrigger = null;
+    }
+  }
+
+  function close() {
+    if (lightbox.hidden && !closing) return;
+    closing = true;
+    clearTimeout(closeTimer);
+    document.body.classList.remove('no-scroll');
+    lightbox.hidden = true; /* allow-discrete: display:none после .18s выхода */
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      finishClose();
+      return;
+    }
+    /* анимация выхода идёт — снимаем img/возвращаем фокус по её завершении
+     (страховка 260мс > .24s — transitionend не ловим: у [hidden]-правил
+     два свойства на двух элементах, таймер проще и надёжнее) */
+    closeTimer = setTimeout(finishClose, 260);
   }
 
   triggers.forEach(function (trigger) {

@@ -43,8 +43,13 @@
        + тихие текст-ссылки «Настроить» (granular-флоу не изменился) и
        «Отклонить» (однотапный отказ — не сложнее согласия, 152-ФЗ).
        cfg.title — редактируемый заголовок (печатается в COOKIE_BANNER_CONFIG
-       витриной; фолбэк здесь — по паттерну text/accept/reject). */
+       витриной; фолбэк здесь — по паттерну text/accept/reject).
+       W104-δ (C2-D2 P0-1 «крестика нет»): ✕ в углу — как «Отклонить»
+       (сохраняем 'necessary', Метрику НЕ грузим), + Escape. Инлайн-стили —
+       минимальные, чтобы кнопка была живая и до рестайла γ (класс
+       .cookie-banner__close — γ может перекрасить в five.css). */
     banner.innerHTML =
+      '<button type="button" class="cookie-banner__close" id="cookieBannerClose" aria-label="Закрыть уведомление" style="position:absolute;top:4px;right:4px;width:34px;height:34px;min-width:34px;min-height:34px;border:none;background:transparent;color:inherit;opacity:.6;border-radius:50%;cursor:pointer;font:600 1.05rem/1 var(--font-ui,Montserrat,sans-serif);display:grid;place-items:center">&times;</button>' +
       '<h3 class="cookie-banner__title">' + esc(cfg.title || 'Мы используем cookie') + '</h3>' +
       '<p class="cookie-banner__text">' + text + '</p>' +
       '<span class="cookie-banner__actions">' +
@@ -86,6 +91,25 @@
         /* без loadMetrica() — аналитика не загружается */
       });
     }
+    /* W104-δ: ✕ и Escape = «Отклонить» (не сложнее согласия — 152-ФЗ) */
+    var closeX = document.getElementById('cookieBannerClose');
+    if (closeX) {
+      closeX.addEventListener('click', function () {
+        saveState('necessary');
+        dismissBanner();
+      });
+    }
+    var escKey = function (ev) {
+      if (ev.key !== 'Escape') return;
+      if (!document.querySelector('.cookie-banner')) {
+        document.removeEventListener('keydown', escKey);
+        return;
+      }
+      saveState('necessary');
+      dismissBanner();
+      document.removeEventListener('keydown', escKey);
+    };
+    document.addEventListener('keydown', escKey);
     /* Legal-критик: кнопка «Настройки cookie» — granular-выбор с чекбоксом аналитики */
     if (settingsBtn) {
       settingsBtn.addEventListener('click', function () {

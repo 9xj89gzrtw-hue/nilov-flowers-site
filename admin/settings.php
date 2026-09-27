@@ -486,11 +486,11 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
           Тёмная промо-карточка рядом с фото
         </label>
         <label class="f" for="hp-badge" style="margin-top:8px">Мета-подпись на промо-карточке (капс)</label>
-        <input class="input" id="hp-badge" name="hero_promo_badge" value="<?= sv('hero_promo_badge', $s) !== '' ? sv('hero_promo_badge', $s) : 'Всегда бесплатно' ?>" maxlength="30">
+        <input class="input" id="hp-badge" name="hero_promo_badge" value="<?= sv('hero_promo_badge', $s) !== '' ? sv('hero_promo_badge', $s) : 'К каждому букету' ?>" maxlength="30">
         <label class="f" for="hp-title" style="margin-top:8px">Заголовок промо-карточки (Playfair-курсив)</label>
         <input class="input" id="hp-title" name="hero_promo_title" value="<?= sv('hero_promo_title', $s) !== '' ? sv('hero_promo_title', $s) : 'Открытка в подарок' ?>" maxlength="80">
         <label class="f" for="hp-text" style="margin-top:8px">Текст промо-карточки</label>
-        <textarea class="input" id="hp-text" name="hero_promo_text" rows="2" maxlength="200"><?= sv('hero_promo_text', $s) !== '' ? sv('hero_promo_text', $s) : 'Напишем ваш текст от руки и вложим в букет — бесплатно, в каждом заказе' ?></textarea>
+        <textarea class="input" id="hp-text" name="hero_promo_text" rows="2" maxlength="200"><?= sv('hero_promo_text', $s) !== '' ? sv('hero_promo_text', $s) : 'Напишем ваш текст от руки и вложим в букет — это бесплатно' ?></textarea>
         <div style="display:flex;gap:12px;margin-top:8px">
           <div style="flex:1">
             <label class="f" for="hp-btn">Кнопка на карточке</label>
@@ -555,7 +555,7 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
           <label class="f" for="ht-t">Заголовок</label>
           <input class="input" id="ht-t" name="section_hits_title" value="<?= sv('section_hits_title', $s) !== '' ? sv('section_hits_title', $s) : 'Хиты продаж' ?>" maxlength="60">
           <label class="f" for="ht-s" style="margin-top:8px">Подпись</label>
-          <input class="input" id="ht-s" name="section_hits_sub" value="<?= sv('section_hits_sub', $s) !== '' ? sv('section_hits_sub', $s) : 'Букеты, которые выбирают чаще всего' ?>" maxlength="120">
+          <input class="input" id="ht-s" name="section_hits_sub" value="<?= sv('section_hits_sub', $s) !== '' ? sv('section_hits_sub', $s) : 'Выбор, который сложно испортить' ?>" maxlength="120">
         </div>
         <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500;margin-top:10px">
           <input type="checkbox" name="feature_section_premium" style="width:auto" <?= sv('feature_section_premium', $s) !== '0' ? 'checked' : '' ?>>
@@ -742,7 +742,7 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
       <div>
         <?php for ($mq = 1; $mq <= 2; $mq++): ?>
         <label class="f" for="mq-<?= $mq ?>"<?= $mq === 2 ? ' style="margin-top:8px"' : '' ?>>Строка ленты <?= $mq ?></label>
-        <input class="input" id="mq-<?= $mq ?>" name="marquee_<?= $mq ?>" value="<?= sv("marquee_{$mq}", $s) !== '' ? sv("marquee_{$mq}", $s) : ['Доставка по Санкт-Петербургу в день заказа', 'Собираем и доставляем в день заказа'][$mq - 1] ?>" maxlength="90">
+        <input class="input" id="mq-<?= $mq ?>" name="marquee_<?= $mq ?>" value="<?= sv("marquee_{$mq}", $s) !== '' ? sv("marquee_{$mq}", $s) : ['Доставка по Санкт-Петербургу в день заказа', 'Срочная сборка — за 1–2 часа'][$mq - 1] ?>" maxlength="90">
         <?php endfor; ?>
       </div>
       <div>
@@ -808,7 +808,7 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
         <label class="f" for="eb-hits" style="margin-top:8px">Eyebrow секции «Хиты»</label>
         <input class="input" id="eb-hits" name="section_hits_eyebrow" value="<?= sv('section_hits_eyebrow', $s) !== '' ? sv('section_hits_eyebrow', $s) : 'Выбор|покупателей' ?>" maxlength="60">
         <label class="f" for="eb-budget" style="margin-top:8px">Eyebrow секции «До N ₽»</label>
-        <input class="input" id="eb-budget" name="section_budget_eyebrow" value="<?= sv('section_budget_eyebrow', $s) !== '' ? sv('section_budget_eyebrow', $s) : 'Выгодно|каждый день' ?>" maxlength="60">
+        <input class="input" id="eb-budget" name="section_budget_eyebrow" value="<?= sv('section_budget_eyebrow', $s) !== '' ? sv('section_budget_eyebrow', $s) : 'Красиво —|не значит|дорого' ?>" maxlength="60">
         <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Формат eyebrow: «капс|курсив» — до <code>|</code> заглавными буквами, после — курсивным серифом. Пустое поле скрывает надпись.</p>
         <?php /* W104-α (M): ручные нумералы секций убраны — оглавление главной
                нумеруется автоматически (01 хиты → … → 09 FAQ) в порядке секций;

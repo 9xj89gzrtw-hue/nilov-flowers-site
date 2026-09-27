@@ -827,4 +827,20 @@ $pdo->exec("UPDATE occasions SET faq_q1 = replace(faq_q1, 'Какую карту
     /* Город-бар: убрать дублирование слов */
     $pdo->exec("UPDATE settings SET value = 'Санкт-Петербург — ваш город?' WHERE key = 'citybar_text' AND value = 'Ваш город — Санкт-Петербург?'");
 
+    /* W104-γ (css-identity-fixer — дедупликация текстов C2-T2). Guard-UPDATE
+       по ТОЧНЫМ старым значениям (паттерн W104 выше): правленое владельцем
+       не трогаем; идемпотентно — после применения value ≠ old. Дефолты
+       в index.php/admin/settings.php уже новые — это перенос на прод-БД. */
+    /* Саб секции 01 (хиты): «Хиты продаж / ВЫБОР покупателей / выбирают чаще
+       всего» — одна мысль трижды → тихая подпись без канцелярита */
+    $pdo->exec("UPDATE settings SET value = 'Выбор, который сложно испортить' WHERE key = 'section_hits_sub' AND value = 'Букеты, которые выбирают чаще всего'");
+    /* Eyebrow 05 «ВЫГОДНО каждый день» (давящий торг) → «Красиво — не значит
+       дорого»; формат капс|курсив|хвост (3-я часть — прямой текст) */
+    $pdo->exec("UPDATE settings SET value = 'Красиво —|не значит|дорого' WHERE key = 'section_budget_eyebrow' AND value = 'Выгодно|каждый день'");
+    /* Промо-карточка: «бесплатно» ×2 в двух строках → по одному разу */
+    $pdo->exec("UPDATE settings SET value = 'К каждому букету' WHERE key = 'hero_promo_badge' AND value = 'Всегда бесплатно'");
+    $pdo->exec("UPDATE settings SET value = 'Напишем ваш текст от руки и вложим в букет — это бесплатно' WHERE key = 'hero_promo_text' AND value = 'Напишем ваш текст от руки и вложим в букет — бесплатно, в каждом заказе'");
+    /* Marquee пункт 2 дублировал пункт 1 («в день заказа» ×2) → конкретика SLA */
+    $pdo->exec("UPDATE settings SET value = 'Срочная сборка — за 1–2 часа' WHERE key = 'marquee_2' AND value = 'Собираем и доставляем в день заказа'");
+
 }

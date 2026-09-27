@@ -416,6 +416,14 @@
   }
 
   function open() {
+    /* W104-δ (C2-M2 P1.4): быстрое закрытие→открытие (<240мс) — отменяем
+       незавершённый выход: drawer мягко возвращается по открыточной кривой
+       (hidden ещё не встал — не мигаем), состояние открытого drawer
+       восстанавливаем целиком (скролл-лок/aria/inert-фон). */
+    if (panel.classList.contains('is-exiting')) {
+      cancelExit();
+      if (!panel.hidden) { applyOpenState(); return; }
+    }
     if (!panel.hidden) return;
     /* W104-β (C1-M P1, drawer-лаг ~100мс): показать и стартовать transform
        в одном кадре. Порядок был: unhide → тяжёлая синхронщина (inert-цикл
@@ -425,6 +433,10 @@
        синхронные вещи → тяжёлая работа после первого кадра (rAF×2). */
     panel.hidden = false;
     void panel.offsetWidth; /* коммит стартового состояния в этом кадре */
+    applyOpenState();
+  }
+
+  function applyOpenState() {
     document.body.classList.add('no-scroll');
     /* a11y-критик S2: body.overflow не блокирует window-scroll на iOS/Safari — вешаем на html */
     document.documentElement.classList.add('no-scroll');
@@ -436,7 +448,7 @@
     /* Тяжёлая работа — после первого кадра движения drawer'а */
     requestAnimationFrame(function () {
       requestAnimationFrame(function () {
-        if (panel.hidden) return; /* успели закрыть — не инертим закрытый */
+        if (panel.hidden || panel.classList.contains('is-exiting')) return; /* успели закрыть — не инертим */
         /* a11y-критик S1 → W97-fixA (A5): инертим ВСЁ вне drawer: шапку
            (оба варианта класса — на случай легаси-страниц), город-бар,
            skip-link, main, футер, таббар, cookie-баннер/настройки и
@@ -476,10 +488,35 @@
     });
   }
 
+  /* ============ W104-δ (C2-M2 P1.4): drawer close — полный ход анимации ============
+    Критик: ~200мс мёртвой паузы и срез слайда display:none на ~55% хода
+    (env-лаг стилей + allow-discrete дефер на five.css). Теперь выходом
+    управляет JS: класс .is-exiting (motion-w104.css: translateX(100%)
+    + fade .26s ease-in-кривой), hidden ставится ТОЛЬКО после
+    transitionend (fallback 340мс). Быстрое переоткрытие — cancelExit().
+    prefers-reduced-motion — мгновенно, как раньше. */
+  var exitTimer = 0;
+  function cancelExit() {
+    clearTimeout(exitTimer);
+    exitTimer = 0;
+    if (panel._exitDrawer && panel._exitOnEnd) {
+      panel._exitDrawer.removeEventListener('transitionend', panel._exitOnEnd);
+    }
+    panel._exitDrawer = null;
+    panel._exitOnEnd = null;
+    panel.classList.remove('is-exiting');
+  }
+
   function close() {
-    panel.hidden = true;
+    if (panel.hidden) {
+      if (panel.classList.contains('is-exiting')) cancelExit();
+      return;
+    }
     clearTimeout(enterTimer);
     panel.classList.remove('is-entering');
+    Array.prototype.forEach.call(itemsEl.querySelectorAll('.cart-item'), function (r) {
+      r.style.removeProperty('--ci');
+    });
     document.body.classList.remove('no-scroll');
     document.documentElement.classList.remove('no-scroll');
     (panel._inertEls || []).forEach(function (el) { el.inert = false; });
@@ -490,13 +527,42 @@
     }
     toggle.setAttribute('aria-expanded', 'false');
     toggle.focus();
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      panel.hidden = true;
+      return;
+    }
+    cancelExit(); /* повторный close во время выхода — перезапуск чистым состоянием */
+    panel.classList.add('is-exiting');
+    var drawerEl = panel.querySelector('.cart-panel__drawer');
+    var done = function () {
+      if (!panel.classList.contains('is-exiting')) return; /* успели открыть назад */
+      cancelExit();
+      panel.hidden = true; /* анимация уже доиграла — без среза */
+    };
+    var onEnd = function (ev) {
+      if (ev.target === drawerEl && ev.propertyName === 'transform') done();
+    };
+    panel._exitDrawer = drawerEl;
+    panel._exitOnEnd = onEnd;
+    if (drawerEl) drawerEl.addEventListener('transitionend', onEnd);
+    exitTimer = setTimeout(done, 340); /* страховка: transitionend не пришёл */
   }
 
   function goToOrderSection() {
     close();
     const orderSection = document.getElementById('order');
     if (orderSection) {
-      orderSection.scrollIntoView({ behavior: scrollBehavior(), block: 'start' });
+      /* W104-δ: скролл — через Lenis (единый пробег с якорями, offset −96).
+      rAF: close() снимает скролл-лок, MutationObserver в kinetic.js
+      перезапускает Lenis микротаском — к кадру скролла он уже активен. */
+      requestAnimationFrame(function () {
+        const lenis = window.NF_LENIS;
+        if (lenis && !lenis.isStopped && typeof lenis.scrollTo === 'function') {
+          lenis.scrollTo(orderSection, { offset: -96 });
+        } else {
+          orderSection.scrollIntoView({ behavior: scrollBehavior(), block: 'start' });
+        }
+      });
       const nameInput = document.getElementById('orderName');
       if (nameInput) nameInput.focus();
     } else {
@@ -515,6 +581,33 @@
     if (e.key === 'Escape' && !panel.hidden) close();
   });
 
+  /* ============ W104-δ (C2-M2 P1.3): удаление айтема — коллапс, не снап ============
+     Строка схлопывается (grid-template-rows 1fr→0fr — паттерн FAQ — плюс
+     opacity/padding/margin, 260мс), и только затем cart.remove() →
+     'cart:change' → render() (перерисовка списка + пересчёт итога).
+     prefers-reduced-motion — сразу, двойной клик — игнор. */
+  function removeRow(row, productId) {
+    if (productId === unavailableProductId) unavailableProductId = null;
+    if (!row || !row.isConnected
+        || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+        || row.classList.contains('is-removing')) {
+      window.cart.remove(productId);
+      return;
+    }
+    row.classList.add('is-removing');
+    var t = 0;
+    var done = function () {
+      clearTimeout(t);
+      row.removeEventListener('transitionend', onEnd);
+      window.cart.remove(productId);
+    };
+    var onEnd = function (ev) {
+      if (ev.target === row && ev.propertyName === 'grid-template-rows') done();
+    };
+    row.addEventListener('transitionend', onEnd);
+    t = setTimeout(done, 360); /* страховка: transitionend не пришёл */
+  }
+
   itemsEl.addEventListener('click', function (e) {
     const btn = e.target.closest('[data-action]');
     if (!btn) return;
@@ -523,16 +616,14 @@
     if (!productId) return;
 
     if (btn.dataset.action === 'remove') {
-      if (productId === unavailableProductId) unavailableProductId = null;
-      window.cart.remove(productId);
+      removeRow(row, productId);
     } else if (btn.dataset.action === 'inc' || btn.dataset.action === 'dec') {
       const items = window.cart.getItems();
       const item = items.find((i) => i.product_id === productId);
       if (!item) return;
       const delta = btn.dataset.action === 'inc' ? 1 : -1;
       if (item.qty + delta < 1) {
-        if (productId === unavailableProductId) unavailableProductId = null;
-        window.cart.remove(productId);
+        removeRow(row, productId);
       } else {
         window.cart.updateQty(productId, item.qty + delta);
       }

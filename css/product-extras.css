@@ -72,7 +72,9 @@
   color:var(--ink,#1c1a1e);
 }
 .pdp-specs__caption{
-  font:600 10px/1.3 var(--font-ui);
+  /* W104-γ (C2-T2 P0-3): единая ступень капс-меток — 600 11px/1.4 .14em
+     (было 10px/1.3 — один из 7 разъехавшихся кеглей роли «метка») */
+  font:600 11px/1.4 var(--font-ui);
   letter-spacing:.14em;text-transform:uppercase;
   color:var(--ink-muted,#6e6a72);
 }

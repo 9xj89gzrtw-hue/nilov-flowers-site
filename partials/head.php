@@ -60,15 +60,12 @@ if (isset($ogType) && $ogType === 'product' && isset($img) && is_string($img) &&
 <meta name="apple-mobile-web-app-title" content="Nilov Flowers">
 <?php /* layout-критик 768px + RF-remediation: шрифты локализованы (Google Fonts display=swap
    = CLS-лавина при подгрузке). fonts.css со своим :root-стеком подключается ПОСЛЕ style.css. */ ?>
-<?php /* W96-fix3a (T1): Playfair-preload удалён — дизайн 5cv использует только Montserrat
-   (Golos остаётся: fallback-стек fonts.css). Шрифты Playfair в /fonts/ — для legacy-страниц админки. */ ?>
-<?php /* W97-fixB1 (B1-5): мёртвые preload-хинты обоих подмножеств шрифта Golos (62КБ
-   в critical path) убраны — витрина 5cv использует Montserrat; шрифт остаётся в
-   fallback-стеке fonts.css и подтянется по unicode-range ТОЛЬКО при использовании. */ ?>
-<?php /* W96/T2-a (5cv): Montserrat — основной шрифт нового дизайна. Preload только
-   cyrillic-подмножества (23КБ): latin подтянется по unicode-range при латинице —
-   не грузим лишнее на мобильных. */ ?>
-<link rel="preload" href="/fonts/MontserratVariable-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+<?php /* W96-fix3a (T1) → W104-γ (C2-T2 P1.7): UI-шрифт — Golos Text (был Montserrat).
+   Playfair-preload не нужен на витрине: cyrillic-подмножество предзагружают
+   index/product/category/occasion под свои H1 (см. страницы). */ ?>
+<?php /* W97-fixB1 (B1-5): preload обоих подмножеств Golos (62КБ) не нужен —
+   latin подтянется по unicode-range при латинице; кириллица покрывает витрину. */ ?>
+<link rel="preload" href="/fonts/GolosText-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/css/style.css?v=<?= e($styleCssV) ?>">
 <link rel="stylesheet" href="/css/nilov.css?v=<?= e($nilovCssV) ?>">
 <?php /* W96/T2-a: дизайн-система 5cv — ПОСЛЕ nilov.css (перекрывает той же специфичностью),

@@ -21,6 +21,21 @@
   function reducedMotion() {
     return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   }
+  /* W104-δ (C2-M2 P0-1): единая точка программного скролла к секции —
+     через Lenis с offset −96 (sticky-хедер), чтобы якорные переходы из JS
+     шли тем же единственным плавным пробегом, что и клики по ссылкам
+     (kinetic.js). Нет Lenis (тач/reduced/сбой) — нативный smooth
+     с ручной компенсацией хедера. */
+  function nfScrollToEl(el) {
+    if (!el) return;
+    var lenis = window.NF_LENIS;
+    if (lenis && !lenis.isStopped && typeof lenis.scrollTo === 'function') {
+      lenis.scrollTo(el, { offset: -96 });
+      return;
+    }
+    var top = el.getBoundingClientRect().top + (window.scrollY || window.pageYOffset) - 96;
+    window.scrollTo({ top: Math.max(0, top), behavior: reducedMotion() ? 'auto' : 'smooth' });
+  }
   /* Русское склонение: 1 букет / 2 букета / 5 букетов */
   function pluralBuket(n) {
     var m10 = n % 10, m100 = n % 100;
@@ -45,19 +60,30 @@
   function citybar() {
     var bar = document.getElementById('fcCitybar');
     if (!bar) return;
-    function hide() {
-      try { localStorage.setItem('fc-city-ok', '1'); } catch (e) { /* приват-режим: просто скрыть */ }
+    function hide(saveKey) {
+      if (saveKey) { try { localStorage.setItem(saveKey, '1'); } catch (e) { /* приват-режим: просто скрыть */ } }
       bar.setAttribute('data-citybar-hidden', '');
       bar.style.display = 'none';
     }
-    /* Уже отвечали — прячем сразу (миг на первом заходе допустим) */
+    /* Уже отвечали (или закрыли кликом мимо) — прячем сразу (миг на
+       первом заходе допустим) */
     try {
-      if (localStorage.getItem('fc-city-ok') === '1') { hide(); return; }
+      if (localStorage.getItem('fc-city-ok') === '1'
+          || localStorage.getItem('fc-city-dismissed') === '1') { hide(); return; }
     } catch (e) { /* localStorage недоступен — бар остаётся до крестика */ }
     var yes = document.getElementById('fcCityYes');
     var close = document.getElementById('fcCityClose');
-    if (yes) yes.addEventListener('click', hide);
-    if (close) close.addEventListener('click', hide);
+    if (yes) yes.addEventListener('click', function () { hide('fc-city-ok'); });
+    if (close) close.addEventListener('click', function () { hide('fc-city-dismissed'); });
+    /* W104-δ (C2-D2 P1: бар перехватывал клики и висел до ответа): клик
+       мимо бара закрывает его БЕЗ утверждения города — отдельный маркер
+       'fc-city-dismissed', чтобы бар не возвращался на каждой странице.
+       Сам клик не глушим: он доходит до своей цели (Корзина, ссылки…). */
+    document.addEventListener('click', function (e) {
+      if (bar.getAttribute('data-citybar-hidden') !== null) return;
+      if (bar.contains(e.target)) return;
+      hide('fc-city-dismissed');
+    }, { capture: true });
   }
 
   /* ---------- 2. Карусели: стрелки ← → + disabled по краям ---------- */
@@ -141,12 +167,33 @@
 
     /* A3: пилюля под строкой поиска на главной — «Нашлось N букетов — посмотреть ↓».
        Появляется при непустом запросе, прячется при очистке; клик — плавный скролл
-       к #catalog (каталог ниже первого экрана, живой фильтр его не видно). */
+       к #catalog (каталог ниже первого экрана, живой фильтр его не видно).
+       W104-δ (C2-D2 P1 «поиск без счётчика»): рядом — визуально скрытый
+       aria-live-регион «Нашлось N букет(а/ов) по запросу …» (SR слышит
+       результат фильтрации без взгляда на каталог; при 0 — «ничего
+       не нашлось»; очистка — тишина). */
     var pill = null;
+    var live = null;
+    function liveCount(q, n) {
+      if (!live || !live.isConnected) {
+        live = document.createElement('div');
+        live.id = 'fcSearchLive';
+        live.setAttribute('role', 'status');
+        live.setAttribute('aria-live', 'polite');
+        live.style.cssText = 'position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap';
+        document.body.appendChild(live);
+      }
+      if (!q) { live.textContent = ''; return; }
+      live.textContent = n > 0
+        ? (n % 10 === 1 && n % 100 !== 11 ? 'Нашёлся' : 'Нашлось') + ' '
+          + n + ' ' + pluralBuket(n) + ' по запросу «' + q + '»'
+        : 'По запросу «' + q + '» ничего не нашлось';
+    }
     function pillUpdate(visible) {
       var q = inp ? (inp.value || '').trim() : '';
       if (!q) {
         if (pill) pill.style.display = 'none';
+        liveCount('', 0);
         return;
       }
       if (visible == null) {
@@ -166,10 +213,7 @@
           + ';font-family:var(--font-ui,Montserrat,sans-serif);font-weight:600;font-size:.8rem'
           + ';cursor:pointer;box-shadow:0 12px 30px -12px rgba(28,26,30,.5);white-space:nowrap';
         pill.addEventListener('click', function () {
-          var cat = document.getElementById('catalog');
-          if (cat && cat.scrollIntoView) {
-            cat.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth' });
-          }
+          nfScrollToEl(document.getElementById('catalog'));
         });
         /* .fc-search уже position:relative (five.css) — пилюля висит под полем */
         (form || document.body).appendChild(pill);
@@ -178,6 +222,7 @@
          каталог — скрываем (empty-state в каталоге объясняет причину). */
       if (visible === 0) {
         pill.style.display = 'none';
+        liveCount(q, 0);
         return;
       }
       pill.style.display = 'inline-flex';
@@ -186,6 +231,7 @@
       var verb = (visible % 10 === 1 && visible % 100 !== 11) ? 'Нашёлся' : 'Нашлось';
       pill.textContent = verb + ' ' + visible + ' ' + pluralBuket(visible) + ' — посмотреть ↓';
       pill.setAttribute('aria-label', verb + ' ' + visible + ' ' + pluralBuket(visible) + ' — перейти к каталогу букетов');
+      liveCount(q, visible);
     }
 
     /* Единый re-apply: карточки/счётчики/empty-state пересчитывает catalog-filter.js;
@@ -197,10 +243,7 @@
       }
       pillUpdate(visible);
       if (scroll) {
-        var cat = document.getElementById('catalog');
-        if (cat && cat.scrollIntoView) {
-          cat.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth' });
-        }
+        nfScrollToEl(document.getElementById('catalog'));
       }
     }
 
@@ -260,10 +303,7 @@
       inp.value = qParam;
       refilter(false);
       setTimeout(function () {
-        var cat = document.getElementById('catalog');
-        if (cat && cat.scrollIntoView) {
-          cat.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth' });
-        }
+        nfScrollToEl(document.getElementById('catalog'));
       }, 400);
     }
 
@@ -293,18 +333,22 @@
      её подхватывает catalog-filter.js (аналог ?category=). */
   function rowLinks() {
     document.addEventListener('click', function (e) {
-      if (e.button !== 0 || e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      /* W104-δ: убран guard e.defaultPrevented — якорные клики теперь гасит
+         capture-обработчик kinetic.js (телепорт-фикс); здесь ДОРАБАТЫВАЕМ
+         свою часть (вкладка/чип + плавный скролл) независимо от него */
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
       var a = e.target.closest ? e.target.closest('a[data-tab],a[data-chip]') : null;
       if (!a) return;
       var tabId = a.getAttribute('data-tab');
       var chipId = a.getAttribute('data-chip');
+      e.preventDefault(); /* нативный fragment-прыжок не нужен — скроллим сами */
+      try { if (a.hash) history.pushState(null, '', a.hash); } catch (err) {}
       if (tabId) {
         var tab = document.querySelector('.catalog-tabs__tab[data-category-id="' + tabId + '"]');
         if (tab) {
           tab.click();
         } else {
           /* Вторичная страница: вкладки нет — глубокая ссылка включит её на главной */
-          e.preventDefault();
           location.href = '/?category=' + encodeURIComponent(tabId) + '#catalog';
           return;
         }
@@ -314,13 +358,16 @@
         if (!chip) {
           /* K5 (W101): вторичная страница — чипа нет в DOM, нативный href /#catalog
              включил бы каталог без фильтра. Уводим на глубокую ссылку с чипом. */
-          e.preventDefault();
           location.href = '/?chip=' + encodeURIComponent(chipId) + '#catalog';
           return;
         }
-        if (chip.classList.contains('is-active')) return;
-        chip.click();
+        if (!chip.classList.contains('is-active')) {
+          chip.click(); /* чип-обработчик сам применит фильтр и скролл (refilter(true)) */
+        }
       }
+      /* Единый плавный пробег к каталогу (чип-клик уже мог скроллить —
+         повторный вызов идемпотентно перезапускает ту же цель) */
+      nfScrollToEl(document.getElementById('catalog'));
     });
   }
 
@@ -334,7 +381,9 @@
     var link = document.querySelector('.fc-header__icons a.fc-header__icon[href="/#catalog"]');
     if (!link) return;
     link.addEventListener('click', function (e) {
-      if (e.button !== 0 || e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      /* W104-δ: guard e.defaultPrevented убран — его ставит capture-обработчик
+         якорей (kinetic.js, телепорт-фикс); фильтр «Избранное» обязан включаться */
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
       var fav = document.getElementById('favToggle');
       var grid = document.getElementById('catalogGrid');
       if (!fav || !grid) return; /* не на главной — нативный переход по href */
@@ -344,10 +393,7 @@
         fav.setAttribute('aria-pressed', 'true');
       }
       if (typeof window.NfCatalogApply === 'function') window.NfCatalogApply();
-      var cat = document.getElementById('catalog');
-      if (cat && cat.scrollIntoView) {
-        cat.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth' });
-      }
+      nfScrollToEl(document.getElementById('catalog'));
     });
   }
   /* ---------- 6. Магнитные CTA (W103 → W104-β, C1-M P1) ----------

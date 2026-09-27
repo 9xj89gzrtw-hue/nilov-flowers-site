@@ -54,7 +54,7 @@ $heroDeliveryOn = setting('hero_delivery_card_enabled', '1') === '1';
 $featMarquee = setting('feature_marquee', '1') === '1';
 $marqueeDefaults = [
     1 => 'Доставка по Санкт-Петербургу в день заказа',
-    2 => 'Собираем и доставляем в день заказа',
+    2 => 'Срочная сборка — за 1–2 часа', /* W104-γ: пункт 1 дублировал эту мысль («в день заказа» ×2) */
     3 => 'Фото букета перед отправкой',
     4 => 'Заменяем увядшие в день доставки',
 ];
@@ -393,6 +393,11 @@ function render_product_card(array $p, array $ctx): void
             <?php if ($ctx['featFavorites']): ?><button type="button" class="product-card__fav" data-fav-id="<?= (int)$p['id'] ?>" data-fav-name="<?= e($p['name']) ?>" aria-label="В избранное: <?= e($p['name']) ?>" title="В избранное">♡</button><?php endif; ?>
           </div>
           <div class="product-card__body">
+            <?php /* W104-γ (split-фича): редакционная метка над ценой —
+                   отличие фичи от рельса (VLM: «просто растянутая карточка») */
+            if (!empty($ctx['feature'])): ?>
+            <span class="product-card__feature-label"><?= e(setting('feature_card_label', 'Выбор флориста')) ?></span>
+            <?php endif; ?>
             <?php /* W104: ЦЕНА ПЕРВОЙ (20/800 ink) → имя 13.5/500 — 5cv-принцип
                    «цена ведёт карточку»; категория из карточки убрана */ ?>
             <p class="product-card__price">
@@ -414,13 +419,16 @@ function render_product_card(array $p, array $ctx): void
 }
 
 /* W104: eyebrow «капс|Playfair-курсив» — единый компонент шапки секции
-   (render_fc_row + каталог + поводы). Пустая строка — не печатаем. */
+   (render_fc_row + каталог + поводы). Пустая строка — не печатаем.
+   W104-γ (C2-T2): третья необязательная часть «капс|курсив|хвост» —
+   прямой текст без капса после курсива («Красиво —|не значит|дорого»);
+   прежние 1-2-частные значения совместимы. */
 function render_fc_eyebrow(string $eyebrow): void
 {
     if ($eyebrow === '') return;
-    [$ebCaps, $ebItalic] = array_pad(explode('|', $eyebrow, 2), 2, '');
+    [$ebCaps, $ebItalic, $ebTail] = array_pad(explode('|', $eyebrow, 3), 3, '');
     ?>
-    <p class="fc-row__eyebrow"><?= e($ebCaps) ?><?= $ebItalic !== '' ? ' <em>' . e($ebItalic) . '</em>' : '' ?></p>
+    <p class="fc-row__eyebrow"><?= e($ebCaps) ?><?= $ebItalic !== '' ? ' <em>' . e($ebItalic) . '</em>' : '' ?><?= $ebTail !== '' ? ' <span class="fc-row__eyebrow-tail">' . e($ebTail) . '</span>' : '' ?></p>
     <?php
 }
 
@@ -430,7 +438,7 @@ function render_fc_eyebrow(string $eyebrow): void
    W97-fixB3b (B3b-1f): $catSlug — у категорийных каруселей «Смотреть все» ведёт на
    посадочную /category/{slug} (SEO: у категории появился собственный URL),
    data-tab больше не печатается. */
-function render_fc_row(string $title, string $sub, array $items, array $ctx, string $tabId = '', string $chip = '', string $catSlug = '', string $eyebrow = '', string $numeral = ''): void
+function render_fc_row(string $title, string $sub, array $items, array $ctx, string $tabId = '', string $chip = '', string $catSlug = '', string $eyebrow = '', string $numeral = '', string $variant = ''): void
 {
     global $fcProdSeq;
     if ($items === []) return;
@@ -441,9 +449,14 @@ function render_fc_row(string $title, string $sub, array $items, array $ctx, str
     /* W97-fixB2 (B2-5а): чередование фонов товарных секций — каждая вторая tint
        (стили придёт волной CSS; здесь только классы) */
     $tint = ($fcProdSeq % 2 === 0) ? ' fc-section--tint' : '';
+    /* W104-γ (C2-D2 P1.1): вариация лэйаутов — 'split' (первая карточка —
+       широкая editorial-фича) / 'compact' (мини-рельс дополнений);
+       стили five.css γ-5, классы нейтральны для js/five.js */
+    $rowClass = 'fc-row' . ($variant !== '' ? ' fc-row--' . e($variant) : '');
+    $carouselClass = 'fc-carousel' . ($variant === 'compact' ? ' fc-carousel--compact' : '');
     ?>
     <section class="fc-section<?= $tint ?>"><div class="wrap">
-      <div class="fc-row"><div class="fc-row__head">
+      <div class="<?= $rowClass ?>"><div class="fc-row__head">
         <?php /* W103 (F1): обёртка heading — eyebrow над H2 не ломает flex-строку
                шапки секции (заголовок+подпись группируются в один блок).
                W104: data-numeral — oversize-индекс секции за заголовком (::before,
@@ -469,8 +482,18 @@ function render_fc_row(string $title, string $sub, array $items, array $ctx, str
       </div>
       <?php /* W97-fixB2 (B2-4): карусель — именованный клавиатурно-доступный region
              (безымянные скролл-области молчали для скринридера) */ ?>
-      <div class="fc-carousel" role="region" aria-label="<?= e($title) ?>" tabindex="0">
-        <?php foreach ($items as $item) { render_product_card($item, $ctx); } ?>
+      <div class="<?= $carouselClass ?>" role="region" aria-label="<?= e($title) ?>" tabindex="0">
+        <?php /* W104-γ (split): первая карточка ряда — фича (метка + крупные
+               стили five.css γ-5); остальное — стандартный рельс */
+        foreach ($items as $itemIdx => $item) {
+            if ($variant === 'split' && $itemIdx === 0) {
+                $ctx['feature'] = true;
+                render_product_card($item, $ctx);
+                unset($ctx['feature']);
+            } else {
+                render_product_card($item, $ctx);
+            }
+        } ?>
       </div></div>
     </div></section>
     <?php
@@ -599,10 +622,14 @@ foreach ($products as $p) {
 }
 foreach ($occRows as $o) {
     $photo = '';
+    $photoAlt = '';
     /* Разбираем CSV product_ids, берём первый существующий активный товар с картинкой */
     foreach (array_filter(array_map('intval', array_map('trim', explode(',', (string)$o['product_ids'])))) as $pid) {
         if (isset($productsById[$pid]) && product_img_url($productsById[$pid]) !== '') {
             $photo = product_img_url($productsById[$pid]);
+            /* W104-γ (C2-D2): осмысленный alt плитки — имя товара, чьё фото
+               на плитке (критик: 8 img с пустым alt) */
+            $photoAlt = (string)$productsById[$pid]['name'];
             break;
         }
     }
@@ -611,6 +638,7 @@ foreach ($occRows as $o) {
         /* Подпись плитки: без хвоста « в Санкт-Петербурге» (он уже в заголовке секции) */
         'title' => (string)preg_replace('/\s+в Санкт-Петербурге$/u', '', (string)$o['title']),
         'photo' => $photo,
+        'photo_alt' => $photoAlt,
     ];
 }
 if (!$featOccasions || $occTiles === []) {
@@ -934,7 +962,7 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
                сегодня». {D} подставляется и в PHP (до-JS paint = финальный текст,
                без мигания «…»), и nilov.js'ом (первый тик); токен {T} в дефолте
                больше нет — таймер показывает дедлайн, а не обратный отсчёт. */ ?>
-        <?php if ($featCountdown): ?><p class="hero__deadline" style="display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:8px 16px;border-radius:999px;background:rgba(255,255,255,.75);backdrop-filter:blur(6px);border:1px solid var(--line);font-size:.9rem;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;max-width:100%;min-height:38px"><?= e(str_replace(['{T}', '{D}'], ['…', setting('order_deadline_hour', '20') . ':' . str_pad(setting('order_deadline_minute', '0'), 2, '0', STR_PAD_LEFT)], setting('countdown_text', 'Заказ до {D} — доставим сегодня'))) ?></p><?php endif; ?>
+        <?php if ($featCountdown): ?><p class="hero__deadline fc-hero__deadline"><?= e(str_replace(['{T}', '{D}'], ['…', setting('order_deadline_hour', '20') . ':' . str_pad(setting('order_deadline_minute', '0'), 2, '0', STR_PAD_LEFT)], setting('countdown_text', 'Заказ до {D} — доставим сегодня'))) ?></p><?php endif; ?>
         </div>
         <?php /* NILOV_CONFIG — общий конфиг JS (вне гейта таймера): порог бесплатной доставки
                должен работать и при выключенном таймере. */ ?>
@@ -957,11 +985,19 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
                setting('hero_promo_image') с дефолтом gen20.jpg; пусто/файла нет —
                карточка без фото, как раньше */ ?>
         <?php $heroPromoUrl = site_image_url(setting('hero_promo_image', 'img/products/gen20.jpg')); ?>
+        <?php /* W104-γ: alt миниатюры — имя товара-источника фото (по умолчанию
+               gen20.jpg = «Клубника и макаруны…»); пусто — описательный фолбэк */
+        $heroPromoAlt = '';
+        foreach ($products as $__pp) {
+            if (product_img_url($__pp) === $heroPromoUrl) { $heroPromoAlt = (string)$__pp['name']; break; }
+        }
+        if ($heroPromoAlt === '') { $heroPromoAlt = 'Дополнение к букету из ассортимента магазина'; }
+        ?>
         <div class="fc-hero__promo">
-          <?php if ($heroPromoUrl !== ''): ?><img class="fc-hero__promo-img" src="<?= e($heroPromoUrl) ?>" alt="" loading="lazy" decoding="async" width="96" height="96"><?php endif; ?>
-          <span class="fc-hero__promo-eyebrow"><?= e(setting('hero_promo_badge', 'Всегда бесплатно')) ?></span>
+          <?php if ($heroPromoUrl !== ''): ?><img class="fc-hero__promo-img" src="<?= e($heroPromoUrl) ?>" alt="<?= e($heroPromoAlt) ?>" loading="lazy" decoding="async" width="96" height="96"><?php endif; ?>
+          <span class="fc-hero__promo-eyebrow"><?= e(setting('hero_promo_badge', 'К каждому букету')) ?></span>
           <h2 class="fc-hero__promo-title"><?= e(setting('hero_promo_title', 'Открытка в подарок')) ?></h2>
-          <p class="fc-hero__promo-text"><?= e(setting('hero_promo_text', 'Напишем ваш текст от руки и вложим в букет — бесплатно, в каждом заказе')) ?></p>
+          <p class="fc-hero__promo-text"><?= e(setting('hero_promo_text', 'Напишем ваш текст от руки и вложим в букет — это бесплатно')) ?></p>
           <a class="fc-hero__promo-btn" href="<?= e(safe_url(setting('hero_promo_link', '#catalog'))) ?>"><?= e(setting('hero_promo_btn_text', 'Выбрать букет')) ?></a>
         </div>
         <?php endif; ?>
@@ -1103,7 +1139,7 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
   <?php if ($featCarousels): ?>
     <?php if ($featSectionHits): render_fc_row(
         setting('section_hits_title', 'Хиты продаж'),
-        setting('section_hits_sub', 'Букеты, которые выбирают чаще всего'),
+        setting('section_hits_sub', 'Выбор, который сложно испортить'),
         $hitProducts, $cardCtx, '', 'hit', '', setting('section_hits_eyebrow', 'Выбор|покупателей'),
         fc_next_numeral());
     endif; ?>
@@ -1113,7 +1149,10 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
     <?php foreach ($categoryRows as $ci => $cr): render_fc_row(
         $cr['name'], '', $cr['items'], $cardCtx, '', '', $cr['slug'],
         $ci === 0 ? setting('section_first_cat_eyebrow', 'Свежие поступления|каждое утро') : setting('section_cat_eyebrow', 'Собирают|наши флористы'),
-        fc_next_numeral());
+        fc_next_numeral(),
+        /* W104-γ (C2-D2): первый категорийный ряд («Розы») — editorial-сплит:
+           широкая фича-карточка + стандартный рельс (монотонность каруселей) */
+        $ci === 0 ? 'split' : '');
     endforeach; ?>
   <?php endif; ?>
 
@@ -1128,7 +1167,7 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
   }
   ?>
   <section class="fc-manifesto reveal" aria-label="<?= e(setting('manifesto_kicker', 'Наши принципы')) ?>">
-    <img class="fc-manifesto__img" src="<?= e($manifestoImg) ?>" alt="" loading="lazy" decoding="async">
+    <img class="fc-manifesto__img" src="<?= e($manifestoImg) ?>" alt="Флорист собирает букет из свежих цветов" loading="lazy" decoding="async">
     <div class="fc-manifesto__content">
       <p class="fc-manifesto__kicker"><?= e(setting('manifesto_kicker', 'Наши принципы')) ?></p>
       <p class="fc-manifesto__text"><?= e(setting('manifesto_text', 'Собираем букеты утром — и везём вам сегодня')) ?></p>
@@ -1171,7 +1210,7 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
   <?php if ($featCarousels): ?>
     <?php if ($featSectionBudget && $budgetProducts !== []): render_fc_row(
         sprintf(setting('section_budget_title', 'До %s ₽'), formatSum($chipsN)),
-        setting('section_budget_sub', ''), $budgetProducts, $cardCtx, '', 'low', '', setting('section_budget_eyebrow', 'Выгодно|каждый день'),
+        setting('section_budget_sub', ''), $budgetProducts, $cardCtx, '', 'low', '', setting('section_budget_eyebrow', 'Красиво —|не значит|дорого'),
         fc_next_numeral());
     endif; ?>
   <?php endif; ?>
@@ -1186,7 +1225,9 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
       setting('section_addons_title', 'Дополните букет'),
       setting('section_addons_sub', ''), $addonProducts, $cardCtx, '', '', '',
       setting('section_addons_eyebrow', 'К букету|и без повода'),
-      fc_next_numeral());
+      fc_next_numeral(),
+      /* W104-γ (C2-D2): дополнения — компакт-рельс (мини-карточки 96px) */
+      'compact');
   endif; ?>
 
   <!-- КАТАЛОГ -->
@@ -1198,7 +1239,7 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
   <?php if ($catalogStripText !== ''): ?>
   <section class="fc-catalog-strip" aria-label="О сборке букетов">
     <?php if (is_file(BASE_PATH . '/img/editorial/petals-macro.jpg')): ?>
-    <img class="fc-catalog-strip__img" src="/img/editorial/petals-macro.jpg" alt="" loading="lazy" decoding="async">
+    <img class="fc-catalog-strip__img" src="/img/editorial/petals-macro.jpg" alt="Лепестки цветов крупным планом" loading="lazy" decoding="async">
     <?php endif; ?>
     <div class="wrap fc-catalog-strip__inner">
       <p class="fc-catalog-strip__text reveal"><?= e($catalogStripText) ?></p>
@@ -1319,7 +1360,7 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
               <?php if ($__ocHas400 || $__ocHas600): ?>
               <source type="image/webp" srcset="<?= e(($__ocHas400 ? $__ocThumb400 . ' 400w' : '') . ($__ocHas400 && $__ocHas600 ? ', ' : '') . ($__ocHas600 ? $__ocThumb600 . ' 600w' : '')) ?>" sizes="(max-width:899px) 44vw, 260px">
               <?php endif; ?>
-              <img class="fc-occasion__img" src="<?= e($__ocImg) ?>" alt="" loading="lazy" decoding="async">
+              <img class="fc-occasion__img" src="<?= e($__ocImg) ?>" alt="<?= e($t['photo_alt'] !== '' ? $t['photo_alt'] : $t['title']) ?>" loading="lazy" decoding="async">
             </picture>
           <?php else: ?>
             <?php /* W103 (F1): типографическая плитка без фото — ink-фон, amber-индекс,
@@ -1616,7 +1657,7 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
       <div class="fc-journal__grid">
         <?php foreach ($journalList as $j): ?>
         <article class="fc-journal__card">
-          <?php if ($j['image'] !== ''): ?><div class="fc-journal__media"><img src="/img/uploads/<?= e(rawurlencode($j['image'])) ?>" alt="" loading="lazy" decoding="async"></div><?php endif; ?>
+          <?php if ($j['image'] !== ''): ?><div class="fc-journal__media"><img src="/img/uploads/<?= e(rawurlencode($j['image'])) ?>" alt="<?= e($j['title']) ?>" loading="lazy" decoding="async"></div><?php endif; ?>
           <h3 class="fc-journal__title"><?= e($j['title']) ?></h3>
           <?php if ($j['text'] !== ''): ?><p class="fc-journal__text"><?= e($j['text']) ?></p><?php endif; ?>
           <?php if ($j['link'] !== ''): ?><a class="fc-journal__link" href="<?= e(safe_url($j['link'])) ?>">Читать →</a><?php endif; ?>

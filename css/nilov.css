@@ -129,16 +129,20 @@
   opacity:0;
   transform:translateY(115%) rotate(4deg);
   animation:nv-ch-in .7s cubic-bezier(.22,1,.36,1) forwards;
-  animation-delay:calc(.055s * var(--i,0) + .15s);
+  /* W104-δ (C2-M2 P1.7): stagger 55 → 100мс — три строки H1 перестали
+     читаться одним блоком (совпадает с кинетикой 90мс; полный каскад
+     hero: последний старт ~.35с + .7с = ~1.05с — быстрее 1.5с-бюджета) */
+  animation-delay:calc(.1s * var(--i,0) + .15s);
 }
 @keyframes nv-ch-in{
   to{opacity:1;transform:none}
 }
 
-/* Подзаголовок: fade-in после заголовка */
+/* Подзаголовок: fade-in после заголовка
+   W104-δ (C2-M2 ease-изгой): голый ease → системная кривая */
 .nv-hero-sub{
   opacity:0;
-  animation:nv-fade .8s ease .75s forwards;
+  animation:nv-fade .8s cubic-bezier(.22,1,.36,1) .75s forwards;
 }
 @keyframes nv-fade{
   from{opacity:0;transform:translateY(10px)}
@@ -256,9 +260,11 @@ img.product-card__img{
 /* W65 (статич. выверка #4): админский .row-actions вычищен — nilov.css в админку
    не линкуется, а при случайной линковке убил бы тач-правило 44px */
 
-/* Карточки товара: lift+shadow при hover */
+/* Карточки товара: lift+shadow при hover
+   W104-δ (C2-M2 ease-изгои): почти-дубль системной кривой
+   (.19,1,.22,1) и голый ease → единая cubic-bezier(.22,1,.36,1) */
 .product-card{
-  transition:transform .35s cubic-bezier(.19,1,.22,1),box-shadow .35s ease;
+  transition:transform .35s cubic-bezier(.22,1,.36,1),box-shadow .35s cubic-bezier(.22,1,.36,1);
 }
 .product-card:hover{
   transform:translateY(-6px);
@@ -276,16 +282,19 @@ img.product-card__img{
   inset:0;
   background:linear-gradient(105deg,transparent 42%,rgba(255,255,255,.35) 50%,transparent 58%);
   transform:translateX(-130%);
-  transition:transform .7s ease;
+  /* W104-δ (C2-M2 ease-изгой): sheen .7s ease → системная кривая */
+  transition:transform .7s cubic-bezier(.22,1,.36,1);
   z-index:0;
 }
 .btn--accent:hover::after,.btn:hover::after{
   transform:translateX(130%);
 }
 
-/* Фильтры каталога: fade между вкладками */
+/* Фильтры каталога: fade между вкладками
+   W104-δ (C2-M2): без явной кривой transition по умолчанию = ease —
+   задаём системную явно */
 .catalog-tabs button, .tabs button{
-  transition:color .2s,background .2s,opacity .2s;
+  transition:color .2s cubic-bezier(.22,1,.36,1),background .2s cubic-bezier(.22,1,.36,1),opacity .2s cubic-bezier(.22,1,.36,1);
 }
 
 /* ---------- Минимальная читаемость на мобиле (fix критика: 13→5→0 блоков <12px) ---------- */
@@ -338,9 +347,10 @@ img.product-card__img{
   to{transform:rotate(0deg) scale(1)}
 }
 
-/* 3) Живая CTA: магнитный подъём + распускание тени */
+/* 3) Живая CTA: магнитный подъём + распускание тени
+   W104-δ (C2-M2 ease-изгои): ease → системная кривая */
 .btn--accent{
-  transition:transform .3s cubic-bezier(.22,1,.36,1),box-shadow .3s ease,background .3s ease,opacity .2s ease; /* W65 #2: opacity — fade скрытия fixed-CTA (nilov грузится после style.css) */
+  transition:transform .3s cubic-bezier(.22,1,.36,1),box-shadow .3s cubic-bezier(.22,1,.36,1),background .3s cubic-bezier(.22,1,.36,1),opacity .2s cubic-bezier(.22,1,.36,1); /* W65 #2: opacity — fade скрытия fixed-CTA (nilov грузится после style.css) */
   box-shadow:0 10px 24px -12px rgba(226,121,156,.55);
 }
 .btn--accent:hover{
@@ -391,7 +401,8 @@ img.product-card__img{
   background:rgba(255,255,255,.9);border:1px solid var(--line);
   font-size:1.15rem;line-height:1;color:var(--ink);
   cursor:pointer;display:flex;align-items:center;justify-content:center;
-  transition:transform .18s ease,background .18s ease,color .18s ease;
+  /* W104-δ (C2-M2 ease-изгои): ease → системная кривая */
+  transition:transform .18s cubic-bezier(.22,1,.36,1),background .18s cubic-bezier(.22,1,.36,1),color .18s cubic-bezier(.22,1,.36,1);
   backdrop-filter:blur(4px);
 }
 .product-card__fav:hover{transform:scale(1.12)}
@@ -401,6 +412,6 @@ img.product-card__img{
   display:inline-flex;align-items:center;gap:6px;
   padding:0 14px;min-height:44px;border-radius:999px;border:1px solid var(--line);
   background:#fff;font-size:.85rem;font-weight:600;color:var(--ink);cursor:pointer;
-  transition:border-color .18s ease;
+  transition:border-color .18s cubic-bezier(.22,1,.36,1);
 }
 .fav-toggle.is-active{border-color:var(--rose-live);color:var(--rose-live)}

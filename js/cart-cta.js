@@ -25,8 +25,102 @@
     });
   }
 
+  /* ============ W104-δ (C2-D2 P1 «add-to-cart без отклика» + C2-M2
+     «событийный лепесток»): burstAndFly = (а) мини-бёрст 7 лепестков из
+     точки клика + (б) fly-to-cart — миниатюра/пилюля летит к иконке
+     корзины, по прилёту — пульс бейджа. Дешёвая одна операция на клик:
+     DOM-спрайты живут <1с и снимаются сами; всё на transform/opacity
+     (композит). prefers-reduced-motion — не запускаем вовсе. Drawer НЕ
+     открываем (осознанный FRICTION-выбор W103). Стили — motion-w104.css. */
+  function burstAndFly(fromEl, clientX, clientY) {
+    if (reduceMQ && reduceMQ.matches) return;
+    if (!fromEl || fromEl.nodeType !== 1) return;
+    if (!document.body || typeof fromEl.animate !== 'function') return;
+
+    var cx = clientX, cy = clientY;
+    /* клавиатурный Enter/Space даёт clientX/Y = 0 — берём центр кнопки */
+    if (cx == null || cy == null || (cx === 0 && cy === 0)) {
+      var r0 = fromEl.getBoundingClientRect();
+      cx = r0.left + r0.width / 2;
+      cy = r0.top + r0.height / 2;
+    }
+
+    /* (а) мини-бёрст: 7 лепестков, разлёт по дуге с вращением, 620–780мс */
+    var COLORS = ['#ff4ea2', '#f4a9be', '#f5b301', '#ffd9ec', '#e03a8a'];
+    var makePetal = function (i) {
+      var p = document.createElement('i');
+      p.className = 'nf-burst-petal';
+      p.style.left = cx + 'px';
+      p.style.top = cy + 'px';
+      p.style.background = COLORS[i % COLORS.length];
+      document.body.appendChild(p);
+      if (typeof p.animate !== 'function') { p.remove(); return; }
+      var ang = (Math.PI * 2 * i) / 7 + (Math.random() - 0.5) * 0.7;
+      var dist = 54 + Math.random() * 74;
+      var dx = Math.cos(ang) * dist;
+      var dy = Math.sin(ang) * dist - 24 - Math.random() * 30; /* лёгкий подъём — дуга */
+      var rot = (Math.random() < 0.5 ? -1 : 1) * (140 + Math.random() * 260);
+      var dur = 620 + Math.random() * 160;
+      var anim = p.animate(
+        [
+          { transform: 'translate(-50%,-50%) translate(0,0) rotate(0deg)', opacity: 1 },
+          { transform: 'translate(-50%,-50%) translate(' + (dx * 0.62).toFixed(1) + 'px,' + (dy * 0.62 - 16).toFixed(1) + 'px) rotate(' + (rot * 0.55).toFixed(0) + 'deg)', opacity: 0.95, offset: 0.58 },
+          { transform: 'translate(-50%,-50%) translate(' + dx.toFixed(1) + 'px,' + dy.toFixed(1) + 'px) rotate(' + rot.toFixed(0) + 'deg)', opacity: 0 }
+        ],
+        { duration: dur, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'forwards' }
+      );
+      /* IIFE-скоуп: каждый onfinish снимает СВОЙ спрайт (var-цикл без
+         замыкания оставлял 6 из 7 лепестков в DOM навсегда) */
+      (function (sprite, a) {
+        a.onfinish = a.oncancel = function () { sprite.remove(); };
+      })(p, anim);
+    };
+    for (var i = 0; i < 7; i++) makePetal(i);
+
+    /* (б) fly-to-cart: миниатюра летит к иконке корзины (560мс),
+       scale 1 → 0.3; по прилёту — пульс бейджа корзины */
+    var cartBtn = document.getElementById('cartToggle');
+    if (!cartBtn || typeof cartBtn.getBoundingClientRect !== 'function') return;
+    var from = fromEl.getBoundingClientRect();
+    var to = cartBtn.getBoundingClientRect();
+    var chip = document.createElement('div');
+    chip.className = 'nf-fly-chip';
+    var imgSrc = fromEl.dataset ? fromEl.dataset.productImage : '';
+    if (imgSrc) {
+      var im = document.createElement('img');
+      im.src = imgSrc;
+      im.alt = '';
+      chip.appendChild(im);
+    } else {
+      chip.textContent = '✓';
+    }
+    chip.style.left = (from.left + from.width / 2 - 22) + 'px';
+    chip.style.top = (from.top + from.height / 2 - 22) + 'px';
+    document.body.appendChild(chip);
+    if (typeof chip.animate !== 'function') { chip.remove(); return; }
+    var fx = (to.left + to.width / 2) - (from.left + from.width / 2);
+    var fy = (to.top + to.height / 2) - (from.top + from.height / 2);
+    var fly = chip.animate(
+      [
+        { transform: 'translate(0,0) scale(1)', opacity: 1 },
+        { transform: 'translate(' + (fx * 0.5).toFixed(1) + 'px,' + (fy * 0.5 - 40).toFixed(1) + 'px) scale(0.72)', opacity: 1, offset: 0.55 },
+        { transform: 'translate(' + fx.toFixed(1) + 'px,' + fy.toFixed(1) + 'px) scale(0.3)', opacity: 0.9 }
+      ],
+      { duration: 560, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'forwards' }
+    );
+    fly.onfinish = fly.oncancel = function () {
+      chip.remove();
+      var count = document.getElementById('cartCount');
+      if (count && !count.hidden) {
+        count.classList.remove('is-pulse');
+        void count.offsetWidth; /* reflow — перезапуск keyframes */
+        count.classList.add('is-pulse');
+      }
+    };
+  }
+
   document.querySelectorAll('[data-order-cta]').forEach(function (btn) {
-    btn.addEventListener('click', function () {
+    btn.addEventListener('click', function (e) {
       const { productId, productName, productPriceRaw, productImage } = btn.dataset;
       if (!productId) return;
       window.cart.add(productId, 1, {
@@ -36,6 +130,9 @@
       });
       /* W98-fixF (F4): успешное добавление → add_to_cart */
       nfGoal('add_to_cart');
+      /* W104-δ: лепестковый бёрст из точки клика + полёт миниатюры
+         к иконке корзины (скрипается при prefers-reduced-motion) */
+      burstAndFly(btn, e.clientX, e.clientY);
       /* W98-fixF (F5): временное состояние кнопки «В корзине ✓» (~2.5с) — видно,
          что добавление сработало. Исходную разметку сохраняем ОДИН раз (dataset):
          повторный клик до возврата — просто продлеваем таймер, не ломаем состояние.

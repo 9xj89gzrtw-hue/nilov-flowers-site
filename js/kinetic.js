@@ -2,10 +2,12 @@
    Vanilla ES2020, IIFE-паттерн сайта. Загружается на всех страницах (footer.php).
 
    1) LENIS SMOOTH SCROLL (js/vendor/lenis.min.js, self-host, MIT):
-      lerp .12, wheelMultiplier 1, anchors:true (клики по якорям #… ведёт
-      Lenis), allowNestedScroll (нативный скролл вложенных областей —
-      карусели, корзина-drawer). НЕ активируется на pointer:coarse (тач)
-      и prefers-reduced-motion — там остаётся нативный скролл.
+      lerp .14, wheelMultiplier 1, anchors:false (якоря ведём СВОИМ
+      capture-обработчиком ниже — vendored onClick не делает
+      preventDefault), allowNestedScroll (нативный скролл вложенных
+      областей — карусели, корзина-drawer). НЕ активируется на
+      pointer:coarse (тач) и prefers-reduced-motion — там остаётся
+      нативный скролл.
       Совместимость с CSS scroll-driven анимациями (animation-timeline:
       view() — manifesto-параллакс): Lenis не подменяет нативный скролл,
       а ведёт его через scrollTo каждый кадр — scroll-события остаются
@@ -57,10 +59,13 @@
     let lenis;
     try {
       lenis = new window.Lenis({
-        lerp: 0.12,
+        lerp: 0.14,             /* W104-δ (C2-M2 P1.5): .12 → .14 — хвост
+                                   короче, отклик живее, без рывков */
         wheelMultiplier: 1,
         autoRaf: true,          /* собственный rAF-цикл Lenis */
-        anchors: true,          /* якоря #… — через lenis.scrollTo (плавно) */
+        anchors: false,         /* W104-δ (C2-M2 P0-1): свой перехват ниже —
+                                   vendored onClick БЕЗ preventDefault даёт
+                                   нативный fragment-прыжок = телепорт */
         allowNestedScroll: true /* вложенные скролл-области (drawer, карусели) — нативно */
       });
     } catch (e) {
@@ -68,33 +73,73 @@
     }
     window.NF_LENIS = lenis;
 
-    /* W104-β (C1-M P1): Lenis-десинк. onNativeScroll у Lenis синхронизирует
-       animatedScroll только пока isScrolling !== 'smooth' — внешний скачок
-       скролла (bfcache/scroll-restoration, программный window.scrollTo,
-       нативный hash-прыжок) оставляет animatedScroll устаревшим, и
-       следующий якорный клик телепортирует к старой позиции → откат →
-       повторный пробег. Латаем своим scroll-слушателем: рассинхрон
-       ≥120px между фактическим scrollY и animatedScroll — lenis.reset()
-       (синх animatedScroll/targetScroll + остановка текущей анимации:
-       продолжать её с чужой позиции и есть телепорт).
-       ИСКЛЮЧЕНИЕ — якорные клики: нативный fragment-прыжок срабатывает
-       в том же клике, что и lenis-анимация, и его scroll-событие приходит
-       ДО первого кадра анимации (actual уже у цели, animated — на старте).
-       Без грейса мы бы убили анимацию — якорь стал бы мгновенным телепортом.
-       Грейс 150мс с capture-фазы click по same-page ссылке. */
-    var anchorGraceUntil = 0;
+    /* ============ W104-δ (C2-M2 P0-1): ЯКОРЯ БЕЗ ТЕЛЕПОРТА ============
+       Воспроизведено 4 раза (включая реальный CDP-клик «Каталог»):
+       scrollY 0 → мгновенный телепорт ~6587 → обратный рывок к ~1400 →
+       повторный глисс 1.2-1.4с. Причина: lenis.min.js onClick не делает
+       preventDefault — нативный fragment-прыжок исполняется мгновенно,
+       а затем Lenis доезжает со СТАРОЙ позиции. Фикс: capture-фаза клика
+       по same-page ссылкам с hash → preventDefault (нативный прыжок
+       погашен) + ОДИН lenis.scrollTo с offset −96 (sticky-хедер ~73px
+       + воздух). Затронуты: nav «Каталог» (/#catalog), hero-CTA
+       «Выбрать букет» (#catalog), «Смотреть все», футер-якоря, таббар.
+       hash в URL поддерживаем pushState'ом, фокус — на цель по прилёте
+       (как после нативного якоря). */
+    var ANCHOR_OFFSET = -96;
     document.addEventListener('click', function (e) {
+      if (e.defaultPrevented || e.button !== 0
+          || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      if (lenis.isStopped) return; /* оверлей со скролл-локом — нативно */
       var t = e.target;
       var a = t && t.closest ? t.closest('a[href]') : null;
-      if (!a || !a.hash) return;
+      if (!a || !a.hash || a.hash === '#') return;
       var href = a.getAttribute('href') || '';
+      /* тот же документ: голый #hash ИЛИ абсолютный /path#hash, совпадающий
+         с текущим (отличающийся ?query = другая страница — пусть ходит
+         нативной навигацией, её читает catalog-filter.js) */
+      var norm = function (p) { return p === '/index.php' ? '/' : p; };
       var samePage = href.charAt(0) === '#'
-        || (a.host === location.host && a.pathname === location.pathname);
-      if (samePage) anchorGraceUntil = performance.now() + 150;
-    }, { capture: true, passive: true });
+        || (a.host === location.host
+            && norm(a.pathname || '') === norm(location.pathname)
+            && (a.search || '') === (location.search || ''));
+      if (!samePage) return;
+      var id = decodeURIComponent(a.hash.slice(1));
+      var el = document.getElementById(id);
+      if (!el) {
+        if (id === 'top') { /* «наверх» без цели в DOM */
+          e.preventDefault();
+          lenis.scrollTo(0, { offset: ANCHOR_OFFSET });
+        }
+        return; /* цели нет — браузер и так ничего не делает */
+      }
+      e.preventDefault();
+      try { history.pushState(null, '', a.hash); } catch (err) { /* file:// и пр. */ }
+      lenis.scrollTo(el, {
+        offset: ANCHOR_OFFSET,
+        onComplete: function () {
+          /* sequential focus starting point — как у нативного якоря */
+          if (el.matches('a[href],button,input,select,textarea,[tabindex]')) {
+            el.focus({ preventScroll: true });
+          } else {
+            el.setAttribute('tabindex', '-1');
+            el.focus({ preventScroll: true });
+          }
+        }
+      });
+    }, { capture: true });
+
+    /* W104-β (C1-M P1) → W104-δ: Lenis-десинк. onNativeScroll у Lenis
+       синхронизирует animatedScroll только пока isScrolling !== 'smooth' —
+       внешний скачок скролла (bfcache/scroll-restoration, программный
+       window.scrollTo) оставляет animatedScroll устаревшим, и следующий
+       якорный клик телепортирует к старой позиции → откат → повторный
+       пробег. Рассинхрон ≥120px — lenis.reset(). Якорный grace-режим
+       больше не нужен: с W104-δ нативный fragment-прыжок погашен
+       preventDefault'ом (см. обработчик выше), actualScroll во время
+       якорной анимации ведёт сам Lenis. */
     window.addEventListener('scroll', function () {
       if (lenis.isStopped) return;
-      if (performance.now() < anchorGraceUntil) return; /* якорный клик — ведёт Lenis */
+      if (lenis.isScrolling === 'smooth') return; /* анимацию ведёт Lenis */
       if (Math.abs(lenis.actualScroll - lenis.animatedScroll) >= 120) {
         lenis.reset();
         window.__nfLenisResets = (window.__nfLenisResets | 0) + 1; /* диагностика */

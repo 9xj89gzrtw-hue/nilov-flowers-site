@@ -131,7 +131,7 @@ $__nfIsProduct = (bool)preg_match('#^/product(/|$)#', $__nfPath)
     <?php if ($legalName !== '' && $legalNum !== ''): ?>
     <p class="fc-footer__legal"><?= e($legalName) ?><?= $legalInn !== '' ? ' · ИНН ' . e($legalInn) : '' ?> · <?= e($legalType === 'ip' ?  'ОГРНИП' : 'ОГРН') ?> <?= e($legalNum) ?><?= $legalAddr !== '' ? ' · ' . e($legalAddr) : '' ?></p>
     <?php endif; ?>
-    <span>© <?= date('Y') ?> <?= e($siteName) ?><?= setting('feature_track_link','1')==='1' ? ' · <a href="/track">Где мой заказ?</a>' : '' ?> · <a href="/policy">Политика обработки персональных данных</a> · <a href="/offer">Оферта</a> · <a href="#" onclick="if(window.cookieSettings){window.cookieSettings();}return false">Настройки cookie</a></span>
+    <span>© <?= date('Y') ?> <?= e($siteName) ?><?= setting('feature_track_link','1')==='1' ? ' · <a href="/track">Где мой заказ?</a>' : '' ?> · <a href="/policy">Политика обработки персональных данных</a> · <a href="/offer">Оферта</a> · <a href="/policy" onclick="if(window.cookieSettings){window.cookieSettings();}return false">Настройки cookie</a></span>
   </div>
 </footer>
 

@@ -26,10 +26,13 @@
   --surface-warm:#fbf5f8;
   --line:#e7e5ea;
 
-  /* Шрифты (W103/F1): UI — Montserrat; display — Playfair Display (hero-H1,
+  /* Шрифты (W103/F1 → W104-γ/C2-T2): UI — Golos Text (кириллический гротеск
+     с характером — уходит от шаблонного Montserrat), Montserrat — web-fallback;
+     'Golos Fallback' (local, метрики подогнаны в fonts.css) рендерится ДО
+     загрузки woff2 → свап без CLS. display — Playfair Display (hero-H1,
      акценты-eyebrow, pull-цитаты, премиум-разворот, тэглайн футера).
-     woff2 variable 500–700 — в /fonts, @font-face в fonts.css. */
-  --font-ui:'Montserrat','Montserrat Fallback','Golos Text',system-ui,-apple-system,sans-serif;
+     woff2 variable 400–700 (Golos) / 500–700 (Playfair) — в /fonts, @font-face в fonts.css. */
+  --font-ui:'Golos Text','Golos Fallback','Montserrat',system-ui,-apple-system,sans-serif;
   --font-display:'Playfair Display','Playfair Fallback',Georgia,'Times New Roman',serif;
 
   /* Радиусы 5cv */
@@ -56,15 +59,17 @@
   --blue:#ffd9ec;           /* голубой лепесток → светло-розовый */
   --cream:#ffffff;          /* текст marquee на тёмном */
 }
-/* fonts.css подключается ПОСЛЕ five.css и его :root переопределил бы --font-ui
+/* fonts.css подключается ПОСЛЕ five.css и его :root переопределял бы --font-ui
    обратно на Golos. Дублируем стеки на html (по ТЗ) и на html:root
-   (специфичность 0,1,1 > 0,1,0 у :root в fonts.css — гарантия каскада). */
+   (специфичность 0,1,1 > 0,1,0 у :root в fonts.css — гарантия каскада).
+   W104-γ (C2-T2): стеки здесь и в fonts.css теперь идентичны (Golos Text
+   первым, Montserrat — web-fallback) — дубль фиксирует порядок, а не спорит. */
 html{
-  --font-ui:'Montserrat','Montserrat Fallback','Golos Text',system-ui,-apple-system,sans-serif;
+  --font-ui:'Golos Text','Golos Fallback','Montserrat',system-ui,-apple-system,sans-serif;
   --font-display:'Playfair Display','Playfair Fallback',Georgia,'Times New Roman',serif;
 }
 html:root{
-  --font-ui:'Montserrat','Montserrat Fallback','Golos Text',system-ui,-apple-system,sans-serif;
+  --font-ui:'Golos Text','Golos Fallback','Montserrat',system-ui,-apple-system,sans-serif;
   --font-display:'Playfair Display','Playfair Fallback',Georgia,'Times New Roman',serif;
 }
 
@@ -243,7 +248,7 @@ html{scrollbar-width:thin;scrollbar-color:var(--line) transparent}
   text-wrap:balance;
 }
 .fc-hero__accent{
-  font-style:italic;padding:0 .04em .08em;
+  font-style:italic;font-weight:600;padding:0 .04em .08em;
   background:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 14' preserveAspectRatio='none'%3E%3Cpath d='M4 10 C 42 3, 84 12, 124 7 S 182 4, 196 8' fill='none' stroke='%23f5b301' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E") left bottom / 100% .13em no-repeat;
 }
 .fc-hero__sub{color:rgba(255,255,255,.92);font-size:.98rem;line-height:1.5;max-width:46ch}
@@ -274,12 +279,10 @@ html{scrollbar-width:thin;scrollbar-color:var(--line) transparent}
   backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
   color:#fff;font-size:.88rem;font-weight:600;font-variant-numeric:tabular-nums;
 }
-/* Существующий таймер старого hero: белая «стеклянная» пилюля (инлайн-стили
-   в index.php уже задают форму — сюда перекраска под стеклянную на фото). */
-.hero__deadline{
-  background:rgba(255,255,255,.22)!important;border-color:rgba(255,255,255,.32)!important;
-  color:#fff!important;
-}
+/* Существующий таймер hero: W104-γ — пилюля переведена на класс
+   .fc-hero .hero__deadline (γ-3, конец файла); историческая
+   !important-перекраска «стеклянная на фото» удалена — она
+   перебивала класс и инлайн, оставляя два источника вида. */
 
 .fc-hero__side{display:flex;flex-direction:column;gap:16px}
 .fc-hero__promo{
@@ -573,7 +576,9 @@ img.product-card__img{background:var(--surface-subtle)}
   letter-spacing:-.01em;text-transform:none;
   color:var(--ink);margin:0 0 16px;
 }
-.fc-seo p{font-size:.95rem;line-height:1.65;color:var(--ink-muted);margin:0}
+/* W104-γ (C2-T2 P1.4): мера строки ≤ 62 зн. + text-wrap:pretty —
+   SEO-абзацы не растягиваются на всю 840px-колонку (было ~85 зн./строка) */
+.fc-seo p{font-size:.95rem;line-height:1.65;color:var(--ink-muted);margin:0;max-width:62ch;text-wrap:pretty}
 .fc-seo p+p{margin-top:12px}
 
 /* ============ 12. FAQ (fc-faq + рестайл .faq-item) ============ */
@@ -912,10 +917,9 @@ img.product-card__img{background:var(--surface-subtle)}
    вместо одноколонного легаси ≤480 (карточка 350px — «плитка-гигант»). */
 @media(min-width:360px) and (max-width:480px){
   .catalog__grid{grid-template-columns:repeat(2,1fr);gap:14px}
-  /* компенсация плотности: чуть мельче типографика карточки на узких экранах
-     W103 (6-b, P1): имя .92rem (было .85) — иерархия имя≈цена и на мобиле */
-  .catalog__grid .product-card__name{font-size:14.5px;min-height:42px}
-  .catalog__grid .product-card__price{font-size:16px}
+  /* W104-γ: имя — антиква 15px (2-кол плотная сетка), цена 14px muted */
+  .catalog__grid .product-card__name{font-size:15px;min-height:42px}
+  .catalog__grid .product-card__price{font-size:14px}
 }
 @media(max-width:359px){.catalog__grid{grid-template-columns:1fr}}
 
@@ -1001,9 +1005,10 @@ img.product-card__img{background:var(--surface-subtle)}
    body-паддинг под mnav на мобиле). */
 .fc-product{margin:32px 0 0}
 
-/* F4: FAQ — вопрос чуть ярче (вес 800, чуть крупнее, плюс темнее);
-   колонка 760→880px — в index.php */
-.faq-item__q{font-weight:500;font-size:17px}
+/* F4: FAQ — вопрос крупнее body (промежуточная ступень H2↔body);
+   колонка 760→880px — в index.php.
+   W104-γ (C2-T2 P1.3): 17→19px/500 — FAQ-вопрос читается подзаголовком. */
+.faq-item__q{font-weight:500;font-size:19px}
 .faq-item__q::after{color:var(--ink)}
 
 /* F5: траст-ряд — текст контрастнее (между ink #1c1a1e и muted #6e6a72);
@@ -1752,7 +1757,10 @@ body::after{
 .fc-carousel .reveal.reveal--visible,
 .catalog__grid .reveal.reveal--visible{
   opacity:1;transform:none;
-  animation:fc-card-in .55s cubic-bezier(.22,1,.36,1) both;
+  /* W104-γ (C2-M2 P0-2): fill backwards, НЕ both — fill:both вечно держал
+     transform:none поверх :hover translateY(-4/-6px) и убивал hover-lift
+     на всех revealed-карточках; конечное состояние и так держат строки выше */
+  animation:fc-card-in .55s cubic-bezier(.22,1,.36,1) backwards;
   animation-delay:calc(var(--i,0)*60ms);
 }
 @keyframes fc-card-in{
@@ -1795,8 +1803,10 @@ html:not(.js-ready) .product-card .product-card__media-link{clip-path:inset(0);t
   width:100%;padding:clamp(28px,4vw,48px) 0;
 }
 .fc-catalog-strip__text{
+  /* W104-γ (C2-T2 P1.9): курсив — только в H1-акценте/промо/манифесте/
+     тэглайне/eyebrow-em/spec-значениях; полоса каталога — прямой Playfair */
   margin:0;max-width:30ch;
-  font:italic 500 clamp(1.6rem,2.4vw,1.875rem)/1.4 var(--font-display);
+  font:500 clamp(1.6rem,2.4vw,1.875rem)/1.4 var(--font-display);
   color:#fff;text-wrap:balance;
 }
 .fc-catalog-strip__text::before{
@@ -2176,8 +2186,11 @@ details:not([open]) .faq-item__a-wrap{grid-template-rows:0fr}
 
 /* ============ W104-5. КАРТОЧКА ТОВАРА — 5cv-exact ============
    Порядок в разметке (index/product/category/occasion.php): фото →
-   ЦЕНА 17px/600 (+старая 12px line-through) → имя 15px/600 ink
-   (W104-α: баланс вместо «прайс-листа» — цена ведёт DOM, имя держит витрину). */
+   ЦЕНА → имя. W104-γ (C2-T2 P0-1) «журнал спускается в витрину»:
+   ИМЯ БУКЕТА — заголовок материала: Playfair 500 17px ink (антиква,
+   НЕ курсив); цена — тихая цифра 15px/500 muted (было 17/600 ink —
+   VLM дважды: «оптовый прайс-лист»). Цена остаётся первой в DOM,
+   старая цена 12px muted line-through. */
 .product-card{background:transparent;border-radius:24px;box-shadow:none}
 .product-card:hover{
   transform:translateY(-4px);
@@ -2187,21 +2200,23 @@ details:not([open]) .faq-item__a-wrap{grid-template-rows:0fr}
 .product-card:hover .product-card__img,
 .product-card:hover .product-card__media img{transform:scale(1.05)}
 .product-card__body{padding:12px 2px 0;gap:4px}
-.product-card__price{margin:0;font-weight:600;font-size:17px;line-height:1.25;color:var(--ink);font-variant-numeric:tabular-nums}
+.product-card__price{margin:0;font-weight:500;font-size:15px;line-height:1.3;color:var(--ink-muted);font-variant-numeric:tabular-nums}
 .product-card__price--old{
   font-size:12px;font-weight:600;color:var(--ink-muted);
   text-decoration-thickness:1.5px;margin-right:8px;
 }
 .product-card__name{
-  /* W104-α (C): баланс карточки вместо «прайс-листа» — цена первой в DOM
-     (ДНК 5cv), но имя 15/600/ink держит витрину, цена 17/600 — цифра,
-     а не крик. min-height 43px = 2 строки 15px×1.35 + padding (без «волны»). */
-  font-weight:600;font-size:15px;line-height:1.35;color:var(--ink);
-  min-height:43px;padding:1px 0;
+  /* W104-γ (C2-T2 P0-1): имя — антиква (Playfair 500, не курсив) 17px/1.3 —
+     «заголовок материала» вместо строки прайса; line-clamp:2 остаётся,
+     min-height 46px = две строки 17px×1.3 + padding (без «волны» рядов) */
+  font-family:var(--font-display);
+  font-weight:500;font-size:17px;line-height:1.3;color:var(--ink);
+  min-height:46px;padding:1px 0;
 }
-/* Feature-карточка (одинокая последняя в сетке): имя крупнее, без clamp-минимума */
+/* Feature-карточка (одинокая последняя в сетке / split-фича ряда «Розы»):
+   имя крупнее, без clamp-минимума */
 @media(min-width:900px){
-  .catalog__grid > .product-card:nth-last-child(1):nth-child(4n+1) .product-card__name{font-size:1.05rem}
+  .catalog__grid > .product-card:nth-last-child(1):nth-child(4n+1) .product-card__name{font-size:1.3rem}
 }
 /* Зелёная строка доставки (is_urgent) с zap-иконкой — разметка index/category.php */
 .product-card__urgent-note{
@@ -2349,7 +2364,13 @@ details:not([open]) .faq-item__a-wrap{grid-template-rows:0fr}
   transition:opacity .25s ease,transform .2s cubic-bezier(.22,1,.36,1),border-color .2s,box-shadow .2s;
 }
 .fc-row__arrow:hover{border-color:rgba(28,26,30,.3);box-shadow:0 6px 16px rgba(28,26,30,.14)}
-.fc-row__arrow:disabled{opacity:.4;cursor:default}
+.fc-row__arrow:disabled{opacity:0!important;pointer-events:none!important}
+/* W104-γ (C2-D2 P2): disabled-стрелки больше не выглядят «сломанными»
+   (полупрозрачные круги при 3 айтемах) — скрыты полностью, как у
+   .fc-carousel__arrow; !important перекрывает hover-показ секции и
+   reduced-motion-видимость (кнопка не кликабельна — показывать нечего).
+   Фокус с клавиатуры всё ещё находит кнопку (контур при фокусе). */
+.fc-row__arrow:disabled:focus-visible{opacity:.5!important;pointer-events:none!important}
 .fc-row__arrow:disabled:hover{border-color:rgba(28,26,30,.08);box-shadow:0 2px 10px rgba(28,26,30,.08)}
 @media(hover:hover) and (pointer:fine){
   .fc-row__arrow{opacity:0;pointer-events:none}
@@ -2603,13 +2624,229 @@ button,input,select,textarea{font-family:inherit}
    им остаются исторические vw-клампы выше по файлу. */
 .fc-hero__main{container-type:inline-size}
 .fc-hero__title{font-size:clamp(1.4rem, calc(9.6cqi - 6px), 4.15rem)}
-/* Мобайл: контент-маргин тайла 2×20px (а не 2×32 десктопа) — формула
-   мягче, кегль чуть крупнее при тех же ~7px запаса под фразу */
+/* Мобайл: контент-маргин тайла 2×14px (а не 2×20/32) + кегль под ЦЕЛЬНУЮ
+   фразу «по␣Санкт-Петербургу» (10.12em Playfair 500, замер DOM W104-γ):
+   font = (ширина тайла − 28px) / 10.3 → 390px = 31.3px (+2.4px к прежним
+   28.95), фраза 317px ≤ 322px с запасом 5px — НЕ переносится и не режется.
+   Буквальная формула брифа 10.4cqi (=36.4px@390) рвала бы фразy: 368px >
+   322px — inline-block торчал бы за край тайла под overflow:hidden. */
 @media(max-width:899px){
-  .fc-hero__title{font-size:clamp(1.4rem, calc(9.7cqi - 5px), 3.5rem)}
+  .fc-hero__title{font-size:clamp(1.5rem, calc((100cqi - 28px) / 10.3), 3.5rem)}
+  .fc-hero__content{margin:14px;max-width:none}
 }
 
 /* --- E (хвост): единый caps-трекинг .14em у style.css-элементов,
    живущих на витрине (апселл-заголовок корзины-drawer) — style.css
    вне скоупа волны, перекрываем здесь. */
 .cart-upsell__title{letter-spacing:.14em}
+
+
+/* ================================================================
+   W104-γ (css-identity-fixer — волна критиков C2-D2/C2-T2):
+   идентичность и типографическая дисциплина. Golos-свап и карточка —
+   выше по файлу (токены / W104-5); здесь — капс-метки, город-бар,
+   deadline-пилюля, cookie-компакт, вариация лэйаутов товарных рядов.
+   ================================================================ */
+
+/* ============ γ-1. КАПС-МЕТКИ: ОДНА СТУПЕНЬ (C2-T2 P0-3) ============
+   Одна роль «метка» — один кегль/вес: 600 11px/1.4, трекинг .14em.
+   Собраны все 7 исторических кеглей (10 / 10.5 / 10.94 / 11 / 11.52 /
+   12 / 12.8px × веса 600/700): hero-eyebrow, промо-eyebrow, eyebrow
+   секций, kicker манифеста, заголовки колонок футера, ценник-лейбл
+   премиума, категория-метка карточки, апселл корзины, метка категории
+   PDP. Marquee (12/700) — отдельная роль ленты, НЕ тронут. */
+.fc-hero__eyebrow,
+.fc-hero__promo-eyebrow,
+.fc-row__eyebrow,
+.fc-manifesto__kicker,
+.fc-footer__heading,
+.fc-premium__price-label,
+.product-card__cat,
+.cart-upsell__title,
+.product-page__category{
+  font:600 11px/1.4 var(--font-ui);
+  letter-spacing:.14em;
+  text-transform:uppercase;
+}
+/* Хвост eyebrow «капс|курсив|хвост» (3-я часть — прямой текст без капса,
+   разбиение «Красиво —|не значит|дорого»): тот же кегль метки */
+.fc-row__eyebrow .fc-row__eyebrow-tail{
+  font:600 11px/1.4 var(--font-ui);
+  letter-spacing:.14em;
+  text-transform:none;
+}
+
+/* ============ γ-2. ГОРОД-БАР НЕ ПЕРЕКРЫВАЕТ ХЕДЕР (C2-D2 P1) ============
+   Критик: клик по координатам кнопки «Корзина» попадал в #fcCitybar.
+   Бар в потоке НАД sticky-хедером (z-50): в любом транзиентном
+   состоянии (якорные рывки Lenis, возврат скролла к нулю) хедер
+   обязан выигрывать hit-test. Явный контекст stacking ниже хедера. */
+.fc-citybar{position:relative;z-index:40}
+
+/* ============ γ-3. HERO-DEADLINE: КЛАСС ВМЕСТО ИНЛАЙНА (C2-T2) ============
+   Пилюля «Заказ до 20:00» жила инлайн-стилями в index.php (обход
+   типосистемы). Токен: 600 .9rem/1.2 UI + tabular-nums. */
+.fc-hero .hero__deadline{
+  display:inline-flex;align-items:center;gap:6px;
+  margin:14px 0 0;padding:8px 16px;border-radius:999px;
+  background:rgba(255,255,255,.75);
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  border:1px solid var(--line);
+  font:600 .9rem/1.2 var(--font-ui);color:var(--ink);
+  font-variant-numeric:tabular-nums;
+  max-width:100%;min-height:38px;
+}
+
+/* ============ γ-4. COOKIE: ЗАКРЫВАЕМО + НЕ МЕШАЕТ (C2-D2 P0-1) ============
+   Рестайл поверх W104-a2 (и синхронно с motion-w104 4g): карточка
+   ещё компактнее и ПЛОТНЕЕ — читается как осознанный элемент, а не
+   попап-шум: белый фон с контуром, ≤340px, без заголовка, текст
+   ≤2 строки 12.5px, кнопки в ОДИН ряд, ✕-кнопка (разметку добавит
+   δ в js/cookie-banner.js — класс .cookie-banner__close готов здесь).
+   Мобайл: над таббаром с safe-area (правило ≤820 ниже по каскаду). */
+.cookie-banner{
+  max-width:340px;
+  background:#fff;
+  border:1px solid rgba(28,26,30,.14);
+  border-radius:16px;
+  box-shadow:0 16px 48px rgba(28,26,30,.24),0 2px 8px rgba(28,26,30,.08);
+  padding:12px 14px;
+  gap:8px;
+  flex-direction:column;align-items:stretch;
+}
+.cookie-banner__title{display:none} /* компакт: заголовок не нужен */
+.cookie-banner__text{
+  flex:none;margin:0;padding-right:22px; /* воздух под ✕ (top-right, δ-разметка) */
+  font:400 12.5px/1.45 var(--font-ui);color:var(--ink-muted);
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+  overflow:hidden;
+}
+.cookie-banner__text a{color:var(--ink);text-decoration-color:var(--amber);text-underline-offset:3px}
+.cookie-banner__actions{
+  display:flex;gap:8px;align-items:center;flex-wrap:nowrap;
+  margin-top:2px;
+}
+.cookie-banner__btn{
+  flex:1 1 auto;min-width:0;
+  font:600 13px/1 var(--font-ui);min-height:40px;padding:10px 16px;
+  border-radius:999px;
+}
+.cookie-banner__link{
+  font:600 12.5px var(--font-ui);min-height:40px;padding:0 6px;
+  white-space:nowrap;
+}
+/* ✕-кнопка: абсолютный тихий крестик 32px в правом верхнем углу
+   (тап-зона 32px + инсет; разметка — js/cookie-banner.js, δ) */
+.cookie-banner__close{
+  position:absolute;top:4px;right:4px;
+  width:32px;height:32px;min-width:32px;min-height:32px;
+  display:grid;place-items:center;
+  background:transparent;border:none;border-radius:50%;
+  color:var(--ink-muted);font:600 1rem/1 var(--font-ui);
+  cursor:pointer;transition:color .15s,background .15s;
+}
+.cookie-banner__close::after{content:"";position:absolute;inset:-4px;border-radius:50%}
+.cookie-banner__close:hover{color:var(--ink);background:var(--surface-subtle)}
+.cookie-banner__close:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+/* Запас прокрутки и подъём sticky-CTA под НОВУЮ компакт-карточку
+   (фактическая высота мобайл ≈ 112px: 24 паддинг + 2×18 текст + 6 + 40
+   кнопка + межблочные зазоры; ≈ 100px десктоп) — перекрывает
+   исторические 205/262/192px (замер W104-γ) */
+@media(max-width:820px){
+  body.nf-cookie-open .btn--accent.product-page__cta--sticky{
+    bottom:calc(190px + env(safe-area-inset-bottom)); /* 66 таббар + 112 карточка + 12 зазор */
+  }
+  body.cookie-visible{padding-bottom:calc(242px + env(safe-area-inset-bottom))}
+}
+@media(min-width:821px){
+  body.cookie-visible{padding-bottom:140px}
+}
+
+/* ============ γ-5. ВАРИАЦИЯ ЛЭАУТОВ ТОВАРНЫХ РЯДОВ (C2-D2 P1.1) ============
+   Монотонность «5-6 каруселей одним паттерном» ломается БЕЗ отключения
+   рядов: (а) «Розы» — editorial-сплит: первая карточка = широкая фича
+   (фото слева, текст справа), остальные — стандартный рельс;
+   (б) «Дополните букет» — компакт-рельс: мини-карточки (фото 96px
+   сквиркл + имя + цена в строку), горизонтальный скролл.
+   Модификаторы вешает render_fc_row (index.php, параметр $variant). */
+
+/* (а) SPLIT: широкая фича-карточка первым айтемом ряда */
+.fc-row--split .fc-carousel > .product-card:first-child{
+  display:grid;grid-template-columns:minmax(150px,44%) 1fr;
+  align-items:stretch;gap:0;
+  flex:0 0 86vw; /* мобайл: фича шире стандартных 72vw карточек рельса */
+  /* фича-статус: белая приподнятая карточка на tint-фоне секции
+     (VLM-проверка: «случайно растянутая карточка» → читаемая фича) */
+  background:#fff;border:1px solid var(--line);border-radius:22px;
+  box-shadow:0 24px 60px -34px rgba(28,26,30,.32);
+}
+/* amber-линия над текстом фичи — редакционный якорь (паттерн
+   fc-editorial/fc-hero__promo-title::after), без текста в CSS */
+.fc-row--split .fc-carousel > .product-card:first-child .product-card__body::before{
+  content:"";display:block;width:40px;height:3px;
+  margin-bottom:10px;background:var(--amber);
+}
+/* Редакционная метка фичи (index.php, setting feature_card_label):
+   та же ступень капс-меток γ-1 */
+.product-card__feature-label{
+  font:600 11px/1.4 var(--font-ui);
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--pink-deep);
+}
+.fc-row--split .fc-carousel > .product-card:first-child .product-card__media{
+  aspect-ratio:auto;height:100%;min-height:170px;
+  border-radius:22px 0 0 22px;background:var(--surface-warm);
+}
+.fc-row--split .fc-carousel > .product-card:first-child .product-card__body{
+  align-self:center;padding:14px 16px;
+}
+.fc-row--split .fc-carousel > .product-card:first-child .product-card__name{
+  font-size:1.05rem;min-height:0;
+}
+@media(min-width:900px){
+  .fc-row--split .fc-carousel > .product-card:first-child{
+    flex:0 0 calc(2 * clamp(220px,23vw,280px) + 16px);
+    grid-template-columns:minmax(220px,42%) 1fr;
+  }
+  .fc-row--split .fc-carousel > .product-card:first-child .product-card__media{
+    min-height:300px;
+  }
+  .fc-row--split .fc-carousel > .product-card:first-child .product-card__body{
+    padding:20px 24px;
+  }
+  .fc-row--split .fc-carousel > .product-card:first-child .product-card__name{
+    font-size:1.45rem;
+  }
+  .fc-row--split .fc-carousel > .product-card:first-child .product-card__price{
+    font-size:17px;
+  }
+}
+
+/* (б) COMPACT: мини-рельс дополнений («Дополните букет») */
+.fc-carousel--compact{gap:10px}
+.fc-carousel--compact > *{flex:0 0 250px}
+.fc-carousel--compact .product-card{
+  display:grid;grid-template-columns:96px minmax(0,1fr);align-items:center;
+  gap:12px;padding:10px;
+  background:#fff;border:1px solid var(--line);border-radius:18px;
+}
+.fc-carousel--compact .product-card__media{
+  aspect-ratio:1;width:96px;height:96px;flex:none;
+  border-radius:22px;background:var(--surface-warm);
+}
+.fc-carousel--compact .product-card__cta,
+.fc-carousel--compact .product-card__fav,
+.fc-carousel--compact .product-card__badge{display:none} /* мини-карточка: клик — на карточку */
+.fc-carousel--compact .product-card__body{padding:0;gap:3px}
+.fc-carousel--compact .product-card__name{min-height:0;font-size:15px}
+.fc-carousel--compact .product-card__price{font-size:14px}
+@media(max-width:899px){
+  .fc-carousel--compact > *{flex:0 0 230px}
+  .fc-carousel--compact .product-card{grid-template-columns:84px minmax(0,1fr);gap:10px;padding:8px}
+  .fc-carousel--compact .product-card__media{width:84px;height:84px;border-radius:18px}
+}
+
+/* ============ γ-6. PREFERS-REDUCED-MOTION: новинки γ ============ */
+@media(prefers-reduced-motion:reduce){
+  .cookie-banner__close{transition:none}
+}

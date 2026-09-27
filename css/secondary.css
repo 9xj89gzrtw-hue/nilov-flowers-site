@@ -37,6 +37,9 @@
 }
 .page-hero__accent{
   font-style:italic;
+  /* W104-γ (C2-T2 P1.5): весовой контраст display-оси — акцент 600
+     (оси 500–700 в файле), рядом с прямым 500 читается жирнее курсива */
+  font-weight:600;
   color:var(--pink-deep,#cc2f7a);
 }
 
