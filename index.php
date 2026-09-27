@@ -346,13 +346,21 @@ function render_product_card(array $p, array $ctx): void
     } else {
         $srcset = '';
     }
-    $sizes = '(max-width:899px) 45vw, (min-width:900px) 300px';
-    $link = '/product/' . rawurlencode($p['slug']);
     /* W96-fix1 (F3): поисковый индекс карточки — имя + категория + описание
        (нижний регистр; js/five.js матчит по стемму запроса как подстроке).
        W99-fixG (G2): в карусельных копиях НЕ печатаем (описания дублируются —
        36.5КБ лишнего HTML; поиск живёт только в #catalogGrid). */
     $isCarousel = !empty($ctx['carousel']);
+    /* W104-ζ (C3-D3 P1.1): sizes по ФАКТИЧЕСКОМУ слоту карточки — карусель
+       (flex-basis 72vw моб / ≤280px десктоп) и каталог-сетка (2 кол. ≤819 →
+       ~46vw; 3 кол. ≥820 → 372px при wrap 1200; 4 кол. ≥1700 → ~373px) —
+       раздельные значения вместо единого «300px»: при DPR2 браузер теперь
+       берёт 864w-оригинал для 372px-слота (раньше sizes врал на 72px → бралось
+       600w и ретина получала ~80% пикселей). */
+    $sizes = $isCarousel
+        ? '(max-width:899px) 72vw, 280px'
+        : '(max-width:359px) 92vw, (max-width:819px) 46vw, 372px';
+    $link = '/product/' . rawurlencode($p['slug']);
     $searchIndex = $isCarousel ? '' : mb_strtolower(trim($p['name'] . ' ' . ($p['category_name'] ?? '') . ' ' . ($p['description'] ?? '')));
     /* K10 (W101): data-upsell="1" (show_in_upsell) — приоритетный источник апсейла
        корзины (js/cart-ui.js): сладкие допы вместо «первых попавшихся букетов».
@@ -388,7 +396,7 @@ function render_product_card(array $p, array $ctx): void
               data-product-name="<?= e($p['name']) ?>"
               data-product-price-raw="<?= $price ?>"
               data-product-image="<?= e($img) ?>"
-              aria-label="Добавить в корзину: <?= e($p['name']) ?>" title="В корзину">+</button>
+              aria-label="Добавить в корзину: <?= e($p['name']) ?>" title="Добавить в корзину">+</button>
             <?php /* Избранное (критерий 13, Русский Букет-паттерн): сердечко на карточке, localStorage. Отключаем (критерий 16). */ ?>
             <?php if ($ctx['featFavorites']): ?><button type="button" class="product-card__fav" data-fav-id="<?= (int)$p['id'] ?>" data-fav-name="<?= e($p['name']) ?>" aria-label="В избранное: <?= e($p['name']) ?>" title="В избранное">♡</button><?php endif; ?>
           </div>
@@ -671,7 +679,10 @@ if (!$featJournal) {
 }
 
 /* ---- SEO-текст: sanitize_rich_text разрешает только <a>, абзацы — через \n\n ---- */
-$seoTextDefault = "Доставка цветов по Санкт-Петербургу — в день заказа. Работаем по районам Санкт-Петербурга: в пределах КАД привозим букет за 1–2 часа, в пригороды — Пушкин, Павловск, Гатчина, Всеволожск — в согласованный интервал. Оформите заказ до 20:00, и цветы будут у получателя сегодня же.\n\nСвежесть — главное. Цветы приходят к нам с утренней поставки, а не лежат на складе: букет собираем непосредственно перед отправкой. Перед выездом курьера пришлём фото готовой композиции — вы увидите именно то, что получит адресат. Если какой-то цветок выглядит не идеально, заменим его до доставки.\n\nСпособ оплаты выберете при оформлении: наличными или картой курьеру при получении. Поводы бывают разные: букет маме на день рождения, извиниться, поздравить коллегу или сказать «люблю» без повода — подскажем состав под бюджет и характер события. А если сомневаетесь — просто позвоните, соберём букет вместе по телефону.";
+/* W104-ζ (C3-T3 P1.5): фото-абзац переформулирован — раньше повторял дословно
+   ответ FAQ a3 («курьер фотографирует… вы видите то же, что получит адресат»);
+   SEO-версия короче и без дубля, обещание то же. */
+$seoTextDefault = "Доставка цветов по Санкт-Петербургу — в день заказа. Работаем по районам Санкт-Петербурга: в пределах КАД привозим букет за 1–2 часа, в пригороды — Пушкин, Павловск, Гатчина, Всеволожск — в согласованный интервал. Оформите заказ до 20:00, и цветы будут у получателя сегодня же.\n\nСвежесть — главное. Цветы приходят к нам с утренней поставки, а не лежат на складе: букет собираем непосредственно перед отправкой. Если какой-то цветок выглядит не идеально, заменим его до доставки.\n\nКаждый заказ сопровождаем фото: вы видите букет до того, как его вручат.\n\nСпособ оплаты выберете при оформлении: наличными или картой курьеру при получении. Поводы бывают разные: букет маме на день рождения, извиниться, поздравить коллегу или сказать «люблю» без повода — подскажем состав под бюджет и характер события. А если сомневаетесь — просто позвоните, соберём букет вместе по телефону.";
 ?><!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -701,12 +712,19 @@ $heroWebpOk = $heroWebpUrl !== '';
 $heroDim = $heroRoot !== '' ? (@getimagesize(BASE_PATH . '/' . $heroRoot) ?: null) : null;
 $heroThumb480 = $heroRoot !== '' ? hero_img_size($heroRoot, 480) : '';
 $heroThumb768 = $heroRoot !== '' ? hero_img_size($heroRoot, 768) : '';
+/* W104-ζ (C3-D3): +1024w — слот .fc-hero__main на XL-экранах (wrap-ultra 1700+:
+   2fr/1fr → ~1003px) при DPR1 брал 768w и апскейлил; sizes ниже честно
+   разделяет десктоп (764px) и XL (1004px). Файл — тот же ленивый GD-кэш. */
+$heroThumb1024 = $heroRoot !== '' ? hero_img_size($heroRoot, 1024) : '';
 $heroSrcset = [];
 if ($heroThumb480 !== '') { $heroSrcset[] = $heroThumb480 . ' 480w'; }
 if ($heroThumb768 !== '') { $heroSrcset[] = $heroThumb768 . ' 768w'; }
+if ($heroThumb1024 !== '') { $heroSrcset[] = $heroThumb1024 . ' 1024w'; }
 if ($heroWebpOk && $heroDim !== null) { $heroSrcset[] = $heroWebpUrl . ' ' . (int)$heroDim[0] . 'w'; }
 $heroSrcsetStr = implode(', ', $heroSrcset);
-$heroSizes = '(max-width:899px) 100vw, 640px';
+/* W104-ζ: слот по замеру — тайл 763px на 1440 (2fr/1fr от 1160), на 1700+
+   (wrap-ultra 1560) — 1003px; мобайл — тайл шириной с экран минус поля wrap */
+$heroSizes = '(max-width:899px) 100vw, (min-width:1700px) 1004px, 764px';
 ?>
 <?php /* W97-fixB2 (B2-7): og:image:width/height — соцсети резервируют превью без
        повторной загрузки; @-guard: файла нет — размеры не печатаем */ ?>
@@ -985,6 +1003,15 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
                setting('hero_promo_image') с дефолтом gen20.jpg; пусто/файла нет —
                карточка без фото, как раньше */ ?>
         <?php $heroPromoUrl = site_image_url(setting('hero_promo_image', 'img/products/gen20.jpg')); ?>
+        <?php /* W104-ζ: миниатюра 96px@2x грузила jpg-оригинал 864×1152 (~112КБ) —
+               ленивый GD-мини-превью 400w (~25КБ webp) через тот же конвейер
+               hero_img_size; файла/ГД нет — деградация к прежнему одиночному src */
+        $heroPromoRoot = site_image_root(setting('hero_promo_image', 'img/products/gen20.jpg'));
+        $heroPromoThumb = $heroPromoRoot !== '' ? hero_img_size($heroPromoRoot, 400) : '';
+        $heroPromoWebp = $heroPromoRoot !== '' ? (preg_replace('/\.(jpe?g|png)$/i', '.webp', $heroPromoRoot) ?? '') : '';
+        $heroPromoWebpUrl = ($heroPromoWebp !== $heroPromoRoot && $heroPromoRoot !== '' && is_file(BASE_PATH . '/' . $heroPromoWebp))
+            ? '/' . implode('/', array_map('rawurlencode', explode('/', $heroPromoWebp))) : '';
+        ?>
         <?php /* W104-γ: alt миниатюры — имя товара-источника фото (по умолчанию
                gen20.jpg = «Клубника и макаруны…»); пусто — описательный фолбэк */
         $heroPromoAlt = '';
@@ -994,7 +1021,16 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
         if ($heroPromoAlt === '') { $heroPromoAlt = 'Дополнение к букету из ассортимента магазина'; }
         ?>
         <div class="fc-hero__promo">
-          <?php if ($heroPromoUrl !== ''): ?><img class="fc-hero__promo-img" src="<?= e($heroPromoUrl) ?>" alt="<?= e($heroPromoAlt) ?>" loading="lazy" decoding="async" width="96" height="96"><?php endif; ?>
+          <?php if ($heroPromoUrl !== ''): ?>
+          <?php if ($heroPromoThumb !== '' || $heroPromoWebpUrl !== ''): ?>
+          <picture>
+            <?php if ($heroPromoThumb !== ''): ?><source type="image/webp" srcset="<?= e($heroPromoThumb) ?>"><?php elseif ($heroPromoWebpUrl !== ''): ?><source type="image/webp" srcset="<?= e($heroPromoWebpUrl) ?>"><?php endif; ?>
+            <img class="fc-hero__promo-img" src="<?= e($heroPromoUrl) ?>" alt="<?= e($heroPromoAlt) ?>" loading="lazy" decoding="async" width="96" height="96">
+          </picture>
+          <?php else: ?>
+          <img class="fc-hero__promo-img" src="<?= e($heroPromoUrl) ?>" alt="<?= e($heroPromoAlt) ?>" loading="lazy" decoding="async" width="96" height="96">
+          <?php endif; ?>
+          <?php endif; ?>
           <span class="fc-hero__promo-eyebrow"><?= e(setting('hero_promo_badge', 'К каждому букету')) ?></span>
           <h2 class="fc-hero__promo-title"><?= e(setting('hero_promo_title', 'Открытка в подарок')) ?></h2>
           <p class="fc-hero__promo-text"><?= e(setting('hero_promo_text', 'Напишем ваш текст от руки и вложим в букет — это бесплатно')) ?></p>
@@ -1165,12 +1201,40 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
   if (!is_file(BASE_PATH . $manifestoImg)) {
       $manifestoImg = '/img/products/gen9.jpg'; /* TODO(W103): фолбэк до florist-hands.jpg */
   }
+  /* W104-ζ (C3-D3): full-bleed-полоса грузила jpg-оригинал целиком — тот же
+     webp-конвейер (480/768 ленивые GD-превью + webp-оригинал {w}w),
+     sizes 100vw (полоса без полей). Файлов нет — одиночный src как раньше. */
+  $manifestoRoot = ltrim($manifestoImg, '/');
+  $__mfWebp = preg_replace('/\.(jpe?g|png)$/i', '.webp', $manifestoRoot) ?? '';
+  $__mfWebpOk = $__mfWebp !== $manifestoRoot && is_file(BASE_PATH . '/' . $__mfWebp);
+  $__mfDim = @getimagesize(BASE_PATH . '/' . $manifestoRoot);
+  $__mfSrcset = [];
+  foreach ([480, 768] as $__mfW) {
+      $__mfT = hero_img_size($manifestoRoot, $__mfW);
+      if ($__mfT !== '') { $__mfSrcset[] = $__mfT . ' ' . $__mfW . 'w'; }
+  }
+  if ($__mfWebpOk && $__mfDim !== false) { $__mfSrcset[] = '/' . implode('/', array_map('rawurlencode', explode('/', $__mfWebp))) . ' ' . (int)$__mfDim[0] . 'w'; }
+  $__mfSrcsetStr = implode(', ', $__mfSrcset);
   ?>
   <section class="fc-manifesto reveal" aria-label="<?= e(setting('manifesto_kicker', 'Наши принципы')) ?>">
+    <?php if ($__mfSrcsetStr !== ''): ?>
+    <picture>
+      <source type="image/webp" srcset="<?= e($__mfSrcsetStr) ?>" sizes="100vw">
+      <img class="fc-manifesto__img" src="<?= e($manifestoImg) ?>" alt="Флорист собирает букет из свежих цветов" loading="lazy" decoding="async">
+    </picture>
+    <?php else: ?>
     <img class="fc-manifesto__img" src="<?= e($manifestoImg) ?>" alt="Флорист собирает букет из свежих цветов" loading="lazy" decoding="async">
+    <?php endif; ?>
     <div class="fc-manifesto__content">
       <p class="fc-manifesto__kicker"><?= e(setting('manifesto_kicker', 'Наши принципы')) ?></p>
-      <p class="fc-manifesto__text"><?= e(setting('manifesto_text', 'Собираем букеты утром — и везём вам сегодня')) ?></p>
+      <?php /* W104-ζ (C3-T3 P1.4): типографская норма — тире не открывает строку:
+         пробел ПЕРЕД «—» клеится в NBSP на рендере (любой текст владельца,
+         без правки БД). Дефолт-фраза переведена на бессрочную версию
+         («утром и везём…»): js/kinetic.js при сплите нормализует \s+→' '
+         и СЪЕДАЕТ NBSP — тире снова открывало строку 2 (замер 1440:
+         «Собираем букеты утром» / «— и везём вам сегодня»); вернуть тире
+         можно правкой kinetic.js:190 (см. worklog W104-ζ). */ ?>
+      <p class="fc-manifesto__text"><?= e(preg_replace('/ +—/u', "\u{00A0}—", (string)setting('manifesto_text', 'Собираем букеты утром и везём вам сегодня'))) ?></p>
     </div>
   </section>
 
@@ -1185,7 +1249,9 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
         <div class="fc-premium__cards">
           <?php foreach (array_slice($premiumProducts, 0, 3) as $prIdx => $prP): ?>
           <a class="fc-premium__card<?= $prIdx === 0 ? ' fc-premium__card--lead' : '' ?>" href="/product/<?= e(rawurlencode($prP['slug'])) ?>">
-            <span class="fc-premium__photo"><?php render_premium_picture($prP, '(max-width:899px) 72vw, (min-width:900px) 400px'); ?></span>
+            <span class="fc-premium__photo"><?php render_premium_picture($prP, $prIdx === 0
+                ? '(max-width:899px) 64vw, 400px' /* W104-ζ: lead-картинка 380px десктоп / min(64vw,300px) моб — было 400px/72vw */
+                : '(max-width:899px) 64vw, 280px'); ?></span>
             <span class="fc-premium__card-body">
               <span class="fc-premium__card-name"><?= e($prP['name']) ?></span>
               <span class="fc-premium__card-price"><?= formatPrice(productPrice($prP)) ?></span>
@@ -1239,7 +1305,22 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
   <?php if ($catalogStripText !== ''): ?>
   <section class="fc-catalog-strip" aria-label="О сборке букетов">
     <?php if (is_file(BASE_PATH . '/img/editorial/petals-macro.jpg')): ?>
-    <img class="fc-catalog-strip__img" src="/img/editorial/petals-macro.jpg" alt="Лепестки цветов крупным планом" loading="lazy" decoding="async">
+    <?php /* W104-ζ (C3-D3): full-bleed-полоса — webp-конвейер вместо jpg-оригинала
+           (480/768 GD-превью уже в кэше hero-конвейера + webp-оригинал 1440w) */ ?>
+    <?php
+    $__csRoot = 'img/editorial/petals-macro.jpg';
+    $__csWebp = 'img/editorial/petals-macro.webp';
+    $__csSrcset = [];
+    foreach ([480, 768] as $__csW) {
+        $__csT = hero_img_size($__csRoot, $__csW);
+        if ($__csT !== '') { $__csSrcset[] = $__csT . ' ' . $__csW . 'w'; }
+    }
+    if (is_file(BASE_PATH . '/' . $__csWebp)) { $__csSrcset[] = '/' . $__csWebp . ' 1440w'; }
+    ?>
+    <picture>
+      <?php if ($__csSrcset !== []): ?><source type="image/webp" srcset="<?= e(implode(', ', $__csSrcset)) ?>" sizes="100vw"><?php endif; ?>
+      <img class="fc-catalog-strip__img" src="/img/editorial/petals-macro.jpg" alt="Лепестки цветов крупным планом" loading="lazy" decoding="async">
+    </picture>
     <?php endif; ?>
     <div class="wrap fc-catalog-strip__inner">
       <p class="fc-catalog-strip__text reveal"><?= e($catalogStripText) ?></p>
@@ -1348,17 +1429,32 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
                    (текст дублировался для скринридера); длинное имя — в title не нужно,
                    фото внутри ссылки целиком */ ?>
             <?php /* W102 (perf): плитки грузили JPG-оригиналы (~589КБ) — включаем
-                   тот же webp-конвейер, что у карточек (thumbs 400/600 + оригинал) */
+                   тот же webp-конвейер, что у карточек (thumbs 400/600 + оригинал).
+                   W104-ζ: + webp-оригинал {w}w — ретина-плитка (260px@3x = 780)
+                   берёт полный файл вместо 600w-превью */ ?>
+            <?php
             $__ocImg = (string)$t['photo'];
-            $__ocThumb = preg_replace('/\.(jpe?g|png)$/i', '', $__ocImg);
+            /* W104-ζ: фикс пути превью — раньше в thumbs-URL попадал весь путь
+               '/img/products/…' (urlencode → '%2Fimg%2F…'), is_file был всегда
+               false и плитки грузили ЖЕЛЕЗНЫЙ jpg-оригинал — W102-«фикс» не работал */
+            $__ocBase = rawurldecode(basename($__ocImg));
+            $__ocThumb = preg_replace('/\.(jpe?g|png)$/i', '', $__ocBase);
             $__ocThumb400 = '/img/products/thumbs/' . rawurlencode($__ocThumb) . '-400.webp';
             $__ocThumb600 = '/img/products/thumbs/' . rawurlencode($__ocThumb) . '-600.webp';
             $__ocHas400 = is_file(BASE_PATH . parse_url($__ocThumb400, PHP_URL_PATH));
             $__ocHas600 = is_file(BASE_PATH . parse_url($__ocThumb600, PHP_URL_PATH));
+            $__ocParts = [];
+            if ($__ocHas400) { $__ocParts[] = $__ocThumb400 . ' 400w'; }
+            if ($__ocHas600) { $__ocParts[] = $__ocThumb600 . ' 600w'; }
+            $__ocWebp = '/img/products/' . rawurlencode(preg_replace('/\.(jpe?g|png)$/i', '.webp', $__ocBase));
+            if (is_file(BASE_PATH . parse_url($__ocWebp, PHP_URL_PATH))) {
+                $__ocDim = @getimagesize(BASE_PATH . parse_url($__ocWebp, PHP_URL_PATH));
+                if ($__ocDim !== false) { $__ocParts[] = $__ocWebp . ' ' . (int)$__ocDim[0] . 'w'; }
+            }
             ?>
             <picture>
-              <?php if ($__ocHas400 || $__ocHas600): ?>
-              <source type="image/webp" srcset="<?= e(($__ocHas400 ? $__ocThumb400 . ' 400w' : '') . ($__ocHas400 && $__ocHas600 ? ', ' : '') . ($__ocHas600 ? $__ocThumb600 . ' 600w' : '')) ?>" sizes="(max-width:899px) 44vw, 260px">
+              <?php if ($__ocParts !== []): ?>
+              <source type="image/webp" srcset="<?= e(implode(', ', $__ocParts)) ?>" sizes="(max-width:899px) 44vw, 280px">
               <?php endif; ?>
               <img class="fc-occasion__img" src="<?= e($__ocImg) ?>" alt="<?= e($t['photo_alt'] !== '' ? $t['photo_alt'] : $t['title']) ?>" loading="lazy" decoding="async">
             </picture>

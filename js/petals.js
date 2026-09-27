@@ -2,10 +2,12 @@
    Vanilla Canvas 2D, ноль зависимостей, strict ES2020. Canvas авто-инъекцией
    prepend'ится в .fc-hero__main (фолбэк .fc-hero): absolute; inset:0; z-index:1 —
    между фото/скримом (z:auto) и .fc-hero__content (z:2) — текст читаем.
-   Лепестки (16–34, адаптивно): bezier-форма розы/пиона с асимметрией, 8–22px,
+   Лепестки (16–34, адаптивно; motion-lite — 14/18, W104-η): bezier-форма
+   розы/пиона с асимметрией, 8–22px,
    tumble + sin-качание, падение 12–40px/s; палитра бренда с альфой .55–.85
    и вертикальным градиентом. Ветер — sin/cos-noise поля; курсор — порыв
-   (радиус 140px, repulse+swirl, затухает). Перф: DPR cap 2, один rAF, пауза
+   (радиус 140px, repulse+swirl, затухает). Перф: DPR cap 2 (motion-lite —
+   1.5, W104-η), один rAF, пауза
    вне вьюпорта (IO) и в hidden-табе; старт после window load + html.js-ready.
    prefers-reduced-motion — один статичный кадр (13 лепестков).
    Отключение: класс no-petals на <html> (в т.ч. на лету) или
@@ -53,9 +55,17 @@
 
   const isOff = () => ROOT.classList.contains('no-petals');
 
-  /* Сколько лепестков: 24–36 на десктопе, меньше на мобиле/слабом железе */
+  /* Сколько лепестков: 24–36 на десктопе, меньше на мобиле/слабом железе.
+     W104-η (C3-M3 P1.1): в motion-lite (≤4 ядер, класс ставит kinetic.js
+     ДО первого build() — defer-порядок, а старт у нас после window load)
+     фиксируем бюджет 18/14 и не даём адаптивным бонусам его раздувать:
+     на 2-ядерном стенде idle p95 с лепестками был 30.9мс против 16.8 без —
+     счётчик 24–34 + канвас в 2× пикселей тянули кадр. Цель <25мс. */
   function petalCount() {
     const mobile = window.innerWidth < 900;
+    if (ROOT.classList.contains('motion-lite')) {
+      return mobile ? 14 : 18;
+    }
     let n = mobile ? 24 : 34;
     if ((navigator.hardwareConcurrency || 8) <= 4) n -= 6;
     if ((window.devicePixelRatio || 1) < 1.5) n -= 4;
@@ -271,7 +281,12 @@
     if (!host || !canvas) return;
     W = Math.max(1, host.clientWidth);
     H = Math.max(1, host.clientHeight);
-    DPR = Math.min(2, window.devicePixelRatio || 1);
+    /* W104-η (C3-M3 P1.1): DPR-cap в motion-lite — 1.5 (полный режим — 2):
+       на ретина-ноутбуке с 2 ядрами канвас в 4× пикселей дороже raster,
+       а полупрозрачные bezier-лепестки в 1.5× неотличимы. Класс уже стоит
+       к моменту первого resize() (kinetic.js — defer до window load). */
+    DPR = Math.min(ROOT.classList.contains('motion-lite') ? 1.5 : 2,
+      window.devicePixelRatio || 1);
     canvas.width = Math.round(W * DPR);
     canvas.height = Math.round(H * DPR);
     if (REDUCED) drawStatic();

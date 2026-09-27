@@ -183,7 +183,9 @@ function render_product_card(array $p, array $ctx): void
     } else {
         $srcset = '';
     }
-    $sizes = '(max-width:899px) 45vw, (min-width:900px) 300px';
+    /* W104-ζ (C3-D3): sizes по реальной сетке .catalog__grid (как index.php) —
+       было «(max-width:899px) 45vw, 300px» с занижением десктоп-слота на 72px */
+    $sizes = '(max-width:359px) 92vw, (max-width:819px) 46vw, 372px';
     $link = '/product/' . rawurlencode($p['slug']);
     $searchIndex = mb_strtolower(trim($p['name'] . ' ' . ($p['category_name'] ?? '') . ' ' . ($p['description'] ?? '')));
     ?>
@@ -209,7 +211,7 @@ function render_product_card(array $p, array $ctx): void
               data-product-name="<?= e($p['name']) ?>"
               data-product-price-raw="<?= $price ?>"
               data-product-image="<?= e($img) ?>"
-              aria-label="Добавить в корзину: <?= e($p['name']) ?>" title="В корзину">+</button>
+              aria-label="Добавить в корзину: <?= e($p['name']) ?>" title="Добавить в корзину">+</button>
             <?php if ($ctx['featFavorites']): ?><button type="button" class="product-card__fav" data-fav-id="<?= (int)$p['id'] ?>" data-fav-name="<?= e($p['name']) ?>" aria-label="В избранное: <?= e($p['name']) ?>" title="В избранное">♡</button><?php endif; ?>
           </div>
           <div class="product-card__body">
@@ -256,8 +258,19 @@ $pageTitle = $metaTitle;
 /* $pageDescription → twitter:description в head.php; hero-og:image — ниже */
 $pageDescription = $metaDesc;
 
-/* og:image — hero-фото витрины (как у главной) */
+/* og:image — hero-фото витрины (как у главной). W104-ζ: фикс двойного пути —
+   hero_image с W103 может быть ПУТЁМ ОТ КОРНЯ (img/editorial/…), а не только
+   именем из img/uploads/; раньше печаталось «/img/uploads/img/editorial/…» (404).
+   Логика — как в partials/head.php (сегментное кодирование). */
 $heroImg = setting('hero_image', '');
+$__hiRoot = '';
+if ($heroImg !== '') {
+    $__hi = str_replace('\\', '/', $heroImg);
+    $__hiRoot = is_file(IMG_UPLOADS_DIR . '/' . $__hi) ? 'img/uploads/' . $__hi
+        : (is_file(BASE_PATH . '/' . $__hi) ? $__hi : '');
+}
+$__hiUrl = $__hiRoot !== '' ? '/' . implode('/', array_map('rawurlencode', explode('/', $__hiRoot))) : '';
+$__hiDim = $__hiRoot !== '' ? @getimagesize(BASE_PATH . '/' . $__hiRoot) : false;
 /* W103/F2: стили тулбара фильтров/сортировки — отдельный файл, подключается
    ниже отдельным <link> после five.css (версия — md5-хэш, паттерн head.php T4) */
 $categoryCssV = substr((string)@md5_file(__DIR__ . '/css/category.css'), 0, 8);
@@ -272,12 +285,11 @@ $secondaryCssV = substr((string)@md5_file(__DIR__ . '/css/secondary.css'), 0, 8)
 <meta property="og:title" content="<?= e($metaTitle) ?>">
 <meta property="og:description" content="<?= e($metaDesc) ?>">
 <meta property="og:url" content="<?= e($canonicalUrl) ?>">
-<?php if ($heroImg !== ''): ?>
-<meta property="og:image" content="https://flowers.interfood-catering.ru/img/uploads/<?= e(rawurlencode($heroImg)) ?>">
-<?php $ogDim = @getimagesize(IMG_UPLOADS_DIR . '/' . $heroImg); ?>
-<?php if ($ogDim !== false): ?>
-<meta property="og:image:width" content="<?= (int)$ogDim[0] ?>">
-<meta property="og:image:height" content="<?= (int)$ogDim[1] ?>">
+<?php if ($__hiUrl !== ''): ?>
+<meta property="og:image" content="https://flowers.interfood-catering.ru<?= e($__hiUrl) ?>">
+<?php if ($__hiDim !== false): ?>
+<meta property="og:image:width" content="<?= (int)$__hiDim[0] ?>">
+<meta property="og:image:height" content="<?= (int)$__hiDim[1] ?>">
 <?php endif; ?>
 <?php endif; ?>
 <?php require __DIR__ . '/partials/head.php'; ?>

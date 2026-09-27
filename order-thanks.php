@@ -189,5 +189,30 @@ $pageTitle = 'Заказ № ' . $orderId . ' принят — ' . $siteName;
 </main>
 
 <?php require __DIR__ . '/partials/footer.php'; ?>
+
+<?php /* W104-η (C3-M3 P1.3 «третье касание сигнатуры»): один петал-бёрст
+   над подтверждением заказа — событие успеха, не клик. Лепестки вспархивают
+   из-под галочки/заголовка и мягко оседают на страницу (1.2–1.5с), с
+   задержкой 600мс после load — подтверждение сначала читается. Ядро
+   NF_BURST.petals() — js/kinetic.js (defer, все страницы, к моменту load
+   уже исполнен); спрайты/палитра — класс .nf-burst-petal из
+   css/motion-w104.css (тот же язык, что бёрст у кнопки «+»). Контейнер не
+   нужен: спрайты fixed и снимают себя. prefers-reduced-motion выключен
+   дважды — в модуле и CSS-гвардом display:none. */ ?>
+<script>
+window.addEventListener('load', function () {
+  setTimeout(function () {
+    if (!window.NF_BURST || typeof window.NF_BURST.petals !== 'function') return;
+    window.NF_BURST.petals({
+      x: Math.round(window.innerWidth / 2),
+      y: Math.round(window.innerHeight * 0.24),
+      count: 10 + Math.round(Math.random() * 4),
+      dist: [70, 170],
+      fall: [140, 260],
+      dur: [1200, 1500]
+    });
+  }, 600);
+});
+</script>
 </body>
 </html>

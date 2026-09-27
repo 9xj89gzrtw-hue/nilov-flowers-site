@@ -357,6 +357,7 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
         <input class="input" id="s-name" name="shop_name" required value="<?= sv('shop_name', $s) ?>">
         <label class="f" for="s-phone">Телефон</label>
         <input class="input" id="s-phone" name="shop_phone" value="<?= sv('shop_phone', $s) ?>">
+        <p style="font-size:.75rem;color:var(--ink-soft);margin:2px 0 8px">Основной телефон магазина — показывается в шапке и футере сайта и на страницах заказа. Короткий номер для шапки — в разделе «Контакты».</p>
         <label class="f" for="s-addr">Адрес</label>
         <input class="input" id="s-addr" name="shop_address" value="<?= sv('shop_address', $s) ?>">
         <label class="f" for="s-siteurl">Адрес сайта (для писем и ссылок)</label>
@@ -419,18 +420,10 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
         <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Пишется в alt большого фото на главной — по нему фото находят в поиске по картинкам и читает скринридер.</p>
       </div>
     </div>
-    <?php /* Бегущая лента (критерий 16): тексты редактируются, пустые не показываются */ ?>
-    <p style="font-size:.85rem;font-weight:600;margin:14px 0 8px">Бегущая лента под шапкой (тексты через ✿)</p>
-    <div class="grid2">
-      <?php for ($mq = 1; $mq <= 4; $mq++):
-          $mqDefault = ['Доставка по Санкт-Петербургу в день заказа','Свежие цветы с утренней поставки','Фото букета перед отправкой','Заменяем увядшие в день доставки'][$mq - 1];
-      ?>
-      <div>
-        <label class="f" for="mq-<?= $mq ?>">Фраза <?= $mq ?></label>
-        <input class="input" id="mq-<?= $mq ?>" name="marquee_<?= $mq ?>" value="<?= sv("marquee_{$mq}", $s) !== '' ? sv("marquee_{$mq}", $s) : $mqDefault ?>" maxlength="90">
-      </div>
-      <?php endfor; ?>
-    </div>
+    <?php /* W104-theta (P1 критика C3-G3): дубль полей marquee_1..4 в этой секции удалён —
+       копия ниже («Имиджевые блоки W103») шла позже по DOM и при submit молча перебивала
+       эти поля: «Настройки сохранены» показывалось, а витрина не менялась.
+       Бегущая лента редактируется в одном месте — секция W103, поля «Фраза N — бегущая строка». */ ?>
     <?php /* Заголовки секций главной (критерий 16) */ ?>
     <p style="font-size:.85rem;font-weight:600;margin:14px 0 8px">Заголовки разделов на главной</p>
     <div class="grid2">
@@ -649,8 +642,8 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
     <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 8px 26px">Показываются только заполненные магазины — пустые карточки не выводятся.</p>
     <div class="grid2">
       <div>
-        <label class="f" for="st-t">Заголовок секции магазинов</label>
-        <input class="input" id="st-t" name="stores_title" value="<?= sv('stores_title', $s) !== '' ? sv('stores_title', $s) : 'Наши магазины в Петербурге' ?>" maxlength="60">
+        <label class="f" for="str-t">Заголовок секции магазинов</label>
+        <input class="input" id="str-t" name="stores_title" value="<?= sv('stores_title', $s) !== '' ? sv('stores_title', $s) : 'Наши магазины в Петербурге' ?>" maxlength="60">
         <label class="f" for="st-s" style="margin-top:8px">Подпись</label>
         <input class="input" id="st-s" name="stores_sub" value="<?= sv('stores_sub', $s) !== '' ? sv('stores_sub', $s) : 'Заберите сами или закажите доставку — букет будет готов в течение дня' ?>" maxlength="140">
       </div>
@@ -741,13 +734,13 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
     <div class="grid2" style="margin-top:8px">
       <div>
         <?php for ($mq = 1; $mq <= 2; $mq++): ?>
-        <label class="f" for="mq-<?= $mq ?>"<?= $mq === 2 ? ' style="margin-top:8px"' : '' ?>>Строка ленты <?= $mq ?></label>
+        <label class="f" for="mq-<?= $mq ?>"<?= $mq === 2 ? ' style="margin-top:8px"' : '' ?>>Фраза <?= $mq ?> — бегущая строка</label>
         <input class="input" id="mq-<?= $mq ?>" name="marquee_<?= $mq ?>" value="<?= sv("marquee_{$mq}", $s) !== '' ? sv("marquee_{$mq}", $s) : ['Доставка по Санкт-Петербургу в день заказа', 'Срочная сборка — за 1–2 часа'][$mq - 1] ?>" maxlength="90">
         <?php endfor; ?>
       </div>
       <div>
         <?php for ($mq = 3; $mq <= 4; $mq++): ?>
-        <label class="f" for="mq-<?= $mq ?>"<?= $mq === 3 ? '' : ' style="margin-top:8px"' ?>>Строка ленты <?= $mq ?></label>
+        <label class="f" for="mq-<?= $mq ?>"<?= $mq === 3 ? '' : ' style="margin-top:8px"' ?>>Фраза <?= $mq ?> — бегущая строка</label>
         <input class="input" id="mq-<?= $mq ?>" name="marquee_<?= $mq ?>" value="<?= sv("marquee_{$mq}", $s) !== '' ? sv("marquee_{$mq}", $s) : ['Фото букета перед отправкой', 'Заменяем увядшие в день доставки'][$mq - 3] ?>" maxlength="90">
         <?php endfor; ?>
       </div>
@@ -1144,10 +1137,13 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
     <h2 style="font-family:var(--font-display);font-size:1.2rem;margin-bottom:8px">Контакты и мессенджеры</h2>
     <div class="grid2">
       <div>
-        <label class="f" for="c-phone2">Телефон для сайта</label>
-        <input class="input" id="c-phone2" name="shop_phone" value="<?= sv('shop_phone', $s) ?>">
+        <?php /* W104-theta (P1 критика C3-G3): дубль shop_phone «Телефон для сайта» удалён —
+           при submit эта копия перебивала поле «Телефон» из «Общих» (оно шло раньше по DOM).
+           Единственное поле телефона — секция «Общие». */ ?>
+        <p style="font-size:.75rem;color:var(--ink-soft);margin:0 0 10px">Телефон магазина настраивается в разделе «Общие» вверху страницы. Ниже — только короткий номер для шапки.</p>
         <label class="f" for="c-email">Email магазина</label>
         <input class="input" id="c-email" name="shop_email" value="<?= sv('shop_email', $s) ?>">
+        <p style="font-size:.75rem;color:var(--ink-soft);margin:2px 0 8px">Единственное поле email (дубль в списке мессенджеров удалён): письма клиентам отправляются от него, на сайте показывается в футере при включённом флажке «Показывать email на сайте».</p>
         <label class="f" for="c-hours">Часы работы</label>
         <input class="input" id="c-hours" name="shop_hours" value="<?= sv('shop_hours', $s) ?>" placeholder="напр. Ежедневно 9:00–21:00">
         <label class="f" for="c-hphone">Телефон для шапки (короткий)</label>
@@ -1188,11 +1184,12 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
           <input type="checkbox" name="ig_enabled" style="width:auto" <?= ($s['ig_enabled'] ?? '1') === '1' ? 'checked' : '' ?>>
           Показывать Instagram на сайте (вместе с пометкой)
         </label>
-        <label class="f" for="m-email">Email в списке мессенджеров</label>
-        <input class="input" id="m-email" name="shop_email" value="<?= sv('shop_email', $s) ?>">
+        <?php /* W104-theta (P1 критика C3-G3): дубль shop_email удалён — эта копия шла
+           позже по DOM и перебивала «Email магазина» слева. Единственное поле — слева,
+           здесь остаётся только флажок видимости email на витрине. */ ?>
         <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
           <input type="checkbox" name="email_enabled" style="width:auto" <?= ($s['email_enabled'] ?? '1') === '1' ? 'checked' : '' ?>>
-          Показывать email на сайте
+          Показывать email на сайте (поле «Email магазина» — слева выше)
         </label>
         <p style="font-size:.78rem;color:var(--ink-soft);margin:2px 0 0">Снимите флажок — контакт полностью скроется с сайта, даже если поле заполнено.</p>
       </div>

@@ -36,6 +36,24 @@
   letter-spacing:-.01em;
 }
 
+/* ============ 1c. H2 МЕТА-БЛОКА «ДОСТАВКА И ОПЛАТА» (W104-ζ / C3-T3 P0-1) ============
+   Единственный h2 в .fc-product__info не имел ни одного правила (UA-дефолт
+   Golos 700 24px рядом с Playfair-заголовками). Стилизуем по той же системе,
+   что .fc-related__title (Playfair 500, clamp 1.5–2rem), с запасом на случай
+   появления соседних h2. Сейчас заголовок визуально скрыт инлайн-стилем
+   (sr-only, W99-fixG G9 — контур заголовков для скринридера): правило
+   гарантирует корректную роль и на случай, если владелец/дизайнер уберёт
+   скрытие — две системы H2 на странице больше не будет. */
+.fc-product__info > h2{
+  --font-display:'Playfair Display','Playfair Fallback',Georgia,'Times New Roman',serif;
+  font-family:var(--font-display);
+  font-weight:500;
+  font-size:clamp(1.5rem,2.4vw,2rem);
+  line-height:1.15;
+  letter-spacing:-.01em;
+  margin:28px 0 12px;
+}
+
 /* Цена — якорь иерархии сразу после H1: 1.75rem/700 (W104-α D: без 800-х
    весов, максимум 700 для цен-цифр), tabular-nums (унаследованы из five.css);
    sale: старая — muted 1.1rem, новая — pink-deep 1.75rem/700 */
@@ -129,10 +147,11 @@
   .product-page__media:hover .product-gallery__img{transform:scale(1.03)}
 }
 /* Фокус-кольцо на триггерах лайтбокса (tabindex+role=button ставит js/lightbox.js)
-   — --pink 3px, как у интерактива главной (W103/G2) */
+   — W104-ζ (C3-D3 палитра): ink 2px, как глобальный :focus-visible five.css
+   (розовое кольцо убрано — единый акцент) */
 .product-gallery__slide:focus-visible,
 .product-page__media:focus-visible{
-  outline:3px solid var(--pink,#ff4ea2);outline-offset:2px;
+  outline:2px solid var(--ink,#1c1a1e);outline-offset:2px;
 }
 /* Desktop: фото не выше 760px — компромисс между «H1/цена в первом экране»
    и кропом букетов (критик-8 P0-1: при 660px низ срезался на ~86px).

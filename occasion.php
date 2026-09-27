@@ -152,10 +152,10 @@ function render_occasion_card(array $p): void
         $srcset = $thumb . ' 400w'
             . ($t600 !== null && $t600 !== $thumb && is_file(BASE_PATH . parse_url($t600, PHP_URL_PATH)) ? ', ' . $t600 . ' 600w' : '')
             . ', ' . $webp . ' ' . $origW . 'w';
-        $sizes = '(max-width:899px) 45vw, (min-width:900px) 300px';
+        $sizes = '(max-width:359px) 92vw, (max-width:819px) 46vw, 372px'; /* W104-ζ: реальная сетка .catalog__grid (как index.php) */
     } elseif ($thumb !== '') {
         $srcset = $thumb . ' 400w';
-        $sizes = '(max-width:899px) 45vw, (min-width:900px) 300px';
+        $sizes = '(max-width:359px) 92vw, (max-width:819px) 46vw, 372px';
     } else {
         $srcset = $webp;
         $sizes = '';
@@ -181,7 +181,7 @@ function render_occasion_card(array $p): void
               data-product-name="<?= e($p['name']) ?>"
               data-product-price-raw="<?= $price ?>"
               data-product-image="<?= e($img) ?>"
-              aria-label="Добавить в корзину: <?= e($p['name']) ?>" title="В корзину">+</button>
+              aria-label="Добавить в корзину: <?= e($p['name']) ?>" title="Добавить в корзину">+</button>
             <?php /* W97-fixB3b (B3b-4): сердечко — та же разметка/классы, что на главной
                    (js/nilov.js ловит клики делегированно на любой странице) */ ?>
             <?php if (setting('feature_favorites', '1') === '1'): ?><button type="button" class="product-card__fav" data-fav-id="<?= (int)$p['id'] ?>" data-fav-name="<?= e($p['name']) ?>" aria-label="В избранное: <?= e($p['name']) ?>" title="В избранное">♡</button><?php endif; ?>

@@ -26,6 +26,12 @@
    3) H2-АКСЕНТЫ: Playfair-курсивы в eyebrow секций (.fc-row__eyebrow em)
       получают лёгкий slide-up + fade при появлении.
 
+   4) СОБЫТИЙНЫЙ ПЕТАЛ-БЁРСТ (W104-η, C3-M3 P1.3): переиспользуемое ядро
+      кассового бёрста (cart-cta.js, W104-δ) — window.NF_BURST.petals(opts).
+      Потребитель: order-thanks.php (бёрст на странице успеха — «третье
+      касание сигнатуры» после hero-канваса и add-to-cart). Кассовый
+      бёрст в cart-cta.js не тронут (путь покупки — без регрессии).
+
    Деградация: скрытые состояния существуют ТОЛЬКО под html.kinetic-ready
    (класс ставит этот скрипт) — без JS/при сбое все тексты видимы;
    prefers-reduced-motion — контент виден сразу, без анимаций. */
@@ -181,7 +187,7 @@
      и восстановление после анимации). */
   function splitLines(el) {
     const raw = el.getAttribute('data-kin-text')
-      || (el.textContent || '').replace(/\s+/g, ' ').trim();
+      || (el.textContent || '').replace(/[^\S\u00A0]+/g, ' ').trim(); /* W104-zeta: NBSP сохраняем — тире манифеста не открывает строку */
     if (!raw) return false;
 
     const words = raw.split(' ');
@@ -294,4 +300,63 @@
   } else {
     kinetic();
   }
+
+  /* ============ 4. СОБЫТИЙНЫЙ ПЕТАЛ-БЁРСТ — window.NF_BURST (W104-η,
+     C3-M3 P1.3 «третье касание сигнатуры») ============
+     Переиспользуемое ядро кассового бёрста (cart-cta.js, W104-δ): те же
+     спрайты .nf-burst-petal (стили/палитра — css/motion-w104.css, тот же
+     визуальный язык) разлетаются из точки события. Отличие от кассового:
+     опция fall — вторая фаза «падения» (лепестки оседают на страницу),
+     и произвольная точка/количество/дальность — событие задаёт страница
+     (order-thanks: бёрст над подтверждением заказа через 600мс после
+     load, 10–14 лепестков, 1.2–1.5с).
+     Механика: WAAPI-спрайты <1.6с, transform/opacity-only (композит),
+     снимают себя (onfinish/oncancel). prefers-reduced-motion — не
+     запускаем вовсе (плюс CSS-гвард display:none в motion-w104.css). */
+  window.NF_BURST = {
+    /* petals({x, y, count, dist:[min,max], fall:[min,max], dur:[min,max]})
+       x/y — точка в координатах вьюпорта (клиентские), остальное — px/мс.
+       Дефолты — геометрия кассового бёрста (7 лепестков, ~54–128px). */
+    petals: function (o) {
+      if (reduced()) return;
+      if (!document.body || typeof document.body.animate !== 'function') return;
+      o = o || {};
+      var x = isFinite(+o.x) ? +o.x : Math.round(window.innerWidth / 2);
+      var y = isFinite(+o.y) ? +o.y : Math.round(window.innerHeight * 0.3);
+      var n = Math.max(1, Math.min(24, +o.count || 7));
+      var dist = o.dist || [54, 128];
+      var fall = o.fall || [0, 0];
+      var dur = o.dur || [620, 780];
+      var COLORS = ['#ff4ea2', '#f4a9be', '#f5b301', '#ffd9ec', '#e03a8a'];
+      for (var i = 0; i < n; i++) {
+        (function (i) {
+          var p = document.createElement('i');
+          p.className = 'nf-burst-petal';
+          p.style.left = x + 'px';
+          p.style.top = y + 'px';
+          p.style.background = COLORS[i % COLORS.length];
+          document.body.appendChild(p);
+          if (typeof p.animate !== 'function') { p.remove(); return; }
+          var ang = (Math.PI * 2 * i) / n + (Math.random() - 0.5) * 0.7;
+          var d = dist[0] + Math.random() * (dist[1] - dist[0]);
+          var dx = Math.cos(ang) * d;
+          /* дуга вверх на первой фазе — лепесток вспархивает */
+          var dy0 = Math.sin(ang) * d * 0.55 - 24 - Math.random() * 30;
+          /* вторая фаза: оседание вниз (fall) — «падают на страницу» */
+          var dyF = dy0 + fall[0] + Math.random() * Math.max(0, fall[1] - fall[0]);
+          var rot = (Math.random() < 0.5 ? -1 : 1) * (140 + Math.random() * 260);
+          var t = dur[0] + Math.random() * Math.max(0, dur[1] - dur[0]);
+          var a = p.animate(
+            [
+              { transform: 'translate(-50%,-50%) translate(0,0) rotate(0deg)', opacity: 1 },
+              { transform: 'translate(-50%,-50%) translate(' + (dx * 0.62).toFixed(1) + 'px,' + (dy0 * 0.62 - 16).toFixed(1) + 'px) rotate(' + (rot * 0.55).toFixed(0) + 'deg)', opacity: 0.95, offset: 0.45 },
+              { transform: 'translate(-50%,-50%) translate(' + dx.toFixed(1) + 'px,' + dyF.toFixed(1) + 'px) rotate(' + rot.toFixed(0) + 'deg)', opacity: 0 }
+            ],
+            { duration: t, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'forwards' }
+          );
+          a.onfinish = a.oncancel = function () { p.remove(); };
+        })(i);
+      }
+    }
+  };
 })();

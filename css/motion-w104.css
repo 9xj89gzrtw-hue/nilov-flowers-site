@@ -1,6 +1,6 @@
 /* motion-w104.css — motion-слой W104-c (motion-агент) + фиксы W104-β (C1-M)
-   + W104-δ (C2-M2/C2-D2, fix-волна 2).
-   Владелец файла: motion-агент (W104-c/β/δ). Дизайн-токены, стрелки
+   + W104-δ (C2-M2/C2-D2, fix-волна 2) + W104-η (C3-M3, fix-волна 3 финиш).
+   Владелец файла: motion-агент (W104-c/β/δ/η). Дизайн-токены, стрелки
    каруселей и остальная типографика — css/five.css (агент W104-a), здесь
    их нет (только точечные OVERRIDE-правила — файл грузится ПОСЛЕ
    five.css, см. partials/head.php).
@@ -21,7 +21,10 @@
       коллапс удаляемой строки корзины · drawer-exit до конца анимации ·
       motion-lite: дешёвый marquee остаётся + backdrop-filter → плотный
       rgba на мелких элементах (p95 скролла).
-   6. prefers-reduced-motion — всё статично. */
+   6. W104-η (C3-M3): hover-lift карточек (специфичность 0,3,0 поверх
+      transform:none у .reveal--visible) · правая колонка hero
+      (промо/доставка) в входном каскаде.
+   7. prefers-reduced-motion — всё статично. */
 
 /* ============ 1. ЛЕПЕСТКИ (canvas в hero) ============
    Слой: фото + скрим ::after (z:auto) → canvas .fc-petals (z:1) →
@@ -370,7 +373,70 @@ html.motion-lite .hero__deadline{
 }
 #cartPanel[hidden] .cart-panel__backdrop{ pointer-events:none; }
 
-/* ============ 6. PREFERS-REDUCED-MOTION ============
+/* ============ 6. W104-η — ФИКСЫ C3-M3 (fix-волна 3, финишная) ============ */
+
+/* --- 6a. ПРАВАЯ КОЛОНКА HERO в входном каскаде (C3-M3 P1.2) ---
+   .fc-hero__promo и .fc-hero__delivery (колонка .fc-hero__side) стояли
+   статично, пока слева играл каскад (eyebrow .12s → слова H1 → sub .75s →
+   CTA .9s → таймер 1.05s, five.css M1–M3): бенто наполовину живой.
+   Тот же язык входа — fade + подъём 12px, .8с системной кривой, задержки
+   1.15s/1.3s — сразу за таймером, читается как один выдох; тайминги
+   ЛЕВОЙ колонки не тронуты. Кривая/длительность зеркалят nv-fade
+   (nilov.css), амплитуда 12px — как у kin-acc. Скоуп no-preference:
+   в reduce у правила нет силы — базовая видимость элементов не меняется
+   (opacity:0 живёт только внутри media; деградация безопасна и без JS). */
+@media (prefers-reduced-motion: no-preference) {
+  .fc-hero .fc-hero__promo {
+    opacity: 0;
+    animation: nf-hero-side-in .8s cubic-bezier(0.22, 1, 0.36, 1) 1.15s both;
+  }
+  .fc-hero .fc-hero__delivery {
+    opacity: 0;
+    animation: nf-hero-side-in .8s cubic-bezier(0.22, 1, 0.36, 1) 1.3s both;
+  }
+}
+@keyframes nf-hero-side-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* --- 6b. HOVER-LIFT КАРТОЧЕК — финальный фикс (C3-M3 P0, промах γ) ---
+   `.fc-carousel .reveal.reveal--visible,
+   .catalog__grid .reveal.reveal--visible { transform:none }` (five.css M5,
+   специфичность 0,3,0) перебивал `.product-card:hover{translateY(-6px)}`
+   (0,2,0) — подъём молча не играл на ВСЕХ revealed-карточках (карусели
+   главной + грид каталога/категории; related на PDP и occasion без .reveal —
+   там работал). Тень и zoom фото применялись, transform оставался none.
+   Правило той же специфичности (0,3,0) в файле, который грузится ПОСЛЕ
+   five.css, — каскад на нашей стороне (проверено styleSheets-анализом:
+   самое специфичное :hover-правило для карточек теперь это).
+   Скоуп no-preference: в reduce у five.css остаётся последнее слово
+   `.product-card:hover{transform:none}` (W104-8) — лифт выключен честно.
+   motion-lite НЕ гасим: это один compositor-переход, не скролл-jank.
+   Вход fc-card-in (0.55s backwards) во время проигрывания сильнее
+   каскада — но он конечен и не forwards, после него лифт живой. */
+@media (prefers-reduced-motion: no-preference) {
+  .fc-carousel .product-card:hover,
+  .catalog__grid .product-card:hover {
+    transform: translateY(-6px);
+  }
+  /* Плавность лифта: `.fc-carousel .reveal { transition:none }` (five.css M5,
+     0,2,0 — нужно самому reveal-механизму) заодно убивал hover-переходы
+     карточек в треках/гриде: лифт и тень применялись СКАЧКОМ. Возвращаем
+     переходы той же специфичностью (0,2,0) из более позднего файла.
+     Вход fc-card-in это не ломает: во время анимации каскад/transition
+     всё равно перекрыты animation-origin, после — состояния совпадают.
+     В motion-lite (animation:none у .reveal) появление карточек идёт этим
+     же переходом — мягче, чем прежний снап. reduce: !important у five.css
+     остаётся сильнее — переходов нет. */
+  .fc-carousel .product-card,
+  .catalog__grid .product-card {
+    transition: transform .25s cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow .25s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
+/* ============ 7. PREFERS-REDUCED-MOTION ============
    Всё статично: контент виден сразу (JS-слой тоже не анимирует —
    petals рисует один статичный кадр, kinetic не активируется;
    правила ниже — страховка на случай смены системной настройки

@@ -194,10 +194,12 @@ function meta_cut(string $s, int $max): string
 }
 
 /* B3b-2e: srcset LCP-фото — webp-превью 600w/900w + webp-оригинал {w}w.
-   Слот галереи: .fc-product grid 1fr 1fr (css/five.css) при wrap 1200/gap 40/
-   padding 20 → ~560px → sizes «(max-width:820px) 100vw, 560px»: на 390/DPR1
-   браузер выбирает 600w, ретина — 900w/оригинал. Превью не апскейлятся
-   (оригиналы 582–900px: у ≤600px остаётся только оригинал, как раньше). */
+   Слот галереи: .fc-product grid 1fr 1fr от 960px (css/five.css) при wrap 1200/
+   gap 40 → ~560px; 820–959 — ещё одноколоночный (display ~до 920px), поэтому
+   sizes = 100vw до 959 (раньше до 820 — на 900px-экранах браузер брал 600w
+   и апскейлил). На 390/DPR1 выбирается 600w, ретина — 900w/оригинал.
+   Превью не апскейлятся (оригиналы 582–900px: у ≤600px остаётся только
+   оригинал, как раньше). */
 $thumb600 = product_img_size($product, 600);
 $thumb900 = product_img_size($product, 900);
 $galSrcset = [];
@@ -211,7 +213,7 @@ if ($imgWebpOk && $origW > 0) {
     $galSrcset[] = $imgWebp . ' ' . $origW . 'w';
 }
 $galSrcsetStr = implode(', ', $galSrcset);
-$galSizes = '(max-width:820px) 100vw, 560px';
+$galSizes = '(max-width:959px) 100vw, 560px';
 
 /* B3b-2f: zoom-слайд — фон больше не в инлайн-стиле HTML (.jpg грузился сразу
    вторым дублем); js/product-gallery.js подставит его лениво по активации
@@ -430,16 +432,17 @@ function render_related_card(array $rp): void
     /* B3b-2d: превью 400w + честный {w}-дескриптор оригинала (локальный GD-хелпер) */
     $rThumb = $rImg !== '' ? product_img_size($rp, 400) : '';
     $rOrigW = $rImg !== '' ? product_img_width($rp) : 0;
+    /* W104-ζ (C3-D3 P1.1): sizes по слоту .fc-carousel (72vw моб / ≤280px десктоп)
+       — раньше «(max-width:899px) 45vw, 300px» занижал десктоп-слот */
+    $rSizes = '(max-width:899px) 72vw, 280px';
     if ($rThumb !== '' && $rWebp !== '' && $rOrigW > 0) {
         $r600 = preg_replace('/-400(\.webp)$/', '-600$1', $rThumb); /* W101 (perf): 600w для DPR2-3 (файлы -600 в кэше GD) */
 
         $rSrcset = $rThumb . ' 400w'
             . ($r600 !== null && $r600 !== $rThumb && is_file(BASE_PATH . parse_url($r600, PHP_URL_PATH)) ? ', ' . $r600 . ' 600w' : '')
             . ', ' . $rWebp . ' ' . $rOrigW . 'w';
-        $rSizes = '(max-width:899px) 45vw, (min-width:900px) 300px';
     } elseif ($rThumb !== '') {
         $rSrcset = $rThumb . ' 400w';
-        $rSizes = '(max-width:899px) 45vw, (min-width:900px) 300px';
     } else {
         $rSrcset = $rWebp;
         $rSizes = '';
@@ -472,7 +475,7 @@ function render_related_card(array $rp): void
               data-product-name="<?= e($rp['name']) ?>"
               data-product-price-raw="<?= $rPrice ?>"
               data-product-image="<?= e($rImg) ?>"
-              aria-label="Добавить в корзину: <?= e($rp['name']) ?>" title="В корзину">+</button>
+              aria-label="Добавить в корзину: <?= e($rp['name']) ?>" title="Добавить в корзину">+</button>
             <?php if (setting('feature_favorites', '1') === '1'): ?><button type="button" class="product-card__fav" data-fav-id="<?= (int)$rp['id'] ?>" data-fav-name="<?= e($rp['name']) ?>" aria-label="В избранное: <?= e($rp['name']) ?>" title="В избранное">♡</button><?php endif; ?>
           </div>
           <div class="product-card__body">

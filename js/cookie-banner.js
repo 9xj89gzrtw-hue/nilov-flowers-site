@@ -69,13 +69,7 @@
     var reject = banner.querySelector('.cookie-banner__link--reject');
     var settingsBtn = document.getElementById('cookieSettingsBtn');
 
-    /* W99-fixG2 (H1а) → W103 (F4): на мобиле рядом с кнопкой мало места —
-       дефолтную длинную подпись отказа «Только необходимые» укорачиваем
-       до «Отклонить» (кастомный текст владелька не трогаем). */
-    if (window.matchMedia && window.matchMedia('(max-width:899px)').matches
-        && reject && (cfg.reject || 'Только необходимые') === 'Только необходимые') {
-      reject.textContent = 'Отклонить';
-    }
+    /* W104-zeta: укорачивание «Только необходимые» на мобиле убрано — компактная вёрстка вмещает полную подпись, кнопки едины на десктопе и мобиле (C3-D3 P2). */
 
     if (accept) {
       accept.addEventListener('click', function () {
