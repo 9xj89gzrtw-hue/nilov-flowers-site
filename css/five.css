@@ -1340,7 +1340,10 @@ html{scroll-padding-top:96px}
 }
 /* Запас прокрутки и подъём sticky-CTA товара над полосой (класс вешает
    cookie-banner.js): 66 таббар + 56 полоса + 14 зазор ≈ 136 CTA;
-   запас прокрутки 66+56+8 ≈ 130 (+safe-area). */
+   запас прокрутки 66+56+8 ≈ 130 (+safe-area).
+   W105-8fix (арт-критик 7-a P1#1): НА PDP (≤899) — НАОБОРОТ: cookie-карточка
+   (~167px, вертикальная с 7-fix1) поднимается НАД sticky-CTA (bottom:68),
+   CTA не прыгает (прыжок отменён ниже, правило page-product ниже в файле). */
 @media(max-width:820px){
   body.nf-cookie-open .btn--accent.product-page__cta--sticky{
     bottom:calc(136px + env(safe-area-inset-bottom));
@@ -2742,7 +2745,7 @@ button,input,select,textarea{font-family:inherit}
 .fc-carousel--compact .product-card{
   display:grid;grid-template-columns:96px minmax(0,1fr);align-items:center;
   gap:12px;padding:10px;
-  background:#fff;border:1px solid var(--line);border-radius:18px;
+  background:#fff;border:1px solid var(--line);border-radius:20px; /* W105-8fix: 18→20 — карточка не круглее своей же медиа (20) */
 }
 .fc-carousel--compact .product-card__media{
   aspect-ratio:1;width:96px;height:96px;flex:none;
@@ -3077,10 +3080,14 @@ html.js-ready details.fc-seo__more.is-closing > .faq-item__a-wrap{
 }
 @media(max-width:820px){
   body.page-product{padding-bottom:0} /* 61px под скрытый mnav не нужны */
-  body.page-product .cookie-banner{bottom:0} /* полоса к краю (было над mnav) */
+  /* W105-8fix (арт-критик 7-a P1#1): cookie-карточка НАД sticky-CTA товара:
+   CTA (56px + bottom 12) занимает низ 12–68px; карточка cookie поднимается
+   на 68px+зазор — НЕ перекрывает кнопку покупки (было: cookie 0–167px
+   поверх CTA 12–68px, z90>z40 — первый визит закрывал «Добавить в корзину»). */
+  body.page-product .cookie-banner{bottom:calc(80px + env(safe-area-inset-bottom))}
   body.page-product .btn--accent.product-page__cta--sticky{bottom:calc(12px + env(safe-area-inset-bottom))}
-  body.page-product.nf-cookie-open .btn--accent.product-page__cta--sticky{bottom:calc(68px + env(safe-area-inset-bottom))}
-  body.page-product.cookie-visible{padding-bottom:calc(68px + env(safe-area-inset-bottom))}
+  body.page-product.nf-cookie-open .btn--accent.product-page__cta--sticky{bottom:calc(12px + env(safe-area-inset-bottom))} /* прыжок отменён — cookie теперь над CTA */
+  body.page-product.cookie-visible{padding-bottom:0}
 }
 
 /* ================================================================
