@@ -7,6 +7,22 @@ function e(mixed $v): string
     return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
 }
 
+/* W105-9fix (критики 8-a/9-a: «imagery 1x-only» — диспрув + системный фикс):
+   контент-адресные URL картинок — ?v=filemtime файла.
+   ПРОБЛЕМА: ленивые thumbs и webp-сиблинги живут по СТАБИЛЬНЫМ URL; после
+   EXIF-фикса/поворота в админке (rotateStoredImage) или перегенерации
+   пиксели меняются, а URL нет → HTTP-кэш браузера и SW отдают СТАРЫЕ
+   пиксели (слепые критики трижды мерили naturalWidth 288/280 у файлов
+   400px — кэш их сессий). ВЕРСИЯ = mtime: любое изменение файла = новый
+   URL = чистый кэш у ВСЕХ (SW, HTTP, CDN). Работает и для «?» уже в URL. */
+function static_img_v(string $url): string
+{
+    if ($url === '' || $url[0] !== '/') return $url;
+    $root = BASE_PATH . urldecode((string)(parse_url($url, PHP_URL_PATH) ?? ''));
+    $m = is_file($root) ? @filemtime($root) : false;
+    return $m ? $url . (str_contains($url, '?') ? '&' : '?') . 'v=' . $m : $url;
+}
+
 /**
  * Стресс-критик W87 (stored XSS admin->посетитель): витринные rich-text поля (cookie_banner_text).
  * Whitelist: только <a href="/..."> или <a href="https://..."> без иных атрибутов.

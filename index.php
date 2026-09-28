@@ -100,7 +100,7 @@ $chipsM = (int) setting('chips_price_high', '7000');
 
 function product_img_url(array $p): string
 {
-    return $p['image'] !== '' ? '/img/products/' . rawurlencode($p['image']) : '';
+    return $p['image'] !== '' ? static_img_v('/img/products/' . rawurlencode($p['image'])) : '';
 }
 
 /* WebP-вариант того же фото (если сгенерирован рядом: name.jpg → name.webp).
@@ -109,7 +109,7 @@ function product_img_webp(array $p): string
 {
     if ($p['image'] === '') return '';
     $webp = '/img/products/' . rawurlencode(preg_replace('/\.(jpe?g|png|webp)$/i', '.webp', $p['image']));
-    return is_file(BASE_PATH . urldecode($webp)) ? $webp : '';
+    return is_file(BASE_PATH . urldecode($webp)) ? static_img_v($webp) : '';
 }
 
 /* W96-fix3a (T2): превью карточек каталога — webp шириной 400px в img/products/thumbs/
@@ -140,7 +140,7 @@ function product_img_thumb(array $p): string
     $thumbsDir = IMG_PRODUCTS_DIR . '/thumbs';
     $dst = $thumbsDir . '/' . $base . '-400.webp';
     $url = '/img/products/thumbs/' . rawurlencode($base . '-400.webp');
-    if (is_file($dst)) return $url;
+    if (is_file($dst)) return static_img_v($url);
 
     if (!is_dir($thumbsDir) && !@mkdir($thumbsDir, 0755, true)) return $fail();
     $srcIm = match ($type) {
@@ -173,7 +173,7 @@ function product_img_thumb(array $p): string
         if (is_file($tmp)) @unlink($tmp);
         return $fail();
     }
-    return $url;
+    return static_img_v($url);
 }
 
 /* W96-fix3a (T2): фактическая ширина оригинала в px — для честного {w}-дескриптора
@@ -275,7 +275,7 @@ function hero_img_size(string $file, int $targetW): string
     $thumbsDir = IMG_UPLOADS_DIR . '/thumbs';
     $dst = $thumbsDir . '/' . $base . '-' . $targetW . '.webp';
     $url = '/img/uploads/thumbs/' . rawurlencode($base . '-' . $targetW . '.webp');
-    if (is_file($dst)) return $url;
+    if (is_file($dst)) return static_img_v($url);
 
     if (!is_dir($thumbsDir) && !@mkdir($thumbsDir, 0755, true)) return $fail();
     $srcIm = match ($type) {
@@ -307,7 +307,7 @@ function hero_img_size(string $file, int $targetW): string
         if (is_file($tmp)) @unlink($tmp);
         return $fail();
     }
-    return $url;
+    return static_img_v($url);
 }
 
 /* Критик-покупатель B1: единый фолбэк-фото (productImageFile) — карточка и страница

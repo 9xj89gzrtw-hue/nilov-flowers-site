@@ -48,11 +48,15 @@ if (!$product) {
 
 $price = productPrice($product);
 $isSale = $price !== (int)$product['price'];
-$img = '/img/products/' . rawurlencode(productImageFile($product));
+/* W105-9fix: ?v=filemtime в URL (контент-адресность); чистые пути — отдельно
+   для webp-пары и файловых проверок */
+$imgRoot = urldecode('/img/products/' . rawurlencode(productImageFile($product)));
+$img = static_img_v($imgRoot);
 
 /* WebP-пара к фото товара (каталог уже отдаёт webp через <picture>) */
-$imgWebp = preg_replace('/\.(jpe?g|png)$/i', '.webp', urldecode($img));
-$imgWebpOk = $imgWebp !== $img && is_file(BASE_PATH . $imgWebp);
+$imgWebpPath = (string)preg_replace('/\.(jpe?g|png)$/i', '.webp', $imgRoot);
+$imgWebpOk = $imgWebpPath !== $imgRoot && is_file(BASE_PATH . $imgWebpPath);
+$imgWebp = $imgWebpOk ? static_img_v($imgWebpPath) : '';
 
 /* W97-fixB3b (B3b-1g): категория товара — слаг на лету из name (колонки slug
    в таблице categories нет): хлебные крошки и «Смотреть все» related ведут на
@@ -92,7 +96,7 @@ function product_img_size(array $p, int $targetW): string
     $thumbsDir = IMG_PRODUCTS_DIR . '/thumbs';
     $dst = $thumbsDir . '/' . $base . '-' . $targetW . '.webp';
     $url = '/img/products/thumbs/' . rawurlencode($base . '-' . $targetW . '.webp');
-    if (is_file($dst)) return $url;
+    if (is_file($dst)) return static_img_v($url);
 
     if (!is_dir($thumbsDir) && !@mkdir($thumbsDir, 0755, true)) return $fail();
     $srcIm = match ($type) {
@@ -125,7 +129,7 @@ function product_img_size(array $p, int $targetW): string
         if (is_file($tmp)) @unlink($tmp);
         return $fail();
     }
-    return $url;
+    return static_img_v($url);
 }
 
 /* Фактическая ширина оригинала — честный {w}-дескриптор srcset (копия index.php) */

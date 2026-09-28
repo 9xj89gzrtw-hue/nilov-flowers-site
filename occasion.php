@@ -58,7 +58,7 @@ function product_img_webp_local(array $p): string
 {
     if (($p['image'] ?? '') === '') return '';
     $webp = '/img/products/' . rawurlencode(preg_replace('/\.(jpe?g|png|webp)$/i', '.webp', $p['image']));
-    return is_file(BASE_PATH . urldecode($webp)) ? $webp : '';
+    return is_file(BASE_PATH . urldecode($webp)) ? static_img_v($webp) : '';
 }
 
 /* GD-превью /img/products/thumbs/{имя без ext}-400.webp — копия подхода
@@ -86,7 +86,7 @@ function product_img_thumb_local(array $p): string
     $thumbsDir = IMG_PRODUCTS_DIR . '/thumbs';
     $dst = $thumbsDir . '/' . $base . '-400.webp';
     $url = '/img/products/thumbs/' . rawurlencode($base . '-400.webp');
-    if (is_file($dst)) return $url;
+    if (is_file($dst)) return static_img_v($url);
 
     if (!is_dir($thumbsDir) && !@mkdir($thumbsDir, 0755, true)) return $fail();
     $srcIm = match ($type) {
@@ -118,7 +118,7 @@ function product_img_thumb_local(array $p): string
         if (is_file($tmp)) @unlink($tmp);
         return $fail();
     }
-    return $url;
+    return static_img_v($url);
 }
 
 function product_img_width_local(array $p): int
