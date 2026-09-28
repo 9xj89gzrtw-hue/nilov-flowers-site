@@ -1,5 +1,5 @@
 /* Service worker — Nilov Flowers. VERSION менять при каждом деплое. */
-const VERSION = 'w105j'; /* W105-8fix1: лайтбокс (моб-навигация+индекс клика+живой пан), чип активного поиска, hero-CTA → #fcChips, канон hover, tap-highlight, motion-lite стаггер, админ: статус «Новый» + затихающий title */
+const VERSION = 'w105k'; /* W105-8fix1: лайтбокс (моб-навигация+индекс клика+живой пан), чип активного поиска, hero-CTA → #fcChips, канон hover, tap-highlight, motion-lite стаггер, админ: статус «Новый» + затихающий title */
 const STATIC_CACHE = `static-${VERSION}`;
 const PAGE_CACHE = `pages-${VERSION}`;
 const OFFLINE_URL = '/offline.html';
