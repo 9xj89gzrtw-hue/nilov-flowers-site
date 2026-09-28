@@ -917,7 +917,18 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
         <?php endif; ?>
         <div class="fc-hero__content">
         <?php if ($heroTextEnabled): ?>
-        <p class="fc-hero__eyebrow"><?= e(setting('hero_eyebrow', 'Санкт-Петербург · собираем под ваш заказ')) /* W104-λ (C4-T4): «доставка в день заказа» — эхо бейджа ниже, сменили на позиционирование */ ?></p>
+        <?php
+        /* W105-7fix1 (тип-критик 7-b P2g): eyebrow-пилюля на 390px — перенос
+           ТОЛЬКО между «·»-сегментами (nowrap-спаны, «·» в конце первого
+           сегмента — чистый разрыв после разделителя). Пилюля — flex-wrap:wrap
+           (five.css): сегменты — flex-айтемы, без wrap НЕ переносятся никогда.
+           Значение без «·» — один сегмент, поведение прежнее. */
+        $heroEyebrowVal = trim((string)setting('hero_eyebrow', 'Санкт-Петербург · собираем под ваш заказ'));
+        $heroEyebrowSegs = $heroEyebrowVal !== ''
+            ? array_values(array_filter(array_map('trim', explode('·', $heroEyebrowVal)), static fn (string $s): bool => $s !== ''))
+            : [];
+        ?>
+        <?php if ($heroEyebrowSegs !== []): ?><p class="fc-hero__eyebrow"><?= implode('', array_map(static fn (int $i, string $s): string => '<span class="fc-hero__eyebrow-seg">' . e(rtrim($s) . ($i < count($heroEyebrowSegs) - 1 ? ' ·' : '')) . '</span>', array_keys($heroEyebrowSegs), $heroEyebrowSegs)) /* W104-λ (C4-T4): «доставка в день заказа» — эхо бейджа ниже, сменили на позиционирование */ ?></p><?php endif; ?>
         <h1 class="fc-hero__title"><?php
         /* W103 (F1): акцентное слово H1 — Playfair italic + amber-мазок (стили в five.css).
            Ищем «цветов» (без пунктуации), иначе — второе слово. NBSP-склейка «по Санкт-…»
@@ -1306,22 +1317,25 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
   <?php $catalogStripText = trim((string)setting('catalog_strip_text', 'Каждый букет собираем утром — и фотографируем перед отправкой')); ?>
   <?php if ($catalogStripText !== ''): ?>
   <section class="fc-catalog-strip" aria-label="О сборке букетов">
-    <?php if (is_file(BASE_PATH . '/img/editorial/petals-macro.jpg')): ?>
+    <?php if (is_file(BASE_PATH . '/img/editorial/rose-linen.jpg')): ?>
     <?php /* W104-ζ (C3-D3): full-bleed-полоса — webp-конвейер вместо jpg-оригинала
-           (480/768 GD-превью уже в кэше hero-конвейера + webp-оригинал 1440w) */ ?>
+           (480/768 GD-превью из кэша hero-конвейера + webp-оригинал 1344w).
+           W105-7fix1 (арт-критик 7-a P2): rose-linen.jpg 1344×768 — полоса больше
+           НЕ рециклит старый hero-макро (второе применение одного кадра на
+           первом экране); негативное пространство справа — под scrim-текст. */ ?>
     <?php
-    $__csRoot = 'img/editorial/petals-macro.jpg';
-    $__csWebp = 'img/editorial/petals-macro.webp';
+    $__csRoot = 'img/editorial/rose-linen.jpg';
+    $__csWebp = 'img/editorial/rose-linen.webp';
     $__csSrcset = [];
     foreach ([480, 768] as $__csW) {
         $__csT = hero_img_size($__csRoot, $__csW);
         if ($__csT !== '') { $__csSrcset[] = $__csT . ' ' . $__csW . 'w'; }
     }
-    if (is_file(BASE_PATH . '/' . $__csWebp)) { $__csSrcset[] = '/' . $__csWebp . ' 1440w'; }
+    if (is_file(BASE_PATH . '/' . $__csWebp)) { $__csSrcset[] = '/' . $__csWebp . ' 1344w'; }
     ?>
     <picture>
       <?php if ($__csSrcset !== []): ?><source type="image/webp" srcset="<?= e(implode(', ', $__csSrcset)) ?>" sizes="100vw"><?php endif; ?>
-      <img class="fc-catalog-strip__img" src="/img/editorial/petals-macro.jpg" alt="Лепестки цветов крупным планом" loading="lazy" decoding="async">
+      <img class="fc-catalog-strip__img" src="/img/editorial/rose-linen.jpg" alt="Одна роза на льняной ткани" loading="lazy" decoding="async">
     </picture>
     <?php endif; ?>
     <div class="wrap fc-catalog-strip__inner">

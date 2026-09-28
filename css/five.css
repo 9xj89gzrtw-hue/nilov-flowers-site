@@ -682,7 +682,7 @@ img.product-card__img{background:var(--surface-subtle)}
   .order-form__submit,.order-form__total,.order-form__checkbox,
   .order-form>p{grid-column:1/-1}
 }
-.order-form__field{display:flex;flex-direction:column;gap:6px}
+.order-form__field{display:flex;flex-direction:column;gap:10px} /* W105-7fix1 (тип-критик 7-b P2c): label→поле 6→10px — группировка формы читается (поле само 12/14 padding, 6px приклеивал подпись) */
 .order-form__field label{font-weight:700;font-size:.8125rem;color:var(--ink)} /* W105-6fix2: 13.6→13 */
 .order-form__field input,.order-form__field select,.order-form__field textarea,
 .order-form__field input[type=date],.order-form__field input[type=time]{
@@ -793,7 +793,7 @@ img.product-card__img{background:var(--surface-subtle)}
   box-shadow:0 -10px 32px rgba(28,26,30,.16);
   padding:0 52px 0 16px;gap:10px;
   flex-direction:row;align-items:center;flex-wrap:nowrap;
-  font-size:12.5px;line-height:1.3;
+  font-size:13px;line-height:1.3;
   min-height:48px;
 }
 .cookie-banner__title{display:none}
@@ -825,12 +825,18 @@ img.product-card__img{background:var(--surface-subtle)}
   text-underline-offset:4px;white-space:nowrap;
 }
 .cookie-banner__link:hover{color:#fff;text-decoration-color:var(--gold)}
-/* ✕: JS даёт инлайн-стили 34px — глушим !important, тач-зона 44px */
+/* ✕: ВСЁ стилирование — здесь (W105-7fix1, тип-критик 7-b P1#2: инлайн-шрифт
+   с Montserrat-шорткатом в JS удалён — js/cookie-banner.js печатает голый
+   <button class="cookie-banner__close">). Тач-зона 44px; десктоп-карточка
+   (motion-w104.css 4g) ставит ✕ в угол. */
 .cookie-banner__close{
-  position:absolute!important;top:50%!important;right:0!important;
-  width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;
-  transform:translateY(-50%)!important;
-  font-size:1rem!important;opacity:.65;color:#fff!important;
+  position:absolute;top:50%;right:0;
+  width:44px;height:44px;min-width:44px;min-height:44px;
+  transform:translateY(-50%);
+  border:none;border-radius:50%;
+  background:transparent;color:#fff;opacity:.65;cursor:pointer;
+  font:600 1.05rem/1 var(--font-ui);display:grid;place-items:center;
+  transition:opacity .2s;
 }
 .cookie-banner__close:hover{opacity:1}
 /* фокус на ink-полосе — белое кольцо (ink из five.css:92 тут невидим) */
@@ -839,6 +845,23 @@ img.product-card__img{background:var(--surface-subtle)}
    ink-заливка (белая пилюля на белом не читается), «Закрыть» — контурная. */
 .cookie-settings .cookie-banner__btn{background:var(--ink);color:#fff}
 .cookie-settings .cookie-banner__btn:hover{background:#33303a}
+/* W105-7fix1 (рекон 2-c + тип-критик 7-b): МОБАЙЛ ≤899 — вертикальная
+   карточка: заголовок + текст нормальным переносом (ссылка на политику
+   ДОСТУПНА; в однострочной полосе текст сжимался до 42px, ellipsis резал
+   ссылку), кнопки рядом под текстом. Высота ~104px над таббаром/PDP-CTA. */
+@media (max-width:899px){
+  .cookie-banner{
+    flex-direction:column;align-items:stretch;
+    gap:8px;padding:12px 52px 12px 16px;min-height:0;
+  }
+  .cookie-banner__title{display:block;margin:0;font:600 14px/1.3 var(--font-ui);color:#fff}
+  .cookie-banner__text{
+    flex:0 0 auto;white-space:normal;overflow:visible;text-overflow:clip;
+    padding-block:0;font-size:13px;line-height:1.45;
+  }
+  .cookie-banner__actions{justify-content:flex-start}
+  .cookie-banner__close{top:12px;right:8px;transform:none;width:40px;height:40px;min-width:40px;min-height:40px}
+}
 .cookie-banner__btn--secondary{
   background:transparent;color:var(--ink);border:1.5px solid var(--line);
 }
@@ -958,9 +981,10 @@ img.product-card__img{background:var(--surface-subtle)}
    вместо одноколонного легаси ≤480 (карточка 350px — «плитка-гигант»). */
 @media(min-width:360px) and (max-width:480px){
   .catalog__grid{grid-template-columns:repeat(2,1fr);gap:14px}
-  /* W104-γ: имя — антиква 15px (2-кол плотная сетка), цена 14px muted */
+  /* W104-γ → W105-7fix1 (7-a P1#2): имя — антиква 15px muted; цена наследует
+     γ-токен 15px ink/700 (правило 14px снято — размер ценового якоря един
+     с десктопом и каруселями) */
   .catalog__grid .product-card__name{font-size:15px;min-height:42px}
-  .catalog__grid .product-card__price{font-size:14px}
 }
 @media(max-width:359px){.catalog__grid{grid-template-columns:1fr}}
 
@@ -1215,15 +1239,11 @@ body > div[role="region"][aria-label="Установка приложения"] 
 .fc-chip[aria-pressed="true"],.fc-chip.is-active{background:#fff;color:var(--pink-deep);border-color:var(--pink)}
 .fc-chip[aria-pressed="true"]:hover,.fc-chip.is-active:hover{background:#fff;color:var(--pink-deep);border-color:var(--pink)}
 
-/* --- C5: имя карточки крупнее/контрастнее (было .92rem/500/muted 5.29:1;
-   #45414b на белом = 9.95:1). Замер показал «волну»: у 2-строчных имён
-   2×20.925px + padding 4px = 45.85px > старого min-height 44px ⇒ блок
-   рос и цена уезжала на 2px. Поднимаем min-height до 46px (фикс ≥ двух
-   строк) — priceY соседних карточек ряда совпадают, line-clamp:2 уже был.
-   W103 (F1): имя — ink (иерархия имя > цена, критик-1).
-   W103 (6-b, P1): 17px/600 — имя ≥ цены 16.8px (критик-5б); min-height 50px
-   = две строки 17px×1.35 + padding — «волна» не возвращается. */
-.product-card__name{font-size:17px;font-weight:600;color:var(--ink);min-height:50px}
+/* --- C5 → W103 (F1) → W105-7fix1 (арт-критик 7-a P1#2): имя карточки —
+   Playfair 500 muted 15px (семейство ниже), ЦЕНА — ink 700 15px: главный
+   коммерческий атрибут карточки читается первым. min-height 42px =
+   две строки 15px×1.35 + padding — «волна» рядов не возвращается. */
+.product-card__name{font-size:15px;font-weight:500;color:var(--ink-muted);min-height:42px}
 
 /* --- C6 → W103 (F1): промо-кнопка жёлтой карточки — тихая текстовая
    ссылка (не конкурирует с розовой пилюлей hero); радиус не нужен. */
@@ -1236,7 +1256,7 @@ body > div[role="region"][aria-label="Установка приложения"] 
       (< 18.66px bold): pink на белом 3.06:1 → --pink-deep 4.94:1
       (все три варианта класса — каталог, товар 5cv, товар legacy);
    в) счётчик корзины ~11px/700 белый на pink 3.06:1 → фон --pink-deep. */
-.product-card__badge--sale{background:var(--pink);color:var(--ink);transform:rotate(-3deg);border-radius:12px 12px 12px 3px;box-shadow:0 2px 0 rgba(28,26,30,.22);font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:5px 10px;transition:transform .2s cubic-bezier(.22,1,.36,1)}
+.product-card__badge--sale{background:var(--pink);color:var(--ink);transform:rotate(-3deg);border-radius:12px 12px 12px 3px;box-shadow:0 2px 0 rgba(28,26,30,.22);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:5px 10px;transition:transform .2s cubic-bezier(.22,1,.36,1)} /* W105-7fix1 (тип-критик 7-b P2): трекинг стикера .14→.08em — ПРАВИЛО: стикеры (наклонные) .08em / капс-пилюли .14em (ранее стикер был единственным капс-.08… .14em среди бейджей) */
 .product-card__price--discount,
 .fc-product__price--discount,
 .product-page__price--discount{color:var(--pink-deep)}
@@ -1511,8 +1531,15 @@ html{scroll-padding-top:96px}
 }
 .fc-manifesto__text{
   margin:0;max-width:24ch;
-  font:italic 500 clamp(1.5rem,3vw,2.3rem)/1.3 var(--font-display);
-  letter-spacing:-.015em; /* W105-6fix2: display ≥24 — единый трекинг (36.8 — документированное исключение по кеглю, манифест-роли) */
+  /* W105-7fix1 (арт-критик 7-a P1#3): тип-момент в банде — было
+     clamp(1.5rem,3vw,2.3rem) = 36.8px в 520px-полосе (крупнейший текст
+     страницы после H1 был тихим). Верх 52px — курсивная цитата-манифест
+     получает дисплейный масштаб (лестница: H1 hero 66 → манифест 52 →
+     H2 секций 44); kinetic.js пере-меряет строки сам (сплит по offsetTop
+     после fonts.ready — line-reveal не ломается). lh 1.3→1.25 — плотнее
+     на 52px, полоса ~520px вмещает 2-3 строки. */
+  font:italic 500 clamp(2.2rem,4.2vw,3.25rem)/1.25 var(--font-display);
+  letter-spacing:-.015em; /* W105-6fix2: display ≥24 — единый трекинг */
   color:#fff;text-wrap:balance;
 }
 
@@ -1556,10 +1583,14 @@ html{scroll-padding-top:96px}
   padding:14px 16px 16px;
 }
 .fc-premium__card-name{
-  color:#fff;font:600 .9375rem/1.3 var(--font-ui); /* W105-6fix2: 15.68→15 */
+  /* W105-7fix1 (тип-критик 7-b P2): Golos 600 → Playfair 500 — семейство
+     едино с каталожными карточками (внутри одного компонента два
+     шрифтовых семейства не переключаются) */
+  color:#fff;
+  font-family:var(--font-display);font-weight:500;font-size:.9375rem;line-height:1.35;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
 }
-.fc-premium__card-price{color:rgba(255,255,255,.85);font:600 1rem/1.2 var(--font-ui);font-variant-numeric:tabular-nums} /* W105-6fix2: 16.8→16 */
+.fc-premium__card-price{color:#fff;font:700 1rem/1.2 var(--font-ui);font-variant-numeric:tabular-nums} /* W105-6fix2: 16.8→16 · W105-7fix1: 600→700 — ценовой вес карточек един (ink-цены вне премиум-блока — 700) */
 .fc-premium__info{display:flex;flex-direction:column;align-items:flex-start;gap:16px}
 .fc-premium__title{
   margin:0;
@@ -1781,7 +1812,10 @@ html:not(.js-ready) .product-card .product-card__media-link{clip-path:inset(0);t
 }
 .fc-catalog-strip::after{
   content:"";position:absolute;inset:0;
-  background:linear-gradient(90deg,rgba(28,26,30,.84) 0%,rgba(28,26,30,.5) 52%,rgba(28,26,30,.28) 100%);
+  /* W105-7fix1: rose-linen светлее лепестков — скрим усилен слева и в середине
+     (текст 30ch живёт до ~620px из 1440), правый край прозрачнее (негативное
+     пространство кадра); замер canvas: худший пиксель под текстом 2.04 → 3+ */
+  background:linear-gradient(90deg,rgba(28,26,30,.92) 0%,rgba(28,26,30,.74) 50%,rgba(28,26,30,.6) 68%,rgba(28,26,30,.28) 100%);
 }
 .fc-catalog-strip__inner{
   position:relative;z-index:2;
@@ -2191,18 +2225,18 @@ details:not([open]) .faq-item__a-wrap{grid-template-rows:0fr}
 .product-card:hover .product-card__img,
 .product-card:hover .product-card__media img{transform:scale(1.05)}
 .product-card__body{padding:12px 2px 14px;gap:8px}
-.product-card__price{margin:0;font-weight:500;font-size:15px;line-height:1.3;color:var(--ink-muted);font-variant-numeric:tabular-nums}
+.product-card__price{margin:0;font-weight:700;font-size:15px;line-height:1.3;color:var(--ink);font-variant-numeric:tabular-nums} /* W105-7fix1 (арт-критик 7-a P1#2): цена — ink 700 15px, якорь карточки (было 500/15/muted — «самый тихий элемент решал покупку»); DOM-порядок цена→имя сохранён */
 .product-card__price--old{
   font-size:13px;font-weight:600;color:var(--ink-muted); /* W105-6fix2 (критик 6-b G): 12 → 13 рядом с новой 15px */
   text-decoration-thickness:1.5px;margin-right:8px;
 }
 .product-card__name{
-  /* W104-γ (C2-T2 P0-1): имя — антиква (Playfair 500, не курсив) 17px/1.3 —
-     «заголовок материала» вместо строки прайса; line-clamp:2 остаётся,
-     min-height 46px = две строки 17px×1.3 + padding (без «волны» рядов) */
+  /* W104-γ (C2-T2 P0-1) → W105-7fix1 (7-a P1#2): имя — Playfair 500 muted —
+     «заголовок материала» без конкуренции с ценой; line-clamp:2 остаётся,
+     min-height 42px = две строки 15px×1.35 + padding (без «волны» рядов) */
   font-family:var(--font-display);
-  font-weight:500;font-size:17px;line-height:1.3;color:var(--ink);
-  min-height:46px;padding:1px 0;
+  font-weight:500;font-size:15px;line-height:1.35;color:var(--ink-muted);
+  min-height:42px;padding:1px 0;
 }
 /* Feature-карточка (одинокая последняя в сетке — класс .is-tail-feature от
    js/grid-tail.js / split-фича ряда «Розы»): имя крупнее, без clamp-минимума */
@@ -2719,7 +2753,8 @@ button,input,select,textarea{font-family:inherit}
 .fc-carousel--compact .product-card__badge{display:none} /* мини-карточка: клик — на карточку */
 .fc-carousel--compact .product-card__body{padding:0;gap:6px}
 .fc-carousel--compact .product-card__name{min-height:0;font-size:15px}
-.fc-carousel--compact .product-card__price{font-size:14px}
+/* W105-7fix1 (7-a P1#2): мини-рельс — цена без 14px-компакта: 15px ink/700
+   как во всех карточках (иерархия цена>имя не зависит от плотности рельса) */
 @media(max-width:899px){
   .fc-carousel--compact > *{flex:0 0 230px}
   .fc-carousel--compact .product-card{grid-template-columns:84px minmax(0,1fr);gap:10px;padding:8px}
@@ -2958,8 +2993,9 @@ html.js-ready details.fc-seo__more.is-closing > .faq-item__a-wrap{
 .catalog__grid{container-type:inline-size}
 @container (min-width:720px) and (max-width:1250px){
   .product-card__name{font-size:15px;min-height:41px}
-  .product-card__price{font-size:13px}
-  .product-card__price--old{font-size:13px} /* W105-6fix2 (критик 6-b G): 11 → 13 — одинаковый читаемельный минимум с мобильной парой (five.css 1920: max(.85em,13px)); дифференциация от новой цены — штрих + muted */
+  /* W105-7fix1: цена 13→15 (убрана из контейнера, наследует 15px ink 700) —
+     ценовой якорь не мельче имени (критик 7-a P1#2) */
+  .product-card__price--old{font-size:13px} /* W105-6fix2 (критик 6-b G): 11 → 13 — одинаковый читаемый минимум с мобильной парой; дифференциация от новой цены — штрих + muted */
 }
 
 /* ---- 4. ХВОСТ РЯДА: CTA-плитка «Соберём на заказ» ----
@@ -3011,12 +3047,12 @@ html.js-ready details.fc-seo__more.is-closing > .faq-item__a-wrap{
   .catalog-tail,.catalog-tail__arrow{transition:none}
 }
 
-/* ---- 6. P2 COOKIE ≥900: пилюля по центру (вид — motion-w104.css 4g):
-   запас прокрутки под неё: живой замер пилюли 480×82 + 16px отступа
-   от нижнего края → 104px (было 88 — последние 10px контента прятались
-   под пилюлей на максимальном скролле) ---- */
+/* ---- 6. P2 COOKIE ≥900: карточка по центру (вид — motion-w104.css 4g):
+   запас прокрутки под неё: живой замер карточки ~150px (title 18 + текст
+   2×19 + кнопки 44 + паддинги 32) + 16px отступа от нижнего края → 176px
+   (было 104 — под пилюлю 82px; W105-7fix1 пересчитан под карточку) ---- */
 @media(min-width:900px){
-  body.cookie-visible{padding-bottom:104px}
+  body.cookie-visible{padding-bottom:176px}
 }
 
 /* ---- 6b. P2 COOKIE-ПОЛОСА ≤820: ссылка политики — инлайн ----
@@ -3083,4 +3119,34 @@ html.js-ready details.fc-seo__more.is-closing > .faq-item__a-wrap{
   .product-card__cat{font-size:13px!important} /* 13.12 → 13 — категория-метка PDP (глушит nilov-хвост) */
 }
 
+/* ================================================================
+   W105-7fix1 (Task 7-fix1, критики 7-a/7-b, цель 9+): мелкие P2-хвосты,
+   не имевшие своего слоя — тач-цель «+», сегменты eyebrow-пилюли.
+   (Ценовая иерархия/манифест/бейджи/форма — правлены по месту выше.)
+   ================================================================ */
 
+/* ---- 1. «+» В КОРЗИНУ: 44px на мобиле/таче (арт-критик 7-a P2a; было 40px
+   в W104-слое). margin-left −22px = половина кнопки (свес над фото сохранён),
+   центр низа карточки не сместился. ---- */
+@media(max-width:899px){
+  .product-card__cta{
+    width:44px;height:44px;min-width:44px;min-height:44px;margin-left:-22px;
+    font-size:1.45rem;
+  }
+}
+
+/* ---- 2. EYEBROW-ПИЛЮЛЯ hero: сегменты «·» не рвутся внутри (тип-критик
+   7-b P2g) — перенос на 390px только по разделителю. Пилюля inline-flex:
+   спаны — flex-айтемы, БЕЗ flex-wrap они не переносятся вовсе (пилюля
+   росла до 373px и резалась краем тайла). Разметка — index.php (W105-7fix1). ---- */
+.fc-hero__eyebrow{flex-wrap:wrap}
+.fc-hero__eyebrow-seg{white-space:nowrap}
+/* ---- 2b. Мобиль ≤899: пилюля ЦЕЛИКОМ в одну строку на 390 (замер:
+   сегменты 139+192px @12px + gap 8 + padding 28 = 367 > 350 тайла;
+   @11px = 339 < 350 ✓). Кегль γ-токена капс-меток (11/600/.14em —
+   .fc-row__eyebrow), вес 700 оставлен: белый текст на фото. При ≤360
+   (тайл < 340) — чистый перенос по сегменту из 2. VLM-жюри: двухстрочная
+   пилюля «noisy» даже с чистым разрывом — корень лечится одной строкой. ---- */
+@media(max-width:899px){
+  .fc-hero__eyebrow{font-size:.6875rem}
+}

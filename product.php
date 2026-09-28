@@ -632,6 +632,11 @@ $breadcrumbItems[] = ['@type' => 'ListItem', 'position' => count($breadcrumbItem
             <button type="button" class="product-gallery__nav product-gallery__nav--l" data-gnav="-1" aria-label="Предыдущий вид"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
             <button type="button" class="product-gallery__nav product-gallery__nav--r" data-gnav="1" aria-label="Следующий вид"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
           </div>
+          <?php /* W105-7fix1 (арт-критик 7-a P2h): тач-аффорданс свайпа — точки
+                 под вьюпортом (≤899px, стили product-extras.css 4e; aria-hidden:
+                 для SR уже есть живой счётчик «Слайд N из M» из JS).
+                 Синхронизация — js/product-gallery.js setActive(). */ ?>
+          <div class="product-gallery__dots" aria-hidden="true"><?php for ($gi = 0, $gn = 2; $gi < $gn; $gi++): ?><span class="product-gallery__dot"<?= $gi === 0 ? ' aria-current="true"' : '' ?>></span><?php endfor; ?></div>
           <?php else: ?>
           <div class="fc-product__media product-page__media" data-lightbox-trigger data-lightbox-src="<?= e($img) ?>" data-lightbox-alt="<?= e($product['name']) ?>">
             <?php if ($img !== ''): ?><?= $stampSvg ?><?php endif; ?>
@@ -704,7 +709,7 @@ $breadcrumbItems[] = ['@type' => 'ListItem', 'position' => count($breadcrumbItem
               data-product-price-raw="<?= $price ?>"
               data-product-image="<?= e($img) ?>"
               aria-label="Добавить в корзину: <?= e($product['name']) ?>">
-              Добавить в корзину · <?= formatPrice($price) ?>
+              Добавить в корзину · <span class="product-page__cta-price"><?= formatPrice($price) /* W105-7fix1 (7-b P2f): 700 vs глагол 600 — стили product-extras.css 4c */ ?></span>
             </button>
             <?php if ($featFavorites): ?>
             <button type="button" class="product-page__fav fc-fav-inline" data-fav-toggle data-fav-inline data-fav-id="<?= (int)$product['id'] ?>" data-fav-name="<?= e($product['name']) ?>" aria-pressed="false" aria-label="В избранное" title="В избранное">♡</button>

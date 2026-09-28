@@ -13,13 +13,16 @@
    Playfair Display лежит в /fonts (variable, ось wght 400–900,
    fonts.css). five.css прижимает токен --font-display к Montserrat
    на html:root — переопределяем его ЛОКАЛЬНО внутри заголовка.
-   W105-b (5-b): шкала выровнена с семейством — верх clamp 2.75rem = H2
-   главной (44px @1440): вторичная H1 не спорит с деньгами витрины. */
+   W105-b (5-b): верх clamp 2.75rem = H2 главной (44px @1440).
+   W105-7fix1 (тип-критик 7-b P2, шкала H2): ОДНО ПРАВИЛО — page-hero
+     (category/occasion/утилиты) И PDP-h1 = clamp(2.2rem,3.4vw,2.5rem)
+     = 40px @1440; H2 секций главной остаётся 44 (дисплейный масштаб
+     только у витрины). Было 44 у PDP — «wobble» 44/40/44. */
 .fc-product__title{
   --font-display:'Playfair Display','Playfair Fallback',Georgia,'Times New Roman',serif;
   font-family:var(--font-display);
   font-weight:500;
-  font-size:clamp(2.1rem,3.4vw,2.75rem);   /* W103/G2 п.4 → W105-b: 3.8vw→3.4vw (верх тот же, середина спокойнее) */
+  font-size:clamp(2.2rem,3.4vw,2.5rem);   /* W103/G2 → W105-b → W105-7fix1: = .page-hero__title вторичек (одна ступень page-hero) */
   line-height:1.12;
   letter-spacing:-.015em;   /* W105-c (5-b/2): display-трекинг H2 главной 5-a (−1.5%) */
   text-wrap:balance;
@@ -62,8 +65,10 @@
    W105-b (5-b): ₽ не отрывается от числа (white-space:nowrap на значениях —
    между числом и ₽ стоит обычный пробел, узкая колонка могла его переносить);
    зачёркнутая старая цена — штрих мягче цвета текста (контур читается,
-   «жирная перечёрка» уходит). */
-.fc-product__price{font-size:1.75rem;font-weight:700}
+   «жирная перечёрка» уходит).
+   W105-7fix1 (тип-критик 7-b P1#3): зазор H1→цена 14px (0.28 lh) → 22px
+   (0.5em) — цена не липнет к десцендерам Playfair. */
+.fc-product__price{font-size:1.75rem;font-weight:700;margin-top:8px}
 .fc-product__price > span{white-space:nowrap}
 .fc-product__price--old{font-size:1rem;font-weight:500;text-decoration-color:rgba(110,106,114,.55)} /* W105-6fix2: 16.8→16 */
 .fc-product__price--discount{font-size:1.75rem;font-weight:700;color:var(--pink-deep,#cc2f7a)}
@@ -202,6 +207,30 @@
 /* Стрелки галереи — SVG-шевроны (были текстовые ‹ ›); тап-зона 44px — five.css */
 .product-gallery__nav svg{width:20px;height:20px;display:block}
 
+/* ============ 4e. ГАЛЕРЕЯ: тач-аффорданс — точки-слайды (W105-7fix1, 7-a P2h) ============
+   На ≤899px стрелки скрыты (display:none вне hover:hover — style.css:364):
+   у галереи из 2+ слайдов не было НИ ОДНОГО видимого намёка на свайп.
+   Точки под вьюпортом: пассивная 6px ink-30, активная — пилюля 18px ink;
+   синхронизирует js/product-gallery.js (setActive). Одна точка (одиночный
+   слайд / feature_gallery off) — ряд скрыт (:has-фолбэк: .is-single от JS). */
+.product-gallery__dots{
+  display:none;
+  align-items:center;justify-content:center;gap:6px;
+  margin-top:10px;
+}
+.product-gallery__dot{
+  width:6px;height:6px;border-radius:999px;
+  background:rgba(28,26,30,.28);
+  transition:width .25s cubic-bezier(.4,0,.2,1),background .25s;
+}
+.product-gallery__dot[aria-current="true"]{
+  width:18px;background:var(--ink,#1c1a1e);
+}
+.product-gallery__dots:has(.product-gallery__dot:only-child){display:none!important}
+@media(max-width:899px){
+  .product-gallery__dots{display:flex}
+}
+
 /* ============ 4b. STICKY-CTA (МОБАЙЛ): slide-up + fade 240ms (W103/G2) ============
    Перфекционист: «snap-появление». Причина: transition висел только на
    состоянии .product-page__cta--hidden (style.css) — снятие класса
@@ -225,9 +254,12 @@
 .fc-product__cta{
   min-height:56px;
   font-size:15px;
-  font-weight:600;
-  letter-spacing:.01em;
+  font-weight:600; /* W105-7fix1 (7-b P2f): убран микротрекинг .01em — у пилюли-глагола трекинг 0, как у всех CTA */
 }
+/* W105-7fix1 (тип-критик 7-b P2f): цена в CTA — 700 (глагол 600):
+   Commercial-дatum и в липкой кнопке весит больше глагола. */
+.fc-product__cta .product-page__cta-price,
+.product-page__cta .product-page__cta-price{font-weight:700}
 .product-page__fav.fc-fav-inline{
   width:56px;min-height:56px;
 }

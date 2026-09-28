@@ -130,13 +130,22 @@
 
 /* ---------- Мобильный (≤899px): чипы и сортировка по ряду ---------- */
 @media(max-width:899px){
-  .cat-toolbar__controls{flex-direction:column;align-items:stretch;gap:10px}
+  /* W105-7fix1 (тип-критик 7-b P1#1): КОРНЕВАЯ ПРИЧИНА обрезки «От 7 000 ₽»
+     (body scrollWidth 506 > 390) — flex-wrap:wrap у колонки: Chrome в
+     wrapping column-flex контейнере размерит единственную «линию» по
+     max-content → .cat-chips сам растёт до 506px (замер live), overflow-x
+     бесполезен — трек шире вьюпорта. nowrap возвращает stretch (390px),
+     дальше работает скролл-рельс. min-width:0 — страховка всей цепочки. */
+  .cat-toolbar__controls{flex-direction:column;align-items:stretch;gap:10px;flex-wrap:nowrap;min-width:0}
   /* Чипы — горизонтальный скролл как .fc-chips главной (свайп, без wrap):
      отрицательный margin компенсирует padding .wrap 20px */
   .cat-chips{
-    flex-wrap:nowrap;overflow-x:auto;
+    flex-wrap:nowrap;overflow-x:auto;min-width:0;
     margin:0 -20px;padding:6px 20px;
     scrollbar-width:none;-webkit-overflow-scrolling:touch;
+    /* W105-7fix1: аффорданс продолжения ряда — правый фейд (паттерн .fc-chips) */
+    mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 28px),transparent 100%);
+    -webkit-mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 28px),transparent 100%);
   }
   .cat-chips::-webkit-scrollbar{display:none}
   /* Видимую подпись прячем (роль/aria-label остаются на группе) —

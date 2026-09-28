@@ -16,6 +16,23 @@
   const thumbs = Array.from(
     document.querySelectorAll('#productGalleryThumbs .product-gallery__thumb')
   );
+  /* W105-7fix1 (7-a P2h): точки-аффорданс под вьюпортом (≤899px, разметка
+     product.php + стили product-extras.css 4e). PHP печатает по числу
+     слайдов текущей галереи; если слайдов больше/меньше (будущие фото) —
+     ряд перестраивается здесь. Одна точка — CSS прячет ряд целиком. */
+  let dotsWrap = track.parentNode
+    ? track.parentNode.querySelector('.product-gallery__dots') : null;
+  let dots = dotsWrap
+    ? Array.from(dotsWrap.querySelectorAll('.product-gallery__dot')) : [];
+  if (dotsWrap && dots.length !== slides.length) {
+    dotsWrap.textContent = '';
+    dots = slides.map(function () {
+      const d = document.createElement('span');
+      d.className = 'product-gallery__dot';
+      dotsWrap.appendChild(d);
+      return d;
+    });
+  }
   const counter = document.getElementById('productGalleryCounter');
   const navButtons = Array.from(document.querySelectorAll('[data-gnav]'));
   if (slides.length < 1) return;
@@ -55,6 +72,10 @@
     thumbs.forEach(function (thumb, i) {
       if (i === index) thumb.setAttribute('aria-current', 'true');
       else thumb.removeAttribute('aria-current');
+    });
+    dots.forEach(function (dot, i) {
+      if (i === index) dot.setAttribute('aria-current', 'true');
+      else dot.removeAttribute('aria-current');
     });
     activateZoomBg(slides[index]);
   }

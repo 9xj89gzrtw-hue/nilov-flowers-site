@@ -142,7 +142,7 @@ function seedDemoData(PDO $pdo): void
         ('hero_subtitle', 'К празднику или просто так — повод не обязателен'),
         ('hero_button_text', 'Выбрать букет'),
         ('hero_button_link', '#catalog'),
-        ('hero_image', 'img/editorial/petals-macro.jpg'),
+        ('hero_image', 'img/editorial/petals-hero-4x3.jpg'),
         ('logo_image', ''),
         ('logo_enabled', '1'),
         ('steps_title', 'Как это работает'),
@@ -861,5 +861,14 @@ $pdo->exec("UPDATE occasions SET faq_q1 = replace(faq_q1, 'Какую карту
        при сплите слов нормализует пробелы и съедает NBSP): дефолт переведён
        на бессрочную версию; NBSP-склейку на рендере делает index.php. */
     $pdo->exec("UPDATE settings SET value = 'Собираем букеты утром и везём вам сегодня' WHERE key = 'manifesto_text' AND value = 'Собираем букеты утром — и везём вам сегодня'");
+
+    /* W105-7fix1 (арт-критик 7-a P1#1): hero-мастер 4:3 — старый petals-macro
+       1440×736 (широкий) в слоте .fc-hero__main ~763×566 давал 1.45× вертикальный
+       апскейл (мыло на ретине). Новый мастер img/editorial/petals-hero-4x3.jpg
+       1152×864 = ровно 1.5× слота на DPR2, srcset 480/768/1024/1152w уже
+       генерируется hero_img_size(). Guard по ТОЧНОМУ старому значению:
+       правленое владельцем (свой аплоад) не трогаем; идемпотентно.
+       Premium-фон по-прежнему petals-macro (осознанно). */
+    $pdo->exec("UPDATE settings SET value='img/editorial/petals-hero-4x3.jpg' WHERE key='hero_image' AND value='img/editorial/petals-macro.jpg'");
 
 }
