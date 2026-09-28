@@ -22,4 +22,9 @@ if (!isset($_SESSION['admin_id'])) {
 }
 
 $count = (int)db()->query("SELECT COUNT(*) FROM orders WHERE status = 'new'")->fetchColumn();
-echo json_encode(['count' => $count]);
+/* W105-8fix1 (админ-критик 8-c P2): unread — новые минус «просмотренные»
+   (лента /admin/index.php и карточка /admin/order.php фиксируют seen в
+   сессии). count оставляем прежним полем — совместимость со старым
+   admin-notify.js и возможными потребителями. */
+$seen = (int)($_SESSION['admin_new_seen'] ?? 0);
+echo json_encode(['count' => $count, 'unread' => max(0, $count - $seen)]);

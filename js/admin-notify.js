@@ -48,7 +48,9 @@
         } catch (e) { /* звук не критичен */ }
     }
 
-    /* Счётчик в title + мигание при новых заказах */
+    /* Счётчик в title + мигание при новых заказах.
+       W105-8fix1: last — непрочитанные (см. poll): просмотрел ленту —
+       счётчик обнулился, title вернулся к базовому. */
     var blinkOn = false;
     setInterval(function () {
         if (last === null || last <= 0) { document.title = baseTitle; return; }
@@ -80,11 +82,18 @@
             .then(function (r) { return r.ok ? r.json() : null; })
             .then(function (data) {
                 if (!data || typeof data.count !== 'number') return;
-                if (last !== null && data.count > last) {
+                /* W105-8fix1 (админ-критик 8-c P2): счётчик ведёт НЕПРОЧИТАННЫЕ
+                   (poll.php: unread = новые − seen; seen фиксируют лента
+                   /admin/index.php и карточка /admin/order.php). Раньше title
+                   «🔔 (N) НОВЫЙ ЗАКАЗ!» висел вечно — N падал только когда
+                   заказы подтверждали. Старый сервер без поля unread —
+                   фолбэк на count. */
+                var unread = typeof data.unread === 'number' ? data.unread : data.count;
+                if (last !== null && unread > last) {
                     chime();
-                    toast('Новый заказ! Всего новых: ' + data.count);
+                    toast('Новый заказ! Непрочитанных: ' + unread);
                 }
-                last = data.count;
+                last = unread;
                 updateBadge(last);
             })
             .catch(function () { /* сеть моргнула — не страшно */ });

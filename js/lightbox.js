@@ -51,6 +51,9 @@
       img.className = 'lightbox__img';
       img.src = src;
       img.alt = trigger.dataset.lightboxAlt || '';
+      /* W105-8fix1(г): нативный drag картинки не перехватывает указатель —
+         пан в зуме живой (dragstart гасим и делегированно, см. ниже) */
+      img.draggable = false;
       figure.insertBefore(img, figure.firstChild);
     }
     lastTrigger = trigger;
@@ -136,10 +139,28 @@
      .lightbox__figure (живёт с инициализации): клик по фото — toggle zoom 1.8
      с origin в точке клика; в зуме — drag-пан (grab/grabbing); пан-жест (>3px)
      не toggл-ит зум. Стрелки ←/→ и счётчик «N из M» — навигация по триггерам
-     страницы (стрелки клавиатуры тоже). reduced-motion — без transition. */
-  var zState = { zoomed: false, panning: false, px: 0, py: 0, ox: 50, oy: 50, moved: 0 };
+     страницы (стрелки клавиатуры тоже). reduced-motion — без transition.
+     W105-8fix1 (критики 8-b/8-c, волна 3, P1):
+     (а) индекс — лайтбокс открывается НА КЛИКНУТОМ слайде: data-index на
+         триггерах ставит js/product-gallery.js, navStep/updateNav ходят по
+         curIdx (раньше индекс искался матчем src — дубликаты src в PDP-галерее
+         всегда давали 0, «крупный план» открывался первым кадром);
+     (б) навигация видна, когда ВИДОВ > 1 (list.length), а не «уникальных
+         src > 1» — гейт W104-fix7 прятал стрелки на PDP (2 вида одного фото:
+         «Общий вид» + «Крупный план») и второй кадр был недостижим на 390px;
+     (в) «крупный план» (data-lightbox-zoom) продолжает рассказ слайда:
+         лайтбокс стартует в зуме 1.8 с базой линзы галереи (50% 36%);
+     (г) пан — РЕАЛЬНЫЙ translate поверх scale: раньше зум двигали подменой
+         transform-origin (style.transform не менялся вовсе — мошн-критик
+         сэмплировал 3 раза, 0 движения), а нативный drag <img draggable=true>
+         съедал pointer-поток. Теперь: translate(tx,ty) scale(1.8) с клампом
+         в границы кадра, draggable=false + preventDefault на dragstart,
+         touch-action:none на img в зуме, move/up слушатели на window. */
+  var ZOOM = 1.8;
+  var zState = { zoomed: false, panning: false, px: 0, py: 0, ox: 50, oy: 50, tx: 0, ty: 0, moved: 0 };
   var reduced = window.matchMedia
     && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var curIdx = 0;
 
   /* Навигация: стрелки + счётчик (только если триггеров > 1) */
   var navWrap = document.createElement('div');
@@ -149,30 +170,40 @@
     + '<button type="button" class="lightbox__arrow lightbox__arrow--next" aria-label="Следующее фото">&#8594;</button>';
   figure.appendChild(navWrap);
 
-  function lbSources() {
-    /* W104-fix6b: triggers — NodeList, у него нет .map (TypeError глухил
-       updateNav — счётчик молча оставался пустым; поймано живым прогоном) */
-    return Array.prototype.slice.call(triggers).map(function (t) { return { src: t.dataset.lightboxSrc, alt: t.dataset.lightboxAlt || '' }; })
-      .filter(function (s) { return s.src; });
+  function lbList() {
+    /* W104-fix6b→W105-8fix1: список триггеров с src (NodeList — без .map,
+    TypeError глухил updateNav; поймано живым прогоном). Индекс — ПОЗИЦИЯ
+    вида, дубликаты src не схлопываются: «Общий вид» и «крупный план» —
+    два РАЗНЫХ вида одного снимка. */
+    return Array.prototype.slice.call(triggers)
+      .filter(function (t) { return t.dataset.lightboxSrc; });
+  }
+  function lbIndexFor(trigger) {
+    var list = lbList();
+    /* data-index ставит js/product-gallery.js (порядок слайда в галерее);
+     нет атрибута / вне диапазона — позиция в списке триггеров */
+    var di = parseInt(trigger.getAttribute('data-index'), 10);
+    if (isFinite(di) && di >= 0 && di < list.length) return di;
+    var i = list.indexOf(trigger);
+    return i >= 0 ? i : 0;
   }
   function updateNav() {
-    var list = lbSources();
-    var idx = list.findIndex(function (s) { return img && s.src === img.getAttribute('src'); });
-    /* W104-fix7 (C7-M7 P0): у товара одно фото (главный + zoom-слайд дублируют src) —
-       стрелки по одинаковым изображениям бессмысленны; показываем навигацию
-       только когда УНИКАЛЬНЫХ src больше одного */
-    var uniq = list.map(function (s) { return s.src; }).filter(function (v, i, a) { return a.indexOf(v) === i; });
-    navWrap.style.display = uniq.length > 1 ? '' : 'none';
-    navWrap.querySelector('.lightbox__counter').textContent = (idx + 1) + ' из ' + list.length;
+    var list = lbList();
+    if (curIdx < 0 || curIdx >= list.length) curIdx = 0;
+    /* W105-8fix1(б): гейт уникальности src снят — показываем навигацию при
+    >1 ВИДЕ; единственный триггер (галерея выключена) — по-прежнему без стрелок */
+    navWrap.style.display = list.length > 1 ? '' : 'none';
+    navWrap.querySelector('.lightbox__counter').textContent = (curIdx + 1) + ' из ' + list.length;
   }
   function navStep(dir) {
-    var list = lbSources();
+    var list = lbList();
     if (list.length < 2 || !img) return;
-    var idx = list.findIndex(function (s) { return s.src === img.getAttribute('src'); });
-    var next = list[(idx + dir + list.length) % list.length];
-    zReset();
-    img.src = next.src;
-    img.alt = next.alt;
+    curIdx = (curIdx + dir + list.length) % list.length;
+    var next = list[curIdx];
+    endPan();
+    img.src = next.dataset.lightboxSrc;
+    img.alt = next.dataset.lightboxAlt || '';
+    applyZoomOf(next);
     updateNav();
   }
   navWrap.querySelector('.lightbox__arrow--prev').addEventListener('click', function (e) { e.stopPropagation(); navStep(-1); });
@@ -180,14 +211,52 @@
 
   function zApply(skipTransition) {
     if (!img) return;
-    img.style.transformOrigin = zState.ox + '% ' + zState.oy + '%';
-    img.style.transform = zState.zoomed ? 'scale(1.8)' : '';
+    if (zState.zoomed) {
+      /* W105-8fix1(г): transform = translate ПОТОМ scale — translate в px
+         экранных координат (порядок функций: scale применяется первым,
+         сдвиг — уже в готовых пикселях). Пан = 1:1 за пальцем/курсором. */
+      img.style.transformOrigin = zState.ox + '% ' + zState.oy + '%';
+      img.style.transform = 'translate(' + Math.round(zState.tx) + 'px,' + Math.round(zState.ty) + 'px) scale(' + ZOOM + ')';
+      /* тач: пока зум — жесты браузера не мешают пану; без зума снимаем,
+         pinch-zoom страницы остаётся доступным */
+      img.style.touchAction = 'none';
+    } else {
+      img.style.transform = '';
+      img.style.touchAction = '';
+    }
     img.style.cursor = zState.zoomed ? (zState.panning ? 'grabbing' : 'grab') : 'zoom-in';
     /* W104-fix7 (C7-D7 P0): пан НЕ должен пере-включать transition каждый кадр —
        иначе transform-origin анимируется с задержкой .35s и drag выглядит мёртвым */
     img.style.transition = (reduced || skipTransition) ? 'none' : 'transform .35s cubic-bezier(.22,1,.36,1)';
   }
-  function zReset() { zState.zoomed = false; zState.panning = false; zState.moved = 0; zApply(); }
+  /* Кламп пана: зум-вид не должен отрываться от рамки — края картинки
+     держатся за границей figure. tx ∈ [(ZOOM−1)·(ox−w), (ZOOM−1)·ox] (px). */
+  function zBounds() {
+    if (!img) return;
+    var w = img.offsetWidth || 0, h = img.offsetHeight || 0;
+    if (!w || !h) { zState.tx = 0; zState.ty = 0; return; }
+    var s = ZOOM - 1;
+    var ox = (zState.ox / 100) * w, oy = (zState.oy / 100) * h;
+    zState.tx = Math.max(s * (ox - w), Math.min(s * ox, zState.tx));
+    zState.ty = Math.max(s * (oy - h), Math.min(s * oy, zState.ty));
+  }
+  function zReset() {
+    zState.zoomed = false; zState.panning = false; zState.moved = 0;
+    zState.ox = 50; zState.oy = 50; zState.tx = 0; zState.ty = 0;
+    zApply();
+  }
+  /* Вид триггера задаёт стартовое состояние: «крупный план»
+     (data-lightbox-zoom, ставит product-gallery.js) — вход в зуме 1.8
+     с базой линзы галереи 50% 36%; обычный кадр — целиком, без зума. */
+  function applyZoomOf(trigger) {
+    zState.panning = false; zState.moved = 0; zState.tx = 0; zState.ty = 0;
+    if (trigger && trigger.getAttribute('data-lightbox-zoom') === '1' && img) {
+      zState.zoomed = true; zState.ox = 50; zState.oy = 36;
+    } else {
+      zState.zoomed = false; zState.ox = 50; zState.oy = 50;
+    }
+    zApply();
+  }
 
   /* Делегирование на figure: клики */
   figure.addEventListener('click', function (e) {
@@ -199,42 +268,60 @@
       zState.ox = Math.max(0, Math.min(100, ((e.clientX - r.left) / r.width) * 100));
       zState.oy = Math.max(0, Math.min(100, ((e.clientY - r.top) / r.height) * 100));
       zState.zoomed = !zState.zoomed;
+      zState.tx = 0; zState.ty = 0;
       zApply();
       e.stopPropagation();
       return;
     }
     if (e.target === figure) close(); /* пустое место вокруг фото — закрыть */
   });
-  /* Делегирование: пан (pointer events на img через figure) */
-  figure.addEventListener('pointerdown', function (e) {
-    if (e.target !== img || !img || !zState.zoomed) return;
-    zState.panning = true; zState.moved = 0; zState.px = e.clientX; zState.py = e.clientY;
-    zApply();
-  });
-  figure.addEventListener('pointermove', function (e) {
+  /* Делегирование: пан (pointer events на img через figure).
+     W105-8fix1(г): move/up — на window: без pointer-capture ретаргетит
+     click (тап по зуму закрывал бы лайтбокс вместо отзума), а локальные
+     слушатели теряли жест за пределами figure. */
+  function onPanMove(e) {
     if (!zState.panning || !img) return;
     var dx = e.clientX - zState.px, dy = e.clientY - zState.py;
-    zState.moved += Math.abs(dx) + Math.abs(dy);
     zState.px = e.clientX; zState.py = e.clientY;
-    var r = img.getBoundingClientRect();
-    zState.ox = Math.max(0, Math.min(100, zState.ox - (dx / r.width) * 100 / 1.8));
-    zState.oy = Math.max(0, Math.min(100, zState.oy - (dy / r.height) * 100 / 1.8));
+    if (!dx && !dy) return;
+    zState.moved += Math.abs(dx) + Math.abs(dy);
+    zState.tx += dx; zState.ty += dy;
+    zBounds();
     zApply(true); /* пан — без transition */
+  }
+  function endPan() {
+    if (!zState.panning) return;
+    zState.panning = false;
+    window.removeEventListener('pointermove', onPanMove);
+    window.removeEventListener('pointerup', endPan);
+    window.removeEventListener('pointercancel', endPan);
+    zApply();
+  }
+  figure.addEventListener('pointerdown', function (e) {
+    if (e.target !== img || !img || !zState.zoomed) return;
+    zState.panning = true; zState.moved = 0;
+    zState.px = e.clientX; zState.py = e.clientY;
+    /* native drag <img> не стартует (гасит и mousedown-дефолт); дубль —
+       dragstart-preventDefault ниже */
+    e.preventDefault();
+    window.addEventListener('pointermove', onPanMove);
+    window.addEventListener('pointerup', endPan);
+    window.addEventListener('pointercancel', endPan);
+    zApply();
   });
-  ['pointerup', 'pointercancel'].forEach(function (ev) {
-    figure.addEventListener(ev, function () {
-      if (zState.panning) { zState.panning = false; zApply(); }
-    });
-  });
+  /* Страховка: нативный drag картинки (дефолт draggable=true у <img>)
+     перехватывал указатель — пан «висел» без движения (мошн-критик 8-c) */
+  lightbox.addEventListener('dragstart', function (e) { e.preventDefault(); });
   /* Клавиатура: стрелки — навигация (когда лайтбокс открыт) */
   document.addEventListener('keydown', function (e) {
     if (lightbox.hidden) return;
     if (e.key === 'ArrowLeft') { e.preventDefault(); navStep(-1); }
     if (e.key === 'ArrowRight') { e.preventDefault(); navStep(1); }
   });
-  /* Открытие: курсор + счётчик + сброс зума; закрытие — сброс */
+  /* Открытие: индекс кликнутого вида + зум-состояние вида + счётчик;
+     закрытие — сброс (и пан-слушатели долой) */
   var origOpen = open;
-  open = function (t) { origOpen(t); if (img) { img.style.cursor = 'zoom-in'; } zReset(); updateNav(); };
+  open = function (t) { origOpen(t); curIdx = lbIndexFor(t); applyZoomOf(t); updateNav(); };
   var origClose2 = close;
-  close = function () { zReset(); origClose2(); };
+  close = function () { endPan(); zReset(); origClose2(); };
 })();

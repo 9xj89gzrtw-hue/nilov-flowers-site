@@ -37,6 +37,19 @@
   const navButtons = Array.from(document.querySelectorAll('[data-gnav]'));
   if (slides.length < 1) return;
 
+  /* W105-8fix1 (критик-UX 8-b P1): слайды несут data-index — js/lightbox.js
+     открывает лайтбокс НА КЛИКНУТОМ слайде (раньше индекс искался матчем src:
+     дубликаты src у «общего вида» и «крупного плана» всегда отдавали 0-й).
+     Слайд с .product-gallery__zoom («крупный план») помечен
+     data-lightbox-zoom — лайтбокс продолжает рассказ слайда и стартует
+     в зуме 1.8 с базой линзы (50% 36%). */
+  slides.forEach(function (slide, i) {
+    slide.setAttribute('data-index', String(i));
+    if (slide.querySelector('.product-gallery__zoom')) {
+      slide.setAttribute('data-lightbox-zoom', '1');
+    }
+  });
+
   function activateZoomBg(slide) {
     var zoom = slide ? slide.querySelector('.product-gallery__zoom') : null;
     if (!zoom || zoom.style.backgroundImage) return;

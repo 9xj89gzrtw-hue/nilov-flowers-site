@@ -35,9 +35,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $curSt = (string)($stQ->fetchColumn() ?: '');
         /* W70 (владелец NEW-2): валидация по тому же словарю, что и UI.
            W98-fixD (D9): «Подтверждён» → «Новые» — локальное исключение (кнопка «Вернуть
-           в новые» на карточке): в глобальный словарь includes/util.php не лезем. */
+           в новые» на карточке): в глобальный словарь includes/util.php не лезем.
+           W105-8fix1 (админ-критик 8-c P2): «Новый» принимается и из «В работе» —
+           ошибочный статус восстанавливаем из любого живого (селект ниже
+           печатает тот же набор переходов). */
         $allowedLocal = orderTransitions()[$curSt] ?? [];
-        if ($curSt === 'confirmed' && !in_array('new', $allowedLocal, true)) {
+        if (in_array($curSt, ['confirmed', 'in_progress'], true) && !in_array('new', $allowedLocal, true)) {
             $allowedLocal[] = 'new';
         }
         if (array_key_exists($status, statuses()) && $status !== 'done' && in_array($status, $allowedLocal, true)) {
@@ -98,6 +101,12 @@ if (!$order) {
 $items = $pdo->prepare('SELECT name, price, qty FROM order_items WHERE order_id = :i');
 $items->execute([':i' => $id]);
 $items = $items->fetchAll();
+
+/* W105-8fix1 (админ-критик 8-c P2): заказ просмотрен — фиксируем текущее
+   число новых как «прочитанное» (сессия): poll.php отдаёт unread = new − seen,
+   заголовок «🔔 (N) НОВЫЙ ЗАКАЗ!» затихает после визита, новый заказ будит
+   снова. Аналогичная фиксация — в ленте /admin/index.php. */
+$_SESSION['admin_new_seen'] = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'new'")->fetchColumn();
 
 adminHeader('Заказ №' . $id, 'index');
 flash();
@@ -192,8 +201,15 @@ flash();
       <?= csrf_field() ?>
       <input type="hidden" name="action" value="status">
       <select name="status" style="width:auto">
-        <?php /* W70 (владелец NEW-2): только легальные переходы — тот же словарь, что в ленте */
+        <?php /* W70 (владелец NEW-2): только легальные переходы — тот же словарь, что в ленте.
+               W105-8fix1 (админ-критик 8-c P2): «Новый» вернулся в селект и для
+               «В работе» (раньше — только кнопкой из «Подтверждён»): ошибочное
+               подтверждение восстанавливаемо. Набор = тому, что принимает POST выше. */
                $allowed = orderTransitions()[$order['status']] ?? [];
+               if (in_array($order['status'], ['confirmed', 'in_progress'], true)
+                   && !in_array('new', $allowed, true)) {
+                   $allowed[] = 'new';
+               }
                $labels = statuses();
                foreach ($allowed as $key): ?>
           <option value="<?= e($key) ?>"><?= e($labels[$key] ?? $key) ?></option>

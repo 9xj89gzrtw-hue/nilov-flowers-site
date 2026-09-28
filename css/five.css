@@ -398,12 +398,11 @@ html{scrollbar-width:thin;scrollbar-color:var(--line) transparent}
   box-shadow:0 1px 2px rgba(28,26,30,.05);
   transition:transform .25s cubic-bezier(.22,1,.36,1),box-shadow .25s cubic-bezier(.22,1,.36,1);
 }
-.product-card:hover{
-  /* W103 (критик-7 P0-3): амплитуда ниже порога восприятия (−2px VLM даже
-     не замечал) — поднимаем до −6px + глубокая тень + img 1.07 за .6s */
-  transform:translateY(-6px);
-  box-shadow:0 24px 48px rgba(28,26,30,.16);
-}
+/* W105-8fix1 (мошн-критик 8-c P2 «лотерея каскада» 8+ конфликтующих
+   .product-card:hover): W103-правило {translateY(-6px)+тень} УДАЛЕНО —
+   канон W105 один: hover = translateY(-4px) + zoom 1.03 + волосяное кольцо,
+   БЕЗ тени. Авторы: лифт — W104-5 ниже + motion-w104.css 6b (тайминг в
+   каруселях/гриде); зум/линия/noshadow — блок W105-5a ниже. */
 .product-card__media{
   position:relative;aspect-ratio:3/4;
   background:var(--surface-subtle);
@@ -417,8 +416,8 @@ html{scrollbar-width:thin;scrollbar-color:var(--line) transparent}
   width:100%;height:100%;object-fit:cover;aspect-ratio:auto;
   transition:transform .5s cubic-bezier(.22,1,.36,1);
 }
-.product-card:hover .product-card__img,
-.product-card:hover .product-card__media img{transform:scale(1.07)}
+/* W105-8fix1: :hover-zoom 1.07 удалён — единственный автор зума —
+   блок W105-5a ниже (scale(1.03) за .5s bezier(.4,0,.2,1)) */
 .product-card__img,.product-card__media img{transition-duration:.6s}
 img.product-card__img{background:var(--surface-subtle)}
 
@@ -2220,13 +2219,16 @@ details:not([open]) .faq-item__a-wrap{grid-template-rows:0fr}
    VLM дважды: «оптовый прайс-лист»). Цена остаётся первой в DOM,
    старая цена 12px muted line-through. */
 .product-card{background:transparent;border-radius:20px;box-shadow:none} /* W105-6fix1: 24→20 */
+/* W105-8fix1 (мошн-критик 8-c P2): ЕДИНСТВЕННЫЙ автор hover-лифта в
+   базовом слое: −4px (в каруселях/гриде тайминг .5s добавляет
+   motion-w104.css 6b). Тень не участвует (flat 5cv) — гейтит
+   W105-5a ниже (.product-card:hover{box-shadow:none}). */
 .product-card:hover{
   transform:translateY(-4px);
-  box-shadow:0 24px 48px rgba(28,26,30,.12);
 }
 .product-card__media{border-radius:20px;background:var(--surface-warm)} /* W105-6fix1: 22→20 */
-.product-card:hover .product-card__img,
-.product-card:hover .product-card__media img{transform:scale(1.05)}
+/* W105-8fix1: :hover-zoom 1.05 удалён — единственный автор зума — блок
+   W105-5a ниже (1.03/.5s bezier(.4,0,.2,1)) */
 .product-card__body{padding:12px 2px 14px;gap:8px}
 .product-card__price{margin:0;font-weight:700;font-size:15px;line-height:1.3;color:var(--ink);font-variant-numeric:tabular-nums} /* W105-7fix1 (арт-критик 7-a P1#2): цена — ink 700 15px, якорь карточки (было 500/15/muted — «самый тихий элемент решал покупку»); DOM-порядок цена→имя сохранён */
 .product-card__price--old{
@@ -2825,7 +2827,13 @@ button,input,select,textarea{font-family:inherit}
 /* ---- 2. КАРТОЧКИ: 5cv-exact hover (зум 1.03 / 500ms / плоская линия) ----
    Единая пара зума для ВСЕХ контекстов (каталог, карусель, фича, премиум):
    5cv group-hover:scale-[1.03] за 500ms bezier(.4,0,.2,1) — вместо трёх
-   разных амплитуд (1.07→1.05) и двух таймингов (.5/.6s) */
+   разных амплитуд (1.07→1.05) и двух таймингов (.5/.6s)
+   W105-8fix1 (мошн-критик 8-c P2 «лотерея каскада»): этот блок —
+   ЕДИНСТВЕННЫЙ автор зума/линии/отсутствия тени (проигравшие дубли
+   1.045/1.05/1.07 удалены из style.css / nilov.css / выше по five.css).
+   ПОЛНЫЙ КАНОН W105: hover = translateY(-4px) [лифт — W104-5 выше +
+   motion-w104.css 6b] + zoom 1.03 [тут] + волосяное кольцо [тут] —
+   БЕЗ тени. */
 .product-card__img,
 .product-card__media img{transition:transform .5s cubic-bezier(.4,0,.2,1)}
 .product-card:hover .product-card__img,
@@ -3157,3 +3165,44 @@ html.js-ready details.fc-seo__more.is-closing > .faq-item__a-wrap{
 @media(max-width:899px){
   .fc-hero__eyebrow{font-size:.6875rem}
 }
+
+/* ================================================================
+   W105-8fix1 (Task 8-fix1, критики 8-b/8-c волна 3)
+   ================================================================ */
+
+/* ---- 1. АКТИВНЫЙ ФИЛЬТР ПОИСКА у шапки каталога (критик-UX 8-b P1#2) ----
+   После поиска «розы» сетка молча редела до 11/23 — без индикатора и без
+   видимого выхода. Пилюля «Поиск: «розы» ✕» (разметка — index.php, между
+   шапкой секции и вкладками; состояние — js/catalog-filter.js в apply())
+   — кнопка: клик снимает запрос и пересчитывает каталог. Язык — пилюли
+   вкладок (.catalog-tabs__tab): тёплая подложка + ink-ободок, 44px тач. */
+.catalog-search-chip{
+  align-items:center;gap:10px;
+  min-height:44px;max-width:100%;
+  padding:0 8px 0 16px;border-radius:999px;
+  background:var(--surface-warm,#f6f1e6);color:var(--ink);
+  border:1.5px solid var(--ink);
+  font:600 .875rem var(--font-ui);white-space:nowrap;cursor:pointer;
+  margin:-6px 0 14px;
+  transition:background .15s,transform .15s;
+}
+.catalog-search-chip:not([hidden]){display:inline-flex}
+.catalog-search-chip:hover{background:var(--surface-subtle,#eceaf0)}
+.catalog-search-chip:active{transform:scale(.97)}
+.catalog-search-chip:focus-visible{outline:2px solid var(--pink);outline-offset:2px}
+.catalog-search-chip__label{overflow:hidden;text-overflow:ellipsis}
+.catalog-search-chip__x{
+  flex:none;display:grid;place-items:center;
+  width:28px;height:28px;border-radius:50%;
+  background:var(--ink);color:#fff;font-size:.95rem;line-height:1;
+}
+@media(max-width:899px){
+  .catalog-search-chip{margin:0 0 10px}
+}
+
+/* ---- 2. ЯКОРЬ #fcChips (ряд чипов цен): hero-CTA «Выбрать букет» ведёт
+   сюда (критик-UX 8-b P1#3 — раньше прыгал к #catalog ~6258px, минуя чипы
+   ~781px). Компенсация sticky-хедера уже есть в системе: html{scroll-
+   padding-top:96px} (нативные прыжки на таче — Lenis его тоже читает)
+   + offset −96 в kinetic.js (как у всех якорей сайта). Отдельный
+   scroll-margin НЕ нужен — был бы тройной сдвиг (замер: чипы на y=304). ---- */

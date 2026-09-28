@@ -141,7 +141,7 @@ function seedDemoData(PDO $pdo): void
         ('hero_title', 'Доставка цветов по Санкт-Петербургу'),
         ('hero_subtitle', 'К празднику или просто так — повод не обязателен'),
         ('hero_button_text', 'Выбрать букет'),
-        ('hero_button_link', '#catalog'),
+        ('hero_button_link', '#fcChips'),
         ('hero_image', 'img/editorial/petals-hero-4x3.jpg'),
         ('logo_image', ''),
         ('logo_enabled', '1'),
@@ -460,7 +460,7 @@ function migrateSchema(PDO $pdo): void
         ('hero_promo_title', 'Открытка в подарок'),
         ('hero_promo_text', 'Напишем ваш текст от руки и вложим в букет — бесплатно, в каждом заказе'),
         ('hero_promo_btn_text', 'Выбрать букет'),
-        ('hero_promo_link', '#catalog'),
+        ('hero_promo_link', '#fcChips'),
         ('hero_delivery_card_enabled', '1'),
         ('hero_delivery_title', 'Доставка в день заказа'),
         ('hero_delivery_text', 'По Санкт-Петербургу — оформите до 20:00, привезём сегодня'),
@@ -870,5 +870,13 @@ $pdo->exec("UPDATE occasions SET faq_q1 = replace(faq_q1, 'Какую карту
        правленое владельцем (свой аплоад) не трогаем; идемпотентно.
        Premium-фон по-прежнему petals-macro (осознанно). */
     $pdo->exec("UPDATE settings SET value='img/editorial/petals-hero-4x3.jpg' WHERE key='hero_image' AND value='img/editorial/petals-macro.jpg'");
+
+    /* W105-8fix1 (критик-UX 8-b P1#3): CTA «Выбрать букет» прыгал к #catalog
+       (~6258px), минуя ряд чипов цен (~781px) — золотой путь не видел
+       быстрых фильтров. Якорь обоих hero-кнопок — #fcChips (id ряда чипов,
+       index.php). Guard по ТОЧНОМУ прежнему дефолту '#catalog' — правленое
+       владельцем значение не трогаем; идемпотентно. */
+    $pdo->exec("UPDATE settings SET value='#fcChips' WHERE key='hero_button_link' AND value='#catalog'");
+    $pdo->exec("UPDATE settings SET value='#fcChips' WHERE key='hero_promo_link' AND value='#catalog'");
 
 }

@@ -19,7 +19,11 @@ $zones = $pdo->query('SELECT id, name, price FROM delivery_zones ORDER BY sort, 
 $heroTextEnabled = setting('hero_text_enabled', '1') === '1';
 $heroH1 = setting('seo_h1', setting('hero_title', 'Доставка цветов по Санкт-Петербургу'));
 $heroBtnText = trim(setting('hero_button_text', 'Выбрать букет'));
-$heroBtnLink = safe_url(trim(setting('hero_button_link', '#catalog')));
+/* W105-8fix1 (критик-UX 8-b P1#3): дефолт якоря — #fcChips (ряд чипов цен,
+   ~781px): золотой путь сначала видит быстрые фильтры, а не прыгает сразу
+   к #catalog (~6258px). Стойкое значение в БД (сид '#catalog') переведено
+   guard-миграцией в includes/db.php; правленое владельцем не трогаем. */
+$heroBtnLink = safe_url(trim(setting('hero_button_link', '#fcChips')));
 $heroBtn = $heroTextEnabled && $heroBtnText !== '' && $heroBtnLink !== '';
 
 /* Функции витрины (критерий 16): каждый блок отключаем из админки */
@@ -48,6 +52,14 @@ $featSeotext = setting('feature_seotext', '1') === '1';
 $featJournal = setting('feature_journal', '0') === '1';
 $heroPromoOn = setting('hero_promo_enabled', '1') === '1';
 $heroDeliveryOn = setting('hero_delivery_card_enabled', '1') === '1';
+/* W105-8fix1 (8-b P1#3): кнопка hero-промо «Выбрать букет» — тот же якорь
+   чипов #fcChips (дефолт и guard-миграция как у главного CTA); чипы цен
+   выключены — оба возвращаются к прежнему #catalog, якорь всегда жив */
+$heroPromoLink = safe_url(trim(setting('hero_promo_link', '#fcChips')));
+if (!$featChips) {
+    if ($heroBtnLink === '#fcChips') $heroBtnLink = '#catalog';
+    if ($heroPromoLink === '#fcChips') $heroPromoLink = '#catalog';
+}
 
 /* W103 (F1): marquee-лента под hero — СУЩЕСТВУЮЩИЕ ключи marquee_1..4
    (дефолты — «заводские» из settings-history.php). Пустые строки пропускаем. */
@@ -1047,7 +1059,7 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
           <span class="fc-hero__promo-eyebrow"><?= e(setting('hero_promo_badge', 'К каждому букету')) ?></span>
           <h2 class="fc-hero__promo-title"><?= e(setting('hero_promo_title', 'Открытка в подарок')) ?></h2>
           <p class="fc-hero__promo-text"><?= e(setting('hero_promo_text', 'Напишем ваш текст от руки и вложим в букет — это бесплатно')) ?></p>
-          <a class="fc-hero__promo-btn" href="<?= e(safe_url(setting('hero_promo_link', '#catalog'))) ?>"><?= e(setting('hero_promo_btn_text', 'Выбрать букет')) ?></a>
+          <a class="fc-hero__promo-btn" href="<?= e($heroPromoLink) ?>"><?= e(setting('hero_promo_btn_text', 'Выбрать букет')) ?></a>
         </div>
         <?php endif; ?>
         <?php /* Карточка доставки (W104-a2): ink line-трек «машина → фото → дверь»
@@ -1358,6 +1370,14 @@ if ($citybarCity === '') { $citybarCity = $citybarText; }
         <?php if ($catalogSub !== ''): ?><p class="fc-row__sub"><?= e($catalogSub) ?></p><?php endif; ?>
         </div>
       </div>
+      <?php /* W105-8fix1 (критик-UX 8-b P1#2): индикатор активного поиска — пилюля
+             «Поиск: «запрос» ✕» между шапкой каталога и вкладками. Состояние
+             ведёт js/catalog-filter.js (apply()); клик — снять запрос и
+             пересчитать сетку. Без JS скрыт (hidden) — поиск сам JS-овский. */ ?>
+      <button type="button" class="catalog-search-chip" id="catalogSearchChip" hidden>
+        <span class="catalog-search-chip__label" id="catalogSearchChipLabel">Поиск</span>
+        <span class="catalog-search-chip__x" aria-hidden="true">&#10005;</span>
+      </button>
       <div class="catalog-tabs" id="catalogTabs" role="group" aria-label="Фильтр каталога по категориям">
         <button type="button" class="catalog-tabs__tab is-active" aria-pressed="true" data-category-id="all">Все</button>
         <?php foreach ($categories as $c): ?>

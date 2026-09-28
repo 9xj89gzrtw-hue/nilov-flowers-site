@@ -143,11 +143,18 @@ select.pill{padding:8px 34px 8px 14px;border-radius:999px;border:1px solid var(-
    грида, :last-child карточкой стать не может. */
 @media(min-width:820px){.catalog__grid{grid-template-columns:repeat(3,1fr)}}
 .product-card{background:#fff;border-radius:var(--radius-lg);overflow:hidden;box-shadow:0 10px 30px -18px rgba(43,45,47,.25);transition:transform .2s,box-shadow .2s;display:flex;flex-direction:column}
-.product-card:hover{transform:translateY(-5px);box-shadow:0 22px 44px -20px rgba(43,45,47,.35)}
+/* W105-8fix1 (мошн-критик 8-c P2 «лотерея каскада»): legacy-правила
+   .product-card:hover{translateY(-5px)+тень} и :hover .product-card__img
+   {scale(1.05)} УДАЛЕНЫ — канон W105 один: hover = translateY(-4px) +
+   zoom 1.03 + волосяное кольцо, БЕЗ тени. Авторы: five.css (W104-5/W105-5a:
+   лифт −4px + зум + линия + box-shadow:none) и motion-w104.css 6b (тайминг
+   в каруселях/гриде). Это legacy-базовый слой — five.css грузится позже и
+   перекрывает всё равно; дубль удалили, чтобы каскад не врал. */
 .product-card.is-hidden{display:none}
 .product-card__media{position:relative;aspect-ratio:4/4.7;background:var(--bg-alt);overflow:hidden}
 .product-card__img{width:100%;height:100%;object-fit:cover;transition:transform .5s}
-.product-card:hover .product-card__img{transform:scale(1.05)}
+/* W105-8fix1: :hover-zoom 1.05 удалён — единственный автор зума five.css
+   (W105-5a, scale(1.03) за .5s bezier(.4,0,.2,1)) */
 .product-card__media-link{display:grid;place-items:center;width:100%;height:100%}
 .product-card__badge{position:absolute;top:12px;left:12px;right:56px;background:rgba(255,255,255,.92);backdrop-filter:blur(6px);border-radius:999px;padding:5px 12px;font-size:.75rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:calc(100% - 68px)} /* W105-6fix2: вес 600→700 = базовому токену бейджей five.css */
 /* W64 (obvious-критик w4g4 NEW-1): скидка/urgent/доставка лежали ДРУГ НА ДРУГЕ (одинаковые top:12) —

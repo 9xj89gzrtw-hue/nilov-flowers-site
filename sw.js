@@ -1,5 +1,5 @@
 /* Service worker — Nilov Flowers. VERSION менять при каждом деплое. */
-const VERSION = 'w105h'; /* W105-7fix1: hero-мастер 4:3 (petals-hero-4x3), полоса каталога rose-linen, ценовая иерархия 5cv, cookie-карточка, чипы категории, манифест 52px, PDP 40px/точки галереи */
+const VERSION = 'w105i'; /* W105-8fix1: лайтбокс (моб-навигация+индекс клика+живой пан), чип активного поиска, hero-CTA → #fcChips, канон hover, tap-highlight, motion-lite стаггер, админ: статус «Новый» + затихающий title */
 const STATIC_CACHE = `static-${VERSION}`;
 const PAGE_CACHE = `pages-${VERSION}`;
 const OFFLINE_URL = '/offline.html';

@@ -157,14 +157,14 @@ html.js-ready details.fc-seo__more.is-closing > .faq-item__a-wrap {
    только hover-состояние. Голый ease в transition → системная кривая.
    W105 (5-a): hover-тень убрана вовсе — 5cv flat-язык; вместо неё
    волосяная линия на фото-плитке (five.css W105-2, ::after-кольцо);
-   физику подъёма карточки см. 6b. */
+   физику подъёма карточки см. 6b.
+   W105-8fix1 (мошн-критик 8-c P2 «лотерея каскада»): дубль-правило
+   .product-card:hover{box-shadow:none} удалено — единственный автор
+   «без тени» теперь five.css (блок W105-5a); здесь — только база. */
 .product-card {
   box-shadow: none;
   transition: transform .25s cubic-bezier(0.22, 1, 0.36, 1),
               box-shadow .25s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.product-card:hover {
-  box-shadow: none;
 }
 
 /* --- 4f. Marquee: играет только в вьюпорте ---
@@ -237,6 +237,13 @@ html.js-ready details.fc-seo__more.is-closing > .faq-item__a-wrap {
    (адаптивный счётчик) остаются. 8+ ядер — полный motion. */
 html.motion-lite .reveal { animation: none; }
 html.motion-lite .fc-manifesto__img { animation: none; }
+/* W105-8fix1 (мошн-критик 8-c P2 «утечка стаггера»): fc-card-in — правило
+   five.css (0,3,0) — перебивал lite-гейт выше (0,2,1): в motion-lite базовые
+   reveal выключены, а карточки продолжали каскадиться с задержками --i.
+   Гасим той же специфичностью из позднего файла — в lite карточки появляются
+   мгновенно (IO-fallback .reveal--visible + transition:none у базы). */
+html.motion-lite .fc-carousel .reveal.reveal--visible,
+html.motion-lite .catalog__grid .reveal.reveal--visible { animation: none; }
 html.motion-lite .nv-bloom .nv-bloom-petals {
   animation: none;
   transform: none;  /* статика в открытом состоянии, не полузакрытым */
@@ -444,8 +451,14 @@ html.motion-lite .hero__deadline{
    Правило той же специфичности (0,3,0) в файле, который грузится ПОСЛЕ
    five.css, — каскад на нашей стороне (проверено styleSheets-анализом:
    самое специфичное :hover-правило для карточек теперь это).
-   Скоуп no-preference: в reduce у five.css остаётся последнее слово
-   `.product-card:hover{transform:none}` (W104-8) — лифт выключен честно.
+   W105-8fix1 (мошн-критик 8-c P2 «лотерея каскада», КАНОН W105 задокументирован
+   здесь): hover карточки = translateY(-4px) + zoom фото 1.03 + волосяное
+   кольцо на фото-плитке, БЕЗ тени. Авторы пары: ЛИФТ+ТАЙМИНГ — это правило;
+   ZOOM 1.03/.5s — five.css (W105-5a); ЛИНИЯ + box-shadow:none — five.css
+   (W105-5a). Проигравшие дубли (−5/−6/none, тени 3×) удалены из
+   style.css / nilov.css / five.css. Скоуп no-preference: в reduce hover
+   применяется мгновенно (five.css RM-блок глушит transition — «статика,
+   не пустота»), лифт как был.
    motion-lite НЕ гасим: это один compositor-переход, не скролл-jank.
    Вход fc-card-in (0.55s backwards) во время проигрывания сильнее
    каскада — но он конечен и не forwards, после него лифт живой. */
@@ -622,3 +635,26 @@ html.motion-lite .hero__deadline{
 .fc-occasions .fc-occasion--photo figcaption,
 .fc-occasions .fc-occasion--photo [class*=label]{transition:background .45s cubic-bezier(.4,0,.2,1),color .45s cubic-bezier(.4,0,.2,1)}
 .fc-occasions .fc-occasion--photo:hover [class*=label]{background:var(--ink,#1c1a1e);color:#fff}
+
+/* ================================================================
+   W105-8fix1 — фиксы волны 3 (критики 8-b UX + 8-c motion/admin)
+   ================================================================ */
+
+/* P1 (8-b): мобильный лайтбокс — навигация видима и компактна: стрелки
+   40px + счётчик, отступ с учётом safe-area (home-индикатор iPhone).
+   Раньше .lightbox__nav прятался inline из js (гейт «уникальных src»
+   W104-fix7) — на 390px второй вид («крупный план») был недостижим:
+   свайпа нет, стрелок нет. Гейт в js заменён на «видов > 1», здесь —
+   только компактная геометрия (десктоп-правила выше в этом файле). */
+@media(max-width:899px){
+  .lightbox__nav{bottom:calc(10px + env(safe-area-inset-bottom,0px));gap:10px}
+  .lightbox__arrow{width:40px;height:40px;font-size:16px}
+  .lightbox__counter{font-size:12px}
+}
+
+/* P2 (8-c): системная синяя вспышка -webkit-tap-highlight
+   rgba(51,181,229,.4) на кремово-розовом бренде — глушим на html
+   (наследуется всеми элементами). Отклик касания остаётся за авторскими
+   press-масштабами: .fc-chip:active/.catalog-tabs__tab:active scale(.97)
+   (five.css), CTA .94, ссылки .98 — «тихое касание» в языке бренда. */
+html{-webkit-tap-highlight-color:transparent}

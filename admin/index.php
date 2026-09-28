@@ -16,6 +16,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !csrf_check()) {
 $pdo = db();
 $flash_err = false;
 
+/* W105-8fix1 (админ-критик 8-c P2): лента заказов просмотрена — фиксируем
+   текущее число новых как «прочитанное» (сессия). poll.php теперь отдаёт
+   unread = новые − прочитанные: заголовок «🔔 (N) НОВЫЙ ЗАКАЗ!» гаснет
+   после просмотра, а не висит вечно; следующий заказ будит его снова. */
+$_SESSION['admin_new_seen'] = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'new'")->fetchColumn();
+
 // Смена статуса (кроме «Выполнен» — он через /admin/order.php с подтверждением вручения).
 /* W70 (владелец NEW-1/2): переходы — из единого словаря orderTransitions() */
 $allowedTransitions = orderTransitions();

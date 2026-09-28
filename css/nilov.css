@@ -237,9 +237,8 @@ html:not(.js-ready) .reveal *{
   transition:transform .5s cubic-bezier(.22,1,.36,1);
   mix-blend-mode:normal;
 }
-.product-card:hover .product-card__media img{
-  transform:scale(1.045);
-}
+/* W105-8fix1 (мошн-критик 8-c P2): :hover-zoom 1.045 удалён — единственный
+   автор зума five.css (W105-5a: 1.03/.5s bezier(.4,0,.2,1)) */
 /* Свет-градиент поверх фото снизу — карточка «дышит» даже с плоским фото */
 .product-card__media::after{
   content:"";
@@ -260,15 +259,15 @@ img.product-card__img{
 /* W65 (статич. выверка #4): админский .row-actions вычищен — nilov.css в админку
    не линкуется, а при случайной линковке убил бы тач-правило 44px */
 
-/* Карточки товара: lift+shadow при hover
+/* Карточки товара: базовый переход (hover-состояние — НЕ здесь)
    W104-δ (C2-M2 ease-изгои): почти-дубль системной кривой
-   (.19,1,.22,1) и голый ease → единая cubic-bezier(.22,1,.36,1) */
+   (.19,1,.22,1) и голый ease → единая cubic-bezier(.22,1,.36,1)
+   W105-8fix1 (мошн-критик 8-c P2 «лотерея каскада»): правило
+   .product-card:hover{translateY(-6px)+тень} УДАЛЕНО — канон W105 один:
+   hover = translateY(-4px) + zoom 1.03 + волосяное кольцо, БЕЗ тени
+   (авторы — five.css W105-5a + motion-w104.css 6b) */
 .product-card{
   transition:transform .35s cubic-bezier(.22,1,.36,1),box-shadow .35s cubic-bezier(.22,1,.36,1);
-}
-.product-card:hover{
-  transform:translateY(-6px);
-  box-shadow:0 24px 44px -18px rgba(43,43,47,.28);
 }
 /* Плавный sheen на кнопках: светлая полоса проезжает */
 .btn--accent,.btn{

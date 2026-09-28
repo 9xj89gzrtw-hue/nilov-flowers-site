@@ -34,6 +34,13 @@
     tab.setAttribute('aria-pressed', 'true');
 
     const categoryId = tab.dataset.categoryId;
+    /* W105-8fix1 (критик-UX 8-b P1#2): «Все» = «показать всё» — снимает и
+       поиск (раньше после «розы» вкладка возвращала категории, но сетка
+       оставалась урезанной 11/23 без объяснения). Остальные вкладки запрос
+       не трогают — честная AND-комбинация (пусто = empty-state объяснит). */
+    if (categoryId === 'all' && searchInp && searchInp.value !== '') {
+      searchInp.value = '';
+    }
     cards.forEach(function (card) {
       const matches = categoryId === 'all' || card.dataset.categoryId === categoryId;
       card.classList.toggle('is-hidden', !matches);
@@ -149,6 +156,23 @@
     /* H10: длинные стеммы (≥3) матчатся ТОЧНО по Set стеммов карточки;
      короткий запрос целиком (напр. «7») — прежний подстрочный fallback */
     var stems = rawStems.filter(function (w) { return w.length >= 3; });
+
+    /* W105-8fix1 (критик-UX 8-b P1#2): видимый индикатор активного поиска —
+       пилюля «Поиск: «розы» ✕» у шапки каталога (разметка — index.php).
+       Раньше сетка молча редела до 11/23: ни подсказки, ни выхода (сброс
+       жил только внутри скрытого empty-state). Синхронно с apply(), чтобы
+       любое изменение поля (ввод/«Все»/сброс/глубокая ссылка ?q=) её вело. */
+    var searchChip = document.getElementById('catalogSearchChip');
+    var searchChipLabel = document.getElementById('catalogSearchChipLabel');
+    if (searchChip && searchChipLabel) {
+      if (q !== '') {
+        searchChipLabel.textContent = 'Поиск: «' + rawQ.trim() + '»';
+        searchChip.setAttribute('aria-label', 'Сбросить поиск «' + rawQ.trim() + '» — показать все букеты');
+        searchChip.hidden = false;
+      } else {
+        searchChip.hidden = true;
+      }
+    }
 
     /* W96-fix1 (F6): считаем и скрываем ТОЛЬКО карточки каталога (#catalogGrid) —
        селектор .product-card зацепил бы и карусели секций (хиты/премиум/…). */
@@ -273,6 +297,18 @@
 
   /* Публичный re-apply: его зовут five.js (чип/поиск/сброс) и nilov.js (сердечки) */
   window.NfCatalogApply = apply;
+
+  /* W105-8fix1: пилюля активного поиска — клик снимает запрос и
+     пересчитывает каталог (apply() разошлёт fc:filter — пилюля five.js
+     «Нашлось N» спрячется тем же путём) */
+  (function () {
+    var chipBtn = document.getElementById('catalogSearchChip');
+    if (!chipBtn) return;
+    chipBtn.addEventListener('click', function () {
+      if (searchInp && searchInp.value !== '') searchInp.value = '';
+      apply();
+    });
+  })();
 
   if (priceSel) priceSel.addEventListener('change', function () {
     /* W102 (UX-критик): двусторонний sync — смена селекта переключает ценовой чип
