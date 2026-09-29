@@ -842,3 +842,140 @@ ul,ol,h1,h2,h3,h4,p,figure{margin:0;padding:0;list-style:none}
     <span class="mono" style="color:var(--bone-mute)" data-b="contacts.address">наб. реки Мойки, 82</span>
   </div>
 </div>
+
+<div class="srch" id="srch" role="dialog" aria-modal="true" aria-label="Поиск">
+  <div class="srch__in">
+    <div class="srch__f">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg>
+      <input id="srchI" type="search" placeholder="пионы, розы, коробка…" autocomplete="off" aria-label="Что ищем">
+      <button class="xb" id="srchX" type="button" aria-label="Закрыть поиск"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div class="srch__h">Популярные запросы</div>
+    <div class="srch__t" id="srchTags"></div>
+    <div class="srch__r" id="srchR"></div>
+  </div>
+</div>
+
+<main id="main">
+<span id="top"></span>
+
+<section class="hero" aria-labelledby="heroT">
+  <div class="hero__bg" aria-hidden="true"><i></i><i></i><i></i></div>
+  <canvas id="petals" aria-hidden="true"></canvas>
+  <div class="wrap hero__g">
+    <div class="hero__c1">
+      <p class="hero__k"><b>✿</b><span data-b="hero.kicker">Флористическая студия · Мойка, 82</span></p>
+      <h1 class="hero__t" id="heroT" data-hero-title></h1>
+      <p class="hero__a" data-rv data-d="420"><span data-b="hero.titleAccent">который вам привезут</span></p>
+      <p class="hero__l" data-rv data-d="520" data-b="hero.lead">Собираем букеты из срезки, которая приехала сегодня утром.</p>
+      <div class="hero__c" data-rv data-d="620">
+        <a class="btn btn--fill btn--lg" data-magnet href="#catalog"><span data-b="hero.ctaPrimary.label">Смотреть каталог</span>
+          <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="btn btn--ghost btn--lg" data-magnet href="#constructor"><span data-b="hero.ctaSecondary.label">Собрать свой букет</span></a>
+      </div>
+      <div class="hero__tr" id="heroStats" data-rv data-d="720"></div>
+    </div>
+    <div class="hero__v" data-rv="mask" data-d="200">
+      <figure class="hero__f" id="heroFig" data-par="0.05">
+        <img class="nf-img" id="heroImg" src="/img/editorial/florist-hands.webp" alt="Флорист студии НИЛОВ собирает авторский букет" fetchpriority="high" decoding="async">
+        <span class="hero__fr" aria-hidden="true"></span>
+      </figure>
+      <div class="hcard hcard--1" data-par="-0.09" id="hcard1"></div>
+      <div class="hcard hcard--2" data-par="0.12" id="hcard2"></div>
+      <div class="hero__sc" aria-hidden="true"><em></em><span>Листайте</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="band" aria-hidden="true"><div class="band__t" id="bandT"></div></div>
+
+<section class="sec atl" id="atelier" aria-labelledby="atlT">
+  <div class="wrap atl__g">
+    <div class="atl__l">
+      <p class="kick" data-rv><span data-b="atelier.kicker">Студия</span></p>
+      <h2 class="sec-t" id="atlT" data-rv data-d="80" style="font-size:clamp(28px,3.6vw,50px)"><span data-b="atelier.title">Мы не магазин цветов.</span></h2>
+      <p class="sec-l" style="margin-top:20px" data-rv data-d="160" data-b="atelier.lead">Nilov Flowers — 9 флористов и одна мастерская на Мойке.</p>
+      <div class="atl__sig" data-rv data-d="240">
+        <svg viewBox="0 0 160 48" aria-hidden="true"><path d="M6 38c8-22 14-30 18-30s3 12 1 20-4 12-2 12 8-8 12-16 6-12 9-12 2 10 5 10 8-8 12-14 6-8 8-6 1 8 5 8 9-6 13-12 7-8 9-6"/></svg>
+        <div><b data-b="atelier.signature">Артём Нилов</b>основатель студии</div>
+      </div>
+      <div class="atl__f" id="atlFacts" data-rv data-d="320"></div>
+    </div>
+    <div class="atl__r" id="chapters"></div>
+  </div>
+</section>
+
+<section class="sec" id="occasions" aria-labelledby="occT">
+  <div class="wrap">
+    <div class="sec-h" data-rv>
+      <div>
+        <p class="kick">Поводы</p>
+        <h2 class="sec-t" id="occT">Выберите повод — <em>остальное наша работа</em></h2>
+      </div>
+      <p class="sec-l">Нажмите на повод — каталог отфильтруется сам. Если не нашли свой, напишите в Telegram: соберём с нуля под задачу и бюджет.</p>
+    </div>
+    <div class="occ" id="occGrid"></div>
+  </div>
+</section>
+
+<section class="sec cat" id="catalog" aria-labelledby="catT">
+  <div class="wrap">
+    <div class="sec-h" data-rv>
+      <div>
+        <p class="kick" data-b="catalog.kicker">Каталог 2026</p>
+        <h2 class="sec-t" id="catT" data-b="catalog.title">Двадцать букетов</h2>
+        <p class="sec-l" style="margin-top:18px" data-b="catalog.lead">Цены финальные.</p>
+      </div>
+      <p class="mono" style="color:var(--bone-mute);text-align:right" data-b="catalog.note">Обновлено сегодня в 07:10</p>
+    </div>
+    <div class="filters">
+      <div class="fsearch">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg>
+        <input id="fq" type="search" placeholder="Розы, пионы, коробка, до 7 000 ₽…" aria-label="Поиск по каталогу" autocomplete="off">
+      </div>
+      <div class="chips" id="cats" role="tablist" aria-label="Категории"></div>
+      <select class="fsel" id="sort" aria-label="Сортировка">
+        <option value="pop">Сначала популярные</option>
+        <option value="asc">Цена: по возрастанию</option>
+        <option value="desc">Цена: по убыванию</option>
+        <option value="new">Сначала новинки</option>
+      </select>
+      <div class="frow2">
+        <div class="chips" id="occs"></div>
+        <div class="range">
+          <span>до</span>
+          <input type="range" id="price" min="3000" max="26000" step="500" value="26000" aria-label="Максимальная цена">
+          <b id="priceV">26 000 ₽</b>
+        </div>
+        <label class="tog"><input type="checkbox" id="onlyPop"><i></i><span>Только хиты</span></label>
+        <button class="chip" id="reset" type="button">Сбросить</button>
+      </div>
+    </div>
+    <p class="mono" id="catCount" style="color:var(--bone-mute);margin-top:18px"></p>
+    <div class="grid" id="grid"></div>
+    <div class="more"><button class="btn btn--ghost" id="more" type="button"><span>Показать ещё</span></button></div>
+  </div>
+</section>
+
+<section class="sec con" id="constructor" aria-labelledby="conT">
+  <div class="wrap">
+    <div class="sec-h" data-rv>
+      <div>
+        <p class="kick" data-b="constructor.kicker">Конструктор</p>
+        <h2 class="sec-t" id="conT" data-b="constructor.title">Соберите букет сами</h2>
+      </div>
+      <p class="sec-l" data-b="constructor.lead">Выбирайте форму, размер, цветы и упаковку.</p>
+    </div>
+    <div class="con__g">
+      <div id="conSteps"></div>
+      <aside class="pv" aria-label="Предпросмотр букета">
+        <div class="pv__v"><svg id="conSvg" viewBox="0 0 300 300" aria-hidden="true"></svg></div>
+        <div id="conRows"></div>
+        <div class="pv__t"><span>Итого</span><b id="conTotal">0 ₽</b></div>
+        <button class="btn btn--bloom btn--lg" id="conAdd" type="button"><span>Добавить букет в корзину</span>
+          <svg viewBox="0 0 24 24"><path d="M6 7h12l-1.2 12.2a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.8L6 7z"/><path d="M9.2 7V5.6a2.8 2.8 0 0 1 5.6 0V7"/></svg></button>
+        <p class="pv__n">Сборка занимает 40 минут. Флорист может предложить замену, если какого-то цветка нет в холодильнике сегодня.</p>
+      </aside>
+    </div>
+  </div>
+</section>
