@@ -216,6 +216,50 @@
   font-size:1.0625rem;font-weight:700;
   font-variant-numeric:tabular-nums;
 }
+/* D2 (покупатель 55+ P0): блок «Оплата» под сводкой — та же hairline-
+   карточка r20/max-440, но на тёплой подложке (пара .thanks-check —
+   «спокойная зона денег»). Телефон — главный элемент блока: 55+ читает
+   подтверждение с телефона, цифры крупно (clamp до 28px/700 tabular),
+   тач-зона ≥48px. Мягкая формулировка «можно скорректировать» — в
+   muted-приписке, не кричит. */
+.thanks-pay{
+  border:1px solid var(--line,#e7e5ea);
+  border-radius:20px;
+  background:var(--surface-warm,#fbf5f8);
+  text-align:left;
+  margin:0 auto 20px;
+  max-width:440px;
+  padding:20px 22px;
+}
+.thanks-pay__title{
+  font:600 11px/1.4 var(--font-ui,sans-serif);
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-muted,#6e6a72);
+  margin:0;
+}
+.thanks-pay__text{
+  margin:8px 0 0;
+  font-size:1rem;line-height:1.6;
+  color:var(--ink,#1c1a1e);
+}
+.thanks-pay__phone{
+  display:inline-flex;align-items:center;
+  min-height:48px;margin:10px 0 0;
+  font-family:var(--font-ui,sans-serif);
+  font-size:clamp(1.4rem,5vw,1.75rem);
+  font-weight:700;line-height:1.1;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:.01em;
+  color:var(--ink,#1c1a1e);text-decoration:none;
+  transition:color .3s cubic-bezier(.4,0,.2,1);
+}
+.thanks-pay__phone:hover{color:var(--pink-dark,#cc2f7a)}
+.thanks-pay__phone:focus-visible{outline:2px solid var(--ink,#1c1a1e);outline-offset:3px;border-radius:6px}
+.thanks-pay__hint{
+  margin:12px 0 0;
+  font-size:.875rem;line-height:1.55; /* W105-6fix2: 14 */
+  color:var(--ink-muted,#6e6a72);
+}
 .fc-thanks__steps{border-radius:20px}
 .thanks-links{
   display:flex;justify-content:center;flex-wrap:wrap;gap:6px 26px;
@@ -266,4 +310,5 @@
   .toc__list a:hover .toc__num{color:var(--ink-muted,#6e6a72)}
   .thanks-links a{transition:none}
   .thanks-check path{animation:none;stroke-dashoffset:0}
+  .thanks-pay__phone{transition:none}   /* D2 */
 }

@@ -76,7 +76,7 @@ html.kinetic-ready .kin-split .kin-line__in {
 }
 html.kinetic-ready .kin-split.kin-in .kin-line__in {
   transform: none;
-  transition: transform 720ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 720ms cubic-bezier(0.4, 0, 0.2, 1);
   transition-delay: calc(var(--kin-i, 0) * 90ms);  /* stagger 90мс */
 }
 
@@ -90,8 +90,8 @@ html.kinetic-ready .kin-acc {
 html.kinetic-ready .kin-acc.kin-in {
   opacity: 1;
   transform: none;
-  transition: opacity 550ms cubic-bezier(0.22, 1, 0.36, 1),
-              transform 550ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity 550ms cubic-bezier(0.4, 0, 0.2, 1),
+              transform 550ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ============ 4. W104-β — ФИКСЫ C1-M ============ */
@@ -109,12 +109,12 @@ html.js-ready details.fc-seo__more.is-closing > .faq-item__a-wrap {
 }
 
 /* --- 4b. Drawer-backdrop: системная кривая (ease-изгой → система) ---
-   Открытие — cubic-bezier(.22,1,.36,1); закрытие — осознанная
+   Открытие — cubic-bezier(.4,0,.2,1); закрытие — осознанная
    асимметрия ease-in (drawer уходит быстрее, чем приезжает),
    теперь явной кривой, а не ключевым словом ease-out/ease-in. */
 @supports (transition-behavior: allow-discrete) {
   #cartPanel .cart-panel__backdrop {
-    transition: opacity .24s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: opacity .24s cubic-bezier(0.4, 0, 0.2, 1);
   }
   #cartPanel[hidden] .cart-panel__backdrop {
     transition: opacity .24s cubic-bezier(0.42, 0, 1, 1);
@@ -122,7 +122,7 @@ html.js-ready details.fc-seo__more.is-closing > .faq-item__a-wrap {
 }
 @supports not (transition-behavior: allow-discrete) {
   #cartPanel:not([hidden]) .cart-panel__backdrop {
-    animation: fc-backdrop-in .24s cubic-bezier(0.22, 1, 0.36, 1);
+    animation: fc-backdrop-in .24s cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
 
@@ -143,7 +143,7 @@ html.js-ready details.fc-seo__more.is-closing > .faq-item__a-wrap {
    (в open(), пересчёт при cart:change на входе). Потолок индекса 8 —
    длинные корзины не тянут каскад (320мс максимум задержки). */
 #cartPanel.is-entering .cart-item {
-  animation: fc-cart-item-in .34s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: fc-cart-item-in .34s cubic-bezier(0.4, 0, 0.2, 1) both;
   animation-delay: calc(var(--ci, 0) * 40ms);
 }
 @keyframes fc-cart-item-in {
@@ -163,8 +163,8 @@ html.js-ready details.fc-seo__more.is-closing > .faq-item__a-wrap {
    «без тени» теперь five.css (блок W105-5a); здесь — только база. */
 .product-card {
   box-shadow: none;
-  transition: transform .25s cubic-bezier(0.22, 1, 0.36, 1),
-              box-shadow .25s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform .25s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow .25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* --- 4f. Marquee: играет только в вьюпорте ---
@@ -177,56 +177,25 @@ html.js-ready details.fc-seo__more.is-closing > .faq-item__a-wrap {
   animation-play-state: paused;
 }
 
-/* --- 4g. Cookie-баннер: компактная ПИЛЮЛЯ по центру (C1-D1 P0 → W105-6fix1) ---
-   Было (W104 4g): угловая карточка ≤340px bottom-left — перекрывала USP-ряд
-   и контент первого визита (слепой арт-директор W105: «pill 340×76 висит
-   над контентом без опоры»). W105-7fix1 (тип-критик 7-b P1#2): десктоп
-   ≥900px — тихая КАРТОЧКА по центру нижнего края (заголовок + 2 строки
-   текста + ряд кнопок, 560px, ink+blur, r20); мобайл (≤899px) — прежняя
-   полноширинная slim-полоса (five.css W104-iota) над таббаром/PDP-CTA. */
-@media (min-width: 900px) {
-  .cookie-banner {
-    left: 50%;
-    right: auto;
-    bottom: 16px;
-    transform: translateX(-50%);
-    max-width: min(560px, calc(100vw - 32px));
-    padding: 16px 52px 16px 20px;
-    gap: 10px;
-    flex-direction: column;
-    align-items: flex-start;
-    border-radius: 20px;
-    background: rgba(28, 26, 30, .88);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    box-shadow: 0 18px 44px rgba(28, 26, 30, .3);
-  }
-  /* W105-7fix1 (тип-критик 7-b P1#2): тихая карточка по центру низа вместо
-     однострочной пилюли — заголовок ВИДЕН (14/600), текст 13px/1.45 в колонке
-     ≥340px (карточка 560 − кнопки/паддинги), «Принять» + тихая ссылка в ряд.
-     Позиция 6-fix1 сохранена (bottom-center, ink+blur). */
-  .cookie-banner__title {
-    display: block;
-    margin: 0;
-    font: 600 14px/1.3 var(--font-ui, 'Golos Text', sans-serif);
-    color: #fff;
-  }
-  .cookie-banner__text {
-    display: block;
-    flex: 0 0 auto;
-    font-size: 13px;
-    line-height: 1.45;
-    white-space: normal;
-    overflow: visible;
-    padding-block: 0;
-  }
-  /* ✕ в углу карточки (глушим top:50% из базовой полосы five.css) */
-  .cookie-banner__close {
-    top: 12px;
-    right: 8px;
-    transform: none;
-  }
+/* --- 4f2. Пунктир курьера (карточка доставки hero): играет только в вьюпорте ---
+   E-e2 (P0-4, перф-критик волны 3): .fc-hero__delivery-dash — infinite
+   stroke-dashoffset-анимация (five.css W104-a2) тикала ВСЕГДА, даже когда
+   карточка доставки далеко за пределами экрана. Тот же IO-паттерн 4f
+   (js/five.js marqueePlayback): вне вьюпорта — пауза. Ховер-ускорение
+   five.css (.fc-hero__delivery:hover — длительность .9s) продолжает
+   работать: ховер вне экрана невозможен, конфликта play-state нет.
+   prefers-reduced-motion не тронут (five.css его глушит своим правилом). */
+.fc-hero__delivery-dash.is-offscreen {
+  animation-play-state: paused;
 }
+
+/* --- 4g. Cookie-баннер: десктоп-оверрайд СНЯТ (W106-C1) ---
+   Исторический слой W104-4g/W105-7fix1 (ink-карточка 560px по центру
+   низа, десктоп ≥900) удалён: канонический вид — брендированная
+   крем-плашка снизу-слева ≤420px — целиком живёт в five.css
+   (блок W104-iota → W106-C1): один источник, motion-слой баннер
+   больше не перекрашивает. Правило z-index/позиции — style.css legacy
+   (position:fixed), всё остальное — five.css. */
 
 /* --- 4h. MOTION-LITE (слабое железо, C1-M P0-2) ---
    Класс ставит js/kinetic.js при hardwareConcurrency ≤ 4: scroll-driven
@@ -235,15 +204,16 @@ html.js-ready details.fc-seo__more.is-closing > .faq-item__a-wrap {
    IO-fallback (reveal.js уже умеет .reveal--visible + transition),
    параллакс-фото и цветочный блум — статика. Lenis/кинетика/лепестки
    (адаптивный счётчик) остаются. 8+ ядер — полный motion. */
+/* W105-8fix1 (мошн-критик 8-c P2 «утечка стаггера») → W106 (B2) ОТМЕНЁН:
+   правило глушило fc-card-in в motion-lite — карточки «включались» батчами
+   без задержек (P0 мошн-критика W106: «stagger мёртв в Chrome»; стенд жюри
+   2-ядерный = всегда motion-lite). fc-card-in — одноразовая compositor-
+   анимация (transform/opacity, 550мс + delay ≤300мс), НЕ scroll-driven:
+   в lite она дешевле, чем постоянный view()-таймлайн. Каскад карточек
+   теперь живой во ВСЕХ режимах; гейт lite продолжает глушить только
+   scroll-driven таймлайны (правило выше) и блум. */
 html.motion-lite .reveal { animation: none; }
 html.motion-lite .fc-manifesto__img { animation: none; }
-/* W105-8fix1 (мошн-критик 8-c P2 «утечка стаггера»): fc-card-in — правило
-   five.css (0,3,0) — перебивал lite-гейт выше (0,2,1): в motion-lite базовые
-   reveal выключены, а карточки продолжали каскадиться с задержками --i.
-   Гасим той же специфичностью из позднего файла — в lite карточки появляются
-   мгновенно (IO-fallback .reveal--visible + transition:none у базы). */
-html.motion-lite .fc-carousel .reveal.reveal--visible,
-html.motion-lite .catalog__grid .reveal.reveal--visible { animation: none; }
 html.motion-lite .nv-bloom .nv-bloom-petals {
   animation: none;
   transform: none;  /* статика в открытом состоянии, не полузакрытым */
@@ -344,11 +314,11 @@ html.motion-lite .hero__deadline{
 @supports (transition-behavior: allow-discrete){
   .lightbox{ transition:display .18s allow-discrete; }
   .lightbox .lightbox__backdrop{
-    transition:opacity .24s cubic-bezier(0.22, 1, 0.36, 1);
+    transition:opacity .24s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .lightbox .lightbox__figure{
-    transition:transform .32s cubic-bezier(0.22, 1, 0.36, 1),
-                opacity .24s cubic-bezier(0.22, 1, 0.36, 1);
+    transition:transform .32s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity .24s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .lightbox[hidden] .lightbox__backdrop{
     opacity:0;
@@ -367,10 +337,10 @@ html.motion-lite .hero__deadline{
 }
 @supports not (transition-behavior: allow-discrete){
   .lightbox:not([hidden]) .lightbox__backdrop{
-    animation:fc-backdrop-in .24s cubic-bezier(0.22, 1, 0.36, 1);
+    animation:fc-backdrop-in .24s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .lightbox:not([hidden]) .lightbox__figure{
-    animation:nf-lightbox-in .32s cubic-bezier(0.22, 1, 0.36, 1);
+    animation:nf-lightbox-in .32s cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
 @keyframes nf-lightbox-in{
@@ -392,10 +362,10 @@ html.motion-lite .hero__deadline{
   padding-top:0;
   padding-bottom:0;
   pointer-events:none;
-  transition:grid-template-rows .26s cubic-bezier(0.22, 1, 0.36, 1),
-              padding .26s cubic-bezier(0.22, 1, 0.36, 1),
-              margin-top .26s cubic-bezier(0.22, 1, 0.36, 1),
-              opacity .18s cubic-bezier(0.22, 1, 0.36, 1);
+  transition:grid-template-rows .26s cubic-bezier(0.4, 0, 0.2, 1),
+              padding .26s cubic-bezier(0.4, 0, 0.2, 1),
+              margin-top .26s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity .18s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .cart-item.is-removing > *{ min-height:0; overflow:hidden; }  /* клип ячеек — треку есть куда схлопываться */
 
@@ -417,23 +387,21 @@ html.motion-lite .hero__deadline{
 /* ============ 6. W104-η — ФИКСЫ C3-M3 (fix-волна 3, финишная) ============ */
 
 /* --- 6a. ПРАВАЯ КОЛОНКА HERO в входном каскаде (C3-M3 P1.2) ---
-   .fc-hero__promo и .fc-hero__delivery (колонка .fc-hero__side) стояли
-   статично, пока слева играл каскад (eyebrow .12s → слова H1 → sub .75s →
-   CTA .9s → таймер 1.05s, five.css M1–M3): бенто наполовину живой.
-   Тот же язык входа — fade + подъём 12px, .8с системной кривой, задержки
-   1.15s/1.3s — сразу за таймером, читается как один выдох; тайминги
+   Колонка .fc-hero__side стояла статично, пока слева играл каскад
+   (eyebrow .12s → слова H1 → sub .75s → CTA .9s → таймер 1.05s,
+   five.css M1–M3): бенто наполовину живой.
+   Тот же язык входа — fade + подъём 12px, .8с системной кривой,
+   задержка 1.15s — сразу за таймером, читается как один выдох; тайминги
    ЛЕВОЙ колонки не тронуты. Кривая/длительность зеркалят nv-fade
    (nilov.css), амплитуда 12px — как у kin-acc. Скоуп no-preference:
    в reduce у правила нет силы — базовая видимость элементов не меняется
-   (opacity:0 живёт только внутри media; деградация безопасна и без JS). */
+   (opacity:0 живёт только внутри media; деградация безопасна и без JS).
+   W106-C1: .fc-hero__promo удалена из hero (дизайн-дир P0-4) — в каскаде
+   осталась карточка доставки, единственный житель правой рейки. */
 @media (prefers-reduced-motion: no-preference) {
-  .fc-hero .fc-hero__promo {
-    opacity: 0;
-    animation: nf-hero-side-in .8s cubic-bezier(0.22, 1, 0.36, 1) 1.15s both;
-  }
   .fc-hero .fc-hero__delivery {
     opacity: 0;
-    animation: nf-hero-side-in .8s cubic-bezier(0.22, 1, 0.36, 1) 1.3s both;
+    animation: nf-hero-side-in .8s cubic-bezier(0.4, 0, 0.2, 1) 1.15s both;
   }
 }
 @keyframes nf-hero-side-in {
@@ -586,9 +554,10 @@ html.motion-lite .hero__deadline{
    скоуплено — transform остаётся базовым. */
 @media (prefers-reduced-motion: no-preference) {
   .fc-carousel:not(.fc-carousel--compact) .product-card__media,
+  .fc-collage .fc-collage__feature .product-card__media,
   .catalog__grid .product-card__media {
     transform: translate(calc(var(--tx, 0) * 8px), calc(var(--ty, 0) * 6px));
-    transition: transform .3s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: transform .3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
 
@@ -604,7 +573,7 @@ html.motion-lite .hero__deadline{
    остаётся на базе. */
 @media (prefers-reduced-motion: no-preference) {
   .product-gallery__zoom {
-    transition: background-position .18s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: background-position .18s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .product-gallery__slide:hover .product-gallery__zoom {
     background-position: var(--zx, 50%) var(--zy, 36%);

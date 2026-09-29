@@ -1,5 +1,5 @@
 /* Service worker — Nilov Flowers. VERSION менять при каждом деплое. */
-const VERSION = 'w105k'; /* W105-8fix1: лайтбокс (моб-навигация+индекс клика+живой пан), чип активного поиска, hero-CTA → #fcChips, канон hover, tap-highlight, motion-lite стаггер, админ: статус «Новый» + затихающий title */
+const VERSION = 'w106g'; /* W106-g: поводы-лиды разные, тексты (пионовидные розы/увядшие цветы/укажите), PDP-атрибуция отзывов нейтральная, image2-миграция +6, перекраска gen1-4 светлый студийный, тост/cookie-pill/галерея-хореография/параллакс (G2), hero-колонка заполнена */
 const STATIC_CACHE = `static-${VERSION}`;
 const PAGE_CACHE = `pages-${VERSION}`;
 const OFFLINE_URL = '/offline.html';
@@ -10,8 +10,6 @@ const STATIC_ASSETS = [
   // (контент-адресные ключи), ключи без ?v= никогда не совпадали → двойная загрузка
   // и ~99КБ мёртвого прелоада. CSS корректно кэшируется cache-first в рантайме по ?v=.
   // Golos убран: SW не обслуживает /admin/* (строка ниже), для витрины шрифт мёртвый.
-  '/fonts/MontserratVariable-cyrillic.woff2',
-  '/fonts/MontserratVariable-latin.woff2',
   '/img/favicon.svg',
   '/img/icons/icon-192.png',
   '/img/icons/icon-512.png'

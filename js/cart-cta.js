@@ -119,6 +119,31 @@
     };
   }
 
+  /* G-g2 (жюри P0 «тост перекрывает CTA корзины при открытом drawer»):
+     тост живёт только в «чистом» состоянии страницы. Любой полноэкранный
+     оверлей гасит его МГНОВЕННО. Оверлеи сайта (drawer корзины, лайтбокс)
+     ставят body.no-scroll — MutationObserver ниже ловит это независимо от
+     того, кто открыл оверлей (cart-ui.js/lightbox.js), и убивает тост.
+     cart-ui.js дублирует гашение прямым вызовом в open() — без наблюдателя
+     (гонка показа: тост уже висит, пользователь открыл drawer кликом по
+     иконке корзины — раньше тост z130 оставался ПОВЕРХ drawer z100 и лежал
+     ровно на кнопке «Оформить заказ»). */
+  function killToast() {
+    var t = document.getElementById('cartToast');
+    if (!t) return;
+    clearTimeout(t._hideT);
+    t._hideT = 0;
+    t.classList.remove('is-visible');
+  }
+  window.nfKillCartToast = killToast; /* cart-ui.js open() — прямой вызов */
+  (function watchOverlays() {
+    if (typeof MutationObserver !== 'function') return;
+    var mo = new MutationObserver(function () {
+      if (document.body.classList.contains('no-scroll')) killToast();
+    });
+    mo.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  })();
+
   document.querySelectorAll('[data-order-cta]').forEach(function (btn) {
     btn.addEventListener('click', function (e) {
       const { productId, productName, productPriceRaw, productImage } = btn.dataset;
@@ -176,38 +201,52 @@
       }
       const items = window.cart.getItems ? window.cart.getItems() : [];
       let c = 0; items.forEach(function (it) { c += (it.qty || 1); });
-      /* Awwwards-usability -0.2: «1 товар(ов)» → русское склонение (совпадает с itemsWord в cart-ui) */
-      var w = c % 10 === 1 && c % 100 !== 11 ? 'товар' : (c % 10 >= 2 && c % 10 <= 4 && (c % 100 < 12 || c % 100 > 14) ? 'товара' : 'товаров');
+      /* W106-E1 (корректор P0): «товар(ов)» → «букет/букета/букетов» — единая
+         терминология с itemsWord в cart-ui (магазин продаёт букеты). */
+      var w = c % 10 === 1 && c % 100 !== 11 ? 'букет' : (c % 10 >= 2 && c % 10 <= 4 && (c % 100 < 12 || c % 100 > 14) ? 'букета' : 'букетов');
       /* W98-fixF (F5): родо-независимое «Добавлено в корзину: {имя}» (было «добавлен») */
       sr.textContent = 'Добавлено в корзину: ' + (productName || 'Букет') + (c ? ', в корзине ' + c + ' ' + w : '');
       /* W67 (obvious-витрина NEW-6): на десктопе фидбек был только счётчик — sr-анонс невидим.
-         Визуальный тост: pointer-events:none, над таббаром, под drawer; без открытия панели (FRICTION). */
+         D-d1 (P1-13): при открытом drawer тост не показываем (перерисовка строк —
+         достаточный отклик).
+         W106-E1 (Нильсен P0 «кнопка тоста перекрыта», спешащий P1 «два похожих
+         CTA»): тост переработан — текст «Добавлено в корзину · N ₽» БЕЗ кнопки
+         «Перейти в корзину»; клик по ВСЕЙ площади тоста открывает drawer
+         (курсор-pointer, z-index выше cookie/drawer — стили five.css), клик
+         не спорит со счётчиком шапки — одна и та же цель двумя путями. */
+      var drawerOpen = false;
+      var panelEl = document.getElementById('cartPanel');
+      if (panelEl) drawerOpen = !panelEl.hidden;
       var tt = document.getElementById('cartToast');
+      if (!drawerOpen) {
       if (!tt) {
         tt = document.createElement('div');
         tt.id = 'cartToast';
         tt.setAttribute('role', 'status');
+        /* клик по всей площади тоста → открыть drawer (вешается ОДИН раз —
+           перерисовки innerHTML его не снимают); title подсказывает жест */
+        tt.addEventListener('click', function () {
+          tt.classList.remove('is-visible');
+          var openToggle = document.getElementById('cartToggle');
+          if (openToggle) openToggle.click();
+        });
         document.body.appendChild(tt);
       }
-      /* W104-fix6 (C6-D6 P1.3): тост с действием — «Перейти в корзину» открывает drawer
-         (кнопка внутри тоста; тост больше не pointer-events:none пока виден) */
       tt.innerHTML = '';
+      var ttPrice = Number(productPriceRaw) || 0;
       var ttTxt = document.createElement('span');
-      ttTxt.textContent = (productName || 'Букет') + ' — в корзине' + (c ? ' (' + c + ' ' + w + ')' : '');
-      var ttBtn = document.createElement('button');
-      ttBtn.type = 'button';
-      ttBtn.className = 'cart-toast__go';
-      ttBtn.textContent = 'Перейти в корзину';
-      ttBtn.addEventListener('click', function () {
-        tt.classList.remove('is-visible');
-        var open = document.getElementById('cartToggle');
-        if (open) open.click();
-      });
+      ttTxt.className = 'cart-toast__text';
+      ttTxt.textContent = 'Добавлено в корзину · ' + String(Math.round(ttPrice)).replace(/\B(?=(\d{3})+(?!\d))/g, '\u00A0') + '\u00A0₽';
       tt.appendChild(ttTxt);
-      tt.appendChild(ttBtn);
+      tt.title = 'Открыть корзину';
+      tt.setAttribute('aria-label', 'Открыть корзину');
       tt.classList.add('is-visible');
       clearTimeout(tt._hideT);
       tt._hideT = setTimeout(function () { tt.classList.remove('is-visible'); }, 2600);
+      } else if (tt) {
+        /* drawer открыт — тост не нужен, прячем возможно висящий */
+        tt.classList.remove('is-visible');
+      }
     });
   });
 })();

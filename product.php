@@ -219,16 +219,54 @@ if ($imgWebpOk && $origW > 0) {
 $galSrcsetStr = implode(', ', $galSrcset);
 $galSizes = '(max-width:959px) 100vw, 560px';
 
+/* B5/W106 (фото-волна B1, манифест state/b1-manifest.md): второй НАСТОЯЩИЙ
+   ракурс галереи — products.image2. Есть файл → слайд 2 = реальное фото
+   (вместо псевдослайда «Крупный план» из основного снимка) + миниатюры
+   (#productGalleryThumbs — контракты js/product-gallery.js). URL/превью —
+   та же конвенция, что у основного фото: ?v=filemtime (static_img_v),
+   webp-пара, thumbs 600w + честный {w}-дескриптор webp-оригинала (864px —
+   потолок плотности, файлов больше нет; апскейлить нечестно). */
+$image2File = trim((string)($product['image2'] ?? ''));
+$image2Ok = $image2File !== '' && is_file(IMG_PRODUCTS_DIR . '/' . $image2File);
+$image2 = '';
+$image2Webp = '';
+$image2WebpOk = false;
+$image2Thumb600 = '';
+$image2SrcsetStr = '';
+$image2Dim = false;
+if ($image2Ok) {
+    $image2Root = urldecode('/img/products/' . rawurlencode($image2File));
+    $image2 = static_img_v($image2Root);
+    $image2WebpPath = (string)preg_replace('/\.(jpe?g|png)$/i', '.webp', $image2Root);
+    $image2WebpOk = $image2WebpPath !== $image2Root && is_file(BASE_PATH . $image2WebpPath);
+    $image2Webp = $image2WebpOk ? static_img_v($image2WebpPath) : '';
+    $image2Thumb600 = product_img_size(['image' => $image2File], 600);
+    $image2Dim = @getimagesize(IMG_PRODUCTS_DIR . '/' . $image2File);
+    $image2OrigW = $image2Dim !== false ? (int)$image2Dim[0] : 0;
+    $__ss2 = [];
+    if ($image2Thumb600 !== '') {
+        $__ss2[] = $image2Thumb600 . ' 600w';
+    }
+    if ($image2WebpOk && $image2OrigW > 0) {
+        $__ss2[] = $image2Webp . ' ' . $image2OrigW . 'w';
+    }
+    $image2SrcsetStr = implode(', ', $__ss2);
+}
+/* Лайтбокс второго слайда — полноформатный webp (иначе jpg), тот же выбор,
+   что у первого слайда (B3b-2f) */
+$image2Lb = $image2WebpOk ? $image2Webp : $image2;
+
 /* B3b-2f: zoom-слайд — фон больше не в инлайн-стиле HTML (.jpg грузился сразу
    вторым дублем); js/product-gallery.js подставит его лениво по активации
    слайда. URL — webp (полноформатный twin, иначе 900-превью, иначе оригинал). */
 $zoomSrc = $imgWebpOk ? $imgWebp : ($thumb900 !== '' ? $thumb900 : $img);
 
-/* B3b-2b → W99-fixG (G7): title «{name} — с доставкой по СПб | бренд».
-   Длинное имя (>40 симв.) ИЛИ итог длиннее 65 (Google режет ~60, окно 60–65) —
-   суффикс доставки опускаем: «{name} | Nilov Flowers»; короткое — как раньше. */
-$__titleFull = $product['name'] . ' — с доставкой по СПб | ' . setting('shop_name', 'Nilov Flowers');
-$pageTitle = (mb_strlen($product['name']) > 40 || mb_strlen($__titleFull) > 65)
+/* B3b-2b → W99-fixG (G7) → B5/W106 (копирайтер 6.4): title «{name} — с
+   доставкой по Санкт-Петербургу | бренд». Длинное имя (>40 симв.) ИЛИ итог
+   длиннее 70 (Google режет ~60, окно 60–70) — суффикс доставки опускаем:
+   «{name} | Nilov Flowers»; короткое — как раньше. */
+$__titleFull = $product['name'] . ' — с доставкой по Санкт-Петербургу | ' . setting('shop_name', 'Nilov Flowers');
+$pageTitle = (mb_strlen($product['name']) > 40 || mb_strlen($__titleFull) > 70)
     ? $product['name'] . ' | ' . setting('shop_name', 'Nilov Flowers')
     : $__titleFull;
 
@@ -267,8 +305,9 @@ if ($trust === []) {
 
 /* W98-fixE (E9): «сладкие» товары (клубника/макаруны) — не цветы: строки-гарантии
    «Свежие цветы…» и «Заменяем увядшие…» к ним не относятся и вводят в заблуждение.
-   «Фото букета перед отправкой» оставляем — актуально и для сладких дополнений.
-   Признак категории — слаг из имени (колонки slug нет); фолбэк — lookup по id. */
+   «Фото букета до отправки» (E-e3: было «перед отправкой») оставляем — актуально
+   и для сладких дополнений. Признак категории — слаг из имени (колонки slug нет);
+   фолбэк — lookup по id. */
 $__catSlugEff = $catSlug;
 if ($__catSlugEff === '' && !empty($product['category_id'])) {
     $__catStmt = db()->prepare('SELECT name FROM categories WHERE id = :i LIMIT 1');
@@ -281,14 +320,16 @@ if ($__catSlugEff === 'sladkie-podarki') {
         $trust,
         static fn (string $t): bool => !in_array(
             mb_strtolower(trim($t)),
-            ['свежие цветы с утренней поставки', 'заменяем увядшие в день доставки'],
+            ['свежий срез каждое утро', 'заменяем увядшие в день доставки'],
             true
         )
     ));
-    /* W101 (редактор): «Фото букета перед отправкой» о клубнике — не о букете */
+    /* W101 (редактор) → E-e3: «Фото букета … отправкой» о клубнике — не о
+       букете; матчим и старый («перед»), и новый («до») канон, замена —
+       «Фото до отправки» (единая терминология волны E) */
     $trust = array_map(
-        static fn (string $t): string => mb_stripos($t, 'Фото букета перед отправкой') !== false
-            ? 'Фото перед отправкой' : $t,
+        static fn (string $t): string => (mb_stripos($t, 'Фото букета перед отправкой') !== false || mb_stripos($t, 'Фото букета до отправки') !== false)
+            ? 'Фото до отправки' : $t,
         $trust
     );
 }
@@ -367,8 +408,12 @@ function pdp_spec_chips(string $desc): array
         $chips[] = ['ruler', pdp_range_norm($m[1]) . ' ' . mb_strtolower($m[2])];
     }
 
-    /* Свежесть — по предложениям: «в вазе» рядом с диапазоном → «7–10 дней в вазе» */
-    $freshRe = '/(?:стоит|живёт|живет|цветёт|цветет|цветут|свежесть)[^.\n]*?(\d+(?:[.,]\d+)?\s*[—–-]\s*\d+(?:[.,]\d+)?)\s*(день|дня|дней|сутки|суток)\b/ui';
+    /* Свежесть — по предложениям: «в вазе» рядом с диапазоном → «7–10 дней в вазе».
+   D2 (хвост B5): множественное число глаголов («Розы СТОЯТ 7–10 дней»,
+   «Тюльпаны ЖИВУТ в вазе 5–7 дней») не попадало в регэксп — чип свежести
+   не собирался у 2 товаров. Добавлены «стоят»/«живут» (синхронно в
+   pdp_dedupe_desc ниже — удаляется ровно то, что попало в чип). */
+    $freshRe = '/(?:стоит|стоят|живёт|живет|живут|цветёт|цветет|цветут|свежесть)[^.\n]*?(\d+(?:[.,]\d+)?\s*[—–-]\s*\d+(?:[.,]\d+)?)\s*(день|дня|дней|сутки|суток)\b/ui';
     foreach ((array)preg_split('/(?<=[.!?])\s+|\n/u', $desc) as $sent) {
         if (preg_match($freshRe, (string)$sent, $m) === 1) {
             $label = pdp_range_norm($m[1]) . ' ' . mb_strtolower($m[2]);
@@ -399,10 +444,172 @@ function pdp_spec_chips(string $desc): array
         }
     }
 
+    /* D2 (покупатель 55+ P1 «состав спрятан в абзаце»): чип «Состав» из
+       фразы «N <цветов>» — у монобукетов («Семь альстромерий…», «15 роз…»,
+       «19 красных эквадорских роз…») состав жил только внутри прозы.
+       Количество — цифры И числительные словами (вкл. составные «двадцать
+       пять» и родительный падеж «из пяти … роз»), между числительным и
+       цветком — до двух уточняющих слов («красных эквадорских»). Форма
+       существительного берётся ИЗ ТЕКСТА (копирайтер уже просклонял:
+       «15 роз», «7 альстромерий», «51 роза»). Словарь стеблей — только
+       реальные цветы каталога; «пион(овидная)» отделён негативным
+       lookahead, «розовых» (прилагательное) не матчится как «роз».
+       Диспрув контекста: готовых паттернов «розы/пионы» в парсере НЕ БЫЛО
+       — существовал только «Состав: …» для сладких наборов. */
+    foreach (pdp_flower_count_chips($desc) as $fc) {
+        $chips[] = $fc;
+    }
+
     return $chips;
 }
 
-/* W103/F3: траст-штамп «Фото перед отправкой ✓» — круглая печать поверх фото
+/* Словарь: числительное (все встречные формы) → число */
+function pdp_num_word(string $w): int
+{
+    static $map = [
+        'один' => 1, 'одна' => 1, 'одну' => 1, 'одного' => 1, 'одной' => 1,
+        'два' => 2, 'две' => 2, 'двух' => 2,
+        'три' => 3, 'трёх' => 3, 'трех' => 3,
+        'четыре' => 4, 'четырёх' => 4, 'четырех' => 4,
+        'пять' => 5, 'пяти' => 5, 'шесть' => 6, 'шести' => 6,
+        'семь' => 7, 'семи' => 7, 'восемь' => 8, 'восьми' => 8,
+        'девять' => 9, 'девяти' => 9, 'десять' => 10, 'десяти' => 10,
+        'одиннадцать' => 11, 'одиннадцати' => 11, 'двенадцать' => 12, 'двенадцати' => 12,
+        'тринадцать' => 13, 'тринадцати' => 13, 'четырнадцать' => 14, 'четырнадцати' => 14,
+        'пятнадцать' => 15, 'пятнадцати' => 15, 'шестнадцать' => 16, 'шестнадцати' => 16,
+        'семнадцать' => 17, 'семнадцати' => 17, 'восемнадцать' => 18, 'восемнадцати' => 18,
+        'девятнадцать' => 19, 'девятнадцати' => 19,
+        'двадцать' => 20, 'двадцати' => 20, 'тридцать' => 30, 'тридцати' => 30,
+        'сорок' => 40, 'сорока' => 40, 'пятьдесят' => 50, 'пятидесяти' => 50,
+        'шестьдесят' => 60, 'шестидесяти' => 60, 'семьдесят' => 70, 'семидесяти' => 70,
+        'восемьдесят' => 80, 'восьмидесяти' => 80, 'девяносто' => 90, 'девяноста' => 90,
+        'сто' => 100, 'ста' => 100,
+    ];
+    return $map[mb_strtolower($w)] ?? 0;
+}
+
+/* «N <цветов>» → чипы «Состав» (до 2 шт.): значение — число цифрами +
+   форма существительного из текста */
+function pdp_flower_count_chips(string $desc): array
+{
+    /* числительное: цифра | слово | составное «десятки + единицы» */
+    $num = '(?:\d{1,3}'
+        . '|(?:двадцать|тридцать|сорок|пятьдесят|шестьдесят|семьдесят|восемьдесят|девяносто|двадцати|тридцати|сорока|пятидесяти|шестидесяти|семидесяти|восьмидесяти|девяноста)\s+'
+        . '(?:один|одна|одну|одного|одной|два|две|двух|три|трёх|трех|четыре|четырёх|четырех|пять|пяти|шесть|шести|семь|семи|восемь|восьми|девять|девяти)'
+        . '|одиннадцать|двенадцать|тринадцать|четырнадцать|пятнадцать|шестнадцать|семнадцать|восемнадцать|девятнадцать'
+        . '|одиннадцати|двенадцати|тринадцати|четырнадцати|пятнадцати|шестнадцати|семнадцати|восемнадцати|девятнадцати'
+        . '|один|одна|одну|одного|одной|два|две|двух|три|трёх|трех|четыре|четырёх|четырех|пять|пяти'
+        . '|шесть|шести|семь|семи|восемь|восьми|девять|девяти|десять|десяти)';
+    /* цветы каталога: стебель + правая граница слова (не «розовых»/«пионовидная»).
+       ВАЖНО: [а-яё] вместо \w — в PCRE /u без UCP \w = только ASCII,
+       кириллица в \w не входит (хвост «…ии» у «альстромерии» срезался бы) */
+    $flower = '(альстромери[а-яё]*|тюльпан[а-яё]*|гортензи[а-яё]*|хризантем[а-яё]*|ирис[а-яё]*|орхиде[а-яё]*|гербер[а-яё]*|ромашк[а-яё]*'
+        . '|пион(?:а|ы|ов)?(?![а-яё])|роз(?:а|ы)?(?![а-яё]))';
+    /* числительное + до 2 уточняющих слов + цветок. Левая граница —
+       негативный lookbehind (НЕ \b: кириллица вне ASCII-\w, \b между
+       пробелом и русским словом не срабатывает). Составное числительное
+       идёт РАНЬШЕ одиночных слов — иначе «пятьдесят одна роза» собралась бы
+       как 50 (одна ушла бы в уточняющие слова) */
+    $re = '/(?<![а-яё0-9])(' . $num . ')\s+((?:[а-яё]+\s+){0,2}?)' . $flower . '/ui';
+    $out = [];
+    if (preg_match_all($re, $desc, $mm, PREG_SET_ORDER) === false) {
+        return $out;
+    }
+    foreach ($mm as $m) {
+        $words = preg_split('/\s+/u', trim($m[1]));
+        $n = 0;
+        foreach ((array)$words as $w) {
+            if (ctype_digit($w)) {
+                $n = (int)$w;
+            } else {
+                $n += pdp_num_word($w);
+            }
+        }
+        if ($n < 1 || $n > 999) {
+            continue;
+        }
+        $label = $n . ' ' . mb_strtolower($m[3]);
+        if (mb_strlen($label) > 26 || in_array($label, array_map(static fn ($c) => $c[1], $out), true)) {
+            continue;
+        }
+        $out[] = ['sprout', $label];
+        if (count($out) >= 2) {
+            break;
+        }
+    }
+    return $out;
+}
+
+/* B5/W106 (копирайтер 6.4 P1): дедупликация ОТОБРАЖАЕМОГО описания — спек-чипы
+   уже несут «Повод: …» и «N–M дней в вазе», и те же предложения в прозе
+   повторяли их слово в слово. Предложения, из которых родились чипы, из
+   вывода убираем: «Повод: …»/«Подходит для …» — целиком (это и есть чипы),
+   свежесть — до двоеточия (уход за букетом ПОСЛЕ двоеточия — новая информация,
+   оставляем, «подрежьте стебли…» не должно пропадать). Полный текст остаётся
+   в meta description/og/JSON-LD (индексация не страдает). Работает по тем же
+   регэкспам, что pdp_spec_chips — удаляется ровно то, что попало в чипы. */
+function pdp_dedupe_desc(string $desc, array $chips): string
+{
+    $hasFresh = false;
+    $hasOcc = false;
+    foreach ($chips as $chip) {
+        if (($chip[0] ?? '') === 'clock') $hasFresh = true;
+        if (($chip[0] ?? '') === 'tag') $hasOcc = true;
+    }
+    if (!$hasFresh && !$hasOcc) {
+        return $desc;
+    }
+
+    $freshRe = '/(?:стоит|стоят|живёт|живет|живут|цветёт|цветет|цветут|свежесть)[^.\n]*?(\d+(?:[.,]\d+)?\s*[—–-]\s*\d+(?:[.,]\d+)?)\s*(день|дня|дней|сутки|суток)\b/ui';
+    $occDone = false;
+    $freshDone = false;
+    $outParas = [];
+    foreach ((array)preg_split('/\n+/u', trim($desc)) as $para) {
+        $para = trim((string)$para);
+        if ($para === '') {
+            continue;
+        }
+        $outSents = [];
+        foreach ((array)preg_split('/(?<=[.!?])\s+/u', $para) as $sent) {
+            $sent = trim((string)$sent);
+            if ($sent === '') {
+                continue;
+            }
+            /* Повод: предложение-источник чипов «ПОВОД» — уходит целиком
+               (весь его состав — первые пункты чипов) */
+            if ($hasOcc && !$occDone && preg_match('/Повод\s*:|Подходит\s+для/ui', $sent) === 1) {
+                $occDone = true;
+                continue;
+            }
+            /* Свежесть: предложение-источник чипа «СВЕЖЕСТЬ». Есть уход
+               после двоеточия — оставляем только его (с заглавной), нет —
+               предложение целиком состоит из свежести и уходит целиком */
+            if ($hasFresh && !$freshDone && preg_match($freshRe, $sent, $m, PREG_OFFSET_CAPTURE) === 1) {
+                $freshDone = true;
+                /* PREG_OFFSET_CAPTURE/strpos — БАЙТОВЫЕ смещения: хвост режем
+                   substr (байты), заглавную — mb_* (символы) — смешение систем
+                   давало «И под углом, меняйте…» вместо «Подрежьте стебли…» */
+                $colonPos = strpos($sent, ':', (int)$m[1][1] + strlen($m[1][0]));
+                if ($colonPos !== false) {
+                    $tail = trim(substr($sent, $colonPos + 1));
+                    if ($tail !== '') {
+                        $outSents[] = mb_strtoupper(mb_substr($tail, 0, 1)) . mb_substr($tail, 1);
+                    }
+                }
+                continue;
+            }
+            $outSents[] = $sent;
+        }
+        if ($outSents !== []) {
+            $outParas[] = implode(' ', $outSents);
+        }
+    }
+    $out = implode("\n", $outParas);
+    return $out !== '' ? $out : $desc;
+}
+
+/* W103/F3 → E-e3 (терминология волны E): траст-штамп «Фото до отправки ✓» —
+   круглая печать поверх фото
    (SVG: текст по дуге 270°, r=33; центр — галочка; вращение/hover — CSS
    .pdp-stamp). Позиция top-right: бейджи на PDP — в инфо-колонке, стрелки
    галереи — по середине боков, счётчика нет — угол свободен. */
@@ -411,7 +618,7 @@ $stampSvg = '<div class="pdp-stamp" aria-hidden="true">'
     . '<defs><path id="pdpStampArc" d="M20.7 67.3A33 33 0 1 1 67.3 67.3" fill="none"/></defs>'
     . '<circle class="pdp-stamp__ring" cx="44" cy="44" r="41.5"/>'
     . '<circle class="pdp-stamp__ring pdp-stamp__ring--inner" cx="44" cy="44" r="24.5"/>'
-    . '<text class="pdp-stamp__text"><textPath href="#pdpStampArc" startOffset="50%" text-anchor="middle">ФОТО ПЕРЕД ОТПРАВКОЙ</textPath></text>'
+    . '<text class="pdp-stamp__text"><textPath href="#pdpStampArc" startOffset="50%" text-anchor="middle">ФОТО ДО ОТПРАВКИ</textPath></text>'
     . '<circle class="pdp-stamp__dot" cx="44" cy="77" r="1.7"/>'
     . '<path class="pdp-stamp__check" d="M37 44.5 42 49.5 51.5 38.5"/>'
     . '</svg></div>';
@@ -427,11 +634,15 @@ function render_related_card(array $rp): void
     $rPremium = (int)($rp['is_premium'] ?? 0) === 1;
     $rUrgent = (int)($rp['is_urgent'] ?? 0) === 1;
     $rFile = productImageFile($rp);
-    $rImg = $rFile !== '' ? '/img/products/' . rawurlencode($rFile) : '';
+    $rImg = $rFile !== '' ? static_img_v('/img/products/' . rawurlencode($rFile)) : '';
     $rWebp = '';
-    if ($rImg !== '') {
-        $w = preg_replace('/\.(jpe?g|png)$/i', '.webp', urldecode($rImg));
-        $rWebp = $w !== $rImg && is_file(BASE_PATH . $w) ? $w : '';
+    if ($rFile !== '') {
+        /* E-e3: webp-пара мини-рельса — контент-адресный URL static_img_v
+           (W105-h: на всех товарных фото/тумбах/webp-парах, здесь был пропуск).
+           is_file — по ЧИСТОМУ пути от $rFile: у $rImg уже есть хвост ?v=,
+           файловая проверка с ним всегда false (ловится живым прогоном) */
+        $w = preg_replace('/\.(jpe?g|png)$/i', '.webp', $rFile);
+        $rWebp = $w !== $rFile && is_file(IMG_PRODUCTS_DIR . '/' . $w) ? static_img_v('/img/products/' . rawurlencode($w)) : '';
     }
     /* B3b-2d: превью 400w + честный {w}-дескриптор оригинала (локальный GD-хелпер) */
     $rThumb = $rImg !== '' ? product_img_size($rp, 400) : '';
@@ -440,7 +651,11 @@ function render_related_card(array $rp): void
        — раньше «(max-width:899px) 45vw, 300px» занижал десктоп-слот */
     $rSizes = '(max-width:899px) 72vw, 280px';
     if ($rThumb !== '' && $rWebp !== '' && $rOrigW > 0) {
-        $r600 = preg_replace('/-400(\.webp)$/', '-600$1', $rThumb); /* W101 (perf): 600w для DPR2-3 (файлы -600 в кэше GD) */
+        $r600 = preg_replace('/-400(\.webp)(?=\?|$)/', '-600$1', $rThumb); /* W101 (perf): 600w для DPR2-3 (файлы -600 в кэше GD);
+           E-e3 (техно-критик P1): старый якорь `(\.webp)$` не матчил из-за хвоста
+           ?v=filemtime у static_img_v — 600w НЕ попадал в srcset, и на DPR2-3
+           (а также в слоте 72vw > 555px) браузер грузил полноразмерный
+           webp-оригинал рядом с -400.webp; теперь рельс грузит тумбы 400/600 */
 
         $rSrcset = $rThumb . ' 400w'
             . ($r600 !== null && $r600 !== $rThumb && is_file(BASE_PATH . parse_url($r600, PHP_URL_PATH)) ? ', ' . $r600 . ' 600w' : '')
@@ -497,6 +712,25 @@ function render_related_card(array $rp): void
         </article>
     <?php
 }
+
+/* B5/W106 → D2 (маркетолог P0 «ноль отзывов на /product/*»): отзывы есть
+   на КАЖДОЙ карточке. У товара БЕЗ своих отзывов — общий блок магазина
+   «Что говорят покупатели» (getReviews(null,3), product_id IS NULL) с
+   подписью «отзывы о доставке и сборке»; у отозванного товара — как было
+   («Об этом букете», getReviews($id,3)). Бейдж рейтинга у цены — теперь
+   у ВСЕХ товаров: живой агрегат ВСЕХ отзывов сайта getRatingAggregate()
+   (db.php) — БЕЗ фильтра по source (конкурент-критик: фильтр
+   WHERE source='Яндекс Карты' выдавал заимствованный рейтинг чужой
+   площадки за наш); формулировка как на главной (C1): «— по отзывам
+   покупателей». 0 отзывов в БД — ни бейджа, ни блока (guard count>0). */
+$prodReviews = getReviews((int)$product['id'], 3);
+/* D2: fallback-отзывы магазина — только когда своих нет (иначе «Об этом
+   букете» уже несёт соцдоказательство, дублировать магазинными незачем) */
+$shopReviews = $prodReviews !== [] ? [] : getReviews(null, 3);
+$ratingAgg = getRatingAggregate();
+/* якорь #pdpReviews существует, только если рендерится какой-то из блоков */
+$hasReviewsBlock = $prodReviews !== [] || $shopReviews !== [];
+$rvMonthsPdp = ['01' => 'января', '02' => 'февраля', '03' => 'марта', '04' => 'апреля', '05' => 'мая', '06' => 'июня', '07' => 'июля', '08' => 'августа', '09' => 'сентября', '10' => 'октября', '11' => 'ноября', '12' => 'декабря'];
 ?><!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -560,7 +794,17 @@ function render_related_card(array $rp): void
         'returnFees' => 'https://schema.org/FreeReturn',
     ],
     'category' => $product['category_name'] ?? 'Букеты',
-] + ($product['sale_price'] !== null ? ['basePrice' => (int)$product['price']] : []), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>
+] + ($product['sale_price'] !== null ? ['basePrice' => (int)$product['price']] : [])
+  /* D2 (маркетолог P0 «нет звёзд в выдаче»): AggregateRating для rich-
+     результатов Google — агрегат ВСЕХ отзывов сайта (getRatingAggregate,
+     без фильтра по source — общая оценка магазина). reviewCount=0 — узел
+     НЕ добавляем (пустой AggregateRating = ошибка валидатора разметки). */
+  + ($ratingAgg['count'] > 0 ? ['aggregateRating' => [
+        '@type' => 'AggregateRating',
+        'ratingValue' => $ratingAgg['avg'],
+        'reviewCount' => $ratingAgg['count'],
+        'bestRating' => 5,
+    ]] : []), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>
 </script>
 <?php /* W97-fixB3b (B3b-2а): BreadcrumbList — ОТДЕЛЬНЫЙ top-level JSON-LD
    (SERP-фичер хлебных крошек); уровни синхронны с видимыми крошками:
@@ -599,10 +843,17 @@ $breadcrumbItems[] = ['@type' => 'ListItem', 'position' => count($breadcrumbItem
       </nav>
 
       <div class="fc-product">
-        <div class="fc-product__gallery product-gallery">
+        <div class="fc-product__gallery product-gallery<?= $image2Ok ? ' product-gallery--multi' : '' ?>">
           <?php /* W103/F3: траст-штамп поверх фото (top-right, вне скролл-контейнера
                      галереи — не уезжает вместе со слайдами); только при реальном фото */ ?>
           <?php if ($img !== ''): ?><?= $stampSvg ?><?php endif; ?>
+          <?php /* B5/W106: видимый аффорданс лайтбокса (моушн-критик 7.5 P0:
+                     «Увеличить фото» существовал только в aria-label триггера).
+                     Пилюля top-left (зеркально штампу), pointer-events:none —
+                     клик уходит в слайд-триггер под ней. */ ?>
+          <?php if ($img !== ''): ?>
+          <span class="product-gallery__zoomhint" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/><path d="M11 8v6M8 11h6"/></svg>Увеличить фото</span>
+          <?php endif; ?>
           <?php /* Design-критик W47: честная multi-view галерея из ОДНОГО реального фото —
                      слайд 2 = крупный план того же снимка (CSS-zoom), не выдуманный ракурс.
                      Вторые настоящие фото — данные клиента (feature_gallery выключает всё). */ ?>
@@ -625,12 +876,25 @@ $breadcrumbItems[] = ['@type' => 'ListItem', 'position' => count($breadcrumbItem
                 </picture>
                 <figcaption class="product-gallery__cap">Общий вид</figcaption>
               </figure>
-              <figure class="product-gallery__slide" data-lightbox-trigger data-lightbox-src="<?= e($zoomSrc) ?>" data-lightbox-alt="<?= e($product['name']) ?> — крупный план">
+              <figure class="product-gallery__slide" data-lightbox-trigger data-lightbox-src="<?= e($image2Ok ? $image2Lb : ($imgWebpOk ? $imgWebp : $img)) ?>" data-lightbox-alt="<?= e($product['name']) ?> — крупный план">
+<?php if ($image2Ok): ?>
+                <?php /* B5/W106: ВТОРОЙ НАСТОЯЩИЙ СЛАЙД (products.image2, фото-волна B1).
+                   src/srcset в HTML НЕТ — второй кадр не грузится при открытии
+                   страницы рядом с LCP-фото (контракт B3b-2f); js/product-gallery.js
+                   подставляет адреса при первой активации слайда: СНАЧАЛА
+                   webp-<source>, потом img — браузер сразу берёт webp. */ ?>
+                <picture>
+                  <?php if ($image2SrcsetStr !== ''): ?><source type="image/webp" data-gallery-srcset="<?= e($image2SrcsetStr) ?>" sizes="<?= e($galSizes) ?>"><?php elseif ($image2WebpOk): ?><source type="image/webp" data-gallery-srcset="<?= e($image2Webp) ?>"><?php endif; ?>
+                  <img class="product-gallery__img" data-gallery-src="<?= e($image2) ?>" alt="<?= e($product['name']) ?> — крупный план" decoding="async"<?= $image2Dim !== false ? ' width="' . (int)$image2Dim[0] . '" height="' . (int)$image2Dim[1] . '"' : '' ?>>
+                </picture>
+                <figcaption class="product-gallery__cap">Крупный план</figcaption>
+<?php else: ?>
                 <?php /* W97-fixB3b (B3b-2f): background-image убран из инлайн-стиля —
                            .jpg-дубль грузился сразу вместе с LCP; webp-URL подставит
                            js/product-gallery.js лениво при активации этого слайда */ ?>
                 <div class="product-gallery__zoom" data-gallery-zoom="<?= e($zoomSrc) ?>" role="img" aria-label="<?= e($product['name']) ?> — крупный план"></div>
                 <figcaption class="product-gallery__cap">Крупный план</figcaption>
+<?php endif; ?>
               </figure>
             </div>
             <button type="button" class="product-gallery__nav product-gallery__nav--l" data-gnav="-1" aria-label="Предыдущий вид"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
@@ -639,8 +903,21 @@ $breadcrumbItems[] = ['@type' => 'ListItem', 'position' => count($breadcrumbItem
           <?php /* W105-7fix1 (арт-критик 7-a P2h): тач-аффорданс свайпа — точки
                  под вьюпортом (≤899px, стили product-extras.css 4e; aria-hidden:
                  для SR уже есть живой счётчик «Слайд N из M» из JS).
-                 Синхронизация — js/product-gallery.js setActive(). */ ?>
+                 Синхронизация — js/product-gallery.js setActive(). При
+                 настоящих миниатюрах (B5: .product-gallery--multi) ряд
+                 скрыт — тумбы работают аффордансом на всех экранах. */ ?>
           <div class="product-gallery__dots" aria-hidden="true"><?php for ($gi = 0, $gn = 2; $gi < $gn; $gi++): ?><span class="product-gallery__dot"<?= $gi === 0 ? ' aria-current="true"' : '' ?>></span><?php endfor; ?></div>
+          <?php if ($image2Ok): ?>
+          <?php /* B5/W106: НАСТОЯЩИЕ миниатюры (2 вида) — возврат блока
+                 #productGalleryThumbs по условию W96-fix2 («появятся реальные
+                 вторые фото — вернуть»): контракты js/product-gallery.js
+                 (.product-gallery__thumb[data-index], aria-current).
+                 Тумбы 600w — маленькие превьюки-файлы B1. */ ?>
+          <div class="product-gallery__thumbs" id="productGalleryThumbs" role="group" aria-label="Виды букета">
+            <button type="button" class="product-gallery__thumb" data-index="0" aria-current="true" aria-label="Общий вид"><img src="<?= e($thumb600 !== '' ? $thumb600 : $img) ?>" alt="" decoding="async"></button>
+            <button type="button" class="product-gallery__thumb" data-index="1" aria-label="Крупный план"><img src="<?= e($image2Thumb600 !== '' ? $image2Thumb600 : $image2) ?>" alt="" decoding="async"></button>
+          </div>
+          <?php endif; ?>
           <?php else: ?>
           <div class="fc-product__media product-page__media" data-lightbox-trigger data-lightbox-src="<?= e($img) ?>" data-lightbox-alt="<?= e($product['name']) ?>">
             <?php if ($img !== ''): ?><?= $stampSvg ?><?php endif; ?>
@@ -681,6 +958,21 @@ $breadcrumbItems[] = ['@type' => 'ListItem', 'position' => count($breadcrumbItem
               <span><?= formatPrice($price) ?></span>
             <?php endif; ?>
           </p>
+          <?php /* B5/W106 → D2 (маркетолог P0 + конкурент): бейдж рейтинга рядом
+             с ценой — у ВСЕХ товаров (раньше только у отозванных), живой
+             агрегат ВСЕХ отзывов сайта (getRatingAggregate, без фильтра по
+             source — «Яндекс Карты» в подписи выдавал чужой рейтинг за наш);
+             формулировка — как hero-бейдж главной (C1) + «из 5» (E-e3,
+             корректор: «★ 4,8» без шкалы не синхронизировался со секцией
+             отзывов «из 5 · N отзывов»). Ведёт к блоку отзывов (якорь есть,
+             если блок рендерится); блока нет (пустая БД) — бейдж- span без ссылки */ ?>
+          <?php if ($ratingAgg['count'] > 0): ?>
+          <<?= $hasReviewsBlock ? 'a class="pdp-rating" href="#pdpReviews"' : 'span class="pdp-rating"' ?> aria-label="Рейтинг <?= e(str_replace('.', ',', (string)round($ratingAgg['avg'], 1))) ?> из 5 — по отзывам покупателей<?= $hasReviewsBlock ? ' — перейти к отзывам' : '' ?>">
+            <span class="pdp-rating__star" aria-hidden="true">★</span>
+            <span class="pdp-rating__num"><?= e(str_replace('.', ',', (string)round($ratingAgg['avg'], 1))) ?></span>
+            <span class="pdp-rating__note">из 5 — по отзывам покупателей</span>
+          </<?= $hasReviewsBlock ? 'a' : 'span' ?>>
+          <?php endif; ?>
           <?php if ($isUrgent): ?><p class="product-card__urgent-note">Соберём и доставим в течение дня — количество ограничено</p><?php endif; ?>
           <?php /* W103/F3: спек-чипы (размер/свежесть/повод/состав) — над описанием;
                      парсинг без совпадений → блока нет целиком (никаких заглушек) */ ?>
@@ -700,7 +992,11 @@ $breadcrumbItems[] = ['@type' => 'ListItem', 'position' => count($breadcrumbItem
             <?php endforeach; ?>
           </ul>
           <?php endif; ?>
-          <?php if ($product['description'] !== ''): ?><div class="prose"><?= nl2br(e($product['description'])) ?></div><?php endif; ?>
+          <?php /* B5/W106 (копирайтер 6.4 P1): в прозе — дедуплицированный текст:
+             предложения-источники чипов (Повод/Свежесть) уже над описанием,
+             каждое предложение ниже несёт НОВУЮ информацию (pdp_dedupe_desc);
+             полный текст остаётся в meta/og/JSON-LD */ ?>
+          <?php if ($product['description'] !== ''): ?><div class="prose"><?= nl2br(e(pdp_dedupe_desc((string)$product['description'], $specChips))) ?></div><?php endif; ?>
           <?php /* W97-fixB3b (B3b-4): сердечко избранного рядом с CTA — тот же
              localStorage-стор, что у каталога (js/nilov.js по [data-fav-toggle]);
              состояние синхронно с /#catalog и фильтром «Избранное». Вид — класс
@@ -719,17 +1015,29 @@ $breadcrumbItems[] = ['@type' => 'ListItem', 'position' => count($breadcrumbItem
             <button type="button" class="product-page__fav fc-fav-inline" data-fav-toggle data-fav-inline data-fav-id="<?= (int)$product['id'] ?>" data-fav-name="<?= e($product['name']) ?>" aria-pressed="false" aria-label="В избранное" title="В избранное">♡</button>
             <?php endif; ?>
           </div>
+          <?php /* D2 (mobile P1): таб-бар на PDP скрыт осознанно (five.css
+             W105-6fix1 — sticky-CTA вместо него), но быстрый «назад в каталог»
+             пропал вместе с ним. Маленькая пилюля «← в каталог» НАД sticky-CTA
+             слева (стили — product-extras.css §9; ≥821px и при открытой
+             cookie-плашке скрыта). Href — посадочная категории товара
+             (/category/{slug}, как «Смотреть все» ниже), без категории —
+             каталог; history.back() не использован: ссылка с текстом «в
+             каталог» обязана вести в каталог, а не куда-то по истории. */ ?>
+          <a class="product-page__back" href="<?= $catSlug !== '' ? '/category/' . e($catSlug) : '/#catalog' ?>" aria-label="Вернуться в каталог">← в каталог</a>
           <span class="product-page__cta-spacer" aria-hidden="true"></span>
           <script>
           /* W62 (obvious-критик NEW-2): fixed-CTA на мобиле ложилась на legal-ссылки футера
              (elementFromPoint попадал в кнопку). Как только футер входит во вьюпорт —
-             кнопка честно исчезает: покупателю она уже не нужна (страница дочитана). */
+             кнопка честно исчезает: покупателю она уже не нужна (страница дочитана).
+             D2: вместе с кнопкой прячется и пилюля «← в каталог» (тот же класс). */
           document.addEventListener('DOMContentLoaded', function(){
-            var cta=document.querySelector('.product-page__cta--sticky');
+            var stickyEls = document.querySelectorAll('.product-page__cta--sticky, .product-page__back');
             var ft=document.querySelector('.site-footer');
-            if(!cta||!ft||!window.IntersectionObserver) return;
+            if(!stickyEls.length||!ft||!window.IntersectionObserver) return;
             new IntersectionObserver(function(es){
-              es.forEach(function(e){cta.classList.toggle('product-page__cta--hidden',e.isIntersecting);});
+              es.forEach(function(e){
+                stickyEls.forEach(function(el){el.classList.toggle('product-page__cta--hidden',e.isIntersecting);});
+              });
             },{threshold:0.02}).observe(ft);
           });
           </script>
@@ -752,11 +1060,46 @@ $breadcrumbItems[] = ['@type' => 'ListItem', 'position' => count($breadcrumbItem
             <li><span class="fc-product__meta-icon"><?= $metaIcons['flower'] ?></span><span>Открытка с вашим текстом — напишем от руки, бесплатно</span></li>
             <li><span class="fc-product__meta-icon"><?= $metaIcons['truck'] ?></span><span><?= e(setting('delivery_badge_text', 'Доставка по Санкт-Петербургу')) ?></span></li>
             <?php if ($pickupAddr !== ''): ?><li><span class="fc-product__meta-icon"><?= $metaIcons['map'] ?></span><span>Самовывоз: <?= e($pickupAddr) ?></span></li><?php endif; ?>
-            <li><span class="fc-product__meta-icon"><?= $metaIcons['card'] ?></span><span><?= $ykOn ? 'Оплата — картой, СБП или при получении. На защищённой странице платёжного провайдера.' : 'Оплата — курьеру при получении заказа.' ?></span></li>
+            <li><span class="fc-product__meta-icon"><?= $metaIcons['card'] ?></span><span><?= $ykOn ? 'Оплата — картой, СБП или при получении. На защищённой странице платёжного провайдера' : 'Оплата — курьеру при получении заказа' /* B5/W106 (копирайтер): точка в конце — единственная в списке, унифицировано */ ?></span></li>
             <?php foreach ($trust as $ti => $t): ?>
             <li><span class="fc-product__meta-icon"><?= $metaIcons[$trustIconKeys[$ti % 3]] ?></span><span><?= e($t) ?></span></li>
             <?php endforeach; ?>
           </ul>
+
+          <?php /* B5/W106 → D2 (маркетолог P0 «все /product/* — ноль отзывов»):
+             блок отзывов на КАЖДОЙ карточке. Свои отзывы — «Об этом букете»
+             (как было); своих нет — общий блок магазина «Что говорят
+             покупатели»: 2-3 отзыва о доставке и сборке (getReviews(null,3),
+             product_id IS NULL) + подпись-пояснение, что это отзывы о работе
+             магазина, а не о конкретном букете. Карточки-цитаты — те же
+             .fc-review (five.css), правки — в css/product-extras.css. */ ?>
+          <?php $rvList = $prodReviews !== [] ? $prodReviews : $shopReviews; ?>
+          <?php if ($rvList !== []): ?>
+          <section class="pdp-reviews<?= $prodReviews === [] ? ' pdp-reviews--shop' : '' ?>" id="pdpReviews" aria-label="<?= $prodReviews !== [] ? 'Отзывы о букете' : 'Отзывы о магазине' ?>">
+            <h2 class="fc-product__meta-title pdp-reviews__title"><?= e($prodReviews !== [] ? setting('pdp_reviews_title', 'Об этом букете') : setting('pdp_reviews_shop_title', 'Что говорят покупатели')) ?></h2>
+            <?php /* подпись fallback-блока: честно помечаем, что это отзывы о
+               работе магазина (доставка/сборка), а не о конкретном букете */ ?>
+            <?php if ($prodReviews === []): ?><p class="pdp-reviews__note"><?= e(setting('pdp_reviews_shop_note', 'отзывы о доставке и сборке')) ?></p><?php endif; ?>
+            <?php foreach ($rvList as $rvRow): ?>
+            <?php
+              $rvRating = max(1, min(5, (int)$rvRow['rating']));
+              $rvDate = '';
+              if (preg_match('/^(\d{4})-(\d{2})-(\d{2})/', (string)$rvRow['created_at'], $rvDm)) {
+                  $rvDate = ((int)$rvDm[3]) . ' ' . ($rvMonthsPdp[$rvDm[2]] ?? '');
+              }
+            ?>
+            <figure class="fc-review pdp-review">
+              <p class="fc-review__stars" aria-label="Оценка: <?= $rvRating ?> из 5"><?= str_repeat('<span aria-hidden="true">★</span>', $rvRating) . str_repeat('<span class="fc-review__star--off" aria-hidden="true">★</span>', 5 - $rvRating) ?></p>
+              <blockquote class="fc-review__text"><?= e($rvRow['text']) ?></blockquote>
+              <figcaption class="fc-review__meta">
+                <span class="fc-review__author"><?= e($rvRow['author']) ?></span>
+                <?php if ($rvDate !== ''): ?><time class="fc-review__date" datetime="<?= e($rvRow['created_at']) ?>"><?= e($rvDate) ?></time><?php endif; ?>
+                <?php /* W106-G: источник из БД не показываем (как на главной — «отзыв после доставки»), внешний профиль не подключён */ ?><span class="fc-review__source">отзыв после доставки</span>
+              </figcaption>
+            </figure>
+            <?php endforeach; ?>
+          </section>
+          <?php endif; ?>
         </div>
       </div>
     </div>

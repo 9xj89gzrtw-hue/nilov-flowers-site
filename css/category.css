@@ -127,6 +127,15 @@
 .cat-empty__hint{
   font-size:.875rem;color:var(--ink-muted,#6e6a72);margin:0 0 16px; /* W105-6fix2: 14.4→14 */
 }
+/* C-c4 (CRO P0 «поиск-тупик»): ряд действий в empty-state — акцентный
+   «Собрать на заказ» первым (выход из тупика), «Сбросить фильтры» — вторым.
+   Тот же паттерн, что #catalogEmpty главной (JS-вставка catalog-filter.js:
+   CTA + resetPriceBtn + reset в ряд с зазором 10px). Высоты кнопок —
+   базовые .btn (52px ≥ 44px тач-зоны, AGENTS #8), не переопределяем. */
+.cat-empty__actions{
+  display:flex;justify-content:center;align-items:center;
+  gap:10px;flex-wrap:wrap;
+}
 
 /* ---------- Мобильный (≤899px): чипы и сортировка по ряду ---------- */
 @media(max-width:899px){

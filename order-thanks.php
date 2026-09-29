@@ -116,7 +116,7 @@ $secondaryCssV = substr((string)@md5_file(__DIR__ . '/css/secondary.css'), 0, 8)
         <?php if ($__isPickup): ?>
           Букет соберём из цветов утренней поставки и предупредим, когда будет готов.
         <?php else: ?>
-          Букет соберём из цветов утренней поставки, а фото пришлём вам перед отправкой.
+          Букет соберём из цветов утренней поставки, а фото пришлём вам до отправки.
         <?php endif; ?>
         <?php if ($deliveryLine !== ''): ?><br><?= e($deliveryLine) ?><?php endif; ?>
       </p>
@@ -144,9 +144,30 @@ $secondaryCssV = substr((string)@md5_file(__DIR__ . '/css/secondary.css'), 0, 8)
         </p>
       </div>
       <?php endif; ?>
+      <?php /* D2 (покупатель 55+ P0 «тишина про оплату» — тревога после
+         заказа): крупный спокойный блок «как платить» сразу под сводкой.
+         Текст адаптивен: наличные (по умолчанию и после выбора «при
+         получении»), самовывоз — «при получении» без курьера, онлайн —
+         честно про защищённую страницу + запасной вариант (55+ боится,
+         что «оплату пропустил»). Телефон — крупно (55+ читает с телефона),
+         формат — setting('shop_phone') как в футере; обещание, что заказ
+         можно скорректировать до отправки, снимает «а если я ошибся». */ ?>
+      <?php $__payOnline = (($__order['payment_method'] ?? 'cash') === 'online'); ?>
+      <div class="thanks-pay">
+        <p class="thanks-pay__title">Оплата</p>
+        <?php if ($__payOnline): ?>
+        <p class="thanks-pay__text">Картой или через СБП — на защищённой странице банка, данные карты магазину не передаются. Если платёж не прошёл — ничего не потеряно: позвоните нам, оплатить можно будет и при получении.</p>
+        <?php else: ?>
+        <p class="thanks-pay__text">Наличными или картой — <?= $__isPickup ? 'при получении в мастерской' : 'курьеру при получении' ?>. Онлайн-оплата не требуется.</p>
+        <?php endif; ?>
+        <?php if ($phone !== ''): ?>
+        <a class="thanks-pay__phone" href="tel:+<?= e($phoneDigits) ?>"><?= e($phone) ?></a>
+        <?php endif; ?>
+        <p class="thanks-pay__hint">Если что-то поменялось — позвоните нам, заказ можно скорректировать до отправки.</p>
+      </div>
       <?php /* W96-fix3b (D8): «Что дальше» — 3 шага в стилистике карточки заказа.
          K7 (W101): ветка самовывоза (зоны нет) — без «привезём» и без фото-шага
-         (оферта §5: фото перед отправкой — только для доставки); вместо адреса
+         (оферта §5: фото до отправки — только для доставки); вместо адреса
          доставки — адрес выдачи. Доставка — как было. */ ?>
       <div class="fc-thanks__steps">
         <p class="fc-thanks__title">Что дальше</p>
@@ -175,7 +196,7 @@ $secondaryCssV = substr((string)@md5_file(__DIR__ . '/css/secondary.css'), 0, 8)
           </li>
           <li>
             <span class="fc-thanks__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
-            <span><strong>Соберём и сфотографируем</strong> — пришлём фото перед отправкой</span>
+            <span><strong>Соберём и сфотографируем</strong> — пришлём фото до отправки</span>
           </li>
           <li>
             <span class="fc-thanks__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h11v11H2z"/><path d="M13 9h4l3 3v5h-3"/><circle cx="5.5" cy="17.5" r="2"/><circle cx="16.5" cy="17.5" r="2"/></svg></span>

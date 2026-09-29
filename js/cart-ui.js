@@ -72,14 +72,67 @@
     );
   }
 
+  /* ============ A-b3 (3): пустая корзина — empty-state с CTA ============
+     Бизнес-критик (P1): после удаления последнего товара drawer показывал
+     задизейбленную кнопку «Оформить заказ» и сухую строку — нет ни объяснения,
+     ни пути назад. Теперь: «В корзине пока пусто» + CTA «Выбрать букет»
+     (закрывает drawer и ведёт к каталогу #catalog); задизейбленная кнопка
+     оформления в пустом состоянии скрыта. Текст дефолтной настройки
+     заменяем; кастомный текст владельца (cart_empty_text) не трогаем. */
+  const DEFAULT_EMPTY_TEXT = 'Корзина пуста — выберите букет в каталоге';
+  var emptyCtaBtn = null;
+  (function setupEmptyState() {
+    if (emptyEl && (emptyEl.textContent || '').trim() === DEFAULT_EMPTY_TEXT) {
+      emptyEl.textContent = 'В корзине пока пусто';
+    }
+    if (emptyEl) {
+      emptyEl.style.textAlign = 'center';
+      emptyEl.style.margin = '6px 0 0';
+    }
+    if (emptyEl && !document.getElementById('cartEmptyCta')) {
+      emptyCtaBtn = document.createElement('button');
+      emptyCtaBtn.type = 'button';
+      emptyCtaBtn.id = 'cartEmptyCta';
+      emptyCtaBtn.className = 'btn btn--accent';
+      emptyCtaBtn.textContent = 'Выбрать букет';
+      /* тач-зона ≥44px (AGENTS): кнопка полношириная, 48px высотой */
+      emptyCtaBtn.style.cssText = 'margin-top:16px;width:100%;min-height:48px';
+      emptyCtaBtn.addEventListener('click', goToCatalog);
+      emptyEl.parentNode.insertBefore(emptyCtaBtn, emptyEl.nextSibling);
+    } else {
+      emptyCtaBtn = document.getElementById('cartEmptyCta');
+    }
+  })();
+
+  /* CTA пустой корзины: закрыть drawer и привести к каталогу (как
+     goToOrderSection — Lenis с offset −96, иначе нативный скролл;
+     на вторичных страницах без #catalog — переход на /#catalog). */
+  function goToCatalog() {
+    close();
+    const catalogSection = document.getElementById('catalog');
+    if (!catalogSection) {
+      window.location.href = '/#catalog';
+      return;
+    }
+    requestAnimationFrame(function () {
+      const lenis = window.NF_LENIS;
+      if (lenis && !lenis.isStopped && typeof lenis.scrollTo === 'function') {
+        lenis.scrollTo(catalogSection, { offset: -96 });
+      } else {
+        catalogSection.scrollIntoView({ behavior: scrollBehavior(), block: 'start' });
+      }
+    });
+  }
+
   function itemsWord(n) {
     const mod10 = n % 10;
     const mod100 = n % 100;
-    /* W100 (редактор): единая терминология с анонсом добавления (cart-cta.js) —
-       «товар/товара/товаров» вместо «позиция/позиции/позиций» (разнобой рядом). */
-    if (mod10 === 1 && mod100 !== 11) return 'товар';
-    if ([2, 3, 4].includes(mod10) && ![12, 13, 14].includes(mod100)) return 'товара';
-    return 'товаров';
+    /* W106-E1 (корректор P0): «товар/товара/товаров» → «букет/букета/букетов» —
+       магазин продаёт букеты, не товары; та же терминология, что у пилюли
+       поиска (pluralBuket в five.js) и чипов каталога. */
+    if (mod10 === 1 && mod100 !== 11) return 'букет';
+    if ([2, 3, 4].includes(mod10) && ![12, 13, 14].includes(mod100)) return 'букета';
+    return 'букетов';
   }
 
   /* ============ W97-fixA (A7): live-регион для молчаливых сумм ============
@@ -128,9 +181,18 @@
   }
 
   function promoFeedback(text, isErr) {
-    if (!promoMsgEl) return;
-    promoMsgEl.textContent = text;
-    promoMsgEl.style.color = isErr ? 'var(--err,#d64545)' : 'var(--ink-soft)';
+    /* G-g2: сообщение пишем в ОБА поля — drawer (#cartPromoMsg) и строку
+       промокода в форме заказа (#orderPromoMsg, partials/order-form.php):
+       источник PROMO_STATE один, состояния не расходятся. */
+    if (promoMsgEl) {
+      promoMsgEl.textContent = text;
+      promoMsgEl.style.color = isErr ? 'var(--err,#d64545)' : 'var(--ink-soft)';
+    }
+    var formMsg = document.getElementById('orderPromoMsg');
+    if (formMsg) {
+      formMsg.textContent = text;
+      formMsg.style.color = isErr ? 'var(--err,#d64545)' : 'var(--ink-soft)';
+    }
   }
 
   function promoClear(silent) {
@@ -139,42 +201,90 @@
     if (!silent) promoFeedback('', false);
   }
 
-  if (promoApplyBtn && promoInput) {
-    promoApplyBtn.addEventListener('click', function () {
-      const code = promoInput.value.trim();
-      if (!code) { promoFeedback('Введите промокод', true); return; }
-      promoApplyBtn.disabled = true;
-      promoFeedback('Проверяем…', false);
-      fetch('/api/promo', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: code, subtotal: window.cart.getTotal() })
-      }).then(function (r) { return r.json(); }).then(function (res) {
-        promoApplyBtn.disabled = false;
-        if (res && res.ok) {
-          promoState.code = res.code; promoState.discount = res.discount;
-          promoState.lastCode = res.code;
-          /* W78: сохраняем реальный порог и формулу — раньше minOrder вечно =0 убивал guard ниже */
-          promoState.minOrder = (res.min | 0) > 0 ? (res.min | 0) : 0;
-          promoState.kind = res.kind === 'fixed' ? 'fixed' : (res.kind === 'percent' ? 'percent' : '');
-          promoState.val = res.val | 0;
-          promoFeedback(res.label || 'Промокод применён', false);
-        } else {
-          promoClear(true);
-          if (res && res.error === 'min_order' && res.min) { promoState.lastCode = code.trim().toUpperCase(); promoState.minOrder = res.min | 0; } /* W86: регистр как на success */ /* W80: рост корзины → зелёная подсказка вместо залипшего красного */
-          const msg = res && res.error === 'min_order' && res.min
-            ? 'Промокод действует от ' + formatPrice(res.min) + '\u00A0₽'
-            : 'Такого промокода нет или он истёк';
-          promoFeedback(msg, true);
-          promoState.code = ''; promoState.discount = 0;
-        }
-        render();
-      }).catch(function () {
-        promoApplyBtn.disabled = false;
-        promoFeedback('Не удалось проверить промокод — попробуйте позже', true);
-      });
+  /* G-g2: прямая запись цветного статуса в ОБА поля промо (render-ветки
+     W78/W79/W81 писали только в drawer — строка в форме заказа могла
+     залипать с устаревшим текстом) */
+  function promoMsgWrite(text, color) {
+    if (promoMsgEl) { promoMsgEl.textContent = text; promoMsgEl.style.color = color; }
+    var fm = document.getElementById('orderPromoMsg');
+    if (fm) { fm.textContent = text; fm.style.color = color; }
+  }
+
+  /* G-g2 (редактор P1): применение промокода — единый запрос для поля
+     drawer И поля в форме заказа (оба пишут общий promoState). */
+  function applyPromoCode(rawCode) {
+    const code = String(rawCode || '').trim();
+    if (!code) { promoFeedback('Введите промокод', true); return; }
+    if (promoApplyBtn) promoApplyBtn.disabled = true;
+    const formApplyBtn = document.getElementById('orderPromoApply');
+    if (formApplyBtn) formApplyBtn.disabled = true;
+    promoFeedback('Проверяем…', false);
+    fetch('/api/promo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: code, subtotal: window.cart.getTotal() })
+    }).then(function (r) { return r.json(); }).then(function (res) {
+      if (promoApplyBtn) promoApplyBtn.disabled = false;
+      if (formApplyBtn) formApplyBtn.disabled = false;
+      if (res && res.ok) {
+        promoState.code = res.code; promoState.discount = res.discount;
+        promoState.lastCode = res.code;
+        /* W78: сохраняем реальный порог и формулу — раньше minOrder вечно =0 убивал guard ниже */
+        promoState.minOrder = (res.min | 0) > 0 ? (res.min | 0) : 0;
+        promoState.kind = res.kind === 'fixed' ? 'fixed' : (res.kind === 'percent' ? 'percent' : '');
+        promoState.val = res.val | 0;
+        promoFeedback(res.label || 'Промокод применён', false);
+        syncPromoInputs(res.code);
+      } else {
+        promoClear(true);
+        if (res && res.error === 'min_order' && res.min) { promoState.lastCode = code.trim().toUpperCase(); promoState.minOrder = res.min | 0; } /* W86: регистр как на success */ /* W80: рост корзины → зелёная подсказка вместо залипшего красного */
+        const msg = res && res.error === 'min_order' && res.min
+          ? 'Промокод действует от ' + formatPrice(res.min) + '\u00A0₽'
+          : 'Такого промокода нет или он истёк';
+        promoFeedback(msg, true);
+        promoState.code = ''; promoState.discount = 0;
+      }
+      render();
+      /* сводка на /checkout слушает только cart:change — промо меняет
+         итог без события, дёргаем её напрямую (экспорт ниже в IIFE) */
+      if (typeof window.nfRenderCheckoutSummary === 'function') window.nfRenderCheckoutSummary();
+    }).catch(function () {
+      if (promoApplyBtn) promoApplyBtn.disabled = false;
+      if (formApplyBtn) formApplyBtn.disabled = false;
+      promoFeedback('Не удалось проверить промокод — попробуйте позже', true);
     });
   }
+
+  /* применённый код — видим в обоих полях (drawer + форма); снятие — чистим */
+  function syncPromoInputs(appliedCode) {
+    if (promoInput && appliedCode) promoInput.value = appliedCode;
+    var formInput = document.getElementById('orderPromoInput');
+    if (formInput && appliedCode) formInput.value = appliedCode;
+  }
+
+  if (promoApplyBtn && promoInput) {
+    promoApplyBtn.addEventListener('click', function () {
+      applyPromoCode(promoInput.value);
+    });
+  }
+
+  /* поле промокода в форме заказа (G-g2): клик по «Применить» и Enter
+     (Enter в текст-поле внутри формы иначе отправил бы заказ) */
+  (function orderPromoField() {
+    var inp = document.getElementById('orderPromoInput');
+    var btn = document.getElementById('orderPromoApply');
+    if (!inp || !btn) return;
+    btn.addEventListener('click', function () { applyPromoCode(inp.value); });
+    inp.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        applyPromoCode(inp.value);
+      }
+    });
+    /* состояние применённого кода видно сразу (например, применили в drawer
+       на главной, потом дошли до формы) */
+    if (promoState.code) inp.value = promoState.code;
+  })();
 
   function render() {
     const items = window.cart.getItems();
@@ -185,6 +295,11 @@
 
     itemsEl.innerHTML = items.map(itemRowHtml).join('');
     emptyEl.hidden = items.length > 0;
+    /* A-b3 (3): CTA пустой корзины живёт в тандеме с подписью — виден только
+       в пустом состоянии; кнопка «Оформить заказ» в пустом состоянии скрыта
+       (задизейбленная кнопка — мёртвый элемент, путь вперёд — «Выбрать букет»). */
+    if (emptyCtaBtn) emptyCtaBtn.hidden = items.length > 0;
+    if (checkoutBtn) checkoutBtn.hidden = items.length === 0;
     itemsEl.hidden = items.length === 0;
 
     /* H7 (W99-fixG2): пустая корзина — не показываем «Итого: 0 ₽»: скрываем
@@ -201,7 +316,7 @@
     var promoEmpty = items.length === 0;
     if (promoEmpty && (promoState.code || promoState.lastCode)) {
       promoClear(true);
-      promoState.lastCode = ''; if (promoMsgEl) { promoMsgEl.textContent = ''; promoMsgEl.style.color = ''; } /* W81b: не прятать msg с залипшим красным inline-color */
+      promoState.lastCode = ''; promoMsgWrite('', ''); /* W81b: не прятать msg с залипшим красным inline-color */
     } /* иначе minOrder=0 и зелёная ветка сработала бы ложно после возврата товара */
     if (promoWrap) promoWrap.hidden = promoEmpty;
     if (promoMsgEl) promoMsgEl.hidden = promoEmpty;
@@ -211,13 +326,11 @@
       if (promoState.code && window.cart.getTotal() < promoState.minOrder) {
         promoState.code = ''; promoState.discount = 0;
         promoState.kind = ''; promoState.val = 0;
-        promoMsgEl.textContent = 'Промокод ' + promoState.lastCode + ' действует от ' + formatPrice(promoState.minOrder) + '\u00A0₽ — добавьте ещё цветов';
-        promoMsgEl.style.color = 'var(--err,#d64545)';
+        promoMsgWrite('Промокод ' + promoState.lastCode + ' действует от ' + formatPrice(promoState.minOrder) + '\u00A0₽ — добавьте ещё цветов', 'var(--err,#d64545)');
       } else if (!promoState.code && promoState.lastCode && window.cart.getTotal() >= promoState.minOrder) {
         /* W79 (владелец OPEN_NEW-1): корзина снова выше порога — залипшее красное
            предупреждение врёт о текущем состоянии; снимаем его, подсказываем повтор. */
-        promoMsgEl.textContent = 'Порог для промокода ' + promoState.lastCode + ' достигнут — введите код заново';
-        promoMsgEl.style.color = 'var(--ok,#2e7d32)';
+        promoMsgWrite('Порог для промокода ' + promoState.lastCode + ' достигнут — введите код заново', 'var(--ok,#2e7d32)');
       } else if (promoState.code && promoState.kind) {
         /* W78: пересчёт по текущей корзине — скидка не должна «застывать» при смене qty.
            (Совпадение с серверной формулой /api/orders гарантировано той же функцией.) */
@@ -239,7 +352,6 @@
       announce('cartTotal', 'Итого: ' + formatPrice(payable) + '\u00A0₽');
     }
     checkoutBtn.disabled = items.length === 0;
-
     if (orderSelected) {
       orderSelected.textContent =
         items.length > 0
@@ -416,6 +528,13 @@
   }
 
   function open() {
+    /* G-g2 (жюри P0): drawer открылся — тост «Добавлено в корзину» гасим
+       МГНОВЕННО, до первого кадра анимации: тост z130 выше drawer z100 и
+       на мобиле лежал ровно на кнопке «Оформить заказ» (открытие drawer
+       кликом по иконке корзины тост раньше не убирало — только показ НОВОГО
+       тоста при открытом drawer был отменён). cart-cta.js держит и второй
+       контур — MutationObserver по body.no-scroll (лайтбокс и пр.). */
+    if (typeof window.nfKillCartToast === 'function') window.nfKillCartToast();
     /* W104-δ (C2-M2 P1.4): быстрое закрытие→открытие (<240мс) — отменяем
        незавершённый выход: drawer мягко возвращается по открыточной кривой
        (hidden ещё не встал — не мигаем), состояние открытого drawer
@@ -551,23 +670,48 @@
   function goToOrderSection() {
     close();
     const orderSection = document.getElementById('order');
-    if (orderSection) {
-      /* W104-δ: скролл — через Lenis (единый пробег с якорями, offset −96).
+    const orderFormEl = document.getElementById('orderForm');
+    if (!orderSection && !orderFormEl) {
+      /* W106-E1 (Нильсен P0 «чекаут заперт в лендинге», спешащий P1 «телепорт
+         на главную #order»): со вторичных страниц (PDP/категория/повод) кнопка
+         «Оформить заказ» ведёт на отдельную страницу /checkout.php — там та же
+         форма (partials/order-form.php) и сводка корзины; было — переброс на
+         главную к якорю #order с потерей контекста товара. */
+      window.location.href = '/checkout.php';
+      return;
+    }
+    /* D-d1 (P1-14, 55+): цель — сама ФОРМА (#orderForm), не секция #order:
+       прежний скролл к секции оставлял вверху вьюпорта хвост «Дополните
+       букет» (замер: scrollY 7167 при orderTop 7359 — offset и scroll-padding
+       складывались), покупатель 55+ не видел полей. Форма скрыта при пустой
+       корзине (syncOrderEmptyState) — тогда секция как прежде.
+       Скролл — числом (не элементом): элементный scrollTo в этом Lenis
+       добавляет scroll-padding-top повторно (замер: offset:0 → −96),
+       числовой цель попадает ровно. Работает и на /checkout.php — там
+       секция #order рендерит тот же partial. */
+    const formVisible = orderFormEl && orderFormEl.offsetParent !== null;
+    const target = formVisible ? orderFormEl : orderSection;
+    if (target) {
+      /* W104-δ: скролл — через Lenis (единый пробег с якорями).
       rAF: close() снимает скролл-лок, MutationObserver в kinetic.js
       перезапускает Lenis микротаском — к кадру скролла он уже активен. */
       requestAnimationFrame(function () {
+        const top = Math.max(0,
+          target.getBoundingClientRect().top + (window.scrollY || window.pageYOffset) - 96);
         const lenis = window.NF_LENIS;
         if (lenis && !lenis.isStopped && typeof lenis.scrollTo === 'function') {
-          lenis.scrollTo(orderSection, { offset: -96 });
+          lenis.scrollTo(top);
         } else {
-          orderSection.scrollIntoView({ behavior: scrollBehavior(), block: 'start' });
+          window.scrollTo({ top: top, behavior: scrollBehavior() });
         }
       });
-      const nameInput = document.getElementById('orderName');
-      if (nameInput) nameInput.focus();
-    } else {
-      /* Секция #order есть только на главной — переходим туда с якорем */
-      window.location.href = '/#order';
+      /* D-d1: фокус — на первое поле формы (после перегруппировки это
+         селект района), preventScroll — не дёргает только что выставленную
+         позицию; поле остаётся в зоне видимости. */
+      const firstField = target.querySelector('select, input:not([type=hidden]):not([tabindex="-1"]), textarea');
+      if (firstField) {
+        try { firstField.focus({ preventScroll: true }); } catch (e) { firstField.focus(); }
+      }
     }
   }
 
@@ -635,6 +779,93 @@
 
   window.addEventListener('cart:change', render);
   render();
+
+  /* ============ W106-E1 (Нильсен P0 «чекаут заперт в лендинге»):
+     СВОДКА КОРЗИНЫ на /checkout.php ============
+     Корзина живёт в localStorage → страницу рендерит JS. Блок-плейсхолдер
+     печатает checkout.php (#checkoutSummary*), здесь — компактная сводка:
+     товары/цены → промо (если применён в drawer, PROMO_STATE общий) →
+     «Букеты» → «Доставка» (тариф выбранного района формы, порог бесплатной
+     доставки — та же формула, что order-form.js selectedDeliveryPrice) →
+     «Итого». Пересчёт: cart:change + делегированный change селекта района. */
+  (function checkoutSummary() {
+    const root = document.getElementById('checkoutSummary');
+    if (!root) return;
+    const itemsEl = document.getElementById('checkoutSummaryItems');
+    const emptyEl = document.getElementById('checkoutSummaryEmpty');
+    const promoRow = document.getElementById('checkoutSummaryPromoRow');
+    const promoLabel = document.getElementById('checkoutSummaryPromoLabel');
+    const promoValue = document.getElementById('checkoutSummaryPromoValue');
+    const itemsTotalEl = document.getElementById('checkoutSummaryItemsTotal');
+    const deliveryEl = document.getElementById('checkoutSummaryDelivery');
+    const totalEl = document.getElementById('checkoutSummaryTotal');
+    if (!itemsEl || !totalEl) return;
+
+    function zonePrice() {
+      const sel = document.getElementById('orderDeliveryZone');
+      if (!sel) return null;
+      const opt = sel.selectedOptions[0];
+      let price = opt ? Number(opt.dataset.price) || 0 : 0;
+      const cfg = window.NILOV_CONFIG || {};
+      const threshold = Number(cfg.freeDeliveryThreshold) || 0;
+      const items = window.cart ? window.cart.getTotal() : 0;
+      if (threshold > 0 && items >= threshold && price > 0) price = 0;
+      return { price: price, pickup: sel.value === '0' || sel.value === '' };
+    }
+
+    function renderSummary() {
+      const items = window.cart ? window.cart.getItems() : [];
+      if (items.length === 0) {
+        itemsEl.innerHTML = '';
+        if (emptyEl) emptyEl.hidden = false;
+        if (promoRow) promoRow.hidden = true;
+        if (itemsTotalEl) itemsTotalEl.textContent = '—';
+        if (deliveryEl) deliveryEl.textContent = '—';
+        totalEl.textContent = '—';
+        return;
+      }
+      if (emptyEl) emptyEl.hidden = true;
+      itemsEl.innerHTML = items.map(function (item) {
+        return '<li class="checkout-summary__item">'
+          + '<span class="checkout-summary__name">' + escapeHtml(item.name || 'Букет')
+          + (item.qty > 1 ? ' × ' + item.qty : '') + '</span>'
+          + '<span class="checkout-summary__price">' + formatPrice(item.price * item.qty) + '\u00A0₽</span>'
+          + '</li>';
+      }).join('');
+
+      const itemsTotal = window.cart.getTotal();
+      const promo = window.PROMO_STATE || {};
+      const discount = (promo.code && Number(promo.discount) > 0) ? Number(promo.discount) : 0;
+      if (promoRow) {
+        if (discount > 0) {
+          promoLabel.textContent = 'Промокод ' + promo.code;
+          promoValue.textContent = '−' + formatPrice(discount) + '\u00A0₽';
+          promoRow.hidden = false;
+        } else {
+          promoRow.hidden = true;
+        }
+      }
+      if (itemsTotalEl) itemsTotalEl.textContent = formatPrice(itemsTotal) + '\u00A0₽';
+
+      const z = zonePrice();
+      if (deliveryEl) {
+        if (z === null) deliveryEl.textContent = '—';
+        else if (z.pickup) deliveryEl.textContent = 'Самовывоз · 0\u00A0₽';
+        else deliveryEl.textContent = (z.price === 0 ? 'Бесплатно' : formatPrice(z.price) + '\u00A0₽');
+      }
+      const delivery = z ? z.price : 0;
+      totalEl.textContent = formatPrice(Math.max(0, itemsTotal - discount + delivery)) + '\u00A0₽';
+    }
+
+    document.addEventListener('change', function (e) {
+      if (e.target && e.target.id === 'orderDeliveryZone') renderSummary();
+    });
+    window.addEventListener('cart:change', renderSummary);
+    /* G-g2: прямой доступ из промо-потока (применение кода меняет итог
+       без события корзины) */
+    window.nfRenderCheckoutSummary = renderSummary;
+    renderSummary();
+  })();
 
   window.cartUI = {
     open: open,

@@ -128,7 +128,7 @@
   display:inline-block;
   opacity:0;
   transform:translateY(115%) rotate(4deg);
-  animation:nv-ch-in .7s cubic-bezier(.22,1,.36,1) forwards;
+  animation:nv-ch-in .7s cubic-bezier(.4,0,.2,1) forwards;
   /* W104-δ (C2-M2 P1.7): stagger 55 → 100мс — три строки H1 перестали
      читаться одним блоком (совпадает с кинетикой 90мс; полный каскад
      hero: последний старт ~.35с + .7с = ~1.05с — быстрее 1.5с-бюджета) */
@@ -142,7 +142,7 @@
    W104-δ (C2-M2 ease-изгой): голый ease → системная кривая */
 .nv-hero-sub{
   opacity:0;
-  animation:nv-fade .8s cubic-bezier(.22,1,.36,1) .75s forwards;
+  animation:nv-fade .8s cubic-bezier(.4,0,.2,1) .75s forwards;
 }
 @keyframes nv-fade{
   from{opacity:0;transform:translateY(10px)}
@@ -234,7 +234,7 @@ html:not(.js-ready) .reveal *{
   aspect-ratio:4/5;
   object-fit:cover;
   filter:saturate(1.06) contrast(1.04) brightness(1.02);
-  transition:transform .5s cubic-bezier(.22,1,.36,1);
+  transition:transform .5s cubic-bezier(.4,0,.2,1);
   mix-blend-mode:normal;
 }
 /* W105-8fix1 (мошн-критик 8-c P2): :hover-zoom 1.045 удалён — единственный
@@ -261,13 +261,13 @@ img.product-card__img{
 
 /* Карточки товара: базовый переход (hover-состояние — НЕ здесь)
    W104-δ (C2-M2 ease-изгои): почти-дубль системной кривой
-   (.19,1,.22,1) и голый ease → единая cubic-bezier(.22,1,.36,1)
+   (.19,1,.22,1) и голый ease → единая cubic-bezier(.4,0,.2,1)
    W105-8fix1 (мошн-критик 8-c P2 «лотерея каскада»): правило
    .product-card:hover{translateY(-6px)+тень} УДАЛЕНО — канон W105 один:
    hover = translateY(-4px) + zoom 1.03 + волосяное кольцо, БЕЗ тени
    (авторы — five.css W105-5a + motion-w104.css 6b) */
 .product-card{
-  transition:transform .35s cubic-bezier(.22,1,.36,1),box-shadow .35s cubic-bezier(.22,1,.36,1);
+  transition:transform .35s cubic-bezier(.4,0,.2,1),box-shadow .35s cubic-bezier(.4,0,.2,1);
 }
 /* Плавный sheen на кнопках: светлая полоса проезжает */
 .btn--accent,.btn{
@@ -282,7 +282,7 @@ img.product-card__img{
   background:linear-gradient(105deg,transparent 42%,rgba(255,255,255,.35) 50%,transparent 58%);
   transform:translateX(-130%);
   /* W104-δ (C2-M2 ease-изгой): sheen .7s ease → системная кривая */
-  transition:transform .7s cubic-bezier(.22,1,.36,1);
+  transition:transform .7s cubic-bezier(.4,0,.2,1);
   z-index:0;
 }
 .btn--accent:hover::after,.btn:hover::after{
@@ -293,7 +293,7 @@ img.product-card__img{
    W104-δ (C2-M2): без явной кривой transition по умолчанию = ease —
    задаём системную явно */
 .catalog-tabs button, .tabs button{
-  transition:color .2s cubic-bezier(.22,1,.36,1),background .2s cubic-bezier(.22,1,.36,1),opacity .2s cubic-bezier(.22,1,.36,1);
+  transition:color .2s cubic-bezier(.4,0,.2,1),background .2s cubic-bezier(.4,0,.2,1),opacity .2s cubic-bezier(.4,0,.2,1);
 }
 
 /* ---------- Минимальная читаемость на мобиле (fix критика: 13→5→0 блоков <12px) ---------- */
@@ -311,11 +311,11 @@ img.product-card__img{
 /* 1) Курсор-параллакс лепестков (JS в nilov.js ставит --mx/--my -1..1) */
 .nv-petals .nv-petal--a{
   transform:translate(calc(var(--mx,0)*14px),calc(var(--my,0)*10px)) rotate(-6deg);
-  transition:transform .35s cubic-bezier(.22,1,.36,1);
+  transition:transform .35s cubic-bezier(.4,0,.2,1);
 }
 .nv-petals .nv-petal--b{
   transform:translate(calc(var(--mx,0)*-10px),calc(var(--my,0)*-8px)) rotate(7deg);
-  transition:transform .45s cubic-bezier(.22,1,.36,1);
+  transition:transform .45s cubic-bezier(.4,0,.2,1);
 }
 
 /* 2) Цветок-блум в секции «Как это работает»: раскрывается по скроллу.
@@ -336,7 +336,7 @@ img.product-card__img{
 }
 @supports (animation-timeline: view()){
   .nv-bloom .nv-bloom-petals{
-    animation:nv-bloom-open 1s cubic-bezier(.22,1,.36,1) both;
+    animation:nv-bloom-open 1s cubic-bezier(.4,0,.2,1) both;
     animation-timeline:view();
     animation-range:entry 10% cover 38%;
   }
@@ -349,7 +349,7 @@ img.product-card__img{
 /* 3) Живая CTA: магнитный подъём + распускание тени
    W104-δ (C2-M2 ease-изгои): ease → системная кривая */
 .btn--accent{
-  transition:transform .3s cubic-bezier(.22,1,.36,1),box-shadow .3s cubic-bezier(.22,1,.36,1),background .3s cubic-bezier(.22,1,.36,1),opacity .2s cubic-bezier(.22,1,.36,1); /* W65 #2: opacity — fade скрытия fixed-CTA (nilov грузится после style.css) */
+  transition:transform .3s cubic-bezier(.4,0,.2,1),box-shadow .3s cubic-bezier(.4,0,.2,1),background .3s cubic-bezier(.4,0,.2,1),opacity .2s cubic-bezier(.4,0,.2,1); /* W65 #2: opacity — fade скрытия fixed-CTA (nilov грузится после style.css) */
   box-shadow:0 10px 24px -12px rgba(226,121,156,.55);
 }
 .btn--accent:hover{
@@ -401,7 +401,7 @@ img.product-card__img{
   font-size:1.15rem;line-height:1;color:var(--ink);
   cursor:pointer;display:flex;align-items:center;justify-content:center;
   /* W104-δ (C2-M2 ease-изгои): ease → системная кривая */
-  transition:transform .18s cubic-bezier(.22,1,.36,1),background .18s cubic-bezier(.22,1,.36,1),color .18s cubic-bezier(.22,1,.36,1);
+  transition:transform .18s cubic-bezier(.4,0,.2,1),background .18s cubic-bezier(.4,0,.2,1),color .18s cubic-bezier(.4,0,.2,1);
   backdrop-filter:blur(4px);
 }
 .product-card__fav:hover{transform:scale(1.12)}
@@ -411,6 +411,6 @@ img.product-card__img{
   display:inline-flex;align-items:center;gap:6px;
   padding:0 14px;min-height:44px;border-radius:999px;border:1px solid var(--line);
   background:#fff;font-size:.85rem;font-weight:600;color:var(--ink);cursor:pointer;
-  transition:border-color .18s cubic-bezier(.22,1,.36,1);
+  transition:border-color .18s cubic-bezier(.4,0,.2,1);
 }
 .fav-toggle.is-active{border-color:var(--rose-live);color:var(--rose-live)}

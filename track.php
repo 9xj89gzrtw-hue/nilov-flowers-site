@@ -140,7 +140,7 @@ function trackStep(string $status): int {
             <p class="track-card__meta">
               <?= e($addr) ?> · Сумма: <strong><?= formatPrice((int)$o['total']) ?></strong>
               <?php if ($o['status'] === 'new'): ?><br><?= e(trim(setting('thanks_call_text', 'Мы позвоним в течение 15 минут для подтверждения'))) ?>
-              <?php elseif ($o['status'] === 'confirmed'): ?><br>Букет собираем — фото пришлём перед отправкой.
+              <?php elseif ($o['status'] === 'confirmed'): ?><br>Букет собираем — фото пришлём до отправки.
               <?php elseif ($o['status'] === 'done'): ?><br>Доставлено. Спасибо, что выбираете нас!
               <?php endif; ?><?php if (!empty($o['handover_photo'])): ?><br>Фото вручения: <a href="/img/uploads/<?= e($o['handover_photo']) ?>" target="_blank" rel="noopener">посмотреть</a><?php endif; ?>
             </p>

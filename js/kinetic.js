@@ -55,11 +55,52 @@
      (замер: p95 39–67мс). html.motion-lite — CSS (motion-w104.css)
      переводит scroll-driven анимации на IO-fallback (reveal.js уже
      умеет: класс .reveal--visible + transition), параллакс/блум —
-     статик. Lenis и кинетика остаются. 8+ ядер — полный motion. */
+     статик. Lenis и кинетика остаются. 8+ ядер — полный motion.
+     D-d1 (P0-6, жюри): автовключение расширено — кроме ≤4 ядер:
+     (а) connection.saveData (заявленная экономия трафика/батареи),
+     (б) замер деградации: 3 ПОДРЯД кадра дольше 40мс в первые 2с
+     жизни страницы → тяжёлый рендер, view()-таймлайны сняли бы
+     последний кадр. Поздняя постановка класса безопасна: reveal.js
+     держит MutationObserver на <html> и пере-подписывает IO на
+     секции (self-heal W105). prefers-reduced-motion — приоритетнее:
+     там motion-lite не нужен (всё уже статично). */
   (function motionLite() {
     if (reduced()) return;
     var cores = navigator.hardwareConcurrency || 8;
-    if (cores <= 4) ROOT.classList.add('motion-lite');
+    var lite = cores <= 4; /* прежний порог W104 (включая ≤2 из ТЗ D-d1) */
+    if (!lite) {
+      try {
+        var conn = navigator.connection || navigator.webkitConnection;
+        if (conn && conn.saveData) lite = true; /* (а) Data Saver */
+      } catch (e) { /* недоступен Network Information API — не страшно */ }
+    }
+    if (lite) {
+      ROOT.classList.add('motion-lite');
+      return;
+    }
+    /* (б) замер кадров: 3 подряд >40мс в первых 2000мс */
+    var SLOW_MS = 40, STRIKES = 3, WINDOW_MS = 2000;
+    var t0 = null, tPrev = null, strikes = 0, done = false;
+    function frame(ts) {
+      if (done) return;
+      if (t0 === null) t0 = ts;
+      if (ts - t0 > WINDOW_MS) { done = true; return; } /* окно закрыто — рендер жив */
+      if (tPrev !== null) {
+        if (ts - tPrev > SLOW_MS) {
+          strikes++;
+          if (strikes >= STRIKES) {
+            done = true;
+            ROOT.classList.add('motion-lite');
+            return;
+          }
+        } else {
+          strikes = 0; /* подряд нарушено — начинаем счёт заново */
+        }
+      }
+      tPrev = ts;
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
   })();
 
   /* ============ 1. LENIS ============ */
@@ -357,7 +398,7 @@
               { transform: 'translate(-50%,-50%) translate(' + (dx * 0.62).toFixed(1) + 'px,' + (dy0 * 0.62 - 16).toFixed(1) + 'px) rotate(' + (rot * 0.55).toFixed(0) + 'deg)', opacity: 0.95, offset: 0.45 },
               { transform: 'translate(-50%,-50%) translate(' + dx.toFixed(1) + 'px,' + dyF.toFixed(1) + 'px) rotate(' + rot.toFixed(0) + 'deg)', opacity: 0 }
             ],
-            { duration: t, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'forwards' }
+            { duration: t, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' }
           );
           a.onfinish = a.oncancel = function () { p.remove(); };
         })(i);

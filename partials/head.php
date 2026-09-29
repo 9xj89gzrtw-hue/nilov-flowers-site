@@ -8,14 +8,31 @@ $iconHref = $favicon !== '' ? '/img/uploads/' . rawurlencode($favicon) : '/img/f
 $yandexVerification = trim(setting('yandex_verification', ''));
 $googleVerification = trim(setting('google_site_verification', ''));
 /* W96-fix3a (T4): версионирование CSS — ?v= из md5-хэша файла (паттерн favicon).
-   immutable-кэш (T3 .htaccess) безопасен: смена файла меняет URL, кэш инвалидируется. */
-$styleCssV = substr((string)@md5_file(__DIR__ . '/../css/style.css'), 0, 8);
-$nilovCssV = substr((string)@md5_file(__DIR__ . '/../css/nilov.css'), 0, 8);
-$fiveCssV = substr((string)@md5_file(__DIR__ . '/../css/five.css'), 0, 8);
+   immutable-кэш (T3 .htaccess) безопасен: смена файла меняет URL, кэш инвалидируется.
+   E-e2 (P0-3, перф-критик волны 3: 280КБ render-blocking CSS): подключаем
+   минифицированную копию css/<имя>.min.css (генератор /tmp/e2min.php —
+   whitespace+comments only, селекторы/значения не меняются; исходники
+   остаются каноническими и НЕ удаляются). mtime-guard: если min отсутствует
+   или СТАРЕЕ исходника (исходники правят волны/параллельные агенты — файл
+   five.css активно менялся прямо во время E-e2), отдаём ИСХОДНИК — стили
+   всегда актуальны, мин — только когда он честно свежее. ?v= — md5 того
+   файла, который реально отдаётся (смена содержимого любого из них меняет
+   URL и чистит immutable-кэш). */
+$nfCssPick = static function (string $name): array {
+    $src = __DIR__ . '/../css/' . $name;
+    $min = __DIR__ . '/../css/' . preg_replace('/\.css$/', '.min.css', $name);
+    $useMin = is_file($min) && is_file($src)
+        && (int)@filemtime($min) >= (int)@filemtime($src);
+    $file = $useMin ? $min : $src;
+    return ['/css/' . basename($file), substr((string)@md5_file($file), 0, 8)];
+};
+[$styleCssHref, $styleCssV] = $nfCssPick('style.css');
+[$nilovCssHref, $nilovCssV] = $nfCssPick('nilov.css');
+[$fiveCssHref, $fiveCssV] = $nfCssPick('five.css');
 /* W104-c (motion): motion-слой — лепестки/lenis/кинетика; ПОСЛЕ five.css
    (слоистость canvas над фото — см. css/motion-w104.css), ДО fonts.css. */
-$motionCssV = substr((string)@md5_file(__DIR__ . '/../css/motion-w104.css'), 0, 8);
-$fontsCssV = substr((string)@md5_file(__DIR__ . '/../css/fonts.css'), 0, 8);
+[$motionCssHref, $motionCssV] = $nfCssPick('motion-w104.css');
+[$fontsCssHref, $fontsCssV] = $nfCssPick('fonts.css');
 /* W97-fixB1 (B1-5): twitter-мета — парные к og (тот же источник значения).
    twitter:title: product.php/occasion.php передают $pageTitle == og:title; главная
    $pageTitle не задаёт — берём seo_title с тем же дефолтом, что index.php печатает
@@ -66,13 +83,13 @@ if (isset($ogType) && $ogType === 'product' && isset($img) && is_string($img) &&
 <?php /* W97-fixB1 (B1-5): preload обоих подмножеств Golos (62КБ) не нужен —
    latin подтянется по unicode-range при латинице; кириллица покрывает витрину. */ ?>
 <link rel="preload" href="/fonts/GolosText-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/css/style.css?v=<?= e($styleCssV) ?>">
-<link rel="stylesheet" href="/css/nilov.css?v=<?= e($nilovCssV) ?>">
+<link rel="stylesheet" href="<?= e($styleCssHref) ?>?v=<?= e($styleCssV) ?>">
+<link rel="stylesheet" href="<?= e($nilovCssHref) ?>?v=<?= e($nilovCssV) ?>">
 <?php /* W96/T2-a: дизайн-система 5cv — ПОСЛЕ nilov.css (перекрывает той же специфичностью),
    ДО fonts.css (токены --font-ui закреплены в five.css на html:root — выше :root из fonts.css). */ ?>
-<link rel="stylesheet" href="/css/five.css?v=<?= e($fiveCssV) ?>">
-<link rel="stylesheet" href="/css/motion-w104.css?v=<?= e($motionCssV) ?>">
-<link rel="stylesheet" href="/css/fonts.css?v=<?= e($fontsCssV) ?>">
+<link rel="stylesheet" href="<?= e($fiveCssHref) ?>?v=<?= e($fiveCssV) ?>">
+<link rel="stylesheet" href="<?= e($motionCssHref) ?>?v=<?= e($motionCssV) ?>">
+<link rel="stylesheet" href="<?= e($fontsCssHref) ?>?v=<?= e($fontsCssV) ?>">
 <?php /* W99-fixG (G4): pwa-register.js — с ?v={md5_file 8} как у скриптов
    footer.php (A9): .htaccess отдаёт .js immutable-год, без версии вернувшиеся
    посетители сидят на старом SW-регистраторе. */ ?>

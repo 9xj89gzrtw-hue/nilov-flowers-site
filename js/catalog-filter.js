@@ -98,23 +98,49 @@
 
   /* W96-fix1 (F3): базовый стемминг русского запроса — отрезаем типичные окончания,
      чтобы «розы» находило «Букет из роз», «пионы» — «пион», «маме» — «мам».
-     W99-fixG2 (H10): стеммы больше не ищутся подстрокой — поисковый индекс
-     карточки токенизируется и сравнивается ТОЧНЫМ вхождением стеммы в Set.
-     + прилагательные: «розовое/розовые/розовой/розовых» → стемма «розов»
-     (как у «розовый») — запрос «розовый» находит «Розовое облако» и пр. */
+     W99-fixG2 (H10): стеммы карточки токенизируются в Set.
+     A-b3 (4, копирайтер-критик): матчи по НАЧАЛУ СЛОВА (word-prefix): стемма
+     запроса должна быть префиксом стеммы какого-то слова карточки —
+     «ромашка» больше не находит «Романтику» (ромашк≠романтик…), зато
+     «ромаш» находит «ромашки» (раньше точное сравнение стеммов теряло
+     недонабранные запросы). + нормализация ё→е в обе стороны. */
   function stemRu(word) {
     var w = word.toLowerCase();
     var m = w.match(/^(.+?)(?:ами|ого|ому|ыми|ими|ая|ые|ое|ее|ой|ым|ых|ов|ей|ий|ый|ом|ем|ам|ах|иях|ях|ии|ие|ия|ью|ья|а|я|ы|и|у|ю|е|о)$/);
     return (m && m[1].length >= 3) ? m[1] : w;
   }
-  /* Токены ≥3 символов (буквы/цифры) — «роз» остаётся токеном, а предлоги/«7» отпадают */
+  /* Токены ≥3 символов (буквы/цифры) — «роз» остаётся токеном, а предлоги/«7» отпадают;
+     ё→е: запрос «ёлка» и текст «ель»… — «ёлка»==«елка» в одной орфографии */
   function tokenize(text) {
-    return String(text || '').toLowerCase()
+    return String(text || '').toLowerCase().replace(/ё/g, 'е')
       .split(/[^a-zа-яё0-9]+/)
       .filter(function (t) { return t.length >= 3; });
   }
   function queryStems(q) {
     return tokenize(q).map(stemRu);
+  }
+
+  /* A-b3 (4): предрасчёт поискового индекса карточки — tokenize+stem дорожки
+     data-search один раз на карточку (apply() гоняется на каждый keystroke,
+     23 карточки × 500 символов пересчитывать не нужно). Кэш по элементу. */
+  var cardStemCache = new Map();
+  function cardStems(card) {
+    var cached = cardStemCache.get(card);
+    if (cached) return cached;
+    var nameEl = card.querySelector('.product-card__name');
+    var hay = card.getAttribute('data-search') || (nameEl ? nameEl.textContent : '');
+    var stems = tokenize(hay).map(stemRu);
+    cardStemCache.set(card, stems);
+    return stems;
+  }
+  /* Стемма запроса матчится, если она — начало какой-то стеммы карточки
+     (равенство — частный случай префикса). indexOf===0 вместо startsWith —
+     на всякий случай для старых WebKit. */
+  function stemPrefixMatch(stems, qw) {
+    for (var i = 0; i < stems.length; i++) {
+      if (stems[i].length >= qw.length && stems[i].indexOf(qw) === 0) return true;
+    }
+    return false;
   }
 
   /* Чип задаёт диапазон: data-min — исключительно («от M»), data-max — включительно
@@ -188,21 +214,13 @@
         var price = parseInt(card.getAttribute('data-price'), 10) || 0;
         if ((min !== null && price < min) || (max !== null && price > max)) ok = false;
       }
-      /* Поиск (W99-fixG2 H10): токенизируем поисковый индекс карточки (имя+
-         категория+описание; фолбэк на имя для старого кэша) по словам ≥3 симв.,
-         стеммим и складываем в Set — КАЖДАЯ стемма запроса должна быть в нём
-         точно. Было подстрочным indexOf: «роз» матчил «розовый» (стемма
-         «розов» ≠ «роз»), «пион» ложно попадал в «пионерский» и т.п. */
-      if (ok && q !== '') {
-        var nameEl = card.querySelector('.product-card__name');
-        var hay = (card.getAttribute('data-search') || (nameEl ? nameEl.textContent : '')).toLowerCase();
-        if (stems.length) {
-          var stemSet = new Set(tokenize(hay).map(stemRu));
-          ok = stems.every(function (w) { return stemSet.has(w); });
-        } else if (rawStems.length) {
-          /* запрос из одних коротких токенов — старый подстрочный матч */
-          ok = rawStems.every(function (w) { return hay.indexOf(w) !== -1; });
-        }
+      /* Поиск (A-b3 4): word-prefix по предрасчитанному индексу (имя+категория+
+         описание из data-search). КАЖДАЯ стемма запроса (≥3 симв.) должна быть
+         началом какого-то слова карточки — «ромашка» честно находит только
+         «Полевые цветы» (там есть ромашки), «Романтика» не всплывает. */
+      if (ok && q !== '' && stems.length) {
+        var cardStemList = cardStems(card);
+        ok = stems.every(function (qw) { return stemPrefixMatch(cardStemList, qw); });
       }
       /* избранное */
       if (ok && favOn && !cardFav(card)) ok = false;
@@ -230,12 +248,17 @@
     /* Empty-state: 0 видимых → подсказка + сброс. Заголовок честный:
        «Избранное» совсем без лайков — про избранное (A2); лайки есть, но их
        вырезал другой фильтр (цена/вкладка/поиск) — про фильтры, не «пусто»;
-       K3 (W101): поиск × активная цена — причина в тексте («в выбранном
-       диапазоне цен») + отдельная кнопка «Сбросить цену» (снимает ТОЛЬКО цену,
-       запрос/категорию/избранное не трогает);
-       поиск без совпадений — про запрос (W96-fix3b); иначе — исходный текст. */
+       K3 (W101): поиск × активная цена — отдельная кнопка «Сбросить цену»
+       (снимает ТОЛЬКО цену, запрос/категорию/избранное не трогает);
+       C-c4 (CRO P0 «поиск-тупик»): поиск без совпадений — заголовок
+       «Ничего не нашлось» + строка «Опишите, какой букет нужен — соберём
+       на заказ» + CTA «Собрать на заказ» (скролл к #order — якорный
+       клик перехватывает kinetic.js: lenis + offset −96; на вторичных
+       страницах — /#order). Разметка #catalogEmpty — в index.php (чужая
+       зона), блок собирается здесь целиком, живёт до первого сброса. */
     if (emptyBox) {
       emptyBox.hidden = visible > 0;
+      var searchEmpty = q !== '' && visible === 0;
       if (emptyTitle) {
         if (!emptyTitle.dataset.origTitle) emptyTitle.dataset.origTitle = emptyTitle.textContent;
         if (favOn && visible === 0) {
@@ -243,14 +266,43 @@
           emptyTitle.textContent = anyFav
             ? 'В избранном нет букетов по этим фильтрам — попробуйте вернуть цену или категорию'
             : 'В избранном пока пусто — нажмите ♡ на букете в каталоге';
-        } else if (q !== '' && visible === 0) {
-          emptyTitle.textContent = priceActive
-            ? 'По запросу «' + rawQ.trim() + '» в выбранном диапазоне цен не нашлось'
-            : 'По запросу «' + rawQ.trim() + '» не нашлось букетов';
+        } else if (searchEmpty) {
+          emptyTitle.textContent = 'Ничего не нашлось';
         } else {
           emptyTitle.textContent = emptyTitle.dataset.origTitle;
         }
       }
+      /* C-c4: CTA «Собрать на заказ» — один раз собираем нод, дальше только
+         вкл/выкл; серверная подсказка (2-й прямой <p>: «сбросьте цену…»)
+         в сценарии поиска прячем — она не про запрос */
+      var orderBlock = document.getElementById('catalogEmptyOrder');
+      if (!orderBlock) {
+        var emptyHintP = null;
+        Array.prototype.forEach.call(emptyBox.children, function (child) {
+          if (!emptyHintP && child.tagName === 'P' && child !== emptyTitle) emptyHintP = child;
+        });
+        orderBlock = document.createElement('div');
+        orderBlock.id = 'catalogEmptyOrder';
+        orderBlock.style.cssText = 'margin:2px 0 16px';
+        var orderHint = document.createElement('p');
+        orderHint.style.cssText = 'color:var(--ink-soft,#6e6a72);font-size:.9rem;margin:0 0 16px';
+        orderHint.textContent = 'Опишите, какой букет нужен — соберём на заказ';
+        var orderCta = document.createElement('a');
+        orderCta.className = 'btn btn--accent';
+        orderCta.style.marginRight = '10px';
+        orderCta.textContent = 'Собрать на заказ';
+        orderCta.href = document.getElementById('order') ? '#order' : '/#order';
+        orderBlock.appendChild(orderHint);
+        orderBlock.appendChild(orderCta);
+        if (emptyTitle && emptyTitle.nextSibling) {
+          emptyBox.insertBefore(orderBlock, emptyTitle.nextSibling);
+        } else {
+          emptyBox.insertBefore(orderBlock, emptyBox.firstChild);
+        }
+        orderBlock._nfHintP = emptyHintP; /* прячем/показываем вместе с блоком */
+      }
+      orderBlock.hidden = !searchEmpty;
+      if (orderBlock._nfHintP) orderBlock._nfHintP.hidden = searchEmpty;
       /* K3 (W101): кнопка «Сбросить цену» — создаётся один раз, показывается
          только в сценарии поиск × цена (иначе hidden). */
       var resetPriceBtn = document.getElementById('catalogEmptyResetPrice');

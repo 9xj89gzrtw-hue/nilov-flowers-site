@@ -30,17 +30,27 @@ if (!$oc) {
 }
 
 $canonicalUrl = 'https://flowers.interfood-catering.ru/occasion/' . rawurlencode($oc['slug']);
-/* W98-fixE (E17): title повода — всегда с брендом «— Nilov Flowers» (по образцу
-   product.php); meta_title из админки без бренда больше не оставляет «голый» title */
-$metaTitle = ($oc['meta_title'] !== '' ? $oc['meta_title'] : $oc['title']) . ' — ' . $shopName;
+/* W98-fixE (E17) → E-e3 (корректор P1): title повода — всегда с брендом;
+   разделитель « | » — единый с category.php и product.php (у категорий/товаров
+   «… | Nilov Flowers», у поводов было «—»); meta_title из админки без бренда
+   больше не оставляет «голый» title */
+$metaTitle = ($oc['meta_title'] !== '' ? $oc['meta_title'] : $oc['title']) . ' | ' . $shopName;
 $metaDesc = $oc['meta_description'] !== '' ? $oc['meta_description'] : mb_substr($oc['intro'], 0, 160);
 
-/* Подборка: только витринные товары с ценой и фото (без «0 ₽»-дыр). */
+/* Подборка: только витринные товары с ценой и фото (без «0 ₽»-дыр).
+   B5/W106 (бизнес 6.5 P1 — лестница цен): сортировка «хиты/премиум
+   вперёд, потом по цене» — сценарный контекст (бейдж «Хит»/«Премиум»
+   + возрастающая цена внутри групп) вместо сырого sort,id; фактическая
+   цена с учётом sale_price — как productPrice(). Набор id — occasion
+   product_ids (админка/сид), порядок внутри — здесь. */
 $ids = array_values(array_filter(array_map('intval', explode(',', (string)$oc['product_ids']))));
 $products = [];
 if ($ids !== []) {
     $in = implode(',', array_fill(0, count($ids), '?'));
-    $ps = db()->prepare("SELECT * FROM products WHERE id IN ($in) AND is_active = 1 AND price > 0 AND image <> '' ORDER BY sort, id");
+    $ps = db()->prepare("SELECT * FROM products WHERE id IN ($in) AND is_active = 1 AND price > 0 AND image <> ''
+        ORDER BY (is_premium = 1 OR is_hit = 1) DESC,
+            CASE WHEN sale_price IS NOT NULL AND sale_price <> '' AND sale_price > 0 THEN sale_price ELSE price END ASC,
+            sort, id");
     $ps->execute($ids);
     $products = $ps->fetchAll();
 }
@@ -50,6 +60,18 @@ foreach ([['faq_q1', 'faq_a1'], ['faq_q2', 'faq_a2']] as [$qk, $ak]) {
     $a = trim((string)$oc[$ak]);
     if ($q !== '' && $a !== '') { $faq[] = ['q' => $q, 'a' => $a]; }
 }
+
+/* C-c4 (редактор P0): контекстный CTA повода — «Заказать с доставкой сегодня»
+   противоречит свадебной логике (FAQ: «оптимально за 2–3 дня»). Маппинг
+   slug→текст живёт здесь (includes/db.php — чужая зона); приоритет —
+   настройка occasion_cta_<slug> (если владелец добавит ключ в админку),
+   затем маппинг, дефолт — прежний текст «на сегодня». */
+$occasionCtaMap = [
+    'svadebnye-bukety' => 'Обсудить свадебный букет',
+    'traurnye-kompozicii' => 'Оформить заявку',
+];
+$occasionCtaText = trim(setting('occasion_cta_' . $oc['slug'], ''))
+    ?: ($occasionCtaMap[$oc['slug']] ?? 'Заказать с доставкой сегодня');
 
 /* Карточка подборки — как на витрине (бейджи «Хит/Премиум/Скидка» + «+» в корзину).
    W97-fixB3b: srcset с thumbs-400 как в каталоге (B3b-3) + сердечко избранного
@@ -141,13 +163,16 @@ function render_occasion_card(array $p): void
     $isPremium = (int)($p['is_premium'] ?? 0) === 1;
     $isUrgent = (int)($p['is_urgent'] ?? 0) === 1;
     $file = productImageFile($p);
-    $img = $file !== '' ? '/img/products/' . rawurlencode($file) : '';
+    $img = $file !== '' ? static_img_v('/img/products/' . rawurlencode($file)) : '';
     $webp = product_img_webp_local($p);
     /* W97-fixB3b (B3b-3): srcset — webp-превью 400w + webp-оригинал {w}w (как каталог) */
     $thumb = $img !== '' ? product_img_thumb_local($p) : '';
     $origW = $img !== '' ? product_img_width_local($p) : 0;
     if ($thumb !== '' && $webp !== '' && $origW > 0) {
-        $t600 = preg_replace('/-400(\.webp)$/', '-600$1', $thumb); /* W101 (perf): 600w для DPR2-3 (файлы -600 в кэше GD) */
+        $t600 = preg_replace('/-400(\.webp)(?=\?|$)/', '-600$1', $thumb); /* W101 (perf): 600w для DPR2-3 (файлы -600 в кэше GD);
+           E-e3 (техно-критик): старый якорь `(\.webp)$` не матчил из-за хвоста
+           ?v=filemtime у static_img_v — 600w не попадал в srcset, и DPR2-3
+           браузеры брали полноразмерный webp-оригинал */
 
         $srcset = $thumb . ' 400w'
             . ($t600 !== null && $t600 !== $thumb && is_file(BASE_PATH . parse_url($t600, PHP_URL_PATH)) ? ', ' . $t600 . ' 600w' : '')
@@ -279,8 +304,44 @@ $secondaryCssV = substr((string)@md5_file(__DIR__ . '/css/secondary.css'), 0, 8)
   </section>
 
   <?php if ($oc['body'] !== ''): ?>
+  <?php /* D-d3 (маркетолог P1, волна 2): H2 из контента — тела поводов
+         начинаются «лейбл: текст» («Что входит в свадебный набор: …»,
+         «Как выбрать именинный букет: …»). Лейбл до двоеточия → H2
+         .section-title (та же Playfair-шкала, что у «Частых вопросов»
+         ниже), остальное — прежний prose. Guard на случай правок владельца:
+         лейбл 5–80 символов, из ≥2 слов (есть пробел), без точки и скобок —
+         иначе тело рендерится как раньше, без H2 (раздел FAQ даёт странице
+         свой H2). Одна и та же логика для всех 5 поводов, без нового текста.
+         E-e3 (корректор P0, волна E): после H2-заголовка двоеточие не нужно
+         (заголовок — не вводная фраза), поэтому первый символ текста после
+         лейбла капитализируем — связка «H2 → абзац» читается как обычный
+         заголовок и самостоятельное предложение («Что входит в свадебный
+         набор» / «Букет невесты, бутоньерки…», было «…набор» / «букет
+         невесты…» со строчной). */ ?>
+  <?php
+  $ocBody = (string)$oc['body'];
+  $ocBodyH2 = '';
+  $ocColon = mb_strpos($ocBody, ':');
+  if ($ocColon !== false) {
+      $ocLabel = trim(mb_substr($ocBody, 0, $ocColon));
+      $ocLabelLen = mb_strlen($ocLabel);
+      if ($ocLabelLen >= 5 && $ocLabelLen <= 80
+          && mb_strpos($ocLabel, ' ') !== false
+          && mb_strpos($ocLabel, '.') === false
+          && mb_strpos($ocLabel, '(') === false) {
+          $ocBodyH2 = $ocLabel;
+          $ocBody = trim(mb_substr($ocBody, $ocColon + 1));
+          /* E-e3: абзац после H2 начинается с заглавной (без двоеточия
+             заголовок и текст — равноправные блоки); уже заглавная —
+             no-op, guard от пустого остатка */
+          if ($ocBody !== '') {
+              $ocBody = mb_strtoupper(mb_substr($ocBody, 0, 1)) . mb_substr($ocBody, 1);
+          }
+      }
+  }
+  ?>
   <section class="fc-section fc-section--subtle">
-    <div class="wrap"><div class="prose"><?= nl2br(e($oc['body'])) ?></div></div>
+    <div class="wrap" style="max-width:760px"><?php if ($ocBodyH2 !== ''): ?><h2 class="section-title"><?= e($ocBodyH2) ?></h2><?php endif; ?><div class="prose"><?= nl2br(e($ocBody)) ?></div></div>
   </section>
   <?php endif; ?>
 
@@ -302,7 +363,7 @@ $secondaryCssV = substr((string)@md5_file(__DIR__ . '/css/secondary.css'), 0, 8)
       </div>
       <?php endif; ?>
       <p style="margin-top:<?= $faq !== [] ? '32' : '0' ?>px;display:flex;gap:10px;flex-wrap:wrap">
-        <a class="btn btn--accent" href="/#order">Заказать с доставкой сегодня</a>
+        <a class="btn btn--accent" href="/#order"><?= e($occasionCtaText) ?></a>
         <a class="btn btn--outline" href="/#catalog">Весь каталог</a>
       </p>
     </div>

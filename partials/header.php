@@ -56,11 +56,40 @@ $cartMode = in_array(setting('cart_mode', 'drawer'), ['drawer', 'hybrid', 'page'
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       <input type="search" id="fcSearch" name="q" placeholder="<?= e(setting('search_placeholder', 'Розы, пионы, тюльпаны…')) ?>" aria-label="Поиск по букетам">
     </form>
-    <span class="fc-header__city">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="2.6"/></svg>
-      <?= e(setting('city_label', 'Санкт-Петербург')) ?>
-    </span>
+    <?php /* W106-C1 (дизайн-дир P0-2): город тихо живёт в шапке — компактная
+       кнопка-дропдаун вместо гео-топбара (вопрос «ваш город?» при первом
+       визите больше не задаётся). Разметку слушает js/five.js cityMenu().
+       Тот же компонент продублирован в футере (partials/footer.php) — на
+       мобиле город из шапки скрыт (≤899px), футер остаётся точкой выбора. */ ?>
+    <div class="fc-city">
+      <button type="button" class="fc-header__city fc-city__btn" aria-expanded="false" aria-haspopup="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="2.6"/></svg>
+        <span class="fc-city__label"><?= e(setting('city_label', 'Санкт-Петербург')) ?></span>
+        <svg class="fc-city__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="fc-city-menu" hidden>
+        <?php /* D-d1 (P1, жюри): панель города содержательная — не одинокий
+               «Выбрать другой»: география + вход к зонам/ценам (якорь #delivery —
+               группа «Как получить» формы заказа) + честная строка про другой
+               город. js/five.js cityMenu() контракт не менялся (.fc-city__btn /
+               .fc-city-menu__opt[data-city] / закрытие по клику на любую ссылку). */ ?>
+        <p class="fc-city-menu__note">Доставляем по Санкт-Петербургу и пригородам</p>
+        <button type="button" class="fc-city-menu__opt is-current" data-city="<?= e(setting('city_label', 'Санкт-Петербург')) ?>"><?= e(setting('city_label', 'Санкт-Петербург')) ?>&nbsp;<span aria-hidden="true">✓</span></button>
+        <a class="fc-city-menu__link" href="#delivery">Зоны и цены<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="fc-city-menu__other" href="#contacts"><?= e(setting('citybar_no_text', 'Другой город — самовывоз или обсудим по телефону')) ?></a>
+      </div>
+    </div>
     <?php if ($headerPhone !== ''): ?><a class="fc-header__phone" href="tel:+<?= e(preg_replace('/\D/', '', $headerPhone)) ?>"><?= e($headerPhone) ?></a><?php endif; ?>
+    <?php /* W106-C1 (моб-критик P1-12): компактный бургер ≤899px с выпадающей
+       панелью (паттерн admin-гамбургера W105-b: Escape/тап-вне/клик-по-ссылке
+       закрывают; js/five.js burgerMenu()). «Каталог»-иконка из первого ряда
+       уходит сюда — ширина ряда на 390px не меняется; поиск и корзина
+       (контракты #fcSearch/#cartToggle) не тронуты. */ ?>
+    <button type="button" class="fc-burger" id="fcBurger" aria-expanded="false" aria-controls="fcBurgerPanel" aria-label="Открыть меню">
+      <span class="fc-burger__bar" aria-hidden="true"></span>
+      <span class="fc-burger__bar" aria-hidden="true"></span>
+      <span class="fc-burger__bar" aria-hidden="true"></span>
+    </button>
     <div class="fc-header__icons">
       <?php /* W96-fix3b (D7): звонок — главный канал цветочного; на мобиле
          текстовый телефон скрыт (≤899px) — круглая иконка-трубка tel: рядом
@@ -82,4 +111,14 @@ $cartMode = in_array(setting('cart_mode', 'drawer'), ['drawer', 'hybrid', 'page'
       </button>
     </div>
   </div>
+  <?php /* W106-C1 (P1-12): выпадающая панель бургера — абсолют под шапкой
+         (sticky-хедер держит stacking-контекст, z-50); ссылки — абсолютные
+         якоря /#…, работают и со вторичных страниц. */ ?>
+  <nav class="fc-burger-panel" id="fcBurgerPanel" hidden aria-label="Меню">
+    <a href="/#catalog">Каталог</a>
+    <a href="/#occasions">Поводы</a>
+    <a href="/checkout.php">Заказать букет</a>
+    <a href="/#contacts">Контакты</a>
+    <?php if ($headerPhone !== ''): ?><a class="fc-burger-panel__phone" href="tel:+<?= e(preg_replace('/\D/', '', $headerPhone)) ?>"><?php /* G-g2 (жюри P1): трубка 16px + hover-подчёркивание — телефон читается действием, а не строкой (стили five.css G-g2) */ ?><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg><?= e($headerPhone) ?></a><?php endif; ?>
+  </nav>
 </header>

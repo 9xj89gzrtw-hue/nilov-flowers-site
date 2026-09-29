@@ -4,6 +4,10 @@
    грузился сразу вторым дублем вместе с LCP-фото. Фон (webp-URL из
    data-gallery-zoom, печатает product.php) подставляем лениво — только
    когда этот слайд стал активным (стрелки/свайп/миниатюра).
+   B5/W106: второй НАСТОЯЩИЙ слайд (products.image2) живёт по тому же
+   контракту ленивости: <img data-gallery-src> / <source data-gallery-srcset>
+   без src/srcset в HTML — адреса подставляются при первой активации
+   слайда (activateLazyPhoto), СНАЧАЛА webp-<source>, потом img.
    W99-fixG2: H4 — стрелки дизейблятся на краях (первый слайд → prev
    disabled, последний → next disabled); H12 — визуально-скрытый счётчик
    aria-live=polite «Слайд N из M» (в DOM счётчика нет — PHP не трогаем,
@@ -37,6 +41,43 @@
   const navButtons = Array.from(document.querySelectorAll('[data-gnav]'));
   if (slides.length < 1) return;
 
+  /* G-g2 (жюри P0-3 «моушн-минимализм, нет сигнатуры»): ХОРЕОГРАФИЯ
+     смены слайда. Входящий слайд — fade + scale(.985→1) 260мс expo-out
+     (cubic-bezier(.19,1,.22,1)): snap-скролл продолжает ехать, а слайд
+     мягко «садится» на место — жест из того же словаря, что hover-zoom
+     карточек. prefers-reduced-motion — без анимации (мгновенно, как было).
+     Первый setActive(0) на загрузке — без хореографии (currentIdx
+     стартует с 0 — активный слайд по разметке; страница и так живёт
+     entrance-слоем). */
+  var reduceMotion = !!(window.matchMedia
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  var currentIdx = 0;
+  function choreographIncoming(index) {
+    if (reduceMotion || index === currentIdx) return;
+    var slide = slides[index];
+    if (!slide || typeof slide.animate !== 'function') return;
+    slide.animate(
+      [
+        { opacity: 0, transform: 'scale(.985)' },
+        { opacity: 1, transform: 'scale(1)' },
+      ],
+      { duration: 260, easing: 'cubic-bezier(.19,1,.22,1)' } /* expo-out */
+    );
+    /* тумба-индикатор: лёгкий сдвиг вверх у становящейся активной
+       (CSS-подъём −2px + bounce-манок в конце жеста) */
+    var thumb = thumbs[index];
+    if (thumb && typeof thumb.animate === 'function') {
+      thumb.animate(
+        [
+          { transform: 'translateY(0)' },
+          { transform: 'translateY(-3px)', offset: .45 },
+          { transform: 'translateY(-2px)' },
+        ],
+        { duration: 260, easing: 'cubic-bezier(.4,0,.2,1)' }
+      );
+    }
+  }
+
   /* W105-8fix1 (критик-UX 8-b P1): слайды несут data-index — js/lightbox.js
      открывает лайтбокс НА КЛИКНУТОМ слайде (раньше индекс искался матчем src:
      дубликаты src у «общего вида» и «крупного плана» всегда отдавали 0-й).
@@ -55,6 +96,23 @@
     if (!zoom || zoom.style.backgroundImage) return;
     var src = zoom.getAttribute('data-gallery-zoom');
     if (src) zoom.style.backgroundImage = 'url("' + src + '")';
+  }
+
+  /* B5/W106: ленивая активация НАСТОЯЩЕГО второго слайда (image2) —
+     тот же контракт, что у zoom-фона: ничего не грузим при открытии
+     страницы, подставляем при первой активации слайда. Порядок важен:
+     СНАЧАЛА srcset на webp-<source> (браузер выберет webp до того, как
+     успеет попросить jpg-фолбэк), ПОТОМ img.src. Идемпотентно. */
+  function activateLazyPhoto(slide) {
+    if (!slide) return;
+    var source = slide.querySelector('source[data-gallery-srcset]');
+    if (source && !source.getAttribute('srcset')) {
+      source.setAttribute('srcset', source.getAttribute('data-gallery-srcset'));
+    }
+    var lazyImg = slide.querySelector('img[data-gallery-src]');
+    if (lazyImg && !lazyImg.getAttribute('src')) {
+      lazyImg.setAttribute('src', lazyImg.getAttribute('data-gallery-src'));
+    }
   }
 
   /* H12 (W99-fixG2): живой счётчик для скринридера. #productGalleryCounter в
@@ -79,6 +137,8 @@
   }
 
   function setActive(index) {
+    choreographIncoming(index);
+    currentIdx = index;
     if (counter) counter.textContent = index + 1 + ' / ' + slides.length;
     srCounter.textContent = 'Слайд ' + (index + 1) + ' из ' + slides.length;
     syncNav(index);
@@ -91,6 +151,7 @@
       else dot.removeAttribute('aria-current');
     });
     activateZoomBg(slides[index]);
+    activateLazyPhoto(slides[index]);
   }
 
   function currentIndexFromScroll() {

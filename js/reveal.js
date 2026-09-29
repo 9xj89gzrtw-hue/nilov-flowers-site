@@ -52,8 +52,10 @@
 
   /* Карточки: хосты из five.css M5 + общий случай — .reveal внутри ЛЮБОГО
      overflow-x скролл-контейнера (будущие карусели): view() там видит
-     горизонтальный скролл, не вертикальный (RC3). */
-  var CARD_HOST = '.fc-carousel, .catalog__grid';
+     горизонтальный скролл, не вертикальный (RC3).
+     W106 (B2): + .fc-collage — коллаж хитов живёт каскадом fc-card-in
+     (stagger --i), а не scrub-таймлайном секций. */
+  var CARD_HOST = '.fc-carousel, .fc-collage, .catalog__grid';
   function isCard(el) {
     if (el.closest && el.closest(CARD_HOST)) return true;
     for (var p = el && el.parentElement; p && p !== document.body; p = p.parentElement) {

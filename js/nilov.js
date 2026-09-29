@@ -197,12 +197,23 @@
 })();
 
 /* 3. Таймер «до 20:00» в hero (критерий 13, конкурентная фишка EXPRESS/маркетплейсов).
-     Показывает сколько часов-минут осталось до дедлайна заказа-сегодня. */
+     Показывает сколько часов-минут осталось до дедлайна заказа-сегодня.
+     D-d1 (P1, маркетолог): живой тихий хвост «осталось 4 ч 12 мин» — в спане
+     .hero__deadline-timer (index.php): основной текст пилюли не дергается,
+     после дедлайна хвост прячется, остаётся ночная строка. Кастомный
+     countdown_text без спана (владелец убрал разметку) — прежнее поведение. */
 (function () {
   var el = document.querySelector('.hero__deadline');
   if (!el) return;
   var cfg = window.NILOV_CONFIG || {};
   var TZ = cfg.tz || 'Europe/Moscow';
+  /* D-d1: спаны пилюли — текст отдельно, таймер отдельно */
+  var textEl = el.querySelector('.hero__deadline-text');
+  var timerEl = el.querySelector('.hero__deadline-timer');
+  function setText(s) {
+    if (textEl) textEl.textContent = s;
+    else el.textContent = s;
+  }
   function pad(n) { return (n < 10 ? '0' : '') + n; }
   /* Стеновые часы магазина в его таймзоне (критерий 26): раньше считали по локальному
      времени браузера — у клиента из другого города таймер врал (ночью показывал «сегодня»). */
@@ -217,13 +228,16 @@
     var h = now.getHours();
     /* Логика-критик W34: в 08:00–09:00 магазин ещё закрыт (shop_hours с 9:00), но таймер
        уже орал «осталось 12 ч до 20:00», когда позвонить и согласовать нельзя.
-       Ночное окно теперь [дедлайн .. открытие], а не [дедлайн .. 08:00]. */
+       Ночное окно теперь [дедлайн .. открытие], а не [дедлайн .. 08:00].
+       W106 (B2, арт-критик P1): эмодзи 🌙/⏱ убраны — тихий dot-индикатор
+       рисует CSS (::before на .hero__deadline, цвет — по data-state). */
     var oh = (cfg.openHour != null ? parseInt(cfg.openHour, 10) : 9);
     if (h >= hh || h < oh) {
       var night = h < oh;
-      el.textContent = '🌙 ' + (night
+      setText(night
         ? (cfg.nightText || 'Ночь. Заказ примем сейчас — доставим сегодня после 9:00')
         : (cfg.closedText || 'Приём заказов на сегодня закрыт — доставим завтра с 9:00'));
+      if (timerEl) timerEl.hidden = true; /* D-d1: ночью хвост не нужен */
       el.dataset.state = 'closed';
       return;
     }
@@ -235,8 +249,15 @@
     var t = H > 0 ? (H + ' ч' + (M ? ' ' + M + ' мин' : '')) : (M + ' мин');
     var tpl = cfg.countdownText || 'Успейте заказать сегодня — осталось {T} до {D}';
     /* Логика-критик W34: подстрока '20:00' в кастомном тексте молча съедалась при смене
-       дедлайна, а без литерала дедлайн исчезал вовсе. Канон — токен {D}; старый литерал — фолбэк. */
-    el.textContent = '⏱ ' + tpl.replace('{T}', t).replace('{D}', label).replace('20:00', label);
+       дедлайна, а без литерала дедлайн исчезал вовсе. Канон — токен {D}; старый литерал — фолбэк.
+       W106 (B2): без эмодзи-префикса — точка-индикатор в CSS. */
+    setText(tpl.replace('{T}', t).replace('{D}', label).replace('20:00', label));
+    if (timerEl) {
+      /* D-d1: «осталось 4 ч 12 мин» — предлог остаётся склеенным (glue.js не
+         трогает табличные обновления — пишем сразу с NBSP) */
+      timerEl.textContent = '\u2014\u00A0осталось ' + t;
+      timerEl.hidden = false;
+    }
     el.dataset.state = 'open';
   }
   tick();
@@ -396,4 +417,43 @@
     }
   }
   inp.addEventListener('input', apply);
+})();
+
+/* 6. G-g2 (жюри P0-3 «моушн-минимализм»): ЛЁГКИЙ параллакс hero-фото
+     главной. --nf-hero-y потребляется five.css (transform .fc-hero__img +
+   keyframes fc-hero-zoom): фото «отстаёт» от скролла на ±2% высоты секции
+   ( overscan inset −3% в CSS не даёт открыться краям). rAF-троттл,
+   transform-only (композит), prefers-reduced-motion — var не пишем
+   (статика). kinetic.js не тронут — эффект живёт своей строкой. */
+(function heroPhotoParallax() {
+  var img = document.querySelector('.fc-hero__img');
+  var section = document.querySelector('.fc-hero');
+  if (!img || !section) return;
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var raf = 0;
+  function update() {
+    raf = 0;
+    var r = section.getBoundingClientRect();
+    var vh = window.innerHeight;
+    if (r.bottom < -40 || r.top > vh + 40) return; /* герой вне вьюпорта — не тратим кадр */
+    /* p: 0 — герой только показался снизу, 1 — полностью ушёл вверх;
+       центр транзита (p=.5) — нулевое смещение, края — ±2% высоты секции */
+    var p = Math.max(0, Math.min(1, (vh - r.top) / (vh + r.height)));
+    var ty = (p - 0.5) * r.height * 0.04;
+    img.style.setProperty('--nf-hero-y', ty.toFixed(1) + 'px');
+  }
+  window.addEventListener('scroll', function () {
+    if (!raf) raf = requestAnimationFrame(update);
+  }, { passive: true });
+  window.addEventListener('resize', function () {
+    if (!raf) raf = requestAnimationFrame(update);
+  }, { passive: true });
+  /* entrance fc-hero-zoom держит fill-состояние animation — в старых
+     браузерах var() в заполняющих keyframes мог не перечитываться живьём;
+     по завершении entrance анимацию снимаем (финал scale(1) == база —
+     без визуального скачка), дальше transform полностью наш. */
+  img.addEventListener('animationend', function () {
+    img.style.animation = 'none';
+  });
+  update();
 })();

@@ -36,13 +36,37 @@
   let closing = false;
   let closeTimer = 0;
 
+  /* ============ C-c4 (техно P1): fade+scale 150–180ms через WAAPI ============
+     CSS-механика W104-δ (@starting-style + allow-discrete) работала на
+     ОТКРЫТИЕ, но выход убивался глобальным [hidden]{display:none!important}
+     из style.css:258 — display:none применялся мгновенно, переход не
+     успевал стартовать (замер: exit-кадры все opacity:0/transform:none
+     с первого 40мс-сэмпла). Решение — единый JS-движок на compositor-
+     свойствах (opacity/transform — INP-безопасно): открытие 170/180мс
+     scale(.98)→1, закрытие 150/160мс — и ТОЛЬКО потом hidden. Класс
+     .lb-js-anim (css/product-extras.css) глушит CSS-переходы, чтобы два
+     аниматора не спорили; prefers-reduced-motion и браузеры без
+     el.animate — без анимации (мгновенно, как раньше). */
+  var LB_EASE = 'cubic-bezier(.4, 0, .2, 1)';
+  var lbFadeOn = typeof lightbox.animate === 'function';
+  var exitAnims = [];
+  if (lbFadeOn) lightbox.classList.add('lb-js-anim');
+  function cancelExitAnims() {
+    if (!exitAnims.length) return;
+    exitAnims.forEach(function (a) { try { a.cancel(); } catch (e) { /* уже закончилась */ } });
+    exitAnims = [];
+  }
+
   function open(trigger) {
     const src = trigger.dataset.lightboxSrc;
     if (!src) return;
     /* W104-δ: переоткрытие во время закрытия — переиспользуем живой <img>
-     (finishClose не успел снять — он гардится снятым hidden) */
+     (finishClose не успел снять — он гардится снятым hidden).
+     C-c4: заодно гасим идущую exit-анимацию (без cancel она доиграла бы
+     fade-out поверх только что открытого лайтбокса). */
     closing = false;
     clearTimeout(closeTimer);
+    cancelExitAnims();
     if (img && img.isConnected) {
       img.src = src;
       img.alt = trigger.dataset.lightboxAlt || '';
@@ -58,7 +82,16 @@
     }
     lastTrigger = trigger;
     lightbox.hidden = false;
-    void lightbox.offsetWidth; /* коммит @starting-style (scale .96) до первого кадра */
+    void lightbox.offsetWidth; /* коммит стилей до первого кадра */
+    if (lbFadeOn && !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+      try {
+        lightbox.querySelector('.lightbox__backdrop').animate(
+          [{ opacity: 0 }, { opacity: 1 }], { duration: 170, easing: LB_EASE });
+        figure.animate(
+          [{ transform: 'scale(.98)', opacity: 0 }, { transform: 'scale(1)', opacity: 1 }],
+          { duration: 180, easing: LB_EASE });
+      } catch (e) { /* WAAPI недоступен — мгновенно, как раньше */ }
+    }
     document.body.classList.add('no-scroll');
     lightbox.querySelector('.lightbox__close').focus();
   }
@@ -82,15 +115,32 @@
     closing = true;
     clearTimeout(closeTimer);
     document.body.classList.remove('no-scroll');
-    lightbox.hidden = true; /* allow-discrete: display:none после .18s выхода */
-    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      finishClose();
+    /* C-c4: exit-анимация идёт ПОКА элемент отрисован (hidden ещё не стоит),
+       скрытие — по её завершении (глобальный [hidden]{display:none!important}
+       из style.css убивал allow-discrete выход — display:none мгновенно,
+       переход не стартовал); повторный close во время выхода — перезапуск
+       анимации (старые кадры отменяются). */
+    if (lbFadeOn && !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+      cancelExitAnims();
+      var done = function () {
+        if (!closing) return; /* успели переоткрыть — не прячем */
+        closing = false;
+        lightbox.hidden = true;
+        finishClose();
+      };
+      exitAnims = [
+        lightbox.querySelector('.lightbox__backdrop').animate(
+          [{ opacity: 1 }, { opacity: 0 }], { duration: 150, easing: LB_EASE }),
+        figure.animate(
+          [{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(.98)', opacity: 0 }],
+          { duration: 160, easing: LB_EASE }),
+      ];
+      exitAnims[1].onfinish = done;
+      closeTimer = setTimeout(done, 240); /* страховка: onfinish не пришёл */
       return;
     }
-    /* анимация выхода идёт — снимаем img/возвращаем фокус по её завершении
-     (страховка 260мс > .24s — transitionend не ловим: у [hidden]-правил
-     два свойства на двух элементах, таймер проще и надёжнее) */
-    closeTimer = setTimeout(finishClose, 260);
+    lightbox.hidden = true;
+    finishClose();
   }
 
   triggers.forEach(function (trigger) {

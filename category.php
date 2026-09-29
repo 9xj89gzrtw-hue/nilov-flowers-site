@@ -172,7 +172,10 @@ function render_product_card(array $p, array $ctx): void
     $thumb = product_img_thumb($p);
     $origW = product_img_width($p);
     if ($thumb !== '' && $imgWebp !== '' && $origW > 0) {
-        $t600 = preg_replace('/-400(\.webp)$/', '-600$1', $thumb); /* W101 (perf): 600w для DPR2-3 */
+        $t600 = preg_replace('/-400(\.webp)(?=\?|$)/', '-600$1', $thumb); /* W101 (perf): 600w для DPR2-3;
+           E-e3 (техно-критик): старый якорь `(\.webp)$` не матчил из-за хвоста
+           ?v=filemtime у static_img_v — 600w не попадал в srcset, и DPR2-3
+           браузеры брали полноразмерный webp-оригинал */
         $srcset = $thumb . ' 400w'
             . ($t600 !== null && $t600 !== $thumb && is_file(BASE_PATH . parse_url($t600, PHP_URL_PATH)) ? ', ' . $t600 . ' 600w' : '')
             . ', ' . $imgWebp . ' ' . $origW . 'w';
@@ -368,9 +371,9 @@ $secondaryCssV = substr((string)@md5_file(__DIR__ . '/css/secondary.css'), 0, 8)
           <?php if ($catFeatChips): ?>
           <div class="cat-chips" role="group" aria-label="Фильтр букетов по цене">
             <button type="button" class="cat-chip is-active" data-chip="all" aria-pressed="true">Все</button>
-            <button type="button" class="cat-chip" data-chip="low" data-max="<?= $catLow ?>" aria-pressed="false">До <?= formatSum($catLow) ?> ₽</button>
+            <button type="button" class="cat-chip" data-chip="low" data-max="<?= $catLow ?>" aria-pressed="false">до <?= formatSum($catLow) ?> ₽</button>
             <button type="button" class="cat-chip" data-chip="mid" data-min="<?= $catLow ?>" data-max="<?= $catHigh ?>" aria-pressed="false"><?= formatSum($catLow) ?>–<?= formatSum($catHigh) ?> ₽</button>
-            <button type="button" class="cat-chip" data-chip="high" data-min="<?= $catHigh ?>" aria-pressed="false">От <?= formatSum($catHigh) ?> ₽</button>
+            <button type="button" class="cat-chip" data-chip="high" data-min="<?= $catHigh ?>" aria-pressed="false">от <?= formatSum($catHigh) ?> ₽</button>
           </div>
           <?php endif; ?>
           <div class="cat-sort" role="group" aria-label="Сортировка букетов">
@@ -409,17 +412,24 @@ $secondaryCssV = substr((string)@md5_file(__DIR__ . '/css/secondary.css'), 0, 8)
         <a class="catalog-tail reveal" href="/#order" data-grid-tail aria-label="Собрать букет на заказ">
           <span class="catalog-tail__kicker"><?= e(setting('catalog_tail_kicker', 'Не нашли нужный букет?')) ?></span>
           <span class="catalog-tail__title"><?= e($tailT1) ?><?= $tailT2 !== '' ? ' <em>' . e($tailT2) . '</em>' : '' ?></span>
-          <span class="catalog-tail__text"><?= e(setting('catalog_tail_text', 'Под ваш повод, палитру и бюджет — фото готового букета пришлём перед доставкой')) ?></span>
+          <span class="catalog-tail__text"><?= e(setting('catalog_tail_text', 'Под ваш повод, палитру и бюджет — фото готового букета пришлём до отправки')) ?></span>
           <span class="catalog-tail__arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
         </a>
         <?php endif; ?>
       </div>
       <?php /* W103/F2: пустое состояние фильтра — 0 карточек в диапазоне (тексты —
-             settings с дефолтами, паттерн catalog_empty_* главной) */ ?>
+             settings с дефолтами, паттерн catalog_empty_* главной).
+             C-c4 (CRO P0 «поиск-тупик», аналог главной): фильтр вырезал всё —
+             выход в индивидуальный заказ «Собрать на заказ» (акцентная кнопка,
+             /#order), сброс фильтров — вторым (как resetPriceBtn главной).
+             Ряд .cat-empty__actions — css/category.css. */ ?>
       <div class="cat-empty" id="catEmpty" hidden>
         <p class="cat-empty__title"><?= e(setting('category_filter_empty_title', 'В этой ценовой категории пока пусто')) ?></p>
         <p class="cat-empty__hint"><?= e(setting('category_filter_empty_hint', 'Попробуйте другой диапазон или посмотрите все букеты категории')) ?></p>
-        <button type="button" class="btn btn--outline" id="catEmptyReset">Сбросить фильтры</button>
+        <div class="cat-empty__actions">
+          <a class="btn btn--accent cat-empty__cta" href="/#order">Собрать на заказ</a>
+          <button type="button" class="btn btn--outline" id="catEmptyReset">Сбросить фильтры</button>
+        </div>
       </div>
       <?php else: ?>
       <?php /* Пустая категория — честная заглушка со ссылкой на общий каталог */ ?>
@@ -432,9 +442,21 @@ $secondaryCssV = substr((string)@md5_file(__DIR__ . '/css/secondary.css'), 0, 8)
     </div>
   </section>
 
+  <?php /* D-d3 (маркетолог P1, волна 2): на страницах категорий не было ни
+         одного H2 — недобор по СЧ/НЧ. SEO-блок под сеткой: H2 «Сколько стоит
+         доставка?» + ответ — СУЩЕСТВУЮЩАЯ пара faq_q1/faq_a1 (та же живёт в
+         FAQ главной, редактируется в админке синхронно), без выдуманного
+         текста и без воды. Выбор «Доставка {категория} по СПб» отвергнут:
+         составные имена категорий («В шляпной коробке», «Сладкие подарки»)
+         дают нескладные заголовки. Типографика — .section-title (Playfair-
+         шкала H2 вторичек, secondary.css §4) + читательская .prose (§4b). */ ?>
   <section class="fc-section fc-section--subtle">
     <div class="wrap" style="max-width:760px">
-      <p style="margin:0;display:flex;gap:10px;flex-wrap:wrap">
+      <h2 class="section-title"><?= e(setting('faq_q1', 'Сколько стоит доставка?')) ?></h2>
+      <div class="prose">
+        <p><?= e(setting('faq_a1', 'Зависит от района: 300–500 ₽ по Санкт-Петербургу, самовывоз бесплатный. Точная сумма сразу видна при оформлении заказа.')) ?></p>
+      </div>
+      <p style="margin:32px 0 0;display:flex;gap:10px;flex-wrap:wrap">
         <a class="btn btn--accent" href="/#order">Заказать с доставкой сегодня</a>
         <a class="btn btn--outline" href="/#catalog">Весь каталог</a>
       </p>

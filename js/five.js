@@ -1,5 +1,9 @@
 /* five.js — витринная логика редизайна 5cv (W96 / T2-b).
-   1) Город-бар: «Да, верно»/крестик → localStorage + скрытие.
+   1) W106-C1 cityMenu: город-дропдаун в шапке/футере (вместо гео-топбара):
+      выбор «Санкт-Петербург» пишет localStorage 'fc-city-ok' (прежний
+      контракт подтверждения города), «Выбрать другой» → #contacts.
+   1b) W106-C1 burgerMenu: мобильный бургер ≤899px (паттерн admin-гамбургера
+       W105-b): Escape / тап-вне / клик по ссылке закрывают панель.
    2) Карусели .fc-carousel: стрелки + disabled-состояния по скроллу.
    2b) TILT карточек (W104-κ, C4-D4): --tx/--ty на .product-card по
        курсору — делегированный mousemove на .fc-carousel/.catalog__grid
@@ -48,7 +52,8 @@
   }
 
   ready(function () {
-    citybar();
+    cityMenu(); /* W106-C1: дропдаун города в шапке/футере */
+    burgerMenu(); /* W106-C1: мобильный бургер ≤899px */
     carousels();
     catalogFilters(); /* чипы + поиск + сброс — общее состояние (AND) */
     rowLinks();
@@ -60,34 +65,96 @@
     marqueePlayback(); /* W104-β (C1-M P0): marquee-лента играет только в вьюпорте */
   });
 
-  /* ---------- 1. Город-бар: подтверждение города ---------- */
-  function citybar() {
-    var bar = document.getElementById('fcCitybar');
-    if (!bar) return;
-    function hide(saveKey) {
-      if (saveKey) { try { localStorage.setItem(saveKey, '1'); } catch (e) { /* приват-режим: просто скрыть */ } }
-      bar.setAttribute('data-citybar-hidden', '');
-      bar.style.display = 'none';
+  /* ---------- 1. W106-C1: Город — компактный дропдаун (шапка + футер) ----------
+     Гео-топбар с вопросом «ваш город?» удалён (дизайн-дир P0-2): город тихо
+     живёт в шапке/футере. Логика прежнего бара сохранена: явный выбор города
+     пишет localStorage 'fc-city-ok' (маркер «город подтверждён»), ссылка
+     «Выбрать другой» ведёт на #contacts (контакты/телефон — как раньше).
+     Дропдауны независимы: открытие одного закрывает остальные. */
+  function cityMenu() {
+    var boxes = document.querySelectorAll('.fc-city');
+    if (!boxes.length) return;
+    function closeAll(except) {
+      Array.prototype.forEach.call(boxes, function (b) {
+        if (b === except) return;
+        var menu = b.querySelector('.fc-city-menu');
+        var btn = b.querySelector('.fc-city__btn');
+        if (menu) menu.hidden = true;
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+      });
     }
-    /* Уже отвечали (или закрыли кликом мимо) — прячем сразу (миг на
-       первом заходе допустим) */
-    try {
-      if (localStorage.getItem('fc-city-ok') === '1'
-          || localStorage.getItem('fc-city-dismissed') === '1') { hide(); return; }
-    } catch (e) { /* localStorage недоступен — бар остаётся до крестика */ }
-    var yes = document.getElementById('fcCityYes');
-    var close = document.getElementById('fcCityClose');
-    if (yes) yes.addEventListener('click', function () { hide('fc-city-ok'); });
-    if (close) close.addEventListener('click', function () { hide('fc-city-dismissed'); });
-    /* W104-δ (C2-D2 P1: бар перехватывал клики и висел до ответа): клик
-       мимо бара закрывает его БЕЗ утверждения города — отдельный маркер
-       'fc-city-dismissed', чтобы бар не возвращался на каждой странице.
-       Сам клик не глушим: он доходит до своей цели (Корзина, ссылки…). */
+    Array.prototype.forEach.call(boxes, function (box) {
+      var btn = box.querySelector('.fc-city__btn');
+      var menu = box.querySelector('.fc-city-menu');
+      if (!btn || !menu) return;
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var open = !menu.hidden;
+        closeAll(box);
+        menu.hidden = open;
+        btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+      });
+      /* выбор города — тот же маркер, что писала кнопка «Да, верно» топбара */
+      var opt = menu.querySelector('.fc-city-menu__opt');
+      if (opt) {
+        opt.addEventListener('click', function () {
+          try { localStorage.setItem('fc-city-ok', '1'); } catch (err) {}
+          var city = opt.getAttribute('data-city');
+          if (city) {
+            Array.prototype.forEach.call(document.querySelectorAll('.fc-city__label'), function (l) {
+              l.textContent = city;
+            });
+          }
+          closeAll();
+          btn.setAttribute('aria-expanded', 'false');
+          btn.focus();
+        });
+      }
+      /* клик по «Выбрать другой» — просто переход на #contacts, панель уходит */
+      menu.addEventListener('click', function (e) {
+        if (e.target.closest('a')) { closeAll(); btn.setAttribute('aria-expanded', 'false'); }
+      });
+    });
+    /* тап вне / Escape закрывают все дропдауны */
     document.addEventListener('click', function (e) {
-      if (bar.getAttribute('data-citybar-hidden') !== null) return;
-      if (bar.contains(e.target)) return;
-      hide('fc-city-dismissed');
-    }, { capture: true });
+      if (!e.target.closest('.fc-city')) closeAll();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeAll();
+    });
+  }
+
+  /* ---------- 1b. W106-C1: Мобильный бургер ≤899px ----------
+     Паттерн admin-гамбургера (includes/layout.php W105 4-b): aria-expanded,
+     закрытие по клику-по-ссылке / Escape / тапу вне шапки; при возврате
+     к десктопу (≥900px) панель закрывается сама. */
+  function burgerMenu() {
+    var burger = document.getElementById('fcBurger');
+    var panel = document.getElementById('fcBurgerPanel');
+    if (!burger || !panel) return;
+    var header = burger.closest('.fc-header') || document.querySelector('.fc-header');
+    function setOpen(open) {
+      panel.hidden = !open;
+      burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+      burger.setAttribute('aria-label', open ? 'Закрыть меню' : 'Открыть меню');
+    }
+    burger.addEventListener('click', function (e) {
+      e.stopPropagation();
+      setOpen(panel.hidden);
+    });
+    panel.addEventListener('click', function (e) {
+      if (e.target.closest('a')) setOpen(false);
+    });
+    document.addEventListener('click', function (e) {
+      if (!panel.hidden && header && !header.contains(e.target)) setOpen(false);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !panel.hidden) { setOpen(false); burger.focus(); }
+    });
+    var mq = window.matchMedia('(min-width:900px)');
+    if (mq.addEventListener) {
+      mq.addEventListener('change', function (m) { if (m.matches) setOpen(false); });
+    }
   }
 
   /* ---------- 2. Карусели: стрелки ← → + disabled по краям ---------- */
@@ -214,7 +281,7 @@
         pill.style.cssText = 'position:absolute;top:calc(100% + 8px);left:0;z-index:70'
           + ';display:inline-flex;align-items:center;gap:4px;border:none;border-radius:999px'
           + ';padding:9px 16px;min-height:36px;background:var(--ink,#1c1a1e);color:#fff'
-          + ';font-family:var(--font-ui,Montserrat,sans-serif);font-weight:600;font-size:.8rem'
+          + ';font-family:var(--font-ui,Montserrat,sans-serif);font-weight:600;font-size:13px' /* F2 (P1-6): 12.8 → 13 — читаемый минимум */
           + ';cursor:pointer;box-shadow:0 12px 30px -12px rgba(28,26,30,.5);white-space:nowrap';
         pill.addEventListener('click', function () {
           nfScrollToEl(document.getElementById('catalog'));
@@ -449,7 +516,10 @@
      .3s из CSS. Только hover+fine и без reduced-motion. */
   function cardTilt() {
     if (reducedMotion()) return; /* W104-fix6: гейт убран — см. magneticHeroCta */
-    var boxes = document.querySelectorAll('.fc-carousel, .catalog__grid');
+    /* W106 (B2): + .fc-collage — фича-карточки коллажа хитов тянутся за
+       курсором тем же жестом (мини-ячейки исключены ниже по closest компакт-класса
+       не имеют — мини без tilt: photo 96px, жест не читается) */
+    var boxes = document.querySelectorAll('.fc-carousel, .fc-collage, .catalog__grid');
     if (!boxes.length) return;
     var cur = null;
     var px = 0;
@@ -558,9 +628,13 @@
      равно тикает каждый кадр (на слабом/софтверном рендере — реальный
      jank: p95 скролла 39–67мс на 2-ядерном стенде). IntersectionObserver
      ставит/снимает play-state. Ховер-пауза из five.css продолжает работать
-     (paused остаётся приоритетнее running). */
+     (paused остаётся приоритетнее running).
+     E-e2 (P0-4, перф-критик волны 3): тот же IO — пунктир маршрута курьера
+     .fc-hero__delivery-dash (stroke-dashoffset infinite, five.css) и
+     marquee-ленты: вне вьюпорта — animation-play-state:paused
+     (motion-w104.css §4f/4f2). Паттерн и класс .is-offscreen — общие. */
   function marqueePlayback() {
-    var tracks = document.querySelectorAll('.fc-marquee__track, .nv-marquee__track');
+    var tracks = document.querySelectorAll('.fc-marquee__track, .nv-marquee__track, .fc-hero__delivery-dash');
     if (!tracks.length) return;
     if (!('IntersectionObserver' in window)) return; /* лента просто играет */
     var io = new IntersectionObserver(function (entries) {

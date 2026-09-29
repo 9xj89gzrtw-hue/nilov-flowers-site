@@ -40,7 +40,7 @@ if ($path !== '/' && is_dir(__DIR__ . $path) && is_file(__DIR__ . rtrim($path, '
    Проверка «каноничный путь — валидный маршрут» отсекает мусорные пути: /TRACKS не
    редиректится, а честно 404. */
 $isStorefrontRoute = static function (string $p): bool {
-    if (in_array($p, ['/', '/help', '/track', '/policy', '/offer', '/order-thanks'], true)) {
+    if (in_array($p, ['/', '/help', '/track', '/policy', '/offer', '/order-thanks', '/checkout'], true)) {
         return true;
     }
     return (bool)preg_match('#^/(?:product|occasion|category)/[a-z0-9\-]+$#', $p);
@@ -102,6 +102,12 @@ if (preg_match('#^/category/([a-z0-9\-]+)$#', $path, $m)) {
 if (preg_match('#^/product/([a-z0-9\-]+)$#', $path, $m)) {
     $_GET['slug'] = $m[1];
     require __DIR__ . '/product.php';
+    return true;
+}
+/* W106-E1fix: ЧПУ /checkout — каноничный адрес оформления (кнопки корзины/PDP
+   ведут сюда; физический /checkout.php продолжает работать — паритет). */
+if ($path === '/checkout') {
+    require __DIR__ . '/checkout.php';
     return true;
 }
 if ($path === '/order-thanks') {

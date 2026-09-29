@@ -49,6 +49,10 @@ $__vjs = static function (string $name): string {
 };
 $__nfPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 $__nfIsHome = ($__nfPath === '/' || $__nfPath === '/index.php');
+/* W106-E1: /checkout.php — вторая страница с формой заказа (#orderForm рендерит
+   partials/order-form.php) — order-form.js нужен и ей; каталог-фильтры —
+   по-прежнему только главная (#catalogGrid там нет). */
+$__nfIsCheckout = (bool)preg_match('#^/checkout(\.php)?$#', $__nfPath);
 $__nfIsProduct = (bool)preg_match('#^/product(/|$)#', $__nfPath)
     || (isset($product) && is_array($product));
 ?>
@@ -117,6 +121,24 @@ $__nfIsProduct = (bool)preg_match('#^/product(/|$)#', $__nfPath)
         <?php if ($address !== ''): ?><li><span class="fc-footer__muted"><?= e($address) ?></span></li><?php endif; ?>
         <?php if ($shopEmail !== ''): ?><li><a href="mailto:<?= e($shopEmail) ?>"><?= e($shopEmail) ?></a></li><?php endif; ?>
       </ul>
+      <?php /* W106-C1 (P0-2): селектор города — тихо в футере (мобильная
+             точка выбора: город шапки на ≤899px скрыт). Тот же компонент
+             .fc-city, что в шапке — js/five.js cityMenu() слушает оба. */ ?>
+      <div class="fc-city fc-city--footer">
+        <button type="button" class="fc-city__btn" aria-expanded="false" aria-haspopup="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="2.6"/></svg>
+          <span class="fc-city__label"><?= e(setting('city_label', 'Санкт-Петербург')) ?></span>
+          <svg class="fc-city__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="fc-city-menu fc-city-menu--up" hidden>
+          <?php /* D-d1 (P1, жюри): та же содержательная панель, что в шапке
+                 (js/five.js cityMenu() слушает оба). */ ?>
+          <p class="fc-city-menu__note">Доставляем по Санкт-Петербургу и пригородам</p>
+          <button type="button" class="fc-city-menu__opt is-current" data-city="<?= e(setting('city_label', 'Санкт-Петербург')) ?>"><?= e(setting('city_label', 'Санкт-Петербург')) ?>&nbsp;<span aria-hidden="true">✓</span></button>
+          <a class="fc-city-menu__link" href="#delivery">Зоны и цены<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          <a class="fc-city-menu__other" href="#contacts"><?= e(setting('citybar_no_text', 'Другой город — самовывоз или обсудим по телефону')) ?></a>
+        </div>
+      </div>
     </div>
   </div>
   <div class="wrap">
@@ -143,7 +165,7 @@ $__nfIsProduct = (bool)preg_match('#^/product(/|$)#', $__nfPath)
 $__mnavActive = '';
 if (preg_match('#^/occasion(\.php)?(/|$)#', $__nfPath)) { $__mnavActive = 'occasions'; }
 elseif (preg_match('#^/(track|policy|offer)(\.php)?(/|$)#', $__nfPath)) { $__mnavActive = 'contacts'; }
-elseif (preg_match('#^/order-thanks(\.php)?(/|$)#', $__nfPath)) { $__mnavActive = 'order'; }
+elseif (preg_match('#^/order-thanks(\.php)?(/|$)#', $__nfPath) || $__nfIsCheckout) { $__mnavActive = 'order'; }
 elseif ($__nfIsHome || preg_match('#^/(product|category)(\.php)?(/|$)#', $__nfPath)) { $__mnavActive = 'catalog'; }
 ?>
 <nav class="mnav" aria-label="Мобильная навигация">
@@ -152,7 +174,10 @@ elseif ($__nfIsHome || preg_match('#^/(product|category)(\.php)?(/|$)#', $__nfPa
   <?php /* W96 (5cv): «Как работаем» → «Поводы» (how-it-works на витрине больше нет) */ ?>
   <a href="/#occasions"<?= $__mnavActive === 'occasions' ? ' aria-current="page"' : '' ?>><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="2.6"/></svg>Поводы</a>
   <a href="/#contacts"<?= $__mnavActive === 'contacts' ? ' aria-current="page"' : '' ?>><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.6 10.8c1.4 2.8 3.8 5.2 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.4c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.4 0 .8-.2 1L6.6 10.8z"/></svg>Контакты</a>
-  <a href="/#order"<?= $__mnavActive === 'order' ? ' aria-current="page"' : '' ?>><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h13l-1.5 8.5H7.2L5 4H2"/><circle cx="8.5" cy="19" r="1.4"/><circle cx="14.5" cy="19" r="1.4"/></svg>Заказать</a>
+  <?php /* W106-E1 (Нильсен P0 «телепорт на главную»): «Заказать» со вторичных
+         страниц ведёт на /checkout.php (было /#order — переброс на лендинг);
+         на главной и на самом чекауте форма на этой же странице — якорь #order. */ ?>
+  <a href="<?= ($__nfIsHome || $__nfIsCheckout) ? '#order' : '/checkout.php' ?>"<?= $__mnavActive === 'order' ? ' aria-current="page"' : '' ?>><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h13l-1.5 8.5H7.2L5 4H2"/><circle cx="8.5" cy="19" r="1.4"/><circle cx="14.5" cy="19" r="1.4"/></svg>Заказать</a>
 </nav>
 
 <div class="cart-panel" id="cartPanel" hidden>
@@ -207,28 +232,40 @@ elseif ($__nfIsHome || preg_match('#^/(product|category)(\.php)?(/|$)#', $__nfPa
 
 <?php /* W105-6fix1: хвост ряда каталога — ДОПОЛНИТЕЛЬ последней строки грида
        (.is-tail-feature / CTA-плитка [data-grid-tail]). Грузится на всех
-       витрин-страницах до catalog-filter.js (синхронный вызов из его apply())
+       витрин-страницах до catalog-filter.js (вызов из его apply())
        и до category.js (defer, ниже по документу); без [data-grid-tail] в
-       гриде — no-op. */ ?>
-<script src="/js/grid-tail.js?v=<?= e($__vjs('grid-tail.js')) ?>"></script>
-<script src="/js/cart.js?v=<?= e($__vjs('cart.js')) ?>"></script>
+       гриде — no-op.
+       E-e2 (P0-1, перф-критик волны 3: 9 sync-скриптов в конце body →
+       парсер ждёт их скачивания/исполнения, DCL 2.6с): ВСЕ внешние скрипты
+       футера — defer. Defer-скрипты исполняются СТРОГО в порядке документа —
+       относительный порядок цепочки не меняется (grid-tail → cart → cart-ui
+       → favicon-badge → cart-cta → order-form → catalog-filter → five →
+       lenis → kinetic → reveal → nilov → glue → petals → cookie-banner).
+       Инлайн-конфиги между ними (UPSELL_*, COOKIE_BANNER_CONFIG, NILOV_CONFIG
+       в index.php) исполняются на парсинге — раньше отложенных скриптов,
+       как и раньше. Никаких document.write и вызовов API соседей на верхнем
+       уровне нет (проверено: cart-ui/cart-cta/five только читают глобалы
+       ПОСЛЕ своей инициализации). */ ?>
+<script src="/js/grid-tail.js?v=<?= e($__vjs('grid-tail.js')) ?>" defer></script>
+<script src="/js/cart.js?v=<?= e($__vjs('cart.js')) ?>" defer></script>
 <script>window.UPSELL_LIMIT = <?= max(1, min(6, (int) setting('upsell_limit', '3'))) ?>; window.UPSELL_ENABLED = <?= setting('upsell_enabled', '1') === '1' ? 1 : 0 ?>; window.UPSELL_CATEGORIES = <?= json_encode(array_filter(array_map('trim', explode(',', setting('upsell_categories', ''))))) ?>;</script>
-<script src="/js/cart-ui.js?v=<?= e($__vjs('cart-ui.js')) ?>"></script>
-<?php if (setting('feature_favicon_badge', '1') === '1'): ?><script src="/js/favicon-badge.js?v=<?= e($__vjs('favicon-badge.js')) ?>"></script><?php endif; ?>
-<script src="/js/cart-cta.js?v=<?= e($__vjs('cart-cta.js')) ?>"></script>
-<?php /* A9: #orderForm и #catalogGrid/#catalogTabs есть только на главной (index.php) —
-         на вторичных страницах скрипты self-guard'ом возвращались сразу, теперь
-         их просто не грузим. */ ?>
+<script src="/js/cart-ui.js?v=<?= e($__vjs('cart-ui.js')) ?>" defer></script>
+<?php if (setting('feature_favicon_badge', '1') === '1'): ?><script src="/js/favicon-badge.js?v=<?= e($__vjs('favicon-badge.js')) ?>" defer></script><?php endif; ?>
+<script src="/js/cart-cta.js?v=<?= e($__vjs('cart-cta.js')) ?>" defer></script>
+<?php /* A9: #orderForm живёт на главной и /checkout.php (W106-E1 — частичный
+       order-form.php); #catalogGrid/#catalogTabs — только главная. */ ?>
+<?php if ($__nfIsHome || $__nfIsCheckout): ?>
+<script src="/js/order-form.js?v=<?= e($__vjs('order-form.js')) ?>" defer></script>
+<?php endif; ?>
 <?php if ($__nfIsHome): ?>
-<script src="/js/order-form.js?v=<?= e($__vjs('order-form.js')) ?>"></script>
-<script src="/js/catalog-filter.js?v=<?= e($__vjs('catalog-filter.js')) ?>"></script>
+<script src="/js/catalog-filter.js?v=<?= e($__vjs('catalog-filter.js')) ?>" defer></script>
 <?php endif; ?>
 <?php /* W96 (5cv): город-бар, карусели, чипы цен, поиск — поверх catalog-filter.js */ ?>
-<script src="/js/five.js?v=<?= e($__vjs('five.js')) ?>"></script>
+<script src="/js/five.js?v=<?= e($__vjs('five.js')) ?>" defer></script>
 <?php /* A9: галерея/лайтбокс — только страница товара (разметку рендерит product.php) */ ?>
 <?php if ($__nfIsProduct): ?>
-<script src="/js/product-gallery.js?v=<?= e($__vjs('product-gallery.js')) ?>"></script>
-<script src="/js/lightbox.js?v=<?= e($__vjs('lightbox.js')) ?>"></script>
+<script src="/js/product-gallery.js?v=<?= e($__vjs('product-gallery.js')) ?>" defer></script>
+<script src="/js/lightbox.js?v=<?= e($__vjs('lightbox.js')) ?>" defer></script>
 <?php endif; ?>
 <?php /* W97-fixA (A9): js/lazy-images.js — dead code (ищет img[data-src], которых
          нет нигде в репо — проверено rg "data-src" перед удалением); подключение
@@ -262,4 +299,4 @@ elseif ($__nfIsHome || preg_match('#^/(product|category)(\.php)?(/|$)#', $__nfPa
   accept: <?= json_encode(setting('cookie_accept_text', 'Принять'), JSON_UNESCAPED_UNICODE) ?>,
   reject: <?= json_encode(setting('cookie_reject_text', 'Только необходимые'), JSON_UNESCAPED_UNICODE) ?>
 };</script>
-<script src="/js/cookie-banner.js?v=<?= e($__vjs('cookie-banner.js')) ?>"></script>
+<script src="/js/cookie-banner.js?v=<?= e($__vjs('cookie-banner.js')) ?>" defer></script>

@@ -68,10 +68,16 @@ a{color:inherit;text-decoration:none}
 /* mobile bottom tabbar */
 .mnav{display:none}
 @media(max-width:820px){
+  /* F2 (P0-4, моб-критик волны 4 «111px нижнего хрома»): компакт-таббар
+     ~43px (было 61-63: padding 10 → 3, gap 3 → 2, line-height 1.2) —
+     иконки/подписи 12px сохранены (D-d1 P0-10). Вместе с cookie-баром
+     44px суммарный хром до принятия ≤88px (было 111). Запасы под
+     таббар (cookie-bar bottom, body padding, toast) синхронизированы
+     в five.css (F2-блок). */
   .mnav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:60;background:#fff;border-top:1px solid var(--line);box-shadow:0 -8px 24px -16px rgba(43,45,47,.35)}
-  .mnav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 6px;font-size:.68rem;font-weight:600;color:var(--ink-soft)}
+  .mnav a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:3px 4px;min-height:44px;font-size:.75rem;font-weight:600;line-height:1.2;color:var(--ink-soft)} /* D-d1 (P0-10): подписи 12px — читаются без очков; F2: тач-цель якоря 44px при высоте бара 45 (минус 1px border-top) */
   .mnav a svg{width:20px;height:20px;color:var(--ink)}
-  body{padding-bottom:58px}
+  body{padding-bottom:44px}
 }
 
 /* ============ ACCESSIBILITY (фикс a11y-критика 5/10) ============ */
@@ -104,9 +110,9 @@ a{color:inherit;text-decoration:none}
 .product-page__cta-spacer{display:none}
 @media(max-width:820px){.btn--accent.product-page__cta--sticky{position:fixed;left:12px;right:12px;bottom:calc(70px + env(safe-area-inset-bottom));z-index:40;box-shadow:0 10px 30px -12px rgba(43,45,47,.5)}
   .product-page__cta-spacer{display:block;height:56px}
-  .product-page__cta--hidden{opacity:0;pointer-events:none;transform:translateY(12px);transition:opacity .2s cubic-bezier(.22,1,.36,1),transform .2s cubic-bezier(.22,1,.36,1)}
-  /* fixed-CTA не прячется под cookie-баннером: его высота ≤ 24vh текста + 86px обвязки + 16 offset */
-  body.cookie-visible .btn--accent.product-page__cta--sticky{bottom:calc(190px + env(safe-area-inset-bottom))}
+  .product-page__cta--hidden{opacity:0;pointer-events:none;transform:translateY(12px);transition:opacity .2s cubic-bezier(.4,0,.2,1),transform .2s cubic-bezier(.4,0,.2,1)}
+  /* fixed-CTA не прячется под cookie-бар (D-d1 P0-3: моб-бар 48px над таббаром): 61 таббар + 48 бар + 13 */
+  body.cookie-visible .btn--accent.product-page__cta--sticky{bottom:calc(122px + env(safe-area-inset-bottom))}
   .product-page{padding-bottom:128px}}
 /* W60 (визит-критик): select-ы пилюли — системная стрелка долой, шеврон SVG */
 select:not(.pill){}
@@ -115,6 +121,10 @@ input[type=date]::-webkit-calendar-picker-indicator{opacity:.5}
 input.pill,select.pill{min-height:44px;font-size:16px;border:1px solid rgba(43,45,47,.35);background-color:#fff}
 select.pill{padding:8px 34px 8px 14px;border-radius:999px;border:1px solid var(--line);background:#fff url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%232B2D2F' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 12px center;font-size:.8125rem;cursor:pointer;-webkit-appearance:none;appearance:none} /* W105-6fix2: 13.6→13 */
 @media(max-width:480px){.site-header__contact span{display:none}}
+/* W106-C1: легаси-слой cookie (полноширинная ink-полоса) нейтрализован —
+   канонический вид — брендированная крем-плашка в five.css (W104-iota→C1);
+   эти правила оставлены как деградация для hypothetically отключенного
+   five.css: позиция/left/right переопределяются, фон/кнопки — нет. */
 .btn--accent:hover{background:var(--rose-cta-hover)}
 .btn--outline{background:transparent;color:var(--ink);border:1.5px solid var(--ink)}
 .btn--outline:hover{background:var(--ink);color:#fff}
@@ -215,14 +225,14 @@ select.pill{padding:8px 34px 8px 14px;border-radius:999px;border:1px solid var(-
 .order-form__payment{border:1.5px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:10px;min-width:0}
 .order-form__payment legend{font-size:.8125rem;font-weight:600;padding:0 6px;white-space:normal} /* W105-6fix2: 13.6→13 */
 .order-form__radio{display:flex;gap:10px;align-items:center;font-size:.875rem;cursor:pointer;min-height:44px} /* W105-6fix2: 14.72→14 */
-.order-form__radio input{appearance:none;-webkit-appearance:none;width:22px;height:22px;flex:none;background:#fff;border:1.5px solid rgba(43,45,47,.4);border-radius:50%;cursor:pointer;transition:border-color .15s cubic-bezier(.22,1,.36,1),background .15s cubic-bezier(.22,1,.36,1);margin-top:2px}
+.order-form__radio input{appearance:none;-webkit-appearance:none;width:22px;height:22px;flex:none;background:#fff;border:1.5px solid rgba(43,45,47,.4);border-radius:50%;cursor:pointer;transition:border-color .15s cubic-bezier(.4,0,.2,1),background .15s cubic-bezier(.4,0,.2,1);margin-top:2px}
 .order-form__radio input:hover{border-color:var(--rose-cta)}
 .order-form__radio input:checked{border-color:var(--rose-cta);background:var(--rose-cta)}
 .order-form__radio input:checked::after{content:"";display:block;width:100%;height:100%;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='5' fill='white'/%3E%3C/svg%3E") center/14px 14px no-repeat}
 .order-form__radio input:focus-visible{outline:3px solid var(--rose-cta);outline-offset:2px}
 .order-form__total{font-weight:700}
 .order-form__checkbox{display:flex;gap:10px;font-size:.8125rem;color:var(--ink-soft);align-items:flex-start} /* W105-6fix2: 13.12→13 */
-.order-form__checkbox input{margin-top:2px;width:22px;height:22px;flex:none;appearance:none;-webkit-appearance:none;background:#fff;border:1.5px solid rgba(43,45,47,.4);border-radius:6px;cursor:pointer;transition:border-color .15s cubic-bezier(.22,1,.36,1),background .15s cubic-bezier(.22,1,.36,1)}
+.order-form__checkbox input{margin-top:2px;width:22px;height:22px;flex:none;appearance:none;-webkit-appearance:none;background:#fff;border:1.5px solid rgba(43,45,47,.4);border-radius:6px;cursor:pointer;transition:border-color .15s cubic-bezier(.4,0,.2,1),background .15s cubic-bezier(.4,0,.2,1)}
 .order-form__checkbox input:hover{border-color:var(--rose-cta)}
 .order-form__checkbox input:checked{background:var(--rose-cta);border-color:var(--rose-cta)}
 .order-form__checkbox input:checked::after{content:"";display:block;width:100%;height:100%;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center/14px 14px no-repeat}
@@ -234,7 +244,7 @@ select.pill{padding:8px 34px 8px 14px;border-radius:999px;border:1px solid var(-
 .cookie-settings{position:fixed;inset:0;z-index:120;background:rgba(20,20,22,.55);display:grid;place-items:center;padding:20px}
 .cookie-settings__panel{background:#fff;color:var(--ink);border-radius:16px;padding:20px 22px;max-width:420px;width:100%;box-shadow:0 18px 50px rgba(0,0,0,.25)}
 .cookie-settings__row{display:flex;gap:10px;align-items:center;font-size:.875rem;padding:8px 0} /* W105-6fix2: 14.4→14 */
-.cookie-settings__row input{appearance:none;-webkit-appearance:none;width:22px;height:22px;flex:none;background:#fff;border:1.5px solid rgba(43,45,47,.4);border-radius:6px;cursor:pointer;position:relative;transition:background .15s cubic-bezier(.22,1,.36,1),border-color .15s cubic-bezier(.22,1,.36,1)}
+.cookie-settings__row input{appearance:none;-webkit-appearance:none;width:22px;height:22px;flex:none;background:#fff;border:1.5px solid rgba(43,45,47,.4);border-radius:6px;cursor:pointer;position:relative;transition:background .15s cubic-bezier(.4,0,.2,1),border-color .15s cubic-bezier(.4,0,.2,1)}
 .cookie-settings__row input:checked{background:var(--rose-cta);border-color:var(--rose-cta)}
 .cookie-settings__row input:focus-visible{outline:3px solid var(--rose-cta);outline-offset:2px}
 .cookie-settings__row input:checked::after{content:"";position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M20 6L9 17l-5-5' fill='none' stroke='white' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/14px 14px no-repeat}
@@ -315,6 +325,14 @@ body.cookie-visible{padding-bottom:180px}
 
 
 .cookie-banner__btn{background:var(--rose-cta);border:none;color:#fff;border-radius:999px;padding:11px 22px;font:600 .8125rem var(--font-ui);cursor:pointer} /* W105-6fix2: 13.6→13 */
+/* E-e2 (P1-6, креативный директор «H3 14px — типографский мусор»):
+   заголовок карточки баннера больше НЕ h3.cookie-banner__title (five.css
+   600/14px) — js/cookie-banner.js рендерит тихую строку p.cookie-banner__lead.
+   Класс новый, в five.css его нет → просто наследуем 13px/1.45 normal
+   от .cookie-banner (five.css W104-iota), без соревнования каскада.
+   Стили five.css .cookie-banner__title остаются (мертвы для витрины —
+   элемент больше не эмитится; five.css — зона другого агента, не трогаем). */
+.cookie-banner__lead{display:block;margin:0;font:inherit;font-weight:400;color:inherit}
 /* Мобильный cookie-баннер (критик P4): 24% экрана → компактный.
    Критик re-check 7/10 (регрессия): баннер z90 накрывал таббар mnav z60 — приподнимаем
    над таббаром (высота mnav ~62px + safe-area), кнопки не тапаются без этого.
@@ -393,24 +411,26 @@ html{scroll-padding-bottom:230px}
 
 /* ============ REVEAL ANIMATION ============ */
 /* W67: тост добавления в корзину (desktop-фидбек, NEW-6) */
-#cartToast{position:fixed;left:50%;bottom:calc(80px + env(safe-area-inset-bottom));transform:translate(-50%,8px);z-index:80;background:var(--ink);color:#fff;border-radius:999px;padding:10px 18px;font:600 .8125rem var(--font-ui);box-shadow:0 12px 30px -12px rgba(43,45,47,.5);opacity:0;pointer-events:none;transition:opacity .25s cubic-bezier(.22,1,.36,1),transform .25s cubic-bezier(.22,1,.36,1);max-width:calc(100vw - 40px);text-align:center;display:flex;align-items:center;gap:10px} /* W105-6fix2: 13.6→13 */
+#cartToast{position:fixed;left:50%;bottom:calc(80px + env(safe-area-inset-bottom));transform:translate(-50%,8px);z-index:80;background:var(--ink);color:#fff;border-radius:999px;padding:10px 18px;font:600 .8125rem var(--font-ui);box-shadow:0 12px 30px -12px rgba(43,45,47,.5);opacity:0;pointer-events:none;transition:opacity .25s cubic-bezier(.4,0,.2,1),transform .25s cubic-bezier(.4,0,.2,1);max-width:calc(100vw - 40px);text-align:center;display:flex;align-items:center;gap:10px} /* W105-6fix2: 13.6→13 */
 /* W104-fix6: тост с действием — кнопка кликабельна пока тост виден */
 #cartToast.is-visible{pointer-events:auto}
-#cartToast .cart-toast__go{border:0;background:rgba(255,255,255,.14);color:#fff;border-radius:999px;padding:6px 12px;font:600 .8rem var(--font-ui);cursor:pointer;white-space:nowrap;transition:background .2s cubic-bezier(.22,1,.36,1)}
+#cartToast .cart-toast__go{border:0;background:rgba(255,255,255,.14);color:#fff;border-radius:999px;padding:6px 12px;font:600 .8rem var(--font-ui);cursor:pointer;white-space:nowrap;transition:background .2s cubic-bezier(.4,0,.2,1)}
 #cartToast .cart-toast__go:hover{background:rgba(255,255,255,.26)}
 #cartToast .cart-toast__go:focus-visible{outline:2px solid #fff;outline-offset:2px}
 #cartToast.is-visible{opacity:1;transform:translate(-50%,0)}
 body.cookie-visible #cartToast{bottom:calc(258px + env(safe-area-inset-bottom))} /* W80: 246 давало box-cover 22% на 375×812 */
-@media(min-width:821px){body.cookie-visible #cartToast{bottom:130px}} /* W72 (obvious NEW): тост не под cookie-баннером (z80<z90, 100% cover) */
+/* W106-C1: крем-плашка cookie (420×~148, bottom:16) — тост поднимаем выше
+   её верхней кромки (148+16+12 ≈ 176 → 184 с запасом) */
+@media(min-width:821px){body.cookie-visible #cartToast{bottom:184px}}
 @media(min-width:821px){#cartToast{bottom:28px}}
 @media(prefers-reduced-motion:reduce){#cartToast{transition:none}}
-.reveal{opacity:0;transform:translateY(18px);transition:opacity .6s cubic-bezier(.22,1,.36,1),transform .6s cubic-bezier(.22,1,.36,1)}
+.reveal{opacity:0;transform:translateY(18px);transition:opacity .6s cubic-bezier(.4,0,.2,1),transform .6s cubic-bezier(.4,0,.2,1)}
 .reveal--visible{opacity:1;transform:none}
 @media(prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}html{scroll-behavior:auto}}
 
 /* ============ PRODUCT PAGE: hover zoom ============ */
 .product-page__media{cursor:zoom-in}
-.product-gallery__img{width:100%;height:auto;object-fit:cover;transition:transform .5s cubic-bezier(.22,1,.36,1)} /* W103: без форс-кропа */
+.product-gallery__img{width:100%;height:auto;object-fit:cover;transition:transform .5s cubic-bezier(.4,0,.2,1)} /* W103: без форс-кропа */
 .product-page__media:hover .product-gallery__img{transform:scale(1.06)}
 .product-gallery__img-placeholder{display:grid;place-items:center;background:var(--bg-alt);aspect-ratio:4/4.8}
 
@@ -423,7 +443,7 @@ body.cookie-visible #cartToast{bottom:calc(258px + env(safe-area-inset-bottom))}
 .site-footer__messengers{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-top:4px}
 /* a11y-критик S2: footer-ссылки h=16–20px → добавляем hit-area паддингами (не видимым размером) */
 /* Buyer-критик W44+/W45: padding 14px давал 43.75px — min-height фиксирует ровно 44 */
-.site-footer__messengers a,.site-footer__phone,.site-footer span a{display:inline-block;padding:14px 8px;min-width:44px;min-height:44px;line-height:1.2;transition:color .15s cubic-bezier(.22,1,.36,1),transform .12s cubic-bezier(.22,1,.36,1)}
+.site-footer__messengers a,.site-footer__phone,.site-footer span a{display:inline-block;padding:14px 8px;min-width:44px;min-height:44px;line-height:1.2;transition:color .15s cubic-bezier(.4,0,.2,1),transform .12s cubic-bezier(.4,0,.2,1)}
 .site-footer__messengers a:active,.site-footer span a:active,.site-footer__phone:active{transform:scale(.97)}
 .site-footer span a:hover{color:var(--rose-cta)}
 /* Покупатель-критик W42: футер-ссылки были 40px — доводим таргет до 44 на тач */

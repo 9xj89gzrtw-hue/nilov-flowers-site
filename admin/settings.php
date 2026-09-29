@@ -1330,7 +1330,7 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
     <label class="f" for="seo-t">Title (виден во вкладке и в Яндексе)</label>
     <input class="input" id="seo-t" name="seo_title" value="<?= sv('seo_title', $s) !== '' ? sv('seo_title', $s) : sv('shop_name', $s) . ' — доставка цветов по Санкт-Петербургу' ?>" maxlength="80">
     <label class="f" for="seo-d" style="margin-top:8px">Description (описание в результатах поиска)</label>
-    <input class="input" id="seo-d" name="seo_description" value="<?= sv('seo_description', $s) !== '' ? sv('seo_description', $s) : 'Доставка букетов по Санкт-Петербургу в день заказа. Свежие цветы с утренней поставки, фото перед отправкой. Заказы до 20:00 — доставим сегодня.' ?>" maxlength="200">
+    <input class="input" id="seo-d" name="seo_description" value="<?= sv('seo_description', $s) !== '' ? sv('seo_description', $s) : 'Доставка букетов по Санкт-Петербургу в день заказа. Свежий срез каждое утро, фото перед отправкой. Заказы до 20:00 — доставим сегодня.' ?>" maxlength="200">
     <label class="f" for="mk-id" style="margin-top:8px">Счётчик Яндекс.Метрики (номер)</label>
     <input class="input" id="mk-id" name="metrika_counter_id" value="<?= sv('metrika_counter_id', $s) ?>" placeholder="12345678" inputmode="numeric" maxlength="12">
     <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Метрика грузится только после согласия на cookie. Номер — из личного кабинета Метрики. Пусто = счётчик не ставится.</p>
