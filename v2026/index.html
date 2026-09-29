@@ -979,3 +979,202 @@ ul,ol,h1,h2,h3,h4,p,figure{margin:0;padding:0;list-style:none}
     </div>
   </div>
 </section>
+
+<section class="sec" id="delivery" aria-labelledby="dlvT">
+  <div class="wrap">
+    <div class="sec-h" data-rv>
+      <div>
+        <p class="kick" data-b="delivery.kicker">Доставка</p>
+        <h2 class="sec-t" id="dlvT" data-b="delivery.title">Шесть зон, один честный тариф</h2>
+      </div>
+      <p class="sec-l" data-b="delivery.lead">Считаем стоимость автоматически по району.</p>
+    </div>
+    <div class="dlv__g">
+      <div data-rv>
+        <div class="calc">
+          <div class="mono" style="color:var(--gold);margin-bottom:14px">Калькулятор доставки</div>
+          <div class="calc__r">
+            <input id="calcI" type="text" placeholder="Улица, дом или станция метро" aria-label="Адрес доставки" autocomplete="off">
+            <button class="btn btn--fill" id="calcB" type="button"><span data-b="delivery.calc.button">Рассчитать</span></button>
+          </div>
+          <p class="calc__h" id="calcH"></p>
+          <div class="calc__o" id="calcO">
+            <div><span>Зона</span><b id="cZone">—</b></div>
+            <div><span>Стоимость</span><b id="cPrice">—</b></div>
+            <div><span>Время в пути</span><b id="cEta">—</b></div>
+          </div>
+        </div>
+        <div class="mono" style="color:var(--bone-mute);margin-bottom:6px">Интервалы на сегодня</div>
+        <div class="slots" id="slots"></div>
+      </div>
+      <div class="zones" id="zones" data-rv data-d="120"></div>
+    </div>
+    <div class="extras" id="dExtras" data-rv></div>
+  </div>
+</section>
+
+<section class="sec sub" id="subscription" aria-labelledby="subT">
+  <div class="wrap">
+    <div class="sec-h sec-h--c" data-rv>
+      <div>
+        <p class="kick" style="justify-content:center" data-b="subscription.kicker">Подписка</p>
+        <h2 class="sec-t" id="subT" data-b="subscription.title">Цветы, которые приезжают сами</h2>
+        <p class="sec-l" style="margin-top:18px;text-align:center" data-b="subscription.lead">Один раз настраиваете.</p>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:center" data-rv><div class="periods" id="periods" role="tablist" aria-label="Периодичность"></div></div>
+    <div class="plans" id="plans"></div>
+  </div>
+</section>
+
+<section class="sec" id="reviews" aria-labelledby="rvT">
+  <div class="wrap">
+    <div class="rv__top" data-rv>
+      <div>
+        <p class="kick" data-b="reviews.kicker">Отзывы</p>
+        <h2 class="sec-t" id="rvT" data-b="reviews.title">2 418 отзывов</h2>
+        <p class="sec-l" style="margin-top:18px" data-b="reviews.lead">Мы не удаляем плохие.</p>
+      </div>
+      <div id="ratingBox"></div>
+    </div>
+  </div>
+  <div class="rvw" style="margin-top:clamp(28px,3.6vw,50px)"><div class="rvw__t" id="rvA"></div></div>
+  <div class="rvw rvw--b" style="margin-top:16px"><div class="rvw__t" id="rvB"></div></div>
+</section>
+
+<section class="sec" id="journal" aria-labelledby="jrnT" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-h" data-rv>
+      <div>
+        <p class="kick">Журнал</p>
+        <h2 class="sec-t" id="jrnT">Пишем о цветах <em>без сюсюканья</em></h2>
+      </div>
+      <a class="lnk" href="#journal">Все материалы <svg viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg></a>
+    </div>
+    <div class="jrn" id="jrn"></div>
+  </div>
+</section>
+
+<section class="sec" id="faq" aria-labelledby="faqT" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-h" data-rv>
+      <div>
+        <p class="kick">Вопросы</p>
+        <h2 class="sec-t" id="faqT">Отвечаем честно, <em>включая неудобное</em></h2>
+      </div>
+      <p class="sec-l">Не нашли свой вопрос? Напишите в Telegram — отвечает живой флорист, а не бот.</p>
+    </div>
+    <div class="faq" id="faqList"></div>
+    <div class="gua" id="gua" data-rv></div>
+  </div>
+</section>
+
+<section class="cta" id="contacts" aria-labelledby="ctaT">
+  <div class="wrap cta__in">
+    <div data-rv>
+      <h2 class="cta__t" id="ctaT" data-b="cta.title">Расскажите, кому нужен букет</h2>
+      <p class="cta__l" data-b="cta.lead">Напишите в Telegram или позвоните.</p>
+    </div>
+    <div class="cta__a" data-rv data-d="120">
+      <a class="btn btn--bloom btn--lg" id="ctaTg" data-magnet href="https://t.me/nilovflowers" target="_blank" rel="noopener">
+        <span data-b="cta.button.label">Написать в Telegram</span>
+        <svg viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg></a>
+      <div><span class="mono" style="color:rgba(244,238,226,.6)" data-b="cta.phoneLabel">или позвоните</span>
+        <a class="cta__p" id="ctaPhone" href="tel:+78125650909" data-b="contacts.phone">+7 (812) 565-09-09</a></div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="ftr" id="footer">
+  <div class="wrap">
+    <div class="ftr__g">
+      <div>
+        <a class="logo" href="#top" aria-label="НИЛОВ">
+          <svg class="logo__mk" viewBox="0 0 32 32" aria-hidden="true">
+            <ellipse cx="16" cy="9.4" rx="4.5" ry="7.1" fill="currentColor"/><ellipse cx="16" cy="9.4" rx="4.5" ry="7.1" fill="currentColor" transform="rotate(72 16 16)"/>
+            <ellipse cx="16" cy="9.4" rx="4.5" ry="7.1" fill="currentColor" transform="rotate(144 16 16)"/><ellipse cx="16" cy="9.4" rx="4.5" ry="7.1" fill="currentColor" transform="rotate(216 16 16)"/>
+            <ellipse cx="16" cy="9.4" rx="4.5" ry="7.1" fill="currentColor" transform="rotate(288 16 16)"/><circle cx="16" cy="16" r="3.1" fill="var(--gold)"/>
+          </svg>
+          <span class="logo__tx"><span class="logo__n" data-b="meta.siteName">НИЛОВ</span><span class="logo__s">flowers · spb · 2014</span></span>
+        </a>
+        <p class="ftr__a" data-b="footer.about">Флористическая студия полного цикла.</p>
+        <div class="soc" id="soc"></div>
+      </div>
+      <div id="fcols" style="display:contents"></div>
+      <div class="ftr__c">
+        <h4>Контакты</h4>
+        <a id="fPhone" href="tel:+78125650909" data-b="contacts.phone">+7 (812) 565-09-09</a>
+        <a id="fMail" href="mailto:hello@nilov-flowers.ru" data-b="contacts.email">hello@nilov-flowers.ru</a>
+        <p data-b="contacts.address">наб. реки Мойки, 82</p>
+        <p data-b="contacts.hours">Ежедневно 08:00 — 23:00</p>
+        <p style="color:var(--bone-mute);font-size:12px;margin-top:14px" data-b="meta.legal">ИП Нилов А. С.</p>
+      </div>
+    </div>
+
+    <div class="nl" data-rv>
+      <div>
+        <h3 data-b="footer.newsletter.title">Письмо раз в две недели</h3>
+        <p data-b="footer.newsletter.text">Что цветёт прямо сейчас, сезонные цены и закрытые распродажи.</p>
+      </div>
+      <div>
+        <form id="nlForm" novalidate>
+          <input id="nlI" type="email" placeholder="Ваш e-mail" aria-label="Электронная почта" required>
+          <button class="btn btn--fill" type="submit"><span data-b="footer.newsletter.button">Подписаться</span></button>
+        </form>
+        <p class="ok" id="nlOk"></p>
+        <p class="er" id="nlEr">Проверьте адрес: похоже, в нём опечатка.</p>
+      </div>
+    </div>
+
+    <div class="ftr__w" aria-hidden="true"><span>НИЛОВ FLOWERS</span></div>
+
+    <div class="ftr__b">
+      <span data-b="footer.bottom">© 2014 — 2026 Nilov Flowers</span>
+      <nav id="flegal" aria-label="Юридические документы"></nav>
+      <div class="ftr__pay"><i>МИР</i><i>СБП</i><i>VISA</i><i>MC</i><i>NALEX</i></div>
+      <a class="adm" href="admin.html">Админка ⌘</a>
+    </div>
+  </div>
+</footer>
+
+<div class="ovl" id="ovl"></div>
+
+<aside class="drw" id="cart" role="dialog" aria-modal="true" aria-label="Корзина">
+  <div class="drw__h">
+    <div><b>Корзина</b> <span id="cartN">пусто</span></div>
+    <button class="xb" id="cartX" type="button" aria-label="Закрыть корзину"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="drw__b" id="cartB2"></div>
+  <div class="drw__f" id="cartF" hidden>
+    <div class="promo">
+      <input id="promoI" type="text" placeholder="Промокод" aria-label="Промокод" autocomplete="off">
+      <button id="promoB" type="button">Применить</button>
+    </div>
+    <div id="cartSums"></div>
+    <button class="btn btn--bloom btn--lg" id="toCheckout" type="button"><span>Оформить заказ</span>
+      <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    <p class="drw__n">Доставка по центру СПб бесплатна от 3 000 ₽ · фото букета перед отправкой входит в стоимость</p>
+  </div>
+</aside>
+
+<div class="mdl" id="qvMdl" role="dialog" aria-modal="true" aria-label="Букет">
+  <div class="mdl__b" id="qvBody"></div>
+</div>
+
+<div class="mdl" id="coMdl" role="dialog" aria-modal="true" aria-label="Оформление заказа">
+  <div class="mdl__b" id="coBody"></div>
+</div>
+
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+
+<button class="totop" id="totop" type="button" aria-label="Наверх">
+  <svg viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg>
+</button>
+
+<nav class="mbar" aria-label="Быстрые действия">
+  <a href="tel:+78125650909" id="mCall"><svg viewBox="0 0 24 24"><path d="M4 5c0 8 7 15 15 15l2-3-4-2-2 2c-2-1-4-3-5-5l2-2-2-4-3 2z"/></svg>Позвонить</a>
+  <a href="#catalog" id="mCat"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.6"/><rect x="14" y="3" width="7" height="7" rx="1.6"/><rect x="3" y="14" width="7" height="7" rx="1.6"/><rect x="14" y="14" width="7" height="7" rx="1.6"/></svg>Каталог</a>
+  <a href="https://t.me/nilovflowers" id="mTg" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M21 4L3 11l6 2 2 6 3-4 5 4z"/></svg>Telegram</a>
+  <button type="button" id="mCart"><svg viewBox="0 0 24 24"><path d="M6 7h12l-1.2 12.2a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.8L6 7z"/><path d="M9.2 7V5.6a2.8 2.8 0 0 1 5.6 0V7"/></svg>Корзина<span class="mbar__b" id="mCartB">0</span></button>
+</nav>
