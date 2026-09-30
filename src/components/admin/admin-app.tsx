@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { Flower2, LayoutDashboard, LogOut, Package, Settings, ShoppingBag, Truck } from "lucide-react"
 import { toast } from "sonner"
 import type { DeliveryZone, Order, Product, Upsell } from "@/lib/types"
-import { parseOrderRow, parseProductRow } from "@/lib/types"
 import { AdminOrders } from "./admin-orders"
 import { AdminCatalog } from "./admin-catalog"
 import { AdminSettings } from "./admin-settings"
@@ -128,8 +127,10 @@ function AdminShell({ onExit, onLogout }: { onExit: () => void; onLogout: () => 
           fetch("/api/admin/settings", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)),
         ])
         if (!alive) return
-        if (o) setOrders(o.orders.map(parseOrderRow))
-        if (p) setProducts(p.products.map(parseProductRow))
+        // Раунд 2 (критик 7, P0): API /api/admin/* уже отдаёт распарсенные объекты —
+        // повторный parseProductRow затирал composition/photos/tags (пустые поля в редакторе и записке).
+        if (o) setOrders(o.orders)
+        if (p) setProducts(p.products)
         if (z) setZones(z.zones)
         if (u) setUpsells(u.upsells)
         if (s) setSettings(s.settings)
@@ -154,7 +155,7 @@ function AdminShell({ onExit, onLogout }: { onExit: () => void; onLogout: () => 
         const r = await fetch("/api/admin/orders", { cache: "no-store" })
         if (r.ok) {
           const d = await r.json()
-          const next = d.orders.map(parseOrderRow) as Order[]
+          const next = d.orders as Order[] // API уже отдаёт распарсенные заказы
           setOrders((prev) => {
             if (next.length > prev.length) {
               const fresh = next.find((o) => !prev.some((p) => p.id === o.id))

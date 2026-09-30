@@ -107,7 +107,7 @@ export function Footer({ settings }: { settings: ShopSettings }) {
         </div>
       </div>
       {/* распорка под мобильную липкую панель (критик 4: 69px панель + safe-area) */}
-      <div className="h-[76px] md:hidden" aria-hidden />
+      <div className="h-[84px] md:hidden" aria-hidden />
     </footer>
   )
 }

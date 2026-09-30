@@ -55,26 +55,32 @@ export function Sections({ settings, zones, editorial }: { settings: ShopSetting
         </div>
       </section>
 
-      {/* Как это работает */}
+      {/* Как это работает — вертикальный таймлайн (Раунд 2, критик 6: не клонировать «Гарантии») */}
       <section className="py-14 md:py-20" aria-label="Как это работает">
         <div className="mx-auto max-w-7xl px-4">
           <SectionHead kicker="3 шага" title="Как это работает" />
-          <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
+          <ol className="relative mt-10 space-y-8 md:grid md:grid-cols-3 md:gap-6 md:space-y-0">
+            <span
+              className="absolute left-[27px] top-2 bottom-2 w-px bg-gradient-to-b from-pine/30 via-pine/15 to-transparent md:hidden"
+              aria-hidden
+            />
             {STEPS.map((s, i) => (
-              <motion.div
+              <motion.li
                 key={s.n}
                 initial={{ opacity: 0, y: 16 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "60px" }}
                 transition={{ duration: 0.45, delay: i * 0.08 }}
-                className="relative rounded-3xl border border-border bg-white p-6"
+                className="relative flex gap-5 md:block"
               >
-                <span className="font-display text-4xl italic text-pine/25">{s.n}</span>
-                <h3 className="mt-2 font-grotesk text-[15px] font-bold text-foreground">{s.t}</h3>
-                <p className="mt-1.5 text-[13.5px] leading-relaxed text-muted-foreground">{s.d}</p>
-              </motion.div>
+                <span className="font-display text-5xl italic leading-none text-pine/30 md:text-6xl">{s.n}</span>
+                <div className="md:mt-3">
+                  <h3 className="font-grotesk text-[15px] font-bold text-foreground">{s.t}</h3>
+                  <p className="mt-1.5 max-w-[380px] text-[13.5px] leading-relaxed text-muted-foreground">{s.d}</p>
+                </div>
+              </motion.li>
             ))}
-          </div>
+          </ol>
         </div>
       </section>
 
@@ -168,8 +174,8 @@ export function Sections({ settings, zones, editorial }: { settings: ShopSetting
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-14 md:py-20" aria-label="Призыв к действию">
+      {/* CTA + лён-разделитель перед футером (Раунд 2, критик 6: тёмные блоки не сливаются) */}
+      <section className="pb-0 pt-14 md:pt-20" aria-label="Призыв к действию">
         <div className="mx-auto max-w-7xl px-4">
           <div className="relative overflow-hidden rounded-[32px] bg-pine px-6 py-12 text-center md:py-16">
             <div
@@ -204,6 +210,7 @@ export function Sections({ settings, zones, editorial }: { settings: ShopSetting
             </div>
           </div>
         </div>
+        <div className="mt-10 h-5 bg-linen md:h-6" aria-hidden />
       </section>
     </>
   )

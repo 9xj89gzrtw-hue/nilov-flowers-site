@@ -122,11 +122,15 @@ export function QuickView({ products }: { products: Product[]; upsellHints: unkn
                 </span>
               )}
             </div>
-            <p className="mt-1 text-xs font-medium text-grass">
+            <p className="mt-1 text-[12.5px] font-medium text-grass">
               Сплит: от {money(splitPrice(product.price))}/мес — 4 платежа без переплат
             </p>
 
             <dl className="mt-5 space-y-2.5 rounded-2xl bg-secondary/70 p-4 text-sm">
+              <div className="flex gap-3">
+                <dt className="w-24 shrink-0 text-muted-foreground">Наличие</dt>
+                <dd className="font-medium text-grass">в наличии сегодня · доставка 60–90 мин по центру</dd>
+              </div>
               {product.size && (
                 <div className="flex gap-3">
                   <dt className="w-24 shrink-0 text-muted-foreground">Размер</dt>

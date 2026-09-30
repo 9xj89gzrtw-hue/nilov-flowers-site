@@ -43,7 +43,7 @@ export function StickyBottomBar({ settings }: { settings: ShopSettings }) {
       }`}
       style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}
     >
-      <div className="grid grid-cols-[1fr_1fr_1.25fr_auto] items-stretch gap-1 px-2 pt-2">
+      <div className="grid grid-cols-[1fr_1fr_1.3fr_auto] items-stretch gap-1.5 px-2 pt-2">
         <button
           onClick={scrollToCatalog}
           className="flex min-h-[52px] flex-col items-center justify-center gap-1 rounded-xl text-muted-foreground hover:bg-accent hover:text-pine"
@@ -71,15 +71,16 @@ export function StickyBottomBar({ settings }: { settings: ShopSettings }) {
             </span>
           )}
         </button>
-        <div className="flex flex-col justify-center gap-1 pr-1">
+        {/* Раунд 2 (критик 9): мессенджеры ≥44px тач-таргет */}
+        <div className="flex items-center gap-1 pr-1">
           <a
             href={String(settings.whatsapp || "#")}
             target="_blank"
             rel="noreferrer"
             aria-label="Написать в WhatsApp"
-            className="grid h-6 w-6 place-items-center rounded-full bg-grass/10 text-grass"
+            className="grid h-11 w-11 place-items-center rounded-full bg-grass/10 text-grass hover:bg-grass/20 min-h-[44px] min-w-[44px]"
           >
-            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-current" aria-hidden>
+            <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden>
               <path d="M12.04 2a9.9 9.9 0 0 0-8.42 15.13L2.05 22l4.98-1.53A9.9 9.9 0 1 0 12.04 2Zm5.77 14.06c-.24.68-1.4 1.3-1.93 1.35-.53.06-1.02.24-3.45-.72-2.94-1.16-4.78-4.2-4.92-4.4-.15-.2-1.17-1.57-1.17-3s.75-2.11 1.01-2.4c.27-.28.58-.35.78-.35s.4 0 .57.01c.19.01.44-.07.68.52.25.6.84 2.06.91 2.21.08.15.13.32.03.52-.1.2-.31.47-.46.62-.15.15-.31.32-.16.61.15.3.66 1.09 1.42 1.77.97.87 1.77 1.14 2.05 1.27.28.13.44.11.6-.07.16-.18.7-.81.88-1.09.19-.28.37-.23.62-.13.25.1 1.6.75 1.87.89.28.13.46.2.53.31.06.12.06.68-.18 1.36Z" />
             </svg>
           </a>
@@ -88,9 +89,9 @@ export function StickyBottomBar({ settings }: { settings: ShopSettings }) {
             target="_blank"
             rel="noreferrer"
             aria-label="Написать в Telegram"
-            className="grid h-6 w-6 place-items-center rounded-full bg-pine/10 text-pine"
+            className="grid h-11 w-11 place-items-center rounded-full bg-pine/10 text-pine hover:bg-pine/20 min-h-[44px] min-w-[44px]"
           >
-            <Send className="h-3.5 w-3.5" aria-hidden />
+            <Send className="h-5 w-5" aria-hidden />
           </a>
         </div>
       </div>

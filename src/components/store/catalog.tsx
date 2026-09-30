@@ -64,26 +64,33 @@ export function Catalog({ products, settings }: { products: Product[]; settings:
         </div>
 
         {/* Липкая лента фильтров */}
-        <div className="sticky top-[64px] z-30 -mx-4 mt-6 bg-background/95 px-4 py-3 backdrop-blur-md md:top-[72px]">
-          <div className="chips-rail flex gap-2 overflow-x-auto pb-0.5" role="tablist" aria-label="Фильтры каталога">
-            {CHIPS.map((c) => {
-              const active = chip === c.id
-              return (
-                <button
-                  key={c.id}
-                  role="tab"
-                  aria-selected={active}
-                  onClick={() => setChip(c.id)}
-                  className={`h-10 shrink-0 whitespace-nowrap rounded-full px-4 font-grotesk text-[13.5px] font-semibold transition-all min-h-[44px] ${
-                    active
-                      ? "bg-pine text-primary-foreground shadow-md shadow-pine/20"
-                      : "bg-white text-foreground border border-border hover:border-pine/40 hover:bg-accent"
-                  }`}
-                >
-                  {c.label}
-                </button>
-              )
-            })}
+        <div className="sticky top-[128px] z-30 -mx-4 mt-6 bg-background/95 px-4 py-3 backdrop-blur-md md:top-[72px]">
+          <div className="relative">
+            <div className="chips-rail flex gap-2 overflow-x-auto pb-0.5" role="tablist" aria-label="Фильтры каталога">
+              {CHIPS.map((c) => {
+                const active = chip === c.id
+                return (
+                  <button
+                    key={c.id}
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => setChip(c.id)}
+                    className={`h-10 shrink-0 whitespace-nowrap rounded-full px-4 font-grotesk text-[13.5px] font-semibold transition-all min-h-[44px] ${
+                      active
+                        ? "bg-pine text-primary-foreground shadow-md shadow-pine/20"
+                        : "bg-white text-foreground border border-border hover:border-pine/40 hover:bg-accent"
+                    }`}
+                  >
+                    {c.label}
+                  </button>
+                )
+              })}
+            </div>
+            {/* Раунд 2 (критики 8 и 9): fade-аффорданс горизонтального скролла */}
+            <span
+              className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-background to-transparent"
+              aria-hidden
+            />
           </div>
         </div>
 

@@ -104,7 +104,7 @@ export function ProductCard({ product, index, onOpen }: { product: Product; inde
             </span>
           )}
         </div>
-        <p className="mt-1 text-[11.5px] font-medium text-grass">
+        <p className="mt-1 text-[12px] font-medium text-grass">
           Сплит: от {money(splitPrice(product.price))}/мес
         </p>
 

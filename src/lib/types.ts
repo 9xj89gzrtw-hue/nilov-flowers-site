@@ -118,7 +118,8 @@ export interface Order {
   items: OrderItem[]
 }
 
-// Сырые строки из БД (JSON-поля) → типизированные объекты
+// Сырые строки из БД (JSON-поля) → типизированные объекты.
+// Идемпотентно: если данные уже распарсены (массив) — не ломаем (фикс двойного парса Раунда 2).
 export function parseProductRow(row: any): Product {
   return {
     ...row,
@@ -136,8 +137,10 @@ export function parseOrderRow(row: any): Order {
   }
 }
 
-export function safeJson<T>(raw: string | null, fallback: T): T {
-  if (!raw) return fallback
+export function safeJson<T>(raw: string | T[] | null | undefined, fallback: T): T {
+  if (raw === null || raw === undefined) return fallback
+  if (Array.isArray(raw)) return raw as T
+  if (typeof raw !== "string") return fallback
   try {
     return JSON.parse(raw)
   } catch {

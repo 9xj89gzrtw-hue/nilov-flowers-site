@@ -44,11 +44,13 @@ export function CheckoutModal({
   const sum = cartSum(cart)
   const discount = promoDiscount(sum, promo)
   const freeFrom = Number(settings.free_delivery_from || 5000)
+  // Раунд 2 (критик 8, P0): единая математика с сервером — порог бесплатной доставки
+  // считается от суммы БУКЕТОВ до применения промокода (как в /api/orders и в корзине).
   const deliveryPrice = useMemo(() => {
     if (pickup) return 0
     if (!zone) return 0
-    return sum - discount >= freeFrom ? 0 : zone.price
-  }, [pickup, zone, sum, discount, freeFrom])
+    return sum >= freeFrom ? 0 : zone.price
+  }, [pickup, zone, sum, freeFrom])
   const total = Math.max(0, sum - discount) + deliveryPrice
 
   const today = useMemo(() => new Date().toISOString().slice(0, 10), [])
@@ -416,6 +418,17 @@ export function CheckoutModal({
                   className={`${inputCls} resize-none`}
                 />
               </Field>
+
+              {/* Раунд 2 (критик 9, P1): мобильная sticky-кнопка сабмита — до кнопки не надо скроллить 1200px */}
+              <div className="sticky bottom-0 -mx-5 mt-6 bg-white/95 px-5 pt-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur-sm lg:hidden">
+                <button
+                  type="submit"
+                  disabled={busy || cart.length === 0}
+                  className="h-12 w-full rounded-full bg-pine font-grotesk text-[15px] font-bold text-primary-foreground transition-colors hover:bg-pine-deep disabled:opacity-60 min-h-[44px]"
+                >
+                  {busy ? "Оформляем…" : `Подтвердить заказ — ${money(total)}`}
+                </button>
+              </div>
             </div>
 
             {/* Сводка */}
@@ -458,9 +471,9 @@ export function CheckoutModal({
                   </span>
                   <span className="tnum">{deliveryPrice === 0 ? "бесплатно" : money(deliveryPrice)}</span>
                 </div>
-                {!pickup && sum - discount < freeFrom && deliveryPrice > 0 && (
+                {!pickup && sum < freeFrom && deliveryPrice > 0 && (
                   <p className="text-[11.5px] text-muted-foreground">
-                    Бесплатно от {money(freeFrom)} — добавьте ещё {money(freeFrom - (sum - discount))}
+                    Бесплатно от {money(freeFrom)} (по сумме букетов) — добавьте ещё {money(freeFrom - sum)}
                   </p>
                 )}
                 <div className="flex items-baseline justify-between pt-2">

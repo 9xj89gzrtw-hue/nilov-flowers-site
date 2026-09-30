@@ -75,6 +75,7 @@ export function Header({
         }`}
       >
         <div className="mx-auto max-w-7xl px-4">
+          {/* Раунд 2 (критики 9 и 8): на мобиле — два ряда: лого+телефон+корзина / полноширинный поиск */}
           <div className="flex h-16 items-center gap-3 md:h-[72px] md:gap-5">
             {/* Город с выбором района */}
             <div className="relative hidden md:block">
@@ -121,8 +122,19 @@ export function Header({
               </span>
             </Link>
 
-            {/* Живой поиск */}
-            <SearchDropdown products={products} onPick={(id) => setQuickView(id)} />
+            {/* Кнопка звонка (мобильная шапка) */}
+            <a
+              href={`tel:${String(settings.shop_phone || "").replace(/[^\d+]/g, "")}`}
+              aria-label={`Позвонить: ${String(settings.shop_phone || "")}`}
+              className="grid h-11 w-11 place-items-center rounded-full bg-accent text-pine transition-colors hover:bg-pine hover:text-primary-foreground lg:hidden min-h-[44px] min-w-[44px]"
+            >
+              <Phone className="h-5 w-5" aria-hidden />
+            </a>
+
+            {/* Живой поиск — на мобиле переносится во второй ряд */}
+            <div className="hidden min-w-0 flex-1 md:block">
+              <SearchDropdown products={products} onPick={(id) => setQuickView(id)} />
+            </div>
 
             {/* Телефон */}
             <a
@@ -138,7 +150,7 @@ export function Header({
             {/* Корзина */}
             <button
               onClick={() => setCartOpen(true)}
-              className="relative flex items-center gap-2.5 rounded-full bg-pine pl-4 pr-5 py-2.5 text-primary-foreground font-grotesk font-semibold min-h-[44px] hover:bg-pine-deep transition-colors shrink-0"
+              className="relative ml-auto flex items-center gap-2.5 rounded-full bg-pine pl-4 pr-5 py-2.5 text-primary-foreground font-grotesk font-semibold min-h-[44px] hover:bg-pine-deep transition-colors shrink-0"
               aria-label={`Корзина: ${count} ${plural(count, ["товар", "товара", "товаров"])} на ${money(sum)}`}
             >
               <ShoppingCart className="h-[18px] w-[18px]" aria-hidden />
@@ -152,6 +164,10 @@ export function Header({
                 </span>
               )}
             </button>
+          </div>
+          {/* Мобильный ряд поиска */}
+          <div className="pb-3 md:hidden">
+            <SearchDropdown products={products} onPick={(id) => setQuickView(id)} />
           </div>
         </div>
       </header>

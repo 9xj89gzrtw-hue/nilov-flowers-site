@@ -16,7 +16,7 @@ import {
 import { Clock, Gift, MapPin, MessageCircle, Phone, Printer, Table2, Trash2, User, Columns3 } from "lucide-react"
 import { toast } from "sonner"
 import type { Order, OrderStatus, Product, ShopSettings } from "@/lib/types"
-import { ORDER_STATUSES, formatPhone, money, parseOrderRow, waLink } from "@/lib/types"
+import { ORDER_STATUSES, formatPhone, money, waLink } from "@/lib/types"
 
 const STATUS_STYLE: Record<OrderStatus, { dot: string; chip: string; ring: string }> = {
   new: { dot: "bg-berry", chip: "bg-powder text-berry", ring: "ring-berry/25" },
@@ -24,7 +24,7 @@ const STATUS_STYLE: Record<OrderStatus, { dot: string; chip: string; ring: strin
   assembly: { dot: "bg-pine", chip: "bg-pine/10 text-pine", ring: "ring-pine/25" },
   courier: { dot: "bg-grass", chip: "bg-grass/10 text-grass", ring: "ring-grass/25" },
   done: { dot: "bg-grass/60", chip: "bg-grass/5 text-grass/80", ring: "ring-grass/15" },
-  canceled: { dot: "bg-muted-foreground", chip: "bg-secondary text-muted-foreground", ring: "ring-border" },
+  canceled: { dot: "bg-berry/60", chip: "bg-secondary text-muted-foreground", ring: "ring-border" },
 }
 
 // Раунд 1 (критик 2, P2): шаблон WhatsApp зависит от этапа заказа
@@ -68,7 +68,7 @@ export function AdminOrders({
         const r = await fetch("/api/admin/orders", { cache: "no-store" })
         if (r.ok) {
           const d = await r.json()
-          setOrders(d.orders.map(parseOrderRow))
+          setOrders(d.orders) // API уже отдаёт распарсенные заказы
         }
       } catch {}
     }
@@ -306,6 +306,13 @@ function OrderCard({
           </p>
         )}
 
+        {/* Раунд 2 (критик 7, P1): сюрприз виден прямо на карточке — курьер не проболётся */}
+        {order.surprise && (
+          <p className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-powder px-2.5 py-1 font-grotesk text-[10.5px] font-bold uppercase tracking-wide text-berry">
+            Сюрприз — не называть отправителя
+          </p>
+        )}
+
         <div className="mt-2.5 flex gap-1.5">
           <a
             href={waLink(order.customerPhone, waTemplate(order))}
@@ -433,13 +440,18 @@ function OrdersTable({
                 <td className="px-4 py-3">
                   <span className="block font-medium text-foreground">{o.customerName}</span>
                   <a href={`tel:${o.customerPhone.replace(/[^\d+]/g, "")}`} className="text-[12px] text-pine tnum">
-                    {o.customerPhone}
+                    {formatPhone(o.customerPhone)}
                   </a>
                 </td>
                 <td className="max-w-[220px] px-4 py-3">
                   <span className="block truncate text-muted-foreground">
                     {o.items.map((i) => `${i.title}×${i.qty}`).join(", ")}
                   </span>
+                  {o.surprise && (
+                    <span className="mt-0.5 inline-block rounded-full bg-powder px-2 py-0.5 text-[10px] font-bold uppercase text-berry">
+                      Сюрприз
+                    </span>
+                  )}
                   {o.cardText && (
                     <span className="block truncate text-[11.5px] italic text-berry">«{o.cardText}»</span>
                   )}
@@ -599,8 +611,10 @@ export function PrintNote({ order, products, onDone }: { order: Order; products:
           </div>
 
           <p className="mt-4 border-t border-[#E8E5DD] pt-3 text-[10px] text-[#71717A]">
-            {order.paymentMethod === "cash" ? "Оплата при получении" : "Оплачено онлайн"} · итог {money(order.total)} ·
-            печать {new Date().toLocaleDateString("ru-RU")}
+            {order.paymentMethod === "cash"
+              ? "Оплата при получении"
+              : "Ожидает оплаты онлайн — ссылка после подтверждения"}{" "}
+            · итог {money(order.total)} · печать {new Date().toLocaleDateString("ru-RU")}
           </p>
         </div>
         <div className="border-t border-border px-5 py-3.5">

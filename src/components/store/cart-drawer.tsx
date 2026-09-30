@@ -173,6 +173,9 @@ export function CartDrawer({ upsells, settings }: { upsells: Upsell[]; settings:
                       </button>
                     </div>
                   )}
+                  <p className="mt-1.5 text-[11px] text-muted-foreground">
+                    Порог промокода зависит от суммы букетов — проверим автоматически
+                  </p>
                 </div>
 
                 <div className="flex-1 overflow-y-auto nice-scroll px-5 py-4">
@@ -264,7 +267,8 @@ export function CartDrawer({ upsells, settings }: { upsells: Upsell[]; settings:
                               useStore.getState().addUpsell({ slug: u.slug, name: u.name, price: u.price, photo: u.photo })
                               toast.success(`${u.name} — в корзине`)
                             }}
-                            className="flex w-full items-center gap-3 rounded-2xl border border-border bg-white p-2.5 text-left transition-colors hover:border-pine/40 hover:bg-accent"
+                            disabled={inCart(u.slug)}
+                            className="flex w-full items-center gap-3 rounded-2xl border border-border bg-white p-2.5 text-left transition-colors hover:border-pine/40 hover:bg-accent disabled:opacity-55 disabled:cursor-default"
                           >
                             <span className="relative h-14 w-12 shrink-0 overflow-hidden rounded-lg bg-secondary">
                               {u.photo && <Image src={u.photo} alt="" fill sizes="48px" className="object-cover" />}
