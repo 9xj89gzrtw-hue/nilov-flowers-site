@@ -97,7 +97,7 @@ export function Sections({ settings, zones, editorial }: { settings: ShopSetting
               >
                 <div className="min-w-0">
                   <p className="truncate text-[14px] font-medium text-white">{z.name}</p>
-                  <p className="text-[12px] text-cream/60">{z.eta}</p>
+                  <p className="text-[12px] text-cream/60 tnum">{z.eta}</p>
                 </div>
                 <span className="shrink-0 font-grotesk text-[15px] font-bold text-hit tnum">
                   {z.price === 0 ? "бесплатно" : money(z.price)}
@@ -105,6 +105,9 @@ export function Sections({ settings, zones, editorial }: { settings: ShopSetting
               </div>
             ))}
           </div>
+          <p className="mt-3 text-[11px] uppercase tracking-[0.12em] text-cream/40" aria-hidden>
+            Район · срок · стоимость
+          </p>
           <p className="mt-5 flex items-center gap-2 text-[13px] text-cream/70">
             <MapPin className="h-4 w-4 shrink-0" aria-hidden />
             Самовывоз — студия: {String(settings.shop_address || "")}. Пригороды (Мурино, Кудрово, Пушкин) — в таблице.
@@ -159,7 +162,7 @@ export function Sections({ settings, zones, editorial }: { settings: ShopSetting
           <SectionHead kicker="FAQ" title="Частые вопросы" />
           <div className="mt-8 space-y-2.5">
             {editorial.faq.slice(0, 6).map((f, i) => (
-              <FaqItem key={i} q={f.q} a={f.a} defaultOpen={i === 0} />
+              <FaqItem key={i} q={f.q} a={f.a} />
             ))}
           </div>
         </div>
@@ -215,8 +218,8 @@ function SectionHead({ kicker, title }: { kicker: string; title: string }) {
   )
 }
 
-function FaqItem({ q, a, defaultOpen }: { q: string; a: string; defaultOpen?: boolean }) {
-  const [open, setOpen] = useState(!!defaultOpen)
+function FaqItem({ q, a }: { q: string; a: string }) {
+  const [open, setOpen] = useState(false)
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-white">
       <button

@@ -28,7 +28,7 @@ export function Footer({ settings }: { settings: ShopSettings }) {
           </div>
 
           <nav aria-label="Разделы">
-            <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-cream/40">Каталог</h3>
+            <h3 className="text-[12px] font-bold uppercase tracking-[0.14em] text-cream/40">Каталог</h3>
             <ul className="mt-4 space-y-2.5 text-[13.5px]">
               <li><a href="#catalog" className="hover:text-cream transition-colors">Все букеты</a></li>
               <li><a href="#catalog" className="hover:text-cream transition-colors">Шляпные коробки</a></li>
@@ -38,7 +38,7 @@ export function Footer({ settings }: { settings: ShopSettings }) {
           </nav>
 
           <div>
-            <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-cream/40">Контакты</h3>
+            <h3 className="text-[12px] font-bold uppercase tracking-[0.14em] text-cream/40">Контакты</h3>
             <ul className="mt-4 space-y-3 text-[13.5px]">
               <li>
                 <a
@@ -86,7 +86,7 @@ export function Footer({ settings }: { settings: ShopSettings }) {
           </div>
 
           <div>
-            <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-cream/40">Покупателям</h3>
+            <h3 className="text-[12px] font-bold uppercase tracking-[0.14em] text-cream/40">Покупателям</h3>
             <ul className="mt-4 space-y-2.5 text-[13.5px]">
               <li className="text-cream/70">{String(settings.split_text || "")}</li>
               <li className="text-cream/55 text-[12.5px]">Бесплатная доставка от {new Intl.NumberFormat("ru-RU").format(Number(settings.free_delivery_from || 5000))} ₽</li>
@@ -106,8 +106,8 @@ export function Footer({ settings }: { settings: ShopSettings }) {
           <p>ИП Нилов А. С. · ОГРНИП — по запросу</p>
         </div>
       </div>
-      {/* распорка под мобильную липкую панель */}
-      <div className="h-16 md:hidden" aria-hidden />
+      {/* распорка под мобильную липкую панель (критик 4: 69px панель + safe-area) */}
+      <div className="h-[76px] md:hidden" aria-hidden />
     </footer>
   )
 }

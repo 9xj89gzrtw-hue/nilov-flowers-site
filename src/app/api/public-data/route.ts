@@ -1,7 +1,9 @@
 import { db } from "@/lib/db"
+import { clientKey, rateLimit } from "@/lib/rate-limit"
 import { parseProductRow } from "@/lib/types"
 
 // Публичные данные витрины: продукты (visible), зоны, апселлы, настройки
+// Раунд 1 (критик 5, P2): короткий браузерный кэш смягчает фокус-рефреши
 export async function GET() {
   const [products, zones, upsells, settingsRows, categories] = await Promise.all([
     db.product.findMany({
@@ -21,11 +23,14 @@ export async function GET() {
     settings[s.key] = s.value
   }
 
-  return Response.json({
-    products: products.map(parseProductRow),
-    zones,
-    upsells,
-    settings,
-    categories,
-  })
+  return Response.json(
+    {
+      products: products.map(parseProductRow),
+      zones,
+      upsells,
+      settings,
+      categories,
+    },
+    { headers: { "Cache-Control": "public, max-age=30, stale-while-revalidate=60" } },
+  )
 }

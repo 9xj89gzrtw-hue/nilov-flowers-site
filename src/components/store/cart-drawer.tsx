@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from "framer-motion"
 import { Gift, Minus, Plus, Tag, Trash2, Truck, X } from "lucide-react"
 import { toast } from "sonner"
 import type { ShopSettings, Upsell } from "@/lib/types"
-import { money } from "@/lib/types"
+import { money, plural } from "@/lib/types"
 import { cartSum, promoDiscount, useStore } from "@/lib/store"
 
 export function CartDrawer({ upsells, settings }: { upsells: Upsell[]; settings: ShopSettings }) {
@@ -88,7 +88,8 @@ export function CartDrawer({ upsells, settings }: { upsells: Upsell[]; settings:
                 Корзина{" "}
                 {cart.length > 0 && (
                   <span className="text-muted-foreground">
-                    · {cart.reduce((n, l) => n + l.qty, 0)}
+                    · {cart.reduce((n, l) => n + l.qty, 0)}{" "}
+                    {plural(cart.reduce((n, l) => n + l.qty, 0), ["товар", "товара", "товаров"])}
                   </span>
                 )}
               </h2>
@@ -140,6 +141,38 @@ export function CartDrawer({ upsells, settings }: { upsells: Upsell[]; settings:
                       transition={{ duration: 0.4 }}
                     />
                   </div>
+                </div>
+
+                {/* Промокод — сразу под прогрессом (критик 4, P2: был глубоко внизу) */}
+                <div className="border-b border-border bg-linen/60 px-5 py-3">
+                  {promo ? (
+                    <div className="flex items-center justify-between rounded-xl border border-grass/30 bg-grass/5 px-3.5 py-2.5">
+                      <p className="text-[13px] text-foreground">
+                        <Tag className="mr-1.5 inline h-3.5 w-3.5 text-grass" aria-hidden />
+                        <b>{promo.code}</b> · {promo.label}
+                      </p>
+                      <button onClick={() => setPromo(null)} aria-label="Убрать промокод" className="grid h-9 w-9 place-items-center rounded-full text-muted-foreground hover:text-berry min-h-[44px] min-w-[44px]">
+                        <X className="h-4 w-4" aria-hidden />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <input
+                        value={promoInput}
+                        onChange={(e) => setPromoInput(e.target.value)}
+                        placeholder="Промокод — например, НЕВА15"
+                        aria-label="Промокод"
+                        className="h-11 min-w-0 flex-1 rounded-xl border border-input bg-white px-4 text-sm uppercase outline-none transition-colors focus:border-pine/50 min-h-[44px]"
+                      />
+                      <button
+                        onClick={applyPromo}
+                        disabled={promoBusy}
+                        className="h-11 shrink-0 rounded-xl border border-pine/25 bg-white px-4 font-grotesk text-[13px] font-bold text-pine hover:bg-accent disabled:opacity-60 min-h-[44px]"
+                      >
+                        {promoBusy ? "…" : "Применить"}
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex-1 overflow-y-auto nice-scroll px-5 py-4">
@@ -265,38 +298,6 @@ export function CartDrawer({ upsells, settings }: { upsells: Upsell[]; settings:
                       className="mt-2 w-full resize-none rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm outline-none transition-colors focus:border-pine/50"
                     />
                     <p className="mt-1 text-right text-[11px] text-muted-foreground tnum">{cardText.length}/500</p>
-                  </div>
-
-                  {/* Промокод */}
-                  <div className="mt-4">
-                    {promo ? (
-                      <div className="flex items-center justify-between rounded-2xl border border-grass/30 bg-grass/5 px-4 py-3">
-                        <p className="text-[13px] text-foreground">
-                          <Tag className="mr-1.5 inline h-3.5 w-3.5 text-grass" aria-hidden />
-                          <b>{promo.code}</b> · {promo.label}
-                        </p>
-                        <button onClick={() => setPromo(null)} aria-label="Убрать промокод" className="text-muted-foreground hover:text-berry">
-                          <X className="h-4 w-4" aria-hidden />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex gap-2">
-                        <input
-                          value={promoInput}
-                          onChange={(e) => setPromoInput(e.target.value)}
-                          placeholder="Промокод"
-                          aria-label="Промокод"
-                          className="h-11 min-w-0 flex-1 rounded-xl border border-input bg-white px-4 text-sm uppercase outline-none transition-colors focus:border-pine/50 min-h-[44px]"
-                        />
-                        <button
-                          onClick={applyPromo}
-                          disabled={promoBusy}
-                          className="h-11 shrink-0 rounded-xl border border-pine/25 bg-white px-4 font-grotesk text-[13px] font-bold text-pine hover:bg-accent disabled:opacity-60 min-h-[44px]"
-                        >
-                          {promoBusy ? "…" : "Применить"}
-                        </button>
-                      </div>
-                    )}
                   </div>
                 </div>
 

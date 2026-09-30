@@ -364,17 +364,23 @@ export function CheckoutModal({
                 </fieldset>
               )}
 
-              {/* Открытка */}
+              {/* Открытка — редактируется прямо здесь (критик 3, P2: раньше только в корзине) */}
               <fieldset className="mt-6">
                 <legend className="mb-3 flex items-center gap-2 text-[13px] font-bold text-foreground">
                   <Gift className="h-4 w-4 text-pine" aria-hidden />4 · Открытка — бесплатно
                 </legend>
-                <p className="mb-2 text-[12.5px] text-muted-foreground">
-                  Флорист напишет текст от руки и вложит в букет. Сейчас в открытке:
+                <textarea
+                  value={cardText}
+                  onChange={(e) => useStore.getState().setCardText(e.target.value)}
+                  rows={2}
+                  maxLength={500}
+                  placeholder="С днём рождения! — от Евгения"
+                  className="h-auto w-full resize-none rounded-xl border border-input bg-white px-4 py-3 text-[15px] outline-none transition-colors focus:border-pine/50 min-h-[44px]"
+                />
+                <p className="mt-1 flex justify-between text-[11px] text-muted-foreground">
+                  <span>Флорист напишет от руки и вложит в букет</span>
+                  <span className="tnum">{cardText.length}/500</span>
                 </p>
-                <div className="rounded-xl border border-border bg-secondary/50 px-4 py-3 text-sm italic text-foreground">
-                  {cardText.trim() || "«(текст появится, если добавить его в корзине)»"}
-                </div>
               </fieldset>
 
               {/* Оплата */}
@@ -414,6 +420,7 @@ export function CheckoutModal({
 
             {/* Сводка */}
             <aside className="border-t border-border bg-linen/50 p-5 sm:p-7 lg:border-l lg:border-t-0">
+              <div className="lg:sticky lg:top-6">
               <h4 className="text-[13px] font-bold text-foreground">Ваш заказ</h4>
               <ul className="mt-3 max-h-56 space-y-2.5 overflow-y-auto nice-scroll">
                 {cart.map((l) => (
@@ -446,25 +453,35 @@ export function CheckoutModal({
                   </div>
                 )}
                 <div className="flex justify-between text-muted-foreground">
-                  <span>Доставка {zone ? `· ${zone.name.replace(/\s*\(.*\)/, "")}` : pickup ? "· самовывоз" : ""}</span>
+                  <span>
+                    Доставка {zone ? `· ${zone.name.replace(/\s*\(.*\)/, "")}` : pickup ? "· самовывоз" : ""}
+                  </span>
                   <span className="tnum">{deliveryPrice === 0 ? "бесплатно" : money(deliveryPrice)}</span>
                 </div>
+                {!pickup && sum - discount < freeFrom && deliveryPrice > 0 && (
+                  <p className="text-[11.5px] text-muted-foreground">
+                    Бесплатно от {money(freeFrom)} — добавьте ещё {money(freeFrom - (sum - discount))}
+                  </p>
+                )}
                 <div className="flex items-baseline justify-between pt-2">
                   <span className="text-[15px] font-bold text-foreground">Итого</span>
                   <span className="font-grotesk text-[24px] font-extrabold text-foreground tnum">{money(total)}</span>
                 </div>
               </div>
 
-              <button
-                type="submit"
-                disabled={busy || cart.length === 0}
-                className="mt-5 h-12 w-full rounded-full bg-pine font-grotesk text-[15px] font-bold text-primary-foreground transition-colors hover:bg-pine-deep disabled:opacity-60 min-h-[44px]"
-              >
-                {busy ? "Оформляем…" : `Подтвердить заказ — ${money(total)}`}
-              </button>
+              <div className="sticky bottom-0 -mx-5 mt-5 bg-linen/80 px-5 pt-3 pb-1 backdrop-blur-sm sm:-mx-7 sm:px-7">
+                <button
+                  type="submit"
+                  disabled={busy || cart.length === 0}
+                  className="h-12 w-full rounded-full bg-pine font-grotesk text-[15px] font-bold text-primary-foreground transition-colors hover:bg-pine-deep disabled:opacity-60 min-h-[44px]"
+                >
+                  {busy ? "Оформляем…" : `Подтвердить заказ — ${money(total)}`}
+                </button>
+              </div>
               <p className="mt-3 text-center text-[11px] leading-relaxed text-muted-foreground">
                 Нажимая кнопку, вы соглашаетесь на обработку персональных данных. Флорист позвонит для подтверждения.
               </p>
+              </div>
             </aside>
           </form>
         )}

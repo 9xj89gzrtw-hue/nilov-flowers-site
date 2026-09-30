@@ -105,6 +105,15 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-feature-settings: "tnum" off;
+    overscroll-behavior-y: none; /* без pull-to-refresh и scroll-chaining на чипсах */
+  }
+  /* iOS-защита: поля < 16px вызывают авто-зум при фокусе (критик 4, P1) */
+  @media (max-width: 640px) {
+    input,
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
   }
   ::selection {
     background: #f4dee3;

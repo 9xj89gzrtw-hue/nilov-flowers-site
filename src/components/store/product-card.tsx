@@ -21,10 +21,13 @@ export function ProductCard({ product, index, onOpen }: { product: Product; inde
     : 0
   const isSturdy = product.tags.some((t) => t.toLowerCase().includes("стойк"))
 
+  // Раунд 1 (критики 1 и 3, P1): бейджи-«−N%»/«До N ₽» дублируют вычисляемую скидку и чипсы цены — не рендерим
+  const isJunkBadge = (b: string) => /^−?\d+\s*%$/.test(b) || /^до\s+\d/i.test(b)
+
   const badges = [
     discount > 0 && { text: `−${discount}%`, cls: "bg-powder text-berry" },
     (product.badge === "Хит" || product.tags.includes("хит")) && { text: "Хит", cls: "bg-hit text-pine-deep" },
-    product.badge && !["Хит"].includes(product.badge) && { text: product.badge, cls: "bg-white/92 text-pine border border-pine/20" },
+    product.badge && !isJunkBadge(product.badge) && !["Хит"].includes(product.badge) && { text: product.badge, cls: "bg-white/92 text-pine border border-pine/20" },
     isSturdy && { text: "Стойкие до 14 дней", cls: "bg-pine/92 text-cream" },
   ].filter(Boolean) as { text: string; cls: string }[]
 

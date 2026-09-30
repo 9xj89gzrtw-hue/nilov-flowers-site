@@ -148,6 +148,26 @@ export function safeJson<T>(raw: string | null, fallback: T): T {
 export const money = (n: number) =>
   new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(n) + " ₽"
 
+// Русские склонения: plural(1, ['букет','букета','букетов']) → «букет»
+export function plural(n: number, forms: [string, string, string]): string {
+  const abs = Math.abs(n) % 100
+  const d = abs % 10
+  if (abs > 10 && abs < 20) return forms[2]
+  if (d > 1 && d < 5) return forms[1]
+  if (d === 1) return forms[0]
+  return forms[2]
+}
+
+// +7 (921) 123-45-67 из сырых цифр
+export function formatPhone(raw: string): string {
+  let d = raw.replace(/\D/g, "")
+  if (d.length === 11 && d.startsWith("8")) d = "7" + d.slice(1)
+  if (d.length === 11 && d.startsWith("7")) {
+    return `+7 (${d.slice(1, 4)}) ${d.slice(4, 7)}-${d.slice(7, 9)}-${d.slice(9)}`
+  }
+  return raw
+}
+
 export const moneyShort = (n: number) =>
   new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(n)
 

@@ -6,7 +6,7 @@ import { motion } from "framer-motion"
 import { ShoppingBag, Zap } from "lucide-react"
 import { toast } from "sonner"
 import type { Product, ShopSettings } from "@/lib/types"
-import { money, splitPrice } from "@/lib/types"
+import { money, plural, splitPrice } from "@/lib/types"
 import { useStore } from "@/lib/store"
 import { ProductCard } from "./product-card"
 
@@ -59,7 +59,7 @@ export function Catalog({ products, settings }: { products: Product[]; settings:
             </h2>
           </div>
           <p className="hidden text-sm text-muted-foreground sm:block">
-            {filtered.length} букетов · фото перед отправкой
+            {filtered.length} {plural(filtered.length, ["букет", "букета", "букетов"])} · фото перед отправкой
           </p>
         </div>
 

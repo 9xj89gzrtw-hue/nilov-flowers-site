@@ -1,9 +1,20 @@
 import { db } from "@/lib/db"
+import { clientKey, rateLimit } from "@/lib/rate-limit"
 
 // Валидация промокода
 export async function POST(req: Request) {
+  // Раунд 1 (критик 5, P2): rate-limit от спама и 400 вместо 500 на битом JSON
+  if (!rateLimit(`promo:${clientKey(req)}`, 20)) {
+    return Response.json({ error: "Слишком много попыток — подождите минуту" }, { status: 429 })
+  }
+  let body: { code?: string; sum?: number }
   try {
-    const { code, sum } = (await req.json()) as { code?: string; sum?: number }
+    body = await req.json()
+  } catch {
+    return Response.json({ error: "Некорректный запрос" }, { status: 400 })
+  }
+  try {
+    const { code, sum } = body
     const clean = (code || "").trim().toUpperCase()
     if (!clean) return Response.json({ error: "Введите промокод" }, { status: 400 })
     const promo = await db.promoCode.findFirst({

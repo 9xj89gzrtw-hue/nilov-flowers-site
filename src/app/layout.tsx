@@ -45,6 +45,7 @@ const playfairItalic = localFont({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://flowers.interfood-catering.ru"),
   title: "Nilov Flowers — доставка цветов по Санкт-Петербургу от 60 минут",
   description:
     "Букеты из свежего среза с доставкой по СПб от 60 минут. Фото букета перед отправкой в WhatsApp, бесплатная открытка с вашим текстом, оплата частями Яндекс Сплит / Долями.",

@@ -15,8 +15,8 @@ import {
 } from "@dnd-kit/core"
 import { Clock, Gift, MapPin, MessageCircle, Phone, Printer, Table2, Trash2, User, Columns3 } from "lucide-react"
 import { toast } from "sonner"
-import type { Order, OrderStatus, ShopSettings } from "@/lib/types"
-import { ORDER_STATUSES, money, waLink } from "@/lib/types"
+import type { Order, OrderStatus, Product, ShopSettings } from "@/lib/types"
+import { ORDER_STATUSES, formatPhone, money, parseOrderRow, waLink } from "@/lib/types"
 
 const STATUS_STYLE: Record<OrderStatus, { dot: string; chip: string; ring: string }> = {
   new: { dot: "bg-berry", chip: "bg-powder text-berry", ring: "ring-berry/25" },
@@ -27,14 +27,34 @@ const STATUS_STYLE: Record<OrderStatus, { dot: string; chip: string; ring: strin
   canceled: { dot: "bg-muted-foreground", chip: "bg-secondary text-muted-foreground", ring: "ring-border" },
 }
 
+// Раунд 1 (критик 2, P2): шаблон WhatsApp зависит от этапа заказа
+function waTemplate(order: Order): string {
+  switch (order.status) {
+    case "photo":
+      return `Здравствуйте! Отправляем фото готового букета по заказу ${order.number} — подтвердите, пожалуйста:`
+    case "assembly":
+      return `Здравствуйте! Букет по заказу ${order.number} уже собирает флорист — фото пришлём перед отправкой.`
+    case "courier":
+      return `Здравствуйте! Курьер выехал по заказу ${order.number} — будет в интервале ${order.deliverySlot || "уточним"}.`
+    case "done":
+      return `Здравствуйте! Спасибо за заказ ${order.number} — надеемся, букет понравился. Будем рады отзыву!`
+    case "canceled":
+      return `Здравствуйте! По заказу ${order.number} — уточним детали:`
+    default:
+      return `Здравствуйте! Ваш заказ ${order.number} в Nilov Flowers принят — подтверждаем детали:`
+  }
+}
+
 export function AdminOrders({
   orders,
   setOrders,
   settings,
+  products,
 }: {
   orders: Order[]
   setOrders: React.Dispatch<React.SetStateAction<Order[]>>
   settings: Record<string, string>
+  products: Product[]
 }) {
   const [view, setView] = useState<"kanban" | "table">("kanban")
   const [dragging, setDragging] = useState<Order | null>(null)
@@ -146,21 +166,29 @@ export function AdminOrders({
         <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
           <div className="chips-rail mt-4 flex gap-3 overflow-x-auto pb-3 lg:grid lg:grid-cols-6 lg:overflow-visible">
             {ORDER_STATUSES.map((st) => (
-              <KanbanColumn key={st.id} status={st} orders={orders.filter((o) => o.status === st.id)} />
+              <KanbanColumn key={st.id} status={st} orders={orders.filter((o) => o.status === st.id)} products={products} />
             ))}
           </div>
           <DragOverlay dropAnimation={{ duration: 220, easing: "cubic-bezier(.16,1,.3,1)" }}>
-            {dragging && <OrderCard order={dragging} settings={null} dragging />}
+            {dragging && <OrderCard order={dragging} products={products} settings={null} dragging />}
           </DragOverlay>
         </DndContext>
       ) : (
-        <OrdersTable orders={orders} settings={settings} onStatus={patchStatus} />
+        <OrdersTable orders={orders} products={products} settings={settings} onStatus={patchStatus} />
       )}
     </div>
   )
 }
 
-function KanbanColumn({ status, orders }: { status: (typeof ORDER_STATUSES)[number]; orders: Order[] }) {
+function KanbanColumn({
+  status,
+  orders,
+  products,
+}: {
+  status: (typeof ORDER_STATUSES)[number]
+  orders: Order[]
+  products: Product[]
+}) {
   const { setNodeRef, isOver } = useDroppable({ id: `col:${status.id}` })
   const style = STATUS_STYLE[status.id]
   return (
@@ -187,7 +215,7 @@ function KanbanColumn({ status, orders }: { status: (typeof ORDER_STATUSES)[numb
           </p>
         )}
         {orders.map((o) => (
-          <OrderCard key={o.id} order={o} settings={null} />
+          <OrderCard key={o.id} order={o} products={products} settings={null} />
         ))}
       </div>
     </section>
@@ -196,10 +224,12 @@ function KanbanColumn({ status, orders }: { status: (typeof ORDER_STATUSES)[numb
 
 function OrderCard({
   order,
+  products,
   settings,
   dragging,
 }: {
   order: Order
+  products: Product[]
   settings: Record<string, string> | null
   dragging?: boolean
 }) {
@@ -278,7 +308,7 @@ function OrderCard({
 
         <div className="mt-2.5 flex gap-1.5">
           <a
-            href={waLink(order.customerPhone, `Здравствуйте! Ваш заказ ${order.number} в Nilov Flowers:`)}
+            href={waLink(order.customerPhone, waTemplate(order))}
             target="_blank"
             rel="noreferrer"
             onClick={(e) => e.stopPropagation()}
@@ -312,7 +342,10 @@ function OrderCard({
             <button
               onClick={(e) => {
                 e.stopPropagation()
-                void patchStatus(order, "canceled")
+                // Раунд 1 (критик 2, P1): подтверждение перед отменой — защита от случайного клика в спешке
+                if (confirm(`Отменить заказ ${order.number} (${order.customerName})?\nКлиента лучше предупредить.`)) {
+                  void patchStatus(order, "canceled")
+                }
               }}
               onPointerDown={(e) => e.stopPropagation()}
               aria-label="Отменить заказ"
@@ -338,7 +371,7 @@ function OrderCard({
         )}
       </article>
 
-      {printNow && <PrintNote order={order} onDone={() => setPrintNow(false)} />}
+      {printNow && <PrintNote order={order} products={products} onDone={() => setPrintNow(false)} />}
     </>
   )
 }
@@ -363,12 +396,14 @@ function usePatchStatus() {
 
 function OrdersTable({
   orders,
+  products,
   settings,
   onStatus,
 }: {
   orders: Order[]
+  products: Product[]
   settings: Record<string, string>
-  onStatus: (id: number, status: OrderStatus) => void
+  onStatus: (id: number, status: OrderStatus) => void | Promise<void>
 }) {
   const [printOrder, setPrintOrder] = useState<Order | null>(null)
   return (
@@ -437,7 +472,7 @@ function OrdersTable({
                 <td className="px-4 py-3">
                   <div className="flex gap-1.5">
                     <a
-                      href={waLink(o.customerPhone, `Здравствуйте! Ваш заказ ${o.number} в Nilov Flowers:`)}
+                      href={waLink(o.customerPhone, waTemplate(o))}
                       target="_blank"
                       rel="noreferrer"
                       aria-label="WhatsApp"
@@ -459,15 +494,30 @@ function OrdersTable({
           </tbody>
         </table>
       </div>
-      {printOrder && <PrintNote order={printOrder} onDone={() => setPrintOrder(null)} />}
+      {printOrder && <PrintNote order={printOrder} products={products} onDone={() => setPrintOrder(null)} />}
     </>
   )
 }
 
-// Печатная записка флористу (А5): состав, адрес, время, крупное пожелание
-export function PrintNote({ order, onDone }: { order: Order; onDone: () => void }) {
+// Печатная записка флористу (А5): состав с раскладкой цветов, адрес, время, крупное пожелание
+export function PrintNote({ order, products, onDone }: { order: Order; products: Product[]; onDone: () => void }) {
   const flowers = order.items.filter((i) => i.productId)
   const extras = order.items.filter((i) => !i.productId)
+
+  // Раунд 1 (критик 2, P2): сборщику нужна раскладка цветов, а не только имя букета
+  const compositionOf = (productId: number | null): string[] => {
+    if (!productId) return []
+    const p = products.find((x) => x.id === productId)
+    return p ? p.composition : []
+  }
+
+  // Раунд 1 (критик 2, P2): Escape закрывает модалку
+  useEffect(() => {
+    if (!order) return
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onDone()
+    document.addEventListener("keydown", onKey)
+    return () => document.removeEventListener("keydown", onKey)
+  }, [order, onDone])
 
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center bg-pine-deep/50 p-4" role="dialog" aria-modal="true">
@@ -488,10 +538,19 @@ export function PrintNote({ order, onDone }: { order: Order; onDone: () => void 
 
           <div className="mt-4 border-t border-[#E8E5DD] pt-4">
             <p className="text-[10px] font-bold uppercase tracking-wider text-[#71717A]">Состав</p>
-            <ul className="mt-1.5 space-y-1">
+            <ul className="mt-1.5 space-y-1.5">
               {flowers.map((i) => (
                 <li key={i.id} className="text-[13px] font-medium text-[#18181B]">
                   {i.title} — {i.qty} шт.
+                  {compositionOf(i.productId).length > 0 && (
+                    <ul className="mt-0.5 space-y-0.5 pl-3">
+                      {compositionOf(i.productId).map((c, j) => (
+                        <li key={j} className="text-[11.5px] font-normal text-[#52525B]">
+                          — {c}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </li>
               ))}
             </ul>
@@ -506,13 +565,19 @@ export function PrintNote({ order, onDone }: { order: Order; onDone: () => void 
             )}
           </div>
 
+          {order.surprise && (
+            <div className="mt-3 rounded-xl bg-[#F4DEE3] px-4 py-2.5 text-center font-grotesk text-[13px] font-extrabold uppercase tracking-[0.08em] text-[#B35663]">
+              Сюрприз — отправителя не называть
+            </div>
+          )}
+
           <div className="mt-4 border-t border-[#E8E5DD] pt-4">
             <p className="text-[10px] font-bold uppercase tracking-wider text-[#71717A]">Доставка</p>
             {order.pickup ? (
               <p className="mt-1.5 text-[13px] font-semibold text-[#18181B]">Самовывоз — студия на Мойке</p>
             ) : (
               <div className="mt-1.5 space-y-0.5 text-[13px] text-[#18181B]">
-                <p className="font-semibold">{order.address || `адрес узнает флорист (${order.recipientPhone})`}</p>
+                <p className="font-semibold">{order.address || `адрес узнает флорист (${formatPhone(order.recipientPhone || "")})`}</p>
                 <p>
                   {order.zone?.name} · {order.deliveryDate ? formatDate(order.deliveryDate) : "дата уточняется"} ·{" "}
                   {order.deliverySlot}
@@ -521,14 +586,14 @@ export function PrintNote({ order, onDone }: { order: Order; onDone: () => void 
             )}
             <div className="mt-1.5 space-y-0.5 text-[12.5px] text-[#52525B]">
               <p>Получатель: {order.recipientName || order.customerName}</p>
-              <p className="tnum">{order.recipientPhone || order.customerPhone}</p>
-              {order.surprise && <p className="font-semibold text-[#B35663]">СЮРПРИЗ — отправителя не называть</p>}
+              <p className="tnum">{formatPhone(order.recipientPhone || order.customerPhone)}</p>
             </div>
           </div>
 
           <div className="mt-4 border-t border-[#E8E5DD] pt-4">
             <p className="text-[10px] font-bold uppercase tracking-wider text-[#71717A]">Пожелание для открытки</p>
-            <p className="mt-2 min-h-[80px] rounded-xl bg-[#F4DEE3]/40 p-3 font-display text-[17px] leading-relaxed text-[#18181B]">
+            {/* Раунд 1 (критик 2, P1): крупный жирный текст — флорист свери его при написании от руки */}
+            <p className="mt-2 min-h-[96px] rounded-xl bg-[#F4DEE3]/40 p-4 font-display text-[21px] font-semibold leading-snug text-[#18181B]">
               {order.cardText || "«без текста — открытка чистая»"}
             </p>
           </div>

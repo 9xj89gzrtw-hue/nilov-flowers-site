@@ -252,7 +252,9 @@ function AdminShell({ onExit, onLogout }: { onExit: () => void; onLogout: () => 
           </div>
         ) : (
           <>
-            {tab === "orders" && <AdminOrders orders={orders} setOrders={setOrders} settings={settings} />}
+            {tab === "orders" && (
+              <AdminOrders orders={orders} setOrders={setOrders} settings={settings} products={products} />
+            )}
             {tab === "catalog" && (
               <AdminCatalog
                 products={products}

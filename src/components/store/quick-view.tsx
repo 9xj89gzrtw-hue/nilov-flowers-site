@@ -156,33 +156,35 @@ export function QuickView({ products }: { products: Product[]; upsellHints: unkn
               <p className="mt-4 text-[13.5px] leading-relaxed text-muted-foreground">{product.description}</p>
             )}
 
-            <div className="mt-auto flex flex-col gap-2.5 pt-6 sm:flex-row">
-              <button
-                onClick={() => {
-                  addProduct({
-                    id: product.id,
-                    name: product.name,
-                    price: product.price,
-                    photo: product.photos[0] || null,
-                  })
-                  toast.success(`«${product.name}» — в корзине`)
-                  setQuickView(null)
-                }}
-                className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-pine font-grotesk text-sm font-bold text-primary-foreground transition-colors hover:bg-pine-deep min-h-[44px]"
-              >
-                <ShoppingBag className="h-4 w-4" aria-hidden />
-                В корзину
-              </button>
-              <button
-                onClick={() => {
-                  setOneClick({ id: product.id, name: product.name, price: product.price, photo: product.photos[0] || null })
-                  setQuickView(null)
-                }}
-                className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-full border border-pine/25 bg-white font-grotesk text-sm font-bold text-pine transition-colors hover:bg-powder hover:text-berry min-h-[44px]"
-              >
-                <Zap className="h-4 w-4" aria-hidden />
-                Купить в 1 клик
-              </button>
+            <div className="sticky bottom-0 -mx-5 mt-6 bg-white/95 px-5 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-sm sm:static sm:mx-0 sm:bg-transparent sm:px-0 sm:pb-0 sm:backdrop-blur-none sm:pt-6">
+              <div className="flex flex-col gap-2.5 sm:flex-row">
+                <button
+                  onClick={() => {
+                    addProduct({
+                      id: product.id,
+                      name: product.name,
+                      price: product.price,
+                      photo: product.photos[0] || null,
+                    })
+                    toast.success(`«${product.name}» — в корзине`)
+                    setQuickView(null)
+                  }}
+                  className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-pine font-grotesk text-sm font-bold text-primary-foreground transition-colors hover:bg-pine-deep min-h-[44px]"
+                >
+                  <ShoppingBag className="h-4 w-4" aria-hidden />
+                  В корзину
+                </button>
+                <button
+                  onClick={() => {
+                    setOneClick({ id: product.id, name: product.name, price: product.price, photo: product.photos[0] || null })
+                    setQuickView(null)
+                  }}
+                  className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-full border border-pine/25 bg-white font-grotesk text-sm font-bold text-pine transition-colors hover:bg-powder hover:text-berry min-h-[44px]"
+                >
+                  <Zap className="h-4 w-4" aria-hidden />
+                  Купить в 1 клик
+                </button>
+              </div>
             </div>
           </div>
         </div>

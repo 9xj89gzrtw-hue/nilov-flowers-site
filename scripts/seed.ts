@@ -81,15 +81,22 @@ async function main() {
   console.log('→ Премиальная коллекция (v2026/content.json)')
   const hashPhotoForP01 = '/img/products/8dd0d077a7e65d88.webp' // VLM: ярко-красные розы, монобукет (замена дубля p01/p05)
   const broken: string[] = []
+  // Раунд 1 (критик 1, P1): hover-«второй ракурс» у премиум-линии был чужой заглушкой
+  // (заимствованные gen-фото других букетов). Честный выбор: один ракурс — zoom-only hover;
+  // два ракурса остаются только там, где это ФАКТИЧЕСКИ тот же букет (классика: b1-buket-iz-roz + roz2).
+  const SECOND_ANGLE_OK = new Set(['buket-iz-roz'])
+  // Бейджи-мусор из v2026: «−12%» дублирует вычисляемую скидку, «До N ₽» дублирует чипсы цены
+  const BADGE_SKIP = (b: string) => /^−?\d+\s*%$/.test(b) || /^до\s+\d/i.test(b)
   for (const [i, p] of (content.products as any[]).entries()) {
     const photos: string[] = []
     const img = p.id === 'p01' ? hashPhotoForP01 : p.img
     if (img) photos.push(img)
-    if (p.img2) photos.push(p.img2)
+    if (p.img2 && SECOND_ANGLE_OK.has(p.id)) photos.push(p.img2)
     for (const ph of photos) if (!exists(ph)) broken.push(`${p.id}: ${ph}`)
     let tags = tagsFor(p, p.cat)
     for (const mt of MANUAL_TAGS[p.id] || []) tags.push(mt)
     tags = [...new Set(tags)]
+    const badge = p.badge && !BADGE_SKIP(p.badge) ? p.badge : null
     await db.product.create({
       data: {
         slug: p.id,
@@ -102,7 +109,7 @@ async function main() {
         description: p.desc || null,
         size: p.size || null,
         photos: JSON.stringify(photos),
-        badge: p.badge || null,
+        badge,
         categoryId: catMap.get(p.cat) || null,
         tags: JSON.stringify(tags),
         visible: p.visible !== false,
@@ -164,7 +171,9 @@ async function main() {
   // ---------- зоны доставки СПб (12 реальных районов из db.php + пригороды) ----------
   console.log('→ Зоны доставки')
   const zones = [
-    ['Центральный (и Петроградка)', 300, '60–90 мин', 'бесплатно от 3 000 ₽'],
+    // Раунд 1 (критик 3, P1): примечание зоны «бесплатно от 3 000 ₽» конфликтовало
+    // с единым глобальным порогом free_delivery_from=5000 — убрано, правило одно для всех.
+    ['Центральный (и Петроградка)', 300, '60–90 мин', ''],
     ['Василеостровский', 300, '75–100 мин', ''],
     ['Адмиралтейский', 300, '60–90 мин', ''],
     ['Выборгский', 350, '90–120 мин', ''],

@@ -3,8 +3,9 @@
 import Image from "next/image"
 import { ArrowRight, Camera, Clock, Sparkles, Star } from "lucide-react"
 import type { ShopSettings } from "@/lib/types"
+import { money } from "@/lib/types"
 
-export function Hero({ settings }: { settings: ShopSettings }) {
+export function Hero({ settings, minPrice }: { settings: ShopSettings; minPrice: number }) {
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-cream via-linen to-cream" aria-label="Главный экран">
       <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-8 px-4 pb-12 pt-10 md:pb-20 md:pt-16 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
@@ -13,7 +14,7 @@ export function Hero({ settings }: { settings: ShopSettings }) {
             <Sparkles className="h-3.5 w-3.5" aria-hidden />
             {String(settings.shop_city || "Санкт-Петербург")} · свежий срез каждое утро
           </p>
-          <h1 className="font-display text-[34px] leading-[1.08] tracking-tight text-foreground sm:text-5xl lg:text-[56px] lg:leading-[1.04] text-balance">
+          <h1 className="font-display text-[34px] leading-[1.08] tracking-tight text-foreground sm:text-5xl lg:text-[64px] lg:leading-[1.03] text-balance">
             {String(settings.hero_title || "Букеты, которые приезжают вовремя")}
           </h1>
           <p className="mt-5 max-w-[520px] text-[15px] leading-relaxed text-muted-foreground sm:text-base">
@@ -32,6 +33,12 @@ export function Hero({ settings }: { settings: ShopSettings }) {
               <Star className="h-4 w-4 fill-hit text-hit" aria-hidden />
               {String(settings.rating_badge || "5.0 на Яндекс Картах")}
             </span>
+            {/* Раунд 1 (критик 3, P2): ценовой якорь в hero */}
+            {minPrice > 0 && (
+              <span className="w-full text-[13px] font-medium text-muted-foreground sm:w-auto">
+                Готовые букеты — <b className="font-grotesk text-foreground tnum">от {money(minPrice)}</b> · в наличии сегодня
+              </span>
+            )}
           </div>
 
           <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-[13px] text-muted-foreground">
@@ -65,7 +72,7 @@ export function Hero({ settings }: { settings: ShopSettings }) {
               Утренний срез · розы Ohara и пионы Sarah Bernhardt
             </figcaption>
           </div>
-          <div className="absolute -bottom-5 -left-3 hidden rounded-2xl bg-white p-4 shadow-xl sm:block">
+          <div className="absolute -bottom-5 -left-3 hidden rounded-2xl bg-white/95 p-4 shadow-lg shadow-black/10 backdrop-blur-sm sm:block">
             <div className="font-grotesk text-2xl font-extrabold text-pine tnum">48 000+</div>
             <div className="text-xs text-muted-foreground">букетов доставили за 2025 год</div>
           </div>

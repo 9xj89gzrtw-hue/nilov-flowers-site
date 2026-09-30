@@ -6,7 +6,7 @@ import Link from "next/link"
 import { MapPin, Phone, Search, ShoppingCart, Star, X } from "lucide-react"
 import { AnimatePresence, motion } from "framer-motion"
 import type { DeliveryZone, Product, ShopSettings } from "@/lib/types"
-import { money } from "@/lib/types"
+import { money, plural } from "@/lib/types"
 import { cartCount, cartSum, useStore } from "@/lib/store"
 
 export function Header({
@@ -139,7 +139,7 @@ export function Header({
             <button
               onClick={() => setCartOpen(true)}
               className="relative flex items-center gap-2.5 rounded-full bg-pine pl-4 pr-5 py-2.5 text-primary-foreground font-grotesk font-semibold min-h-[44px] hover:bg-pine-deep transition-colors shrink-0"
-              aria-label={`Корзина: ${count} товаров на ${money(sum)}`}
+              aria-label={`Корзина: ${count} ${plural(count, ["товар", "товара", "товаров"])} на ${money(sum)}`}
             >
               <ShoppingCart className="h-[18px] w-[18px]" aria-hidden />
               <span className="hidden sm:inline tnum">{count > 0 ? money(sum) : "Корзина"}</span>
@@ -270,9 +270,9 @@ function SearchDropdown({ products, onPick }: { products: Product[]; onPick: (id
           }}
           onFocus={() => setOpen(true)}
           type="search"
-          placeholder="Найти букет: пионы, розы, гортензия…"
+          placeholder="Найти букет: пионы, розы…"
           aria-label="Поиск букетов по названию и цветам"
-          className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+          className="h-11 w-full bg-transparent py-2 text-sm outline-none placeholder:text-muted-foreground min-h-[44px]"
         />
         {q && (
           <button

@@ -61,6 +61,12 @@ export function StoreApp({ initialData, editorial }: { initialData: ShopData; ed
 
   const settings = data.settings as ShopSettings
 
+  const minPrice = useMemo(
+    () => data.products.filter((p) => p.inStock).reduce((m, p) => Math.min(m, p.price), Infinity),
+    [data.products],
+  )
+  const safeMinPrice = Number.isFinite(minPrice) ? minPrice : 0
+
   const upsellProducts = useMemo(
     () => data.upsells.map((u) => ({ slug: u.slug, name: u.name, price: u.price, photo: u.photo })),
     [data.upsells],
@@ -82,7 +88,7 @@ export function StoreApp({ initialData, editorial }: { initialData: ShopData; ed
     <div className="min-h-screen flex flex-col bg-background">
       <Header settings={settings} zones={data.zones} products={data.products} />
       <main id="main" className="flex-1">
-        <Hero settings={settings} />
+        <Hero settings={settings} minPrice={safeMinPrice} />
         <Catalog products={data.products} settings={settings} />
         <Sections settings={settings} zones={data.zones} editorial={editorial} />
       </main>

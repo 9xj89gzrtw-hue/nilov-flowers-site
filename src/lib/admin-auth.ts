@@ -3,7 +3,8 @@ import { cookies } from "next/headers"
 import { db } from "@/lib/db"
 
 const COOKIE = "nf_admin"
-const SECRET = "nilov-flowers-s2-admin-session"
+// Раунд 1 (критик 5, P2): секрет сессии вынесен в env (для прода задать уникальный)
+const SECRET = process.env.NF_SESSION_SECRET || "nilov-flowers-s2-admin-session-dev"
 
 export async function getAdminPassword(): Promise<string> {
   const row = await db.setting.findUnique({ where: { key: "admin_password" } })

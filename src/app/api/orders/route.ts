@@ -1,4 +1,5 @@
 import { db } from "@/lib/db"
+import { clientKey, rateLimit } from "@/lib/rate-limit"
 
 type IncomingItem = {
   kind: "product" | "upsell"
@@ -7,30 +8,40 @@ type IncomingItem = {
   qty: number
 }
 
+type OrderBody = {
+  customerName?: string
+  customerPhone?: string
+  customerEmail?: string
+  comment?: string
+  recipientName?: string
+  recipientPhone?: string
+  surprise?: boolean
+  pickup?: boolean
+  knowAddress?: boolean
+  zoneId?: number | null
+  address?: string
+  deliveryDate?: string
+  deliverySlot?: string
+  cardText?: string
+  paymentMethod?: string
+  promoCode?: string | null
+  items?: IncomingItem[]
+}
+
 // Создание заказа (витрина + «Купить в 1 клик»). Цены всегда пересчитываются на сервере.
 export async function POST(req: Request) {
+  // Раунд 1 (критик 5, P2): анти-спам заказов
+  if (!rateLimit(`orders:${clientKey(req)}`, 8)) {
+    return Response.json({ error: "Слишком много заказов подряд — позвоните нам: поможем" }, { status: 429 })
+  }
+  let b: OrderBody
   try {
-    const b = (await req.json()) as {
-      customerName?: string
-      customerPhone?: string
-      customerEmail?: string
-      comment?: string
-      recipientName?: string
-      recipientPhone?: string
-      surprise?: boolean
-      pickup?: boolean
-      knowAddress?: boolean
-      zoneId?: number | null
-      address?: string
-      deliveryDate?: string
-      deliverySlot?: string
-      cardText?: string
-      paymentMethod?: string
-      promoCode?: string | null
-      items?: IncomingItem[]
-      oneClick?: boolean
-    }
+    b = (await req.json()) as OrderBody
+  } catch {
+    return Response.json({ error: "Некорректный запрос" }, { status: 400 })
+  }
 
+  try {
     const name = (b.customerName || "").trim()
     const phone = (b.customerPhone || "").trim()
     if (name.length < 2) return Response.json({ error: "Укажите имя (минимум 2 буквы)" }, { status: 400 })

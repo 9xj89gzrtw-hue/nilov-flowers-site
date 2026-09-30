@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { LayoutGrid, Search, Send, ShoppingCart } from "lucide-react"
 import type { ShopSettings } from "@/lib/types"
-import { money } from "@/lib/types"
+import { money, plural } from "@/lib/types"
 import { cartCount, cartSum, useStore } from "@/lib/store"
 
 export function StickyBottomBar({ settings }: { settings: ShopSettings }) {
@@ -61,7 +61,7 @@ export function StickyBottomBar({ settings }: { settings: ShopSettings }) {
         <button
           onClick={() => setCartOpen(true)}
           className="flex min-h-[52px] items-center justify-center gap-2 rounded-xl bg-pine font-grotesk font-bold text-primary-foreground"
-          aria-label={`Корзина: ${count} позиций на ${money(sum)}`}
+          aria-label={`Корзина: ${count} ${plural(count, ["позиция", "позиции", "позиций"])}, ${money(sum)}`}
         >
           <ShoppingCart className="h-5 w-5" aria-hidden />
           <span className="text-[13px] tnum">{count > 0 ? money(sum) : "Корзина"}</span>
