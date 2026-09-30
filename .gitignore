@@ -57,3 +57,4 @@ v2026/*.preF2.bak
 # ===================== S2 рабочие артефакты =====================
 /agent-ctx/
 /public/uploads/
+tool-results/
