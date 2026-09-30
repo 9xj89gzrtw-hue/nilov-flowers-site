@@ -28,9 +28,10 @@ jobs:
           # каналом) — идемпотентный PASS, ред-флаг не вешаем.
           set -f
           SSH="sshpass -e ssh -o StrictHostKeyChecking=accept-new -p ${SSH_PORT:-22}"
-          # W98-fixF (F2): + worklog.md/AGENTS.md/ecosystem.config.js — процессные файлы
-          # (история волн/инструкция агентов/PM2-конфиг) не должны попадать на прод.
-          EXC=(-x ".git" -x ".github" -x ".gitignore" -x "db" -x "state" -x "admin/state" -x "img/uploads" -x "img/products" -x ".DS_Store" -x "._*" -x ".worktrees" -x "worklog.md" -x "AGENTS.md" -x "ecosystem.config.js")
+          # S2: Next.js-приложение (витрина+админка новой генерации) живёт в этом же репо,
+          # но НЕ деплоится на Apache/SpaceWeb — для прода остаётся PHP+v2026.
+          # Ниже — полный список исключений: процессные файлы + артефакты Next.js/Prisma.
+          EXC=(-x ".git" -x ".github" -x ".gitignore" -x "db" -x "state" -x "admin/state" -x "img/uploads" -x "img/products" -x ".DS_Store" -x "._*" -x ".worktrees" -x "worklog.md" -x "AGENTS.md" -x "ecosystem.config.js" -x "node_modules" -x ".next" -x ".env" -x ".env.*" -x "src" -x "public" -x "prisma" -x "mini-services" -x "examples" -x "tests" -x "download" -x "scripts" -x ".zscripts" -x "Caddyfile" -x "package.json" -x "package-lock.json" -x "bun.lock" -x "bun.lockb" -x "next.config.ts" -x "postcss.config.mjs" -x "tailwind.config.ts" -x "tsconfig.json" -x "eslint.config.mjs" -x "components.json" -x "dev.log" -x "*.log" -x "CRITIQUE_ROUND_*.md" -x "DIFF_LOG_*.md" -x "README-S2.md" -x "agent-ctx" -x ".claude" -x ".z-ai-config" -x "next-env.d.ts" -x "*.tsbuildinfo")
           ok=0
           for attempt in 1 2 3; do
             echo "== deploy attempt $attempt =="
@@ -38,7 +39,7 @@ jobs:
               echo "rsync OK"; ok=1; break
             fi
             echo "--> rsync failed, trying tar-over-ssh"
-            TARX=(); for x in .git .github .gitignore db state admin/state img/uploads img/products .DS_Store '._*' .worktrees worklog.md AGENTS.md ecosystem.config.js; do TARX+=(--exclude="$x"); done
+            TARX=(); for x in .git .github .gitignore db state admin/state img/uploads img/products .DS_Store '._*' .worktrees worklog.md AGENTS.md ecosystem.config.js node_modules .next .env .env.* src public prisma mini-services examples tests download scripts .zscripts Caddyfile package.json package-lock.json bun.lock bun.lockb next.config.ts postcss.config.mjs tailwind.config.ts tsconfig.json eslint.config.mjs components.json dev.log '*.log' CRITIQUE_ROUND_*.md DIFF_LOG_*.md README-S2.md agent-ctx .claude .z-ai-config next-env.d.ts '*.tsbuildinfo'; do TARX+=(--exclude="$x"); done
             if tar cf - "${TARX[@]}" . | $SSH "$SSH_USER@$SSH_HOST" "tar xf - -C ${REMOTE_DIR%/}"; then
               echo "tar-over-ssh OK"; ok=1; break
             fi

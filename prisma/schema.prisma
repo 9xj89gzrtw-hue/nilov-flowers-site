@@ -1,0 +1,123 @@
+// Nilov Flowers — S2 «живая БД» (SQLite + Prisma)
+// Данные мигрированы из реальных источников репозитория:
+//  - v2026/content.json (премиальная коллекция S1, 20 букетов)
+//  - includes/db.php seed (классический каталог PHP-эры, реальные зоны СПб)
+//  - img/products/* (реальные фото, верифицированы VLM)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id       Int       @id @default(autoincrement())
+  slug     String    @unique
+  name     String
+  sort     Int       @default(100)
+  products Product[]
+}
+
+model Product {
+  id          Int        @id @default(autoincrement())
+  slug        String     @unique
+  name        String
+  sub         String? // подзаголовок: краткий состав
+  line        String     @default("premium") // premium | classic
+  price       Int // рубли
+  oldPrice    Int?
+  composition String? // JSON-массив строк: точный состав цветов
+  description String?
+  size        String? // «60×45 см» / «Ø 22 см»
+  photos      String     @default("[]") // JSON-массив путей (первый — главный, второй — ракурс для hover)
+  badge       String?
+  categoryId  Int?
+  category    Category?  @relation(fields: [categoryId], references: [id])
+  tags        String     @default("[]") // JSON-массив: хит, пионы, розы, гортензии, монобукеты, коробки, стойкие, свидание
+  inStock     Boolean    @default(true)
+  visible     Boolean    @default(true)
+  popular     Boolean    @default(false)
+  sort        Int        @default(100)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  orderItems  OrderItem[]
+}
+
+model DeliveryZone {
+  id     Int     @id @default(autoincrement())
+  name   String
+  price  Int     @default(0)
+  eta    String? // «60–90 мин»
+  note   String? // примечание о бесплатной доставке
+  sort   Int     @default(100)
+  orders Order[]
+}
+
+model Order {
+  id            Int           @id @default(autoincrement())
+  number        String        @unique // NF-1024
+  status        String        @default("new") // new|photo|assembly|courier|done|canceled
+  customerName  String
+  customerPhone String
+  customerEmail String?
+  comment       String? // пожелания заказчика
+  recipientName String?
+  recipientPhone String?
+  surprise      Boolean       @default(false) // «Сюрприз получателю»
+  pickup        Boolean       @default(false) // «Заберу сам»
+  knowAddress   Boolean       @default(false) // «Узнать адрес у получателя»
+  zoneId        Int?
+  zone          DeliveryZone? @relation(fields: [zoneId], references: [id])
+  address       String?
+  deliveryDate  String? // YYYY-MM-DD
+  deliverySlot  String? // «12:00–14:00»
+  cardText      String? // текст открытки
+  paymentMethod String        @default("online") // online|cash
+  deliveryPrice Int           @default(0)
+  itemsTotal    Int           @default(0)
+  total         Int           @default(0)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  items         OrderItem[]
+}
+
+model OrderItem {
+  id        Int      @id @default(autoincrement())
+  orderId   Int
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId Int?
+  product   Product? @relation(fields: [productId], references: [id])
+  title     String
+  price     Int
+  qty       Int      @default(1)
+  photo     String?
+}
+
+model Upsell {
+  id          Int     @id @default(autoincrement())
+  slug        String  @unique
+  name        String
+  description String?
+  price       Int     @default(0)
+  photo       String?
+  active      Boolean @default(true)
+  sort        Int     @default(100)
+}
+
+model Setting {
+  key   String @id
+  value String
+}
+
+model PromoCode {
+  id     Int     @id @default(autoincrement())
+  code   String  @unique
+  type   String  @default("percent") // percent | fixed
+  value  Int     @default(0)
+  min    Int     @default(0)
+  label  String?
+  active Boolean @default(true)
+}

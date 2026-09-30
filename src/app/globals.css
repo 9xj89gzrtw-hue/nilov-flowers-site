@@ -1,0 +1,218 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-golos), ui-sans-serif, system-ui, sans-serif;
+  --font-grotesk: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-playfair), Georgia, serif;
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  /* S2 палитра Nilov Flowers (код 5cv + бриф: молочный фон, графит, хвойный изумруд) */
+  --color-pine: var(--pine);
+  --color-pine-deep: var(--pine-deep);
+  --color-grass: var(--grass);
+  --color-cream: var(--cream);
+  --color-linen: var(--linen);
+  --color-hit: var(--hit);
+  --color-powder: var(--powder);
+  --color-berry: var(--berry);
+  --color-gold: var(--gold);
+}
+
+:root {
+  --radius: 1rem;
+  --background: #faf9f6;
+  --foreground: #18181b;
+  --card: #ffffff;
+  --card-foreground: #18181b;
+  --popover: #ffffff;
+  --popover-foreground: #18181b;
+  --primary: #143c2b;
+  --primary-foreground: #faf9f6;
+  --secondary: #f5f4f0;
+  --secondary-foreground: #143c2b;
+  --muted: #f5f4f0;
+  --muted-foreground: #6b6b74;
+  --accent: #efede6;
+  --accent-foreground: #143c2b;
+  --destructive: #b3261e;
+  --border: #e8e5dd;
+  --input: #e8e5dd;
+  --ring: #143c2b;
+  /* кастомные токены S2 */
+  --pine: #143c2b;
+  --pine-deep: #0e2a1f;
+  --grass: #1b7a43;
+  --cream: #faf9f6;
+  --linen: #f5f4f0;
+  --hit: #f5b301;
+  --powder: #f4dee3;
+  --berry: #b35663;
+  --gold: #c8a24a;
+}
+
+.dark {
+  --background: #0d120e;
+  --foreground: #f4eee2;
+  --card: #1a211c;
+  --card-foreground: #f4eee2;
+  --popover: #1a211c;
+  --popover-foreground: #f4eee2;
+  --primary: #e8607a;
+  --primary-foreground: #0d120e;
+  --secondary: #283228;
+  --secondary-foreground: #f4eee2;
+  --muted: #283228;
+  --muted-foreground: #8a8478;
+  --accent: #283228;
+  --accent-foreground: #f4eee2;
+  --destructive: #d14b66;
+  --border: #283228;
+  --input: #283228;
+  --ring: #e8607a;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: "tnum" off;
+  }
+  ::selection {
+    background: #f4dee3;
+    color: #143c2b;
+  }
+  button, a, input, select, textarea {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* ---- типографика цен: табличные цифры ---- */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- кастомный скроллбар ---- */
+.nice-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #c9c5ba transparent;
+}
+.nice-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.nice-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.nice-scroll::-webkit-scrollbar-thumb {
+  background: #c9c5ba;
+  border-radius: 999px;
+}
+.nice-scroll::-webkit-scrollbar-thumb:hover {
+  background: #a8a499;
+}
+
+/* ---- чипсы: горизонтальный скролл без полосы ---- */
+.chips-rail {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.chips-rail::-webkit-scrollbar {
+  display: none;
+}
+
+/* ---- бегущая строка преимуществ (мобайл) ---- */
+@keyframes nf-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.marquee-track {
+  animation: nf-marquee 28s linear infinite;
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* ---- мягкое появление ---- */
+@keyframes nf-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.rise {
+  animation: nf-rise 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ---- печатная записка флористу (А5) ---- */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #print-note,
+  #print-note * {
+    visibility: visible;
+  }
+  #print-note {
+    position: absolute;
+    inset: 0;
+    width: 148mm;
+    min-height: 200mm;
+    padding: 12mm;
+    background: #fff;
+    color: #18181b;
+  }
+  @page {
+    size: A5 portrait;
+    margin: 0;
+  }
+}
+
+/* ---- фокус-ринг доступности ---- */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid #143c2b;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
