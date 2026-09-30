@@ -1,0 +1,56 @@
+[
+  {
+    "url": "https://www.npmjs.com",
+    "name": "jini-ai/ui",
+    "snippet": "Generic, product-neutral React UI primitives and feature domains . Framework-free types, decision rules, catalogs, and host port contracts live behind .",
+    "host_name": "www.npmjs.com",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://github.com",
+    "name": "DEVELOPMENT.md - stamat/pooppress",
+    "snippet": "Autosave draft every 30s via htmx ( =\"every 30s\" on dirty flag) — draft saves and autosaves never trigger builds Done when: create → edit → save … admin header ...",
+    "host_name": "github.com",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://experienceleague.adobe.com",
+    "name": "API updates in Experience Manager Guides releases",
+    "snippet": "Jul 28, 2026 — This article provides details of the newly added APIs in the. Experience Manager Guides releases. dirty status, labels, etc.) auto-save in the ...",
+    "host_name": "experienceleague.adobe.com",
+    "rank": 2,
+    "date": "Jul 28, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://zed.dev",
+    "name": "All Settings",
+    "snippet": "Autosave Description: When to automatically save edited buffers. Setting: autosave Default: off Options To disable autosave , set it to off : ed whether to save ...",
+    "host_name": "zed.dev",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://glama.ai",
+    "name": "tradingview-mcp-review by F-e-u-e-r",
+    "snippet": "2 days ago — Changing symbol/timeframe can dirty the saved TradingView layout (and persist if layout autosave is on). Work on a dedicated scratch layout. ...",
+    "host_name": "glama.ai",
+    "rank": 4,
+    "date": "Sep 28, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://ed.databayt.org",
+    "name": "Application",
+    "snippet": "Auto-save every 30 s when dirty . Browser warns on unsaved navigation. Three resume paths: localStorage (auto), email link /{lang}/application/continue?token ... Read more",
+    "host_name": "ed.databayt.org",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  }
+]

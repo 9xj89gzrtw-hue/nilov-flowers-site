@@ -1,0 +1,74 @@
+[
+  {
+    "url": "https://www.wisp.blog",
+    "name": "TinaCMS vs Content Collections",
+    "snippet": "Live-editing feature allows for instant previews and publishing of content without delays. AEM provides intuitive control with visual editing options, ...",
+    "host_name": "www.wisp.blog",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://headlesscms.guide",
+    "name": "Top 5 Headless CMS Platforms Built Around Visual Editing",
+    "snippet": "Jun 28, 2026 — Tina is Git-backed and Markdown-friendly, and it offers genuine on-page visual editing directly on the rendered page. For a developer-led ...",
+    "host_name": "headlesscms.guide",
+    "rank": 1,
+    "date": "Jun 28, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.draftview.app",
+    "name": "DraftView vs a git-based CMS (TinaCMS, Decap)",
+    "snippet": "Git -based CMS: A CMS like TinaCMS or Decap CMS is built for authoring. It gives content editors a UI to create pages, fill in frontmatter fields, manage media, ... Read more",
+    "host_name": "www.draftview.app",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://instantdomainsearch.com",
+    "name": "tina.io: Traffic, Backlinks & Authority Metrics",
+    "snippet": "Tina emphasizes inline , visual editing directly in site pages with a Git -backed workflow, targeting developer experience and content authoring in modern ...",
+    "host_name": "instantdomainsearch.com",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.lossless.group",
+    "name": "TinaCMS - Lossless Group",
+    "snippet": "Visual/contextual editing on the real page, with live preview and real-time editing for non-technical users. ... Git-backed CMS with visual editor and GraphQL API ...",
+    "host_name": "www.lossless.group",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.gappsy.com",
+    "name": "Cockpit CMS vs TinaCMS: Which CMS Tool Is Better?",
+    "snippet": "TinaCMS suits teams publishing to static site generators who want free, built-in visual in-context editing tied to Git version history, with the option to ...",
+    "host_name": "www.gappsy.com",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://superblog.ai",
+    "name": "What Is a Git-Based CMS? A 2026 Guide",
+    "snippet": "There is no native visual editor or live preview . The raw workflow is markdown in a text editor. Click-to-edit visual editing is not part of the base model, and ...",
+    "host_name": "superblog.ai",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://swhabitation.com",
+    "name": "Agility CMS Vs TinaCMS",
+    "snippet": "TinaCMS is an open-source, Git-backed CMS that brings real-time editing to the forefront. Inline Editing : Make changes directly on the page and see them live ...",
+    "host_name": "swhabitation.com",
+    "rank": 7,
+    "date": "",
+    "favicon": ""
+  }
+]

@@ -1,14 +1,15 @@
 /* PM2-конфиг локального стенда nilov-flowers-site.
-   Порт 8123: PHP built-in server (php -S 127.0.0.1:8123 router.php).
-   Порт 3000 занят сэндбоксом my-project (Next.js) — его не трогаем.
+   Порт 8123: Bun static + content API server (server.js).
+   Порт 3000 занят сэндбоксом my-project (Next.js) — НЕ трогаем;
+   он даёт превью пользователю через next.config rewrites → 8123.
    Запуск: pm2 start ecosystem.config.js && pm2 save
    Логи:    pm2 logs nilov-site  (файлы в state/pm2-*.log) */
 module.exports = {
   apps: [
     {
       name: 'nilov-site',
-      script: '/home/z/.local/bin/php',
-      args: '-S 127.0.0.1:8123 router.php',
+      script: 'bun',
+      args: 'run server.js',
       cwd: '/home/z/nilov-flowers-site',
       watch: false,
       autorestart: true,

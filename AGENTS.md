@@ -1,30 +1,31 @@
 # AGENTS.md — конспект для агентов по nilov-flowers-site
 
-**Что это:** цветочный магазин на чистом PHP 8 + SQLite (без фреймворков). Прод: flowers.interfood-catering.ru (SpaceWeb, Apache + .htaccess, деплой GitHub Actions по push в main).
+**Что это:** цветочный магазин «Nilov Flowers» (СПб). Сессия S1: **пивот на v2026/** — статичная витрина + content.json + admin.html. Бывший PHP 8 + SQLite (старый код в корне, не используется в сэндбоксе). Прод: flowers.interfood-catering.ru (SpaceWeb, Apache, деплой GH Actions по push в main).
 
 ## Окружение локального стенда
-- PHP: `/home/z/.local/bin/php` (static-php **8.4.23 common** — ОБЯЗАТЕЛЬНО с gd+jpeg+webp; без jpeg главная молча отдаёт битый 823-байтный шелл, проверять `php -r 'var_dump(function_exists("imagecreatefromjpeg"));'`)
-- Сервер: `pm2 start ecosystem.config.js` → `nilov-site` на **127.0.0.1:8123** (php -S + router.php). Порт 3000 — сэндбокс Next.js (my-project), НЕ трогать; он же даёт превью пользователю через next.config rewrites → 8123.
-- Логи: `pm2 logs nilov-site`, файлы в `state/pm2-*.log`. БД `db/flowers.db` (gitignored) — сидируется при первом запросе; guard-UPDATE-миграции текстов живут в includes/db.php migrateSchema().
-- Админ-логин стенда: db/admin-bootstrap-*.txt (локальный стенд; НЕ коммитить).
+- **PHP недоступен** в этом сэндбоксе (нет root, apt locked). Сервер — **Bun** на порту **8123** (`server.js`).
+- Запуск: `pm2 start ecosystem.config.js` → app `nilov-site` (`bun run server.js`, cwd репо). Логи: `pm2 logs nilov-site` (state/pm2-*.log).
+- **Порт 3000** — сэндбокс my-project (Next.js 16), НЕ трогать код; `next.config.ts` rewrites (beforeFiles) → 8123 даёт превью пользователю.
+- **Bun:** `/usr/local/bin/bun`. **pm2:** `/home/z/.npm-global/bin/pm2`. **agent-browser:** `/usr/local/bin/agent-browser` (критики ОБЯЗАНЫ `agent-browser close` после — 2-ядерный стенд).
+- BД: нет (content.json — единый источник). `db/admin-token.txt` (gitignored) — fallback token.
 
-## Архитектура
-- Витрина: `index.php` (hero+лепестки, marquee, карусели с вариантами split/compact, manifesto, премиум-dark, каталог+чипы, поводы duotone, FAQ), `product.php` (галерея+линза+лайтбокс), `category.php`/`occasion.php` (secondary.css + свои js).
-- `includes/`: db.php (PDO+сид+миграции), util.php (setting()/e()/saveUpload()), auth.php, security.php (CSP self + mc.yandex.ru), layout.php. `admin/`: settings.php — allowlist ~220 ключей (дубли полей УСТРАНЕНЫ в W104 — не возвращать), история настроек.
-- `js/` (vanilla, 0 зависимостей кроме self-host): petals.js (сигнатура, API `NF_PETALS`), kinetic.js (Lenis+line-reveal+скролл-порыв), five.js (карточки/tilt/магнит/FAQ-smooth), cart-cta.js (бёрст+fly+тост), cart-ui.js, lightbox.js (zoom/pan/навигация), product-gallery.js (линза), reveal.js (view-timeline-осознанный).
-- `css/`: five.css (основа), nilov.css (motion W4), motion-w104.css (W104-слои, грузится последним), fonts.css (self-host: Playfair+Italic variable, Golos Text, Montserrat fallback), product-extras/secondary/category.css.
-- Дизайн-токены: pink #ff4ea2 (только стикеры/сердце/акценты), amber #f5b301 (бейджи/подчёркивания), gold #E4C287 (на тёмном), ink #1c1a1e (все primary-CTA), Playfair 500 display + курсив-акценты, Golos Text UI, радиусы 16/24/пилюли.
+## Архитектура (v2026)
+- **server.js** (Bun.serve, :8123): `/` → v2026/index.html; `/content.json` + `/v2026/content.json` → v2026/content.json (live на витрине); `/v2026/*` статика; `/img/*` → img/; `/api/content` GET/POST (X-Admin-Token = content.json admin.password); `/api/upload` (formData `file` → img/uploads/); `/api/img-list`; `/api/health`. safePath: strip leading `/`, reject `..`.
+- **v2026/index.html** (≈3850 строк): статичная витрина, inline CSS+JS, CDN-шрифты (Playfair/Golos/JetBrains via jsdelivr), fetch `/content.json` → рендер. Тёмная bloom-тема: ink #0D120E, ink-2 #1A211C, ink-3 #283228, moss #2E3F31, bone #F4EEE2, bone-mute #8A8478, bloom #E8607A, bloom-deep #D14B66 (CTA-bg), gold #C8A24A. Радиусы 20/12/99. Easings cubic-bezier(.16,1,.3,1)/(.76,0,.24,1)/(.34,1.56,.64,1).
+- **v2026/motion.js** (315 строк, vanilla, defer): Tier-A motion — hero pin+parallax (0.3:0.6:1.0, IO-gated rAF), char-stagger reveal, atelier progress ring, fly-to-cart (WAAPI), cardTilt (lerp+spring, pointer:fine), section stagger reveals (IO, 70ms), marquee velocity-mod. RM-safe (статика). Слушает `nf:ready` + fallback setTimeout 3.5s.
+- **v2026/admin.html** (≈2318 строк, vanilla): login (admin/nilov2026) → 10 sidebar groups × 28 секций = 100% content.json; 14 field types (text/textarea/richtext/number/range/color/toggle/select/multi-chips/chips/image/repeater/group/key-value/code); schema-inference; live-preview iframe (viewport toggle 390/768/1280); autosave 1.5s + «Опубликовать» (POST /api/content); image upload+library; ⌘K; FIELD_LABELS (human Russian). Тёмная тема = витрина (ink/bone/bloom/gold).
+- **v2026/content.json** (29 ключей, 50KB): meta(+legal/seo), theme(tokens), contacts, nav, ticker, hero(+stats), marquee, chapters, atelier(+founder), occasions, catalog, categories, occ, constructor, delivery, subscription, reviews(+trust), journal, faq, guarantees, cta, footer, promos, orders, users, poll, admin, products[20], updatedAt.
 
 ## Правила (обязательны)
-1. Перед работой читать `worklog.md` — история волн и решения.
-2. Пуш только в main, **никогда force-push**. Перед пушем: `git diff` ревью + проверка секретов + curl-смоук всех маршрутов + `php -l` на правленых файлах.
-3. Коммит-месседжи: префикс волны (W104, W105...) + суть. В конце работы обновить worklog.md (сжато!).
-4. PHP: strict_types, e(), setting('key', default) — ничего не хардкодить. Миграции текстов для прода — guard-UPDATE по ТОЧНОМУ старому значению (паттерн в db.php, блок W104).
-5. CSP: только self-hosted. sw.js VERSION bump при каждом изменении статики.
-6. НЕ трогать: auth/security/api/orders (проверено волнами W40–W103).
-7. **Верификация = живой прогон в браузере** (agent-browser): клики, скролл, консоль. «Сделанный» фикс без живой проверки = не сделанный (урок W104: NodeList.map, лениво-созданный img, ::after при static-родителе — все ловятся только прогоном).
-8. Тач-зоны ≥44px; prefers-reduced-motion — статика, не пустота; hover-эффекты НЕ гейтить через matchMedia/any-hover (в headless-жюри ложно false — bind всегда, mousemove-эффекты безопасны).
-9. Критики-агенты: свежие (не читают worklog до вердикта), каждые — отдельная browser-сессия `--session имя`, после себя ЗАКРЫВАТЬ браузер (осиротевшие сессии душат 2-ядерный стенд).
+1. Перед работой читать **worklog.md** — история волн и решения.
+2. Пуш только в main, **никогда force-push**. Перед пушем: `git diff` ревью + проверка секретов (db/*.txt gitignored) + `bun -e 'JSON.parse(require("fs").readFileSync("v2026/content.json","utf8"))'` (valid JSON) + `node --check v2026/motion.js` + smoke-тест маршрутов (curl) + `agent-browser` живой прогон. Проверить что пушится (содержимое index.html/content.json).
+3. Коммит-месседжи: префикс `S1`. В конце работы обновить worklog.md (сжато!).
+4. Ничего не хардкодить — всё из content.json. Шрифты/CDN: jsdelivr только @fontsource.
+5. CSP/безопасность: admin token = content.json admin.password; не коммитить db/admin-token.txt.
+6. НЕ трогать: my-project (порт 3000) — только next.config.ts rewrites.
+7. **Верификация = живой прогон** (agent-browser): клики, скролл, консоль. «Сделанный» фикс без живой проверки = не сделанный.
+8. Тач-зоны ≥44px **на самом элементе** (min-height/min-width, не ::after); prefers-reduced-motion → статика (финальное состояние видно, не пустота); hover биндить всегда (headless `any-hover` ложно false — bind всегда, mousemove-эффекты безопасны).
+9. Критики-агенты: **свежие, слепые** (не читают worklog до вердикта), каждые — отдельная browser-сессия `--session имя`, после себя `agent-browser close`. Каждая новая волна не знает о предыдущих.
 
-## Текущая задача (обновлено 29.09.2026, после W106)
-W106 завершён: 7 фикс-волн (A–G) по 5 волнам слепых критиков (~25 агентов). Свежие оценки: жюри Awwwards 8.4 (Usability 8.9), CRO 8.1, редактор 8.0, mobile 8.2 (0 тач-целей <44px), фото-директор 5.5 (разрыв = реальные фото). Ключевое: hero «Сказать без слов» + параллакс; каталог-коллаж (страница −21%); НОВАЯ /checkout (сводка, компакт-хедер, cookie-пилюля, форма 3 группы, адрес всегда виден); 17 неймингов; сезонность-2026; 12 отзывов + AggregateRating; 12 реальных зон СПб; галереи «один букет два плана» (image-edit, 13/13 VLM-match); все скрипты defer (DCL −50%), CSS .min (−53%); stretched-link; SLA/терминология единые. Хвосты: owner-контент (реквизиты/ключи ЮKassa/реальные фото/ассортимент), 4 карточки ждут перекраску + 6 b1-вторых фото + petals-macro (rate-limit image-API, скрипты /home/z/g1work/r4/, image2-миграция в db.php с is_file-guard). Уроки: субагенты — компактные задания (≤16 команд браузера); image-API ~90 генераций/сессию; naturalWidth-lazy в headless ЛЖЁ (new Image().decode()); критики обязаны закрывать браузер.
+## Текущая задача (обновлено 30.09.2026, после S1)
+S1 завершён: 4 волны слепых критиков (8 ролей) + 5 фикс-волн. Финальные оценки: Color 8.5, Copy 8, Mobile 7.5, Motion 7.5, A11y 6-8 (headless-артефакты на focus-restore), Brand 6.5, CRO 4-7 (checkout работает; "freeze" = деградация сессии критика), Design 5. **Хвосты:** Design (нужен SOTD-level signature wow — кинетическая типографика, ботанические текстуры, narrative scroll — многодневная craft-работа); Brand (реальный ОГРНИП — owner-контент). См. worklog.md «Хвосты» + «Чек-лист владельца».

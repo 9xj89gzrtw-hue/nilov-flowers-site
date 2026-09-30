@@ -1,0 +1,65 @@
+[
+  {
+    "url": "http://wiki.thinkgeo.com",
+    "name": "Map Suite MVC Edition All Samples",
+    "snippet": "This sample shows how you can display multiple labels for a given point or feature. You can do this by setting a single TextStyle or multiple TextStyles.",
+    "host_name": "wiki.thinkgeo.com",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "http://docs.teamtad.com",
+    "name": "TAD Shapes",
+    "snippet": "+ Sidebar Welcome. TAD 6.7.7.0 we have introduced a new feature in TAD for quickly creating one or more shapes in TAD TAD shape creation system. This can be ...",
+    "host_name": "docs.teamtad.com",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.wiki.mysticbbs.com",
+    "name": "DokuWiki",
+    "snippet": "Jul 14, 2026 — DokuWiki is a simple to use and highly versatile Open Source wiki software that doesn't require a database. It is loved by users for its ... Read more",
+    "host_name": "www.wiki.mysticbbs.com",
+    "rank": 2,
+    "date": "Jul 14, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://wiki.redpeaks.io",
+    "name": "Collectors [Products documentation]",
+    "snippet": "May 12, 2026 — + Sidebar Redpeaks. A collector is a remote service. Define reusable configuration templates to apply across multiple collectors … modified:  ...",
+    "host_name": "wiki.redpeaks.io",
+    "rank": 3,
+    "date": "May 12, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://wiki.stararmy.com",
+    "name": "Zenjinkaze Fighting High School",
+    "snippet": "May 27, 2026 — Zenjinkaze Fighting High School (known locally as “The Big Z”) is an Upper Secondary school located in Ward 5 of Tsubomi on Yamatai (Planet) ... Read more",
+    "host_name": "wiki.stararmy.com",
+    "rank": 4,
+    "date": "May 27, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://wiki.world.lunc.tools",
+    "name": "📜 Bot Program - Lunc Tools World Wiki",
+    "snippet": "+ Sidebar Navigation begin. The Program Tab is where you design your bot's behavior. can combine triggers, conditions, and actions to create interactive logic. ...",
+    "host_name": "wiki.world.lunc.tools",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://history.sbw.org.au",
+    "name": "The Sydney Bushwalker - SBW Magazine & History Project",
+    "snippet": "Feb 5, 2002 — Explaining why the club requires prospective members to meet first aid, navigation , and walk participation standards prior to full membership. Read more",
+    "host_name": "history.sbw.org.au",
+    "rank": 6,
+    "date": "Feb 5, 2002",
+    "favicon": ""
+  }
+]

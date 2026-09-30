@@ -13,3 +13,9 @@ img/uploads/*
 includes/flowers.state/
 includes/flowers.state/
 db/*.txt
+# S1 temp files (critic screenshots, backups, temp critic worktrees)
+copy*.png
+critic-w*/
+v2026/*.bak
+v2026/*.preF2.bak
+*.bak

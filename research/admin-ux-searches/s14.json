@@ -1,0 +1,65 @@
+[
+  {
+    "url": "https://github.com",
+    "name": "khanahmad4527/femmelady-backend",
+    "snippet": "Collections are visually enhanced in the Directus admin panel using custom colors and icons for faster identification and better UX.",
+    "host_name": "github.com",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.wisp.blog",
+    "name": "Directus vs Framer CMS",
+    "snippet": "Directus is a headless CMS and backend platform for managing complex content structures and digital assets, offering customizable solutions for developers and ... Read more",
+    "host_name": "www.wisp.blog",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://skills.rest",
+    "name": "Develop Vue 3 UI extensions for Directus with WebSocket data",
+    "snippet": "Developing custom UI extensions for Directus (panels, interfaces, displays, layouts) requires deep knowledge of Vue 3, the Directus SDK, and responsive design , ...",
+    "host_name": "skills.rest",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://kanopylabs.com",
+    "name": "Payload CMS vs Directus vs Strapi: Self-Hosted CMS for 2026",
+    "snippet": "Compare Payload CMS vs Directus vs Strapi for self-hosted headless CMS in 2026. Covers TypeScript DX, admin UI, performance, media handling, and pricing.",
+    "host_name": "kanopylabs.com",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://lobehub.com",
+    "name": "Directus | Skills Marketplace",
+    "snippet": "Directus is an open-source headless CMS and data platform that wraps any SQL database with auto-generated REST and GraphQL APIs, a visual admin dashboard , ...",
+    "host_name": "lobehub.com",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.nocobase.com",
+    "name": "Building Internal Tools with Codex: 6 Open-Source Projects for",
+    "snippet": "Help me design an internal admin panel for an existing order database based on Directus . It should include four data types: orders, customers, products, and ...",
+    "host_name": "www.nocobase.com",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://opsily.com",
+    "name": "Self-Host Directus Without Per-Seat Tax",
+    "snippet": "Every collection is a table . Every field is a column. This design gives self-hosted Directus a unique advantage: portability. When you self-host, you own ...",
+    "host_name": "opsily.com",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  }
+]
