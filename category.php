@@ -252,15 +252,11 @@ function render_product_card(array $p, array $ctx): void
             <?php if (!empty($ctx['feature'])): ?>
             <span class="product-card__feature-label"><?= e(setting('feature_card_label', 'Выбор флориста')) ?></span>
             <?php endif; ?>
-            <?php /* строка 1: иконка часов + серый «Сегодня за 1–2 часа» */ ?>
-            <?php if ($deliveryText !== ''): ?><p class="product-card__delivery"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><?= e($deliveryText) ?></p><?php endif; ?>
-            <?php /* строка 2: рейтинг «★ 5.0 (28)» жёлтой звездой */ ?>
-            <?php if ($cardRating !== null): ?>
-            <p class="product-card__rating"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg><span class="product-card__rating-num"><?= e(sprintf('%.1f', (float)$cardRating['avg'])) ?></span>&nbsp;<span class="product-card__rating-count">(<?= (int)$cardRating['count'] ?>)</span></p>
-            <?php endif; ?>
-            <?php /* строка 3: название — чёрный, 15–16px, medium, 1–2 строки */ ?>
-            <a class="product-card__name" href="<?= e($link) ?>"><?= e($p['name']) ?></a>
-            <?php /* строка 4: цена крупно жирным + зачёркнутая старая */ ?>
+            <?php /* S7 СТРОКА 1 (ЦЕНА + СПЛИТ): крупная жирная цена чёрным
+                   (22–24px, font-bold, tabular-nums), при скидке рядом —
+                   зачёркнутая старая; под ней компактный серый бейдж
+                   «Сплит 860 ₽ × 4» (splitLabel, настройка split_label).
+                   Синхронно с index.php (копия render_product_card). */ ?>
             <p class="product-card__price">
               <?php if ($isSale): ?>
                 <span class="product-card__price--discount"><?= formatPrice($price) ?></span>
@@ -269,9 +265,19 @@ function render_product_card(array $p, array $ctx): void
                 <?= formatPrice($price) ?>
               <?php endif; ?>
             </p>
-            <?php /* строка 5: аккуратный серый шильдик «Сплит: от N ₽ × 4» */ ?>
             <?php if ($splitText !== ''): ?>
-            <p class="product-card__split"><span class="product-card__split-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="7.5" height="14" rx="1.5"/><rect x="13.5" y="5" width="7.5" height="14" rx="1.5"/></svg><?= e(trim((string)setting('split_chip_text', 'Сплит'))) ?></span><span class="product-card__split-text"><?= e($splitText) ?></span></p>
+            <p class="product-card__split"><span class="product-card__split-badge"><?= e($splitText) ?></span></p>
+            <?php endif; ?>
+            <?php /* S7 СТРОКА 2 (НАЗВАНИЕ): 15px, чёрное, medium, ровно 2 строки */ ?>
+            <a class="product-card__name" href="<?= e($link) ?>"><?= e($p['name']) ?></a>
+            <?php /* S7 СТРОКА 3 (ДОВЕРИЕ И СРОК): одна строка через точку —
+                   «⚡ За 1–2 ч · ★ 5.0 (24)», серый неброский текст #767676. */ ?>
+            <?php if ($deliveryText !== '' || $cardRating !== null): ?>
+            <p class="product-card__meta">
+              <?php if ($deliveryText !== ''): ?><span class="product-card__meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg><?= e($deliveryText) ?></span><?php endif; ?>
+              <?php if ($deliveryText !== '' && $cardRating !== null): ?><span class="product-card__meta-sep" aria-hidden="true">·</span><?php endif; ?>
+              <?php if ($cardRating !== null): ?><span class="product-card__meta-item product-card__meta-item--rating"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg><?= e(sprintf('%.1f', (float)$cardRating['avg'])) ?>&nbsp;<span class="product-card__rating-count">(<?= (int)$cardRating['count'] ?>)</span></span><?php endif; ?>
+            </p>
             <?php endif; ?>
             <?php /* скрытые данные для Quick View (не отображаются) */ ?>
             <?php if ($comp !== ''): ?><p class="product-card__comp" hidden><?= e($comp) ?></p><?php endif; ?>

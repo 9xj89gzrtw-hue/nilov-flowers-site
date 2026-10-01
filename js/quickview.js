@@ -112,8 +112,10 @@
     var oldEl = card.querySelector('.product-card__price--old');
     var compEl = card.querySelector('.product-card__comp');
     var sizeEl = card.querySelector('.product-card__size-text');
-    var splitEl = card.querySelector('.product-card__split-text');
-    var deliveryEl = card.querySelector('.product-card__delivery');
+    /* S7: сплит-бейдж (.product-card__split-badge) и строка доставки
+       (.product-card__meta-item) сменили классы — читаем оба варианта. */
+    var splitEl = card.querySelector('.product-card__split-badge, .product-card__split-text');
+    var deliveryEl = card.querySelector('.product-card__delivery, .product-card__meta-item');
     var imgEl = card.querySelector('.product-card__img');
     var img2El = card.querySelector('.product-card__img2');
     var hitEl = card.querySelector('.product-card__badge--hit');

@@ -26,12 +26,14 @@ $nfCssPick = static function (string $name): array {
     $file = $useMin ? $min : $src;
     return ['/css/' . basename($file), substr((string)@md5_file($file), 0, 8)];
 };
-[$styleCssHref, $styleCssV] = $nfCssPick('style.css');
-[$nilovCssHref, $nilovCssV] = $nfCssPick('nilov.css');
+/* S7 (CSS-конфликты): легаси-слои style.css / nilov.css / motion-w104.css
+   ОТКЛЮЧЕНЫ полностью — они ломали витрину (кнопки absolute, серые рамки,
+   коррозийные селекторы). Весь визуал витрины теперь контролирует ТОЛЬКО
+   five.css (+fonts.css для @font-face). Нужные правила легаси (корзина-drawer,
+   PDP-галерея, лайтбокс, no-scroll, is-hidden, fly-chip) портированы в five.css
+   секцией «S7. LEGACY-COMPAT». $nfCssPick остаётся для страниц с собственными
+   css (secondary/category/product-extras подключают их локально). */
 [$fiveCssHref, $fiveCssV] = $nfCssPick('five.css');
-/* W104-c (motion): motion-слой — лепестки/lenis/кинетика; ПОСЛЕ five.css
-   (слоистость canvas над фото — см. css/motion-w104.css), ДО fonts.css. */
-[$motionCssHref, $motionCssV] = $nfCssPick('motion-w104.css');
 [$fontsCssHref, $fontsCssV] = $nfCssPick('fonts.css');
 /* W97-fixB1 (B1-5): twitter-мета — парные к og (тот же источник значения).
    twitter:title: product.php/occasion.php передают $pageTitle == og:title; главная
@@ -81,12 +83,10 @@ if (isset($ogType) && $ogType === 'product' && isset($img) && is_string($img) &&
    Playfair/Golos больше не предзагружаются: латиница подтянется по
    unicode-range, кириллицу покрывает витрину. */ ?>
 <link rel="preload" href="/fonts/Inter-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="<?= e($styleCssHref) ?>?v=<?= e($styleCssV) ?>">
-<link rel="stylesheet" href="<?= e($nilovCssHref) ?>?v=<?= e($nilovCssV) ?>">
-<?php /* W96/T2-a: дизайн-система 5cv — ПОСЛЕ nilov.css (перекрывает той же специфичностью),
-   ДО fonts.css (токены --font-ui закреплены в five.css на html:root — выше :root из fonts.css). */ ?>
+<?php /* S7: ЕДИНСТВЕННЫЙ дизайн-файл витрины — five.css (токены + все компоненты
+   + легаси-компат корзины/PDP). Легаси style/nilov/motion больше не едут
+   в браузер — конфликты вёрстки исключены по построению. */ ?>
 <link rel="stylesheet" href="<?= e($fiveCssHref) ?>?v=<?= e($fiveCssV) ?>">
-<link rel="stylesheet" href="<?= e($motionCssHref) ?>?v=<?= e($motionCssV) ?>">
 <link rel="stylesheet" href="<?= e($fontsCssHref) ?>?v=<?= e($fontsCssV) ?>">
 <?php /* W99-fixG (G4): pwa-register.js — с ?v={md5_file 8} как у скриптов
    footer.php (A9): .htaccess отдаёт .js immutable-год, без версии вернувшиеся

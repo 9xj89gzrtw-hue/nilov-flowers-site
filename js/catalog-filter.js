@@ -16,12 +16,17 @@
 (function () {
   'use strict';
 
-  const tabs = document.getElementById('catalogTabs');
-  const grid = document.getElementById('catalogGrid');
-  if (!tabs || !grid) return;
+  /* S7: #catalogTabs больше нет (чипы/плашки бюджета заменяют вкладки) —
+     фильтр живёт только при #catalogGrid (оболочка товарных полок).
+     Селект полки — .fc-shelf внутри сетки: прячем целиком, когда после
+     фильтров в ней не осталось видимых карточек. */
+  var tabs = document.getElementById('catalogTabs');
+  var grid = document.getElementById('catalogGrid');
+  if (!grid) return;
 
-  const cards = grid.querySelectorAll('.product-card');
+  var cards = grid.querySelectorAll('.product-card');
 
+  if (tabs) {
   tabs.addEventListener('click', function (e) {
     const tab = e.target.closest('.catalog-tabs__tab');
     if (!tab) return;
@@ -34,10 +39,6 @@
     tab.setAttribute('aria-pressed', 'true');
 
     const categoryId = tab.dataset.categoryId;
-    /* W105-8fix1 (критик-UX 8-b P1#2): «Все» = «показать всё» — снимает и
-       поиск (раньше после «розы» вкладка возвращала категории, но сетка
-       оставалась урезанной 11/23 без объяснения). Остальные вкладки запрос
-       не трогают — честная AND-комбинация (пусто = empty-state объяснит). */
     if (categoryId === 'all' && searchInp && searchInp.value !== '') {
       searchInp.value = '';
     }
@@ -49,12 +50,13 @@
   });
 
   /* Deep-link: /?category=<id>#catalog */
-  const categoryParam = new URLSearchParams(window.location.search).get('category');
+  var categoryParam = new URLSearchParams(window.location.search).get('category');
   if (categoryParam) {
     const targetTab = Array.from(tabs.querySelectorAll('.catalog-tabs__tab')).find(function (t) {
       return t.dataset.categoryId === categoryParam;
     });
     if (targetTab) targetTab.click();
+  }
   }
 
   /* K5 (W101): deep-link /?chip=hit|premium|low|mid|high#catalog — «Хиты продаж»
@@ -269,6 +271,17 @@
       if (ok) visible++;
     });
 
+    /* S7: товарные полки — прячем целиком, если после всех фильтров в полке
+       не осталось видимых карточек (заголовок без товаров — мусор). */
+    grid.querySelectorAll('.fc-shelf').forEach(function (shelf) {
+      var shelfCards = shelf.querySelectorAll('.product-card');
+      var anyVisible = false;
+      Array.prototype.forEach.call(shelfCards, function (c) {
+        if (c.style.display !== 'none') { anyVisible = true; }
+      });
+      shelf.hidden = !anyVisible;
+    });
+
     /* Счётчики — ОБА показывают одно число (W96-fix3b D9): у select цены и у чипов.
        H6 (W99-fixG2): при активном чипе + поиске подпись чипа сохраняет контекст
        запроса — «N букетов по запросу «…»» (раньше ветка запроса затиралась числом). */
@@ -452,9 +465,13 @@
   if (resetBtn) {
     resetBtn.addEventListener('click', function () {
       if (priceSel) priceSel.value = 'all';
-      var allTab = tabs.querySelector('.catalog-tabs__tab[data-category-id="all"]');
-      if (allTab && !allTab.classList.contains('is-active')) {
-        allTab.click(); /* таб-обработчик сам снимет is-hidden и позовёт apply() */
+      if (tabs) {
+        var allTab = tabs.querySelector('.catalog-tabs__tab[data-category-id="all"]');
+        if (allTab && !allTab.classList.contains('is-active')) {
+          allTab.click(); /* таб-обработчик сам снимет is-hidden и позовёт apply() */
+        } else {
+          cards.forEach(function (card) { card.classList.remove('is-hidden'); });
+        }
       } else {
         cards.forEach(function (card) { card.classList.remove('is-hidden'); });
       }

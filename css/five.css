@@ -92,6 +92,8 @@ html{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
 .section-title{font-variant-numeric:tabular-nums}
 .skip-link{position:fixed;top:-48px;left:16px;z-index:200;padding:10px 16px;border-radius:10px;background:var(--ink);color:#fff;font-weight:600;transition:top .15s}
 .skip-link:focus{top:12px}
+/* S7: визуально скрытый H1 (SEO) — паттерн 5cv */
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
 /* Секции: воздух 5cv */
 .fc-section{padding:56px 0}
@@ -192,7 +194,7 @@ html{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
 .fc-header{
   position:sticky;top:0;z-index:50;
   background:#FFFFFF;
-  border-bottom:1px solid var(--line);
+  border-bottom:1px solid #EBEBEB; /* S7: тонкая серая линия, как на 5cv.ru */
 }
 .fc-header__inner{display:flex;align-items:center;gap:16px;min-height:68px;flex-wrap:wrap}
 .fc-header__logo{
@@ -313,6 +315,9 @@ html{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
 .fc-burger-panel__phone:hover{text-decoration:underline;text-underline-offset:4px}
 
 /* Мобайл <900px: ряд 1 — лого + корзина + бургер; ряд 2 — поиск. */
+@media(max-width:1099px){
+  .fc-header .fc-city{display:none} /* S7: строка плотная — город только на широких */
+}
 @media(max-width:899px){
   .fc-header__inner{min-height:56px;gap:8px}
   .fc-search{order:9;flex:1 1 100%;max-width:none;margin:0 0 8px}
@@ -495,13 +500,14 @@ html:not(.js-ready) .catalog__grid .reveal{opacity:1;transform:none}
 .product-card .product-card__media-link{clip-path:inset(0)}
 .product-card:not(.reveal) .product-card__media-link{clip-path:inset(0);transition:none}
 
-/* ============ 8. КАРТОЧКА ТОВАРА — строгая структура 5cv.ru ============ */
-/* Вертикальное фото 4:5, скругление 12px, без внутренних рамок; на фото
-   только жёлтый «Хит» (#FFB800, чёрный текст) и скидка (белая плашка).
-   Под фото — строго по порядку: часы+«Сегодня за 1–2 часа» → рейтинг
-   «★ 5.0 (28)» жёлтой звездой → название (15–16px, medium) → цена
-   крупно жирным + зачёркнутая старая → серый шильдик «Сплит: от N ₽ × 4»
-   → кнопка «В корзину» (чёрная) + ссылка «Купить в 1 клик». */
+/* ============ 8. КАРТОЧКА ТОВАРА — иерархия e-commerce 5cv.ru (S7) ============
+   Фото вертикальное 4:5, скругление 16px, легчайший контур 1px #F0F0F0;
+   на фото — только жёлтый «Хит» (#FFB800) и белая плашка скидки.
+   Под фото строго по порядку: СТРОКА 1 — крупная жирная цена (22–24px,
+   font-bold) + зачёркнутая старая + серый бейдж «Сплит 860 ₽ × 4»;
+   СТРОКА 2 — название (15px, medium, 2 строки); СТРОКА 3 — «⚡ За 1–2 ч ·
+   ★ 5.0 (24)» серым #767676; СТРОКА 4 — широкая «В корзину» (чёрная
+   #1A1A1A, r12, 44px) + ссылка «Купить в 1 клик». */
 .product-card{
   background:var(--surface);border-radius:var(--radius);
   border:none;
@@ -513,7 +519,8 @@ html:not(.js-ready) .catalog__grid .reveal{opacity:1;transform:none}
   position:relative;aspect-ratio:4/5;
   background:var(--surface-soft);
   overflow:hidden;
-  border-radius:12px;
+  border-radius:16px;
+  outline:1px solid #F0F0F0;outline-offset:-1px;
 }
 .product-card__media::after{content:none}
 .product-card__media picture{display:block;width:100%;height:100%;margin:0}
@@ -530,10 +537,10 @@ html:not(.js-ready) .catalog__grid .reveal{opacity:1;transform:none}
   .product-card__media:focus-within .product-card__img2{opacity:1}
 }
 
-/* бейджи на фото: только «Хит» (жёлтый #FFB800) и скидка (белая плашка) */
+/* бейджи на фото: аккуратные плашки в верхнем левом углу */
 .product-card__badge{
   position:absolute;top:10px;left:10px;right:auto;z-index:2;
-  border-radius:7px;padding:4px 8px;
+  border-radius:8px;padding:4px 9px;
   font-size:.6875rem;font-weight:700;line-height:1.35;letter-spacing:.02em;
   box-shadow:none;
 }
@@ -545,74 +552,80 @@ html:not(.js-ready) .catalog__grid .reveal{opacity:1;transform:none}
 .product-card__badge--hit{background:#FFB800;color:#1A1A1A;text-transform:uppercase;letter-spacing:.05em}
 .product-card__badge--premium{background:#1A1A1A;color:#fff;font-size:.6875rem;text-transform:uppercase;letter-spacing:.05em}
 
-/* тело карточки — строгий порядок строк */
+/* тело карточки — строгий порядок строк e-commerce */
 .product-card__body{
   display:flex;flex-direction:column;align-items:flex-start;
-  padding:8px 0 2px;gap:4px;flex:1;
+  padding:10px 0 2px;gap:5px;flex:1;
 }
 @media(max-width:899px){
-  .product-card__body{padding:8px 0 2px;gap:4px}
-  .product-card__actions{gap:4px;margin-top:4px}
-  .product-card__oneclick{min-height:32px;font-size:.75rem}
+  .product-card__body{padding:10px 0 2px;gap:5px}
+  .product-card__actions{gap:4px}
+  .product-card__oneclick{min-height:36px;font-size:.75rem}
 }
 @media(min-width:768px){.product-card__body{padding:12px 2px 4px;gap:6px}}
 .product-card__feature-label{
   font:600 .6875rem var(--font-ui);letter-spacing:.08em;text-transform:uppercase;
   color:var(--amber-ink);margin-bottom:2px;
 }
-/* строка 1: иконка часов + серый текст «Сегодня за 1–2 часа» */
-.product-card__delivery{
-  display:inline-flex;align-items:center;gap:5px;margin:0;
-  font:400 .75rem var(--font-ui);color:var(--ink-muted);
-}
-.product-card__delivery svg{width:13px;height:13px;flex:none}
-/* строка 2: рейтинг «★ 5.0 (28)» жёлтой звездой */
-.product-card__rating{
-  display:inline-flex;align-items:center;gap:5px;margin:0;
-  font:600 .75rem var(--font-ui);color:var(--ink);
-}
-.product-card__rating svg{width:13px;height:13px;flex:none;color:#FFB800;fill:#FFB800}
-.product-card__rating-count{color:var(--ink-muted);font-weight:400}
-/* строка 3: название — чёрный 15-16px, medium, 1–2 строки */
-.product-card__name{
-  font:500 .9375rem/1.35 var(--font-ui);color:var(--ink);text-decoration:none;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
-}
-.product-card__name:hover{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
-@media(min-width:768px){.product-card__name{font-size:1rem}}
-/* строка 4: цена крупно жирным + зачёркнутая старая */
+/* СТРОКА 1: цена крупно жирным (22-24px) + зачёркнутая старая */
 .product-card__price{
   margin:0;font-weight:800;
-  font-size:1.25rem;line-height:1.15;color:#1A1A1A;
+  font-size:1.375rem;line-height:1.15;color:#1A1A1A;
   font-variant-numeric:tabular-nums;letter-spacing:-.02em;
 }
-@media(min-width:768px){.product-card__price{font-size:1.375rem}}
+@media(min-width:768px){.product-card__price{font-size:1.5rem}}
 .product-card__price--old{
   font-size:.8125rem;font-weight:500;color:var(--ink-muted);
   text-decoration:line-through;text-decoration-thickness:1.5px;
   margin-left:7px;font-variant-numeric:tabular-nums;
 }
 .product-card__price--discount{color:#1A1A1A}
-/* строка 5: аккуратный серый шильдик «Сплит: от N ₽ × 4» */
+/* СТРОКА 1б: компактный серый бейдж «Сплит 860 ₽ × 4» */
 .product-card__split{
-  display:inline-flex;align-items:center;gap:6px;margin:0;
-  font:400 .75rem var(--font-ui);color:var(--ink-muted);
+  display:inline-flex;align-items:center;margin:0;
 }
-.product-card__split-chip{display:none}
+.product-card__split-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  background:var(--surface-soft);color:var(--ink-muted);
+  border-radius:6px;padding:3px 8px;
+  font:500 .6875rem var(--font-ui);white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
 .product-card__split-text{color:var(--ink-muted)}
 .product-card__split--pdp{font-size:.875rem}
 /* скрытые носители данных для Quick View (не отображаются) */
 .product-card__comp[hidden],.product-card__size[hidden]{display:none}
 
-/* строка 6: кнопки «В корзину» (чёрная) + ссылка «Купить в 1 клик» */
-.product-card__actions{display:flex;flex-direction:column;gap:6px;margin-top:6px;width:100%}
+/* СТРОКА 2: название — чёрный 15px, medium, ровно 2 строки */
+.product-card__name{
+  font:500 .9375rem/1.35 var(--font-ui);color:var(--ink);text-decoration:none;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+.product-card__name:hover{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+/* СТРОКА 3: доверие и срок — «⚡ За 1–2 ч · ★ 5.0 (24)», серый #767676 */
+.product-card__meta{
+  display:flex;align-items:center;flex-wrap:wrap;gap:4px 6px;margin:0;
+  font:400 .75rem var(--font-ui);color:var(--ink-muted);
+}
+.product-card__meta-item{
+  display:inline-flex;align-items:center;gap:4px;white-space:nowrap;
+  color:var(--ink-muted);
+}
+.product-card__meta-item svg{width:12px;height:12px;flex:none}
+.product-card__meta-item--rating svg{color:#FFB800;fill:#FFB800}
+.product-card__meta-sep{color:#B9B9BE}
+.product-card__rating-num{font-weight:600}
+.product-card__rating-count{color:var(--ink-muted);font-weight:400}
+
+/* СТРОКА 4: широкая кнопка «В корзину» (чёрная, r12, 44px) + ссылка «Купить в 1 клик» */
+.product-card__actions{display:flex;flex-direction:column;gap:6px;margin-top:auto;padding-top:8px;width:100%}
 .product-card__cta{
   /* нейтрализуем легаси-кружок из style.css:178 (W65-эра: absolute
      right/bottom 12px + 44×44 + opacity:0 — на проде давал stray-квадрат
-     в углу вьюпорта; S6 возвращает кнопку в поток карточки) */
+     в углу вьюпорта; S6/S7 возвращает кнопку в поток карточки) */
   position:static;right:auto;bottom:auto;
   width:100%;height:auto;opacity:1;transform:none;
-  min-height:42px;border:none;border-radius:10px;
+  min-height:44px;border:none;border-radius:12px;
   background:#1A1A1A;color:#fff;
   font:600 .875rem var(--font-ui);cursor:pointer;
   display:inline-flex;align-items:center;justify-content:center;gap:6px;
@@ -620,7 +633,6 @@ html:not(.js-ready) .catalog__grid .reveal{opacity:1;transform:none}
   transition:background .15s;
 }
 .product-card__cta:hover{background:#000;opacity:1;transform:none}
-.product-card__cta:hover{background:#000}
 .product-card__cta:active{transform:scale(.98)}
 .product-card__cta:focus-visible{outline:3px solid rgba(26,26,26,.35);outline-offset:2px}
 .product-card__oneclick{
@@ -639,6 +651,84 @@ html:not(.js-ready) .catalog__grid .reveal{opacity:1;transform:none}
   .product-card__cta{min-height:44px}
   .product-card__oneclick{min-height:44px}
 }
+
+
+/* ============ 8б. S7: ПЛАШКИ БЮДЖЕТА + ЛИПКАЯ ЛЕНТА ЧИПСОВ + ПОЛКИ ============ */
+/* 4 плашки бюджета (2×2 мобайл / 4 в ряд десктоп): #F7F7F8, r14, крупная
+   цена + кол-во букетов; клик фильтрует каталог (js/five.js + budget-чипы). */
+.fc-budget{padding:16px 0 6px}
+.fc-budget__grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media(min-width:768px){.fc-budget__grid{grid-template-columns:repeat(4,1fr);gap:12px}}
+.fc-budget .fc-chip{
+  flex-direction:column;align-items:flex-start;justify-content:center;gap:4px;
+  min-height:84px;padding:14px 16px;border-radius:14px;
+  background:var(--surface-soft);border:1px solid transparent;
+  text-align:left;white-space:normal;
+}
+.fc-budget .fc-chip:hover{background:#EFEFF1}
+.fc-budget .fc-chip:active{transform:scale(.98)}
+.fc-budget .fc-chip:focus-visible{outline:3px solid rgba(26,26,26,.35);outline-offset:2px}
+.fc-budget__label{
+  font:700 1.0625rem/1.2 var(--font-ui);color:var(--ink);
+  font-variant-numeric:tabular-nums;letter-spacing:-.01em;white-space:nowrap;
+}
+.fc-budget__count{font:500 .75rem var(--font-ui);color:var(--ink-muted);white-space:nowrap}
+.fc-budget .fc-chip.is-active{background:#1A1A1A;border-color:#1A1A1A}
+.fc-budget .fc-chip.is-active .fc-budget__label{color:#fff}
+.fc-budget .fc-chip.is-active .fc-budget__count{color:rgba(255,255,255,.72)}
+
+/* липкая лента чипсов — под шапкой (top = высота sticky-шапки) */
+.fc-chips-bar{
+  position:sticky;top:69px;z-index:45;
+  background:#FFFFFF;
+  border-bottom:1px solid var(--line);
+}
+@media(max-width:899px){
+  .fc-chips-bar{top:105px} /* мобайл: ряд1 56px + строка поиска 44+4 + линия (замер 390px) */
+}
+.fc-chips-bar .fc-chips{margin:0;padding:8px 20px}
+.fc-chips-bar .fc-chips .fc-chip{min-height:38px}
+
+/* товарные полки — заголовок 22–26px bold, ровный ритм */
+.fc-shelf + .fc-shelf{margin-top:36px}
+.fc-shelf[hidden]{display:none}
+.fc-shelf__head{display:flex;align-items:baseline;gap:12px;margin:0 0 14px}
+.fc-shelf__title{
+  font:700 1.375rem/1.25 var(--font-ui);color:var(--ink);
+  letter-spacing:-.02em;margin:0;
+}
+@media(min-width:768px){.fc-shelf__title{font-size:1.5rem}}
+@media(max-width:899px){
+  .fc-shelf + .fc-shelf{margin-top:28px}
+  .fc-shelf__title{font-size:1.25rem}
+}
+
+/* ============ 8в. S7: МАСТЕРСКАЯ + ОТЗЫВЫ (блок доверия) ============ */
+.fc-workshop__grid{display:grid;grid-template-columns:1fr;gap:28px;align-items:start}
+@media(min-width:900px){.fc-workshop__grid{grid-template-columns:5fr 7fr}}
+.fc-workshop__title{
+  font:700 1.375rem/1.25 var(--font-ui);color:var(--ink);
+  letter-spacing:-.02em;margin:0 0 14px;
+}
+.fc-workshop__badge{
+  display:inline-flex;align-items:center;gap:8px;
+  background:#FFFFFF;border:1px solid var(--line-strong);border-radius:999px;
+  padding:9px 14px;font:600 .8125rem var(--font-ui);color:var(--ink);
+  text-decoration:none;margin:0 0 18px;transition:border-color .15s;
+}
+.fc-workshop__badge:hover{color:var(--ink);border-color:var(--ink)}
+.fc-workshop__badge svg{width:15px;height:15px;color:#FFB800;fill:#FFB800;flex:none}
+.fc-workshop__row{display:flex;align-items:flex-start;gap:9px;margin:0 0 10px;font:400 .875rem/1.5 var(--font-ui);color:var(--ink)}
+.fc-workshop__row svg{width:16px;height:16px;flex:none;color:var(--ink-muted);margin-top:2px}
+.fc-workshop__note{margin:16px 0 0;font:400 .8125rem/1.55 var(--font-ui);color:var(--ink-muted);max-width:48ch}
+.fc-workshop__reviews{display:flex;flex-direction:column;gap:12px}
+.fc-workshop__review{margin:0;background:#FFFFFF;border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.fc-workshop__stars{margin:0 0 9px;color:#FFB800;font-size:.875rem;letter-spacing:2px}
+.fc-workshop__star--off{color:#D9D9DE}
+.fc-workshop__text{margin:0 0 10px;font:400 .875rem/1.55 var(--font-ui);color:var(--ink)}
+.fc-workshop__meta{display:flex;align-items:center;gap:10px;font:500 .8125rem var(--font-ui);color:var(--ink-muted)}
+.fc-workshop__author{font-weight:600;color:var(--ink)}
+.fc-workshop__date{font-weight:400}
 
 /* ============ 9. КНОПКА fc-btn (общая система) ============ */
 .fc-btn{
@@ -2602,3 +2692,134 @@ body.page-checkout.cookie-visible.nf-cookie-pill{padding-bottom:0}
 .product-page__oneclick{width:calc(100% - 24px);margin:0 12px 10px}
 }
 #zoneCheckResult{white-space:normal!important;max-width:200px;line-height:1.3}
+
+.section--faq{padding-top:var(--s-5)}
+.product-page__cta{scroll-margin-bottom:80px}
+.product-page__cta-spacer{display:none}
+.btn--accent.product-page__cta--sticky{position:fixed;left:12px;right:12px;bottom:calc(70px + env(safe-area-inset-bottom));z-index:40;box-shadow:0 10px 30px -12px rgba(43,45,47,.5)}
+.product-page__cta-spacer{display:block;height:56px}
+.product-page__cta--hidden{opacity:0;pointer-events:none;transform:translateY(12px);transition:opacity .2s cubic-bezier(.4,0,.2,1),transform .2s cubic-bezier(.4,0,.2,1)}
+body.cookie-visible .btn--accent.product-page__cta--sticky{bottom:calc(122px + env(safe-area-inset-bottom))}
+.product-page{padding-bottom:128px}
+.product-card.is-hidden{display:none}
+.product-card__badge--urgent{background:var(--rose-cta,#AE4A71);color:#fff;letter-spacing:.14em;text-transform:uppercase;font-size:.6875rem}
+.product-page__urgent-badge{position:static;display:inline-block;margin-bottom:10px}
+.product-card__urgent-note{margin:4px 0 0;font-size:.78rem;font-weight:500;color:var(--rose-cta,#AE4A71)}
+.order__selected{margin-bottom:14px;font-weight:600}
+.order-form__error{color:var(--err);font-size:.875rem;min-height:1em}
+.cart-panel{position:fixed;inset:0;z-index:100;display:grid;pointer-events:none}
+.cart-panel[hidden]{display:none}
+.cart-panel__backdrop{background:rgba(43,45,47,.45);backdrop-filter:blur(3px);pointer-events:none}
+.cart-panel:not([hidden]){pointer-events:auto}
+.cart-panel:not([hidden]) .cart-panel__backdrop{pointer-events:auto}
+.cart-panel__drawer{position:absolute;top:0;right:0;bottom:0;width:min(420px,94vw);background:#fff;display:flex;flex-direction:column;box-shadow:-20px 0 60px rgba(43,45,47,.25);border-radius:var(--radius-lg) 0 0 var(--radius-lg)}
+.cart-panel__head{display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid var(--line)}
+.cart-panel__title{font-family:var(--font-display);font-size:1.3rem}
+.cart-panel__close{border:none;background:none;font-size:1.6rem;cursor:pointer;color:var(--ink-soft);min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;border-radius:12px;margin:-8px -8px -8px 0}
+.cart-panel__items{flex:1;overflow-y:auto;padding:16px 24px;display:grid;gap:14px;align-content:start}
+.cart-panel__empty{padding:24px;color:var(--ink-soft);text-align:center}
+.cart-panel__foot{border-top:1px solid var(--line);padding:18px 24px;display:grid;gap:10px}
+.cart-panel__total{font-weight:700;font-size:1rem}
+.cart-panel__continue{justify-content:center}
+body.no-scroll{overflow:hidden}
+html.no-scroll{overflow:hidden}
+.cart-upsell{border-top:1px solid var(--line);padding:14px 24px;background:var(--bg)}
+.cart-upsell__title{font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:10px}
+.cart-upsell__items{display:grid;gap:10px}
+.cart-upsell-item{display:grid;grid-template-columns:48px 1fr auto;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px}
+.cart-upsell-item__img,.cart-upsell-item__img-placeholder{width:48px;height:48px;border-radius:8px;object-fit:cover;background:var(--bg-alt)}
+.cart-upsell-item__name{font-size:.8125rem;font-weight:600}
+.cart-upsell-item__price{font-size:.78rem;color:var(--ink-soft)}
+.cart-upsell-item__add{width:44px;height:44px;border-radius:50%;border:none;background:var(--rose-cta);color:#fff;font-size:1.1rem;cursor:pointer;display:grid;place-items:center;transition:transform .15s,background .15s}
+.cart-upsell-item__add:hover{background:var(--rose-cta-hover);transform:scale(1.08)}
+.lightbox{position:fixed;inset:0;z-index:120;display:grid;place-items:center;padding:24px}
+.lightbox[hidden]{display:none}
+.lightbox__backdrop{position:absolute;inset:0;background:rgba(43,45,47,.82);backdrop-filter:blur(4px)}
+.lightbox__figure{position:relative;max-width:min(880px,92vw);margin:0}
+.lightbox__img{width:100%;max-height:86vh;object-fit:contain;border-radius:var(--radius);box-shadow:0 32px 80px -24px rgba(0,0,0,.6)}
+.lightbox__close{position:absolute;top:-16px;right:-16px;width:40px;height:40px;border-radius:50%;border:none;background:#fff;color:var(--ink);font-size:1.4rem;cursor:pointer;display:grid;place-items:center;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.product-page{padding:12px 0 64px}
+.product-page__layout{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(24px,4vw,56px);align-items:start}
+.product-page__layout{grid-template-columns:1fr}
+.product-page__layout > .product-page__info{order:-1}
+.zone-check{margin-left:0;flex-wrap:wrap;max-width:100%}
+.product-gallery{position:sticky;top:88px}
+.product-gallery{position:relative}
+.product-page__media{position:relative;display:block;width:100%;border:none;padding:0;background:none;cursor:zoom-in;border-radius:var(--radius-lg);overflow:hidden;box-shadow:0 24px 48px -24px rgba(43,45,47,.35)}
+.product-gallery__viewport{overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;border-radius:var(--radius-lg)}
+.product-gallery__viewport::-webkit-scrollbar{display:none}
+.product-gallery__track{display:flex}
+.product-gallery__slide{flex:0 0 100%;scroll-snap-align:start;min-width:100%}
+.product-gallery__cap{font-size:.75rem;color:var(--ink-soft);text-align:center;padding:7px 12px;background:var(--bg-alt);border-bottom-left-radius:var(--radius-lg);border-bottom-right-radius:var(--radius-lg);letter-spacing:.02em}
+.product-gallery__viewport{position:relative}
+.product-gallery__zoom{width:100%;aspect-ratio:4/4.8;background-size:165%;background-position:50% 36%;background-repeat:no-repeat;filter:saturate(1.04) contrast(1.03)}
+.product-gallery__thumb--zoom{transform:scale(2)}
+.product-gallery__nav{display:none;position:absolute;top:50%;transform:translateY(-50%);z-index:5;width:44px;height:44px;min-width:44px;border-radius:50%;border:1px solid var(--line);background:rgba(255,255,255,.94);color:var(--ink);font-size:1.1rem;cursor:pointer;place-items:center;box-shadow:0 6px 18px -10px rgba(43,45,47,.4)}
+.product-gallery__nav--l{left:8px}
+.product-gallery__nav--r{right:8px}
+.product-gallery__nav{display:grid}
+.product-gallery__slide img{width:100%;height:auto;object-fit:cover}
+.product-gallery__slide--placeholder{display:grid;place-items:center;background:var(--bg-alt);aspect-ratio:4/4.8}
+.product-gallery__counter{position:absolute;bottom:14px;right:14px;background:rgba(255,255,255,.9);border-radius:999px;padding:4px 12px;font-size:.75rem;font-weight:600}
+.product-page__badge{position:absolute;z-index:2;top:14px;left:14px;background:rgba(255,255,255,.92);backdrop-filter:blur(6px);border-radius:999px;padding:6px 14px;font-size:.75rem;font-weight:600}
+.product-gallery__thumbs{display:flex;gap:10px;margin-top:12px}
+.product-gallery__thumb{width:72px;height:88px;border:2px solid transparent;border-radius:12px;overflow:hidden;padding:0;background:none;cursor:pointer;transition:.15s}
+.product-gallery__thumb img{width:100%;height:100%;object-fit:cover}
+.product-gallery__thumb[aria-current="true"]{border-color:var(--rose-cta)}
+.product-page__info{display:flex;flex-direction:column;gap:14px;padding-top:8px}
+.product-page__name{font-family:var(--font-display);font-weight:600;font-size:clamp(1.9rem,4vw,2.7rem);line-height:1.1}
+.product-page__price{font-size:1.5rem;font-weight:700;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.product-page__price--old{color:rgba(43,45,47,.72);text-decoration:line-through;text-decoration-thickness:2px;text-decoration-color:rgba(174,74,113,.7);font-weight:400;font-size:1rem}
+.product-page__price--discount{color:var(--rose-cta)}
+.product-page__save-badge{display:inline-block;background:var(--mint);color:var(--ink);border-radius:999px;padding:4px 12px;font-size:.75rem;font-weight:700}
+.product-page__category{font-size:.8rem;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-soft);font-weight:600}
+.product-page__description{color:var(--ink);max-width:46ch}
+.product-page__trust{display:grid;gap:10px;margin-top:10px;border-top:1px solid var(--line);padding-top:18px}
+.product-page__trust li{list-style:none;display:flex;gap:10px;align-items:baseline;font-size:.875rem;color:var(--ink-soft)}
+.product-page__trust li::before{content:"✓";color:var(--rose-cta);font-weight:700}
+.product-page__media{cursor:zoom-in}
+.product-gallery__img{width:100%;height:auto;object-fit:cover;transition:transform .5s cubic-bezier(.4,0,.2,1)}
+.product-page__media:hover .product-gallery__img{transform:scale(1.06)}
+.product-gallery__img-placeholder{display:grid;place-items:center;background:var(--bg-alt);aspect-ratio:4/4.8}
+.product-card__cat{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft)}
+#cartPanel .cart-panel__backdrop{transition: opacity .24s cubic-bezier(0.4, 0, 0.2, 1);}
+#cartPanel[hidden] .cart-panel__backdrop{transition: opacity .24s cubic-bezier(0.42, 0, 1, 1);}
+#cartPanel:not([hidden]) .cart-panel__backdrop{animation: fc-backdrop-in .24s cubic-bezier(0.4, 0, 0.2, 1);}
+html.motion-lite .lightbox__backdrop{background:rgba(43,45,47,.88); backdrop-filter:none; -webkit-backdrop-filter:none;}
+.nf-burst-petal{position:fixed; z-index:130; width:13px;height:17px; margin:0; border-radius:100% 0 100% 0; opacity:0; pointer-events:none; will-change:transform,opacity;}
+.nf-fly-chip{position:fixed; z-index:130; width:44px;height:44px; display:grid;place-items:center; border-radius:12px; overflow:hidden; background:#fff; color:var(--pink-deep,#e03a8a); font:700 1.1rem/1 var(--font-ui,Montserrat,sans-serif); box-shadow:0 10px 26px -10px rgba(28,26,30,.45); opacity:0; pointer-events:none; will-change:transform,opacity;}
+.nf-fly-chip img{width:100%;height:100%;object-fit:cover;display:block}
+.lightbox .lightbox__figure{transform-origin:50% 42%;}
+.lightbox{transition:display .18s allow-discrete;}
+.lightbox .lightbox__backdrop{transition:opacity .24s cubic-bezier(0.4, 0, 0.2, 1);}
+.lightbox .lightbox__figure{transition:transform .32s cubic-bezier(0.4, 0, 0.2, 1), opacity .24s cubic-bezier(0.4, 0, 0.2, 1);}
+.lightbox[hidden] .lightbox__backdrop{opacity:0; transition:opacity .18s cubic-bezier(0.42, 0, 1, 1);}
+.lightbox[hidden] .lightbox__figure{transform:scale(.96); opacity:0; transition:transform .18s cubic-bezier(0.42, 0, 1, 1), opacity .18s cubic-bezier(0.42, 0, 1, 1);}
+.lightbox .lightbox__backdrop{opacity:0;}
+.lightbox .lightbox__figure{transform:scale(.96); opacity:0;}
+.lightbox:not([hidden]) .lightbox__backdrop{animation:fc-backdrop-in .24s cubic-bezier(0.4, 0, 0.2, 1);}
+.lightbox:not([hidden]) .lightbox__figure{animation:nf-lightbox-in .32s cubic-bezier(0.4, 0, 0.2, 1);}
+#cartPanel.is-exiting .cart-panel__drawer{transform:translateX(100%); transition:transform .26s cubic-bezier(0.42, 0, 1, 1);}
+#cartPanel.is-exiting .cart-panel__backdrop{opacity:0; transition:opacity .26s cubic-bezier(0.42, 0, 1, 1);}
+#cartPanel[hidden] .cart-panel__backdrop{pointer-events:none;}
+.nf-burst-petal, .nf-fly-chip{display: none !important;}
+.lightbox{transition: none !important;}
+.lightbox .lightbox__backdrop, .lightbox .lightbox__figure{transition: none !important; animation: none !important;}
+#cartPanel.is-exiting .cart-panel__drawer, #cartPanel.is-exiting .cart-panel__backdrop{transition: none !important;}
+.product-gallery__zoom{transition: background-position .18s cubic-bezier(0.4, 0, 0.2, 1);}
+.product-gallery__slide:hover .product-gallery__zoom{background-position: var(--zx, 50%) var(--zy, 36%);}
+.lightbox__nav{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:14px;z-index:3}
+.lightbox__arrow{width:44px;height:44px;border-radius:999px;border:1px solid rgba(255,255,255,.35);background:rgba(28,26,30,.55);color:#fff;font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s cubic-bezier(.4,0,.2,1),transform .2s cubic-bezier(.4,0,.2,1)}
+.lightbox__arrow:hover{background:rgba(28,26,30,.85);transform:translateY(-1px)}
+.lightbox__arrow:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.lightbox__counter{color:rgba(255,255,255,.85);font:500 13px/1 var(--font-ui,'Golos Text',sans-serif);letter-spacing:.08em;font-variant-numeric:tabular-nums}
+.lightbox__nav{bottom:calc(10px + env(safe-area-inset-bottom,0px));gap:10px}
+.lightbox__arrow{width:40px;height:40px;font-size:16px}
+.lightbox__counter{font-size:12px}
+
+/* S7 fix: сворачиваемость grid-элементов формы заказа (было только в style.css
+   — fieldset по умолчанию min-inline-size:min-content распирал сетку за
+   вьюпорт на 390px: scrollWidth 458). Плюс явная ширина полей ввода. */
+.order-form__payment,.order-form__nested,.order-form fieldset{min-width:0}
+.order-form__field input,.order-form__field select,.order-form__field textarea{width:100%;max-width:100%}
+.order-form__datechips{max-width:100%;flex-wrap:wrap}

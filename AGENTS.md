@@ -79,8 +79,43 @@
 - Новые ключи: topbar_delivery_text, trust_badge_1..4 (+ allowlist +
   поля админки); guard-UPDATE search_placeholder/chips_tags.
 
+## Сессия S7 (01.10.2026, коммерческая структура 5cv) — сделано
+- **CSS-КОНФЛИКТЫ ЗАКРЫТЫ** (следующий деплой): head.php подключает ТОЛЬКО
+  five.css + fonts.css — style.css/nilov.css/motion-w104.css НЕ едут в
+  браузер. Нужные легаси-правила (cart-panel/cart-upsell drawer, product-page/
+  product-gallery PDP, lightbox, no-scroll, is-hidden, order-form__error,
+  nf-fly-chip — 123 шт.) портированы в five.css секцией «S7. LEGACY-COMPAT»
+  (селекторы «idden]» style.css починены). footer.php: lenis/kinetic/petals
+  отключены (reveal.js остался — инертный контракт).
+- **Главная = полки 5cv**: шапка одной строкой (лого/поиск/город/телефон/
+  корзина, линия #EBEBEB) → 4 бейджа доверия → 4 ПЛАШКИ БЮДЖЕТА (.fc-budget,
+  .fc-chip data-chip=low/mid/high/premium, клик = фильтр + скролл к #catalog)
+  → липкая лента чипов (.fc-chips-bar sticky; Все→Хиты→теги) → три ПОЛКИ
+  (.fc-shelf: «🔥 Хиты продаж» 4 хита / «🌸 Авторские букеты и розы» 6
+  не-премиум / «✨ Премиум композиции и коробки» премиум+остаток+сладости;
+  каждый товар 1 раз; пустые полки скрывает apply()) → мастерская + 3 отзыва
+  (.fc-workshop) → поводы/форма/SEO/FAQ. Hero/marquee/коллаж/manifesto/
+  премиум-dark/strip/допы/editorial/stores УДАЛЕНЫ (H1 → .sr-only).
+- **Карточка (index + category копия)**: фото 4:5 r16 контур #F0F0F0 →
+  ЦЕНА 22-24px/800 + старая + бейдж «Сплит N ₽ × 4» (.product-card__split-badge)
+  → название 15px/2 строки → «⚡ За 1–2 ч · ★ 5.0 (N)» #767676 → «В корзину»
+  #1A1A1A r12 h44 + «Купить в 1 клик». quickview.js читает новые классы
+  (split-badge/meta-item, старые — фолбэком).
+- **JS**: catalog-filter.js — guard только по #catalogGrid (вкладок нет),
+  скрытие пустых .fc-shelf; five.js — бюджет-чипы в общем массиве чипов +
+  скролл после клика по плашке.
+- **S7-миграция db.php**: +shelf_*_title, workshop_hours/rating/note;
+  guard-UPDATE: chips_all_text→«Все», chips_tags+«Подарки», split_label→
+  «Сплит {price} ₽ × {div}», card_delivery_text→«За 1–2 ч».
+- **ВНИМАНИЕ локальная проверка**: headless-браузер песочницы ресайзит
+  lazy-картинки под sizes (naturalWidth=размеру sizes) — серые прямоугольники
+  на локальных скринах = артефакт эмуляции, НЕ баг кода (байты сервера
+  идентичны, статическая карточная разметка красится, прод красит).
+- Форма заказа: fieldset/payment min-width:0 (было только в style.css —
+  без него mobile scrollWidth 458).
+
 ## Окружение локальной разработки
-- **PHP:** `/home/z/tools/php` (8.4.23 static, полный GD+SQLite). Сервер: `php -S 127.0.0.1:8090 router.php` в корне репо. БД `db/flowers.db` создатся автоматически (seed).
+- **PHP:** `/home/z/tools/php` (8.4.12 static, GD+SQLite; источник — static-php.dev). Сервер: `PHP_CLI_SERVER_WORKERS=8 /home/z/tools/php -S 127.0.0.1:8090 router.php` в корне репо. БД `db/flowers.db` создатся автоматически (seed).
 - **Не трогать** порт 3000 (песочница Next.js my-project) и repo `newsite` (кейтеринг, отдельный проект).
 - Секреты: db/*.db, db/*.txt, .env — gitignored; пуш только в main, **никогда force-push**; перед пушем `php -l` (изменённое) + `node --check` (js) + `python3 scripts/minify-css.py` + live-прогон agent-browser.
 

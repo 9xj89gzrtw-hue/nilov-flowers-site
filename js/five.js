@@ -235,6 +235,13 @@
     }
     var chipsBox = document.querySelector('.fc-chips');
     var chips = chipsBox ? Array.prototype.slice.call(chipsBox.querySelectorAll('.fc-chip')) : [];
+    /* S7: плашки бюджета (.fc-budget .fc-chip) — те же фильтры каталога,
+       что и чипы ленты: один общий массив = синхронный is-active
+       (клик по плашке снимает чип и наоборот), apply() общий. */
+    var budgetBox = document.querySelector('.fc-budget');
+    if (budgetBox) {
+      chips = chips.concat(Array.prototype.slice.call(budgetBox.querySelectorAll('.fc-chip')));
+    }
 
     /* A3: пилюля под строкой поиска на главной — «Нашлось N букетов — посмотреть ↓».
        Появляется при непустом запросе, прячется при очистке; клик — плавный скролл
@@ -346,6 +353,12 @@
           chip.setAttribute('aria-pressed', 'true');
         }
         refilter(true);
+        /* S7: клик по плашке бюджета — плавно ведём к отфильтрованному
+           каталогу ниже (чипы ленты не скроллят: покупатель уже у полок). */
+        if (chip.closest && chip.closest('.fc-budget')) {
+          var cat = document.getElementById('catalog');
+          if (cat) nfScrollToEl(cat);
+        }
       });
     });
 

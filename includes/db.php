@@ -1474,6 +1474,40 @@ $pdo->exec("UPDATE occasions SET faq_q1 = replace(faq_q1, 'Какую карту
         ':k' => 'chips_tags',
         ':ov' => 'Пионы,Гортензии,Французские розы,Монобукеты,В шляпных коробках,Подарок девушке',
     ]);
+
+    /* ===== S7 (v2026.7, коммерческая структура 5cv.ru): полки + плашки
+       бюджета + мастерская =====
+       1) Новые ключи: заголовки трёх товарных полок (shelf_hits_title /
+          shelf_author_title / shelf_premium_title), блок мастерской
+          (workshop_hours / workshop_rating / workshop_note) — адрес берём
+          из shop_address, часы — фолбэк shop_hours.
+       2) Guard-UPDATE по ТОЧНЫМ старым значениям (кастом владельца свят):
+          - chips_all_text «Все букеты» → «Все» (лента чипсов 5cv-структуры);
+          - chips_tags + «Подарки» (лента: Все → Хиты → теги-коллекции);
+          - split_label «Сплит: от N ₽ × 4» → «Сплит N ₽ × 4» (бейдж карточки
+            «Сплит 860 ₽ × 4» — новая иерархия цена+сплит первой строкой);
+          - card_delivery_text «Сегодня за 1–2 часа» → «За 1–2 ч» (строка
+            доверия «⚡ За 1–2 ч · ★ 5.0 (24)»). */
+    $pdo->exec("INSERT OR IGNORE INTO settings (key, value) VALUES
+        ('shelf_hits_title', '🔥 Хиты продаж'),
+        ('shelf_author_title', '🌸 Авторские букеты и розы'),
+        ('shelf_premium_title', '✨ Премиум композиции и коробки'),
+        ('workshop_hours', 'Ежедневно с 09:00 до 21:00'),
+        ('workshop_rating', '5.0 · Более 400 отзывов на Яндекс Картах'),
+        ('workshop_note', 'Собираем букеты утром и везём в день заказа — загляните за свежими цветами или закажите доставку.')");
+    $s7guard = $pdo->prepare("UPDATE settings SET value = :nv WHERE key = :k AND value = :ov");
+    $s7guard->execute([':nv' => 'Все', ':k' => 'chips_all_text', ':ov' => 'Все букеты']);
+    $s7guard->execute([
+        ':nv' => 'Розы,Пионы,Гортензии,В коробках,Подарки',
+        ':k' => 'chips_tags',
+        ':ov' => 'Розы,Пионы,Гортензии,В коробках',
+    ]);
+    $s7guard->execute([
+        ':nv' => 'Сплит {price} ₽ × {div}',
+        ':k' => 'split_label',
+        ':ov' => 'Сплит: от {price} ₽ × {div}',
+    ]);
+    $s7guard->execute([':nv' => 'За 1–2 ч', ':k' => 'card_delivery_text', ':ov' => 'Сегодня за 1–2 часа']);
 }
 
 /* S3 (v2026.3): теги/состав/размеры демо-букетов — общий хелпер для свежих

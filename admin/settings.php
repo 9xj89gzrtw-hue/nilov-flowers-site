@@ -107,6 +107,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
         'gift_self_label','gift_other_label',
         /* S6 (стерильный 5cv): верхняя строка шапки + 4 бейджа доверия */
         'topbar_delivery_text','trust_badge_1','trust_badge_2','trust_badge_3','trust_badge_4',
+        /* S7 (коммерческая структура 5cv): заголовки товарных полок + мастерская */
+        'shelf_hits_title','shelf_author_title','shelf_premium_title',
+        'workshop_hours','workshop_rating','workshop_note',
         /* W96 (редизайн 5cv): тексты новых блоков витрины — город, hero-промо, чипы цен,
            секции хитов/премиума/бюджета/допов, поводы, магазины, SEO-текст, журнал */
         'citybar_text','city_label','search_placeholder','catalog_btn_text',
@@ -906,6 +909,22 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
     <input class="input" id="s-cdeliv" name="card_delivery_text" value="<?= sv('card_delivery_text', $s) ?>">
     <label class="f" for="s-splitchip">Чип сплита в карточке</label>
     <input class="input" id="s-splitchip" name="split_chip_text" value="<?= sv('split_chip_text', $s) ?>">
+
+    <p style="font-size:.9rem;font-weight:700;margin:18px 0 6px">Товарные полки каталога (S7)</p>
+    <label class="f" for="s-shelf1">Заголовок полки 1 — хиты</label>
+    <input class="input" id="s-shelf1" name="shelf_hits_title" value="<?= sv('shelf_hits_title', $s) ?>">
+    <label class="f" for="s-shelf2">Заголовок полки 2 — авторские букеты и розы</label>
+    <input class="input" id="s-shelf2" name="shelf_author_title" value="<?= sv('shelf_author_title', $s) ?>">
+    <label class="f" for="s-shelf3">Заголовок полки 3 — премиум и коробки</label>
+    <input class="input" id="s-shelf3" name="shelf_premium_title" value="<?= sv('shelf_premium_title', $s) ?>">
+
+    <p style="font-size:.9rem;font-weight:700;margin:18px 0 6px">Мастерская и отзывы (под каталогом)</p>
+    <label class="f" for="s-wshours">Часы работы мастерской</label>
+    <input class="input" id="s-wshours" name="workshop_hours" value="<?= sv('workshop_hours', $s) ?>">
+    <label class="f" for="s-wsrating">Плашка рейтинга мастерской</label>
+    <input class="input" id="s-wsrating" name="workshop_rating" value="<?= sv('workshop_rating', $s) ?>">
+    <label class="f" for="s-wsnote">Подпись мастерской (пусто — скрыть)</label>
+    <input class="input" id="s-wsnote" name="workshop_note" value="<?= sv('workshop_note', $s) ?>">
     <label class="f" for="s-splitfmt">Формат платежа сплита ({div} — число платежей, {per} — платёж)</label>
     <input class="input" id="s-splitfmt" name="card_split_format" value="<?= sv('card_split_format', $s) ?>">
     <label class="f" for="s-bf">Бейдж «Свежая поставка» (по тегу «свеж…»)</label>
