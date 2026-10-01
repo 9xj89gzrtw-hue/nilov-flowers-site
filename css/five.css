@@ -476,38 +476,31 @@ html{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
     text-transform:uppercase;color:var(--ink-muted);margin:0;
   }
 }
-.catalog__grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px 10px}
+/* S8: ЕДИНАЯ монолитная сетка 5cv — 2 колонки на мобильных (gap 12px),
+   4 колонки на десктопе (gap 20px); никаких заголовков-разделителей
+   и пустых полок — весь каталог одним плотным ритмом. */
+.catalog__grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
 @media(max-width:899px){.catalog-tabs{margin-bottom:10px}}
 /* Мобильный первый экран: ряд тумблера избранного скрываем — ЦЕНА
    первой карточки видна над нижней панелью. */
 @media(max-width:899px){
   .catalog-toolbar{display:none!important}
 }
-@media(max-width:359px){.catalog__grid{gap:12px 8px}}
-@media(min-width:768px){.catalog__grid{grid-template-columns:repeat(3,1fr);gap:24px 16px}}
-@media(min-width:1024px){.catalog__grid{grid-template-columns:repeat(4,1fr)}}
-@media(min-width:1280px){.catalog__grid{grid-template-columns:repeat(5,1fr)}}
+@media(min-width:768px){.catalog__grid{grid-template-columns:repeat(3,1fr);gap:16px}}
+@media(min-width:1024px){.catalog__grid{grid-template-columns:repeat(4,1fr);gap:20px}}
+/* S8-инцидент «серые прямоугольники»: карточки больше НЕ зависят от
+   reveal-каскада (класс reveal снят с карточек в разметке) и от любых
+   clip-path анимаций — сетка рендерится сразу, фото грузятся eager. */
 
-/* появление карточек: каскадный reveal (контракт .reveal/.reveal--visible) */
-.catalog__grid .reveal{opacity:0;transform:translateY(14px)}
-.catalog__grid .reveal.reveal--visible{opacity:1;transform:none;transition:opacity .5s ease,transform .5s ease}
-.catalog__grid>.reveal:nth-child(2){transition-delay:.04s}
-.catalog__grid>.reveal:nth-child(3){transition-delay:.08s}
-.catalog__grid>.reveal:nth-child(4){transition-delay:.12s}
-.catalog__grid>.reveal:nth-child(5){transition-delay:.16s}
-.catalog__grid>.reveal:nth-child(n+6){transition-delay:.2s}
-html:not(.js-ready) .catalog__grid .reveal{opacity:1;transform:none}
-.product-card .product-card__media-link{clip-path:inset(0)}
-.product-card:not(.reveal) .product-card__media-link{clip-path:inset(0);transition:none}
-
-/* ============ 8. КАРТОЧКА ТОВАРА — иерархия e-commerce 5cv.ru (S7) ============
-   Фото вертикальное 4:5, скругление 16px, легчайший контур 1px #F0F0F0;
-   на фото — только жёлтый «Хит» (#FFB800) и белая плашка скидки.
-   Под фото строго по порядку: СТРОКА 1 — крупная жирная цена (22–24px,
-   font-bold) + зачёркнутая старая + серый бейдж «Сплит 860 ₽ × 4»;
+/* ============ 8. КАРТОЧКА ТОВАРА — иерархия e-commerce 5cv.ru (S8) ============
+   Фото вертикальное 4:5, скругление 12px, подложка #F7F7F8,
+   легчайший контур 1px #F0F0F0; на фото — только жёлтый «Хит»
+   (#FFB800) и белая плашка скидки.
+   Под фото строго по порядку: СТРОКА 1 — крупная жирная цена (20–22px,
+   font-bold) + зачёркнутая старая + серый бейдж «Сплит 850 ₽ × 4»;
    СТРОКА 2 — название (15px, medium, 2 строки); СТРОКА 3 — «⚡ За 1–2 ч ·
    ★ 5.0 (24)» серым #767676; СТРОКА 4 — широкая «В корзину» (чёрная
-   #1A1A1A, r12, 44px) + ссылка «Купить в 1 клик». */
+   #1A1A1A, r10, 42px) + кнопка «В 1 клик». */
 .product-card{
   background:var(--surface);border-radius:var(--radius);
   border:none;
@@ -517,16 +510,23 @@ html:not(.js-ready) .catalog__grid .reveal{opacity:1;transform:none}
 }
 .product-card__media{
   position:relative;aspect-ratio:4/5;
-  background:var(--surface-soft);
+  background:#F7F7F8;
   overflow:hidden;
-  border-radius:16px;
+  border-radius:12px;
   outline:1px solid #F0F0F0;outline-offset:-1px;
 }
 .product-card__media::after{content:none}
-.product-card__media picture{display:block;width:100%;height:100%;margin:0}
-.product-card__img,.product-card__media img{
-  width:100%;height:100%;object-fit:cover;aspect-ratio:auto;
+/* S8-инцидент «серые прямоугольники»: фото карточки ВИДНО ВСЕГДА —
+   жёсткая гарантия (никаких opacity:0/visibility:hidden ни при каком
+   JS-состоянии); srcset/sizes прямо на <img> (без <picture>),
+   loading="eager" в разметке — файл запрашивается немедленно. */
+.product-card__img{
+  display:block!important;
+  width:100%!important;height:100%!important;
+  object-fit:cover!important;aspect-ratio:auto;
+  opacity:1!important;visibility:visible!important;
 }
+.product-card__media img{width:100%;height:100%;object-fit:cover;aspect-ratio:auto}
 /* второй ракурс — мгновенная подмена при hover (без спецэффектов) */
 .product-card__img2{
   position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
@@ -559,21 +559,20 @@ html:not(.js-ready) .catalog__grid .reveal{opacity:1;transform:none}
 }
 @media(max-width:899px){
   .product-card__body{padding:10px 0 2px;gap:5px}
-  .product-card__actions{gap:4px}
-  .product-card__oneclick{min-height:36px;font-size:.75rem}
+  .product-card__actions{gap:5px}
 }
 @media(min-width:768px){.product-card__body{padding:12px 2px 4px;gap:6px}}
 .product-card__feature-label{
   font:600 .6875rem var(--font-ui);letter-spacing:.08em;text-transform:uppercase;
   color:var(--amber-ink);margin-bottom:2px;
 }
-/* СТРОКА 1: цена крупно жирным (22-24px) + зачёркнутая старая */
+/* СТРОКА 1: цена крупно жирным (20-22px) + зачёркнутая старая */
 .product-card__price{
   margin:0;font-weight:800;
-  font-size:1.375rem;line-height:1.15;color:#1A1A1A;
+  font-size:1.25rem;line-height:1.15;color:#1A1A1A;
   font-variant-numeric:tabular-nums;letter-spacing:-.02em;
 }
-@media(min-width:768px){.product-card__price{font-size:1.5rem}}
+@media(min-width:768px){.product-card__price{font-size:1.375rem}}
 .product-card__price--old{
   font-size:.8125rem;font-weight:500;color:var(--ink-muted);
   text-decoration:line-through;text-decoration-thickness:1.5px;
@@ -617,15 +616,16 @@ html:not(.js-ready) .catalog__grid .reveal{opacity:1;transform:none}
 .product-card__rating-num{font-weight:600}
 .product-card__rating-count{color:var(--ink-muted);font-weight:400}
 
-/* СТРОКА 4: широкая кнопка «В корзину» (чёрная, r12, 44px) + ссылка «Купить в 1 клик» */
+/* СТРОКА 4: широкая кнопка «В корзину» (чёрная, r10, 42px) + кнопка
+   «В 1 клик» (белая с контуром, r10) — обе на всю ширину карточки */
 .product-card__actions{display:flex;flex-direction:column;gap:6px;margin-top:auto;padding-top:8px;width:100%}
 .product-card__cta{
   /* нейтрализуем легаси-кружок из style.css:178 (W65-эра: absolute
      right/bottom 12px + 44×44 + opacity:0 — на проде давал stray-квадрат
-     в углу вьюпорта; S6/S7 возвращает кнопку в поток карточки) */
+     в углу вьюпорта; S6/S8 возвращает кнопку в поток карточки) */
   position:static;right:auto;bottom:auto;
   width:100%;height:auto;opacity:1;transform:none;
-  min-height:44px;border:none;border-radius:12px;
+  min-height:42px;border:none;border-radius:10px;
   background:#1A1A1A;color:#fff;
   font:600 .875rem var(--font-ui);cursor:pointer;
   display:inline-flex;align-items:center;justify-content:center;gap:6px;
@@ -636,16 +636,20 @@ html:not(.js-ready) .catalog__grid .reveal{opacity:1;transform:none}
 .product-card__cta:active{transform:scale(.98)}
 .product-card__cta:focus-visible{outline:3px solid rgba(26,26,26,.35);outline-offset:2px}
 .product-card__oneclick{
-  min-height:36px;padding:2px 4px;border:none;border-radius:8px;
-  background:transparent;color:var(--ink-muted);
-  font:500 .8125rem var(--font-ui);cursor:pointer;white-space:nowrap;
+  width:100%;min-height:40px;padding:0 10px;
+  border:1px solid var(--line-strong);border-radius:10px;
+  background:#fff;color:#1A1A1A;
+  font:600 .8125rem var(--font-ui);cursor:pointer;white-space:nowrap;
   display:inline-flex;align-items:center;justify-content:center;gap:6px;
-  transition:color .15s;
+  transition:background .15s,border-color .15s;
 }
-.product-card__oneclick svg{width:12px;height:12px;flex:none}
-.product-card__oneclick:hover{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+.product-card__oneclick svg{width:12px;height:12px;flex:none;color:var(--ink-muted)}
+.product-card__oneclick:hover{background:var(--surface-soft);border-color:#D6D6DC;color:#1A1A1A;text-decoration:none}
 .product-card__oneclick:active{transform:scale(.98)}
 .product-card__oneclick:focus-visible{outline:3px solid rgba(26,26,26,.35);outline-offset:2px}
+@media(max-width:899px){
+  .product-card__oneclick{min-height:38px;font-size:.75rem}
+}
 /* тач-таргеты ≥44px на тач-устройствах */
 @media(hover:none){
   .product-card__cta{min-height:44px}

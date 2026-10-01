@@ -677,10 +677,9 @@ function render_related_card(array $rp): void
              скринридера и Tab-фокуса (href сохранён: клик мышью работает) */ ?>
             <a class="product-card__media-link" href="<?= e($rLink) ?>" aria-label="<?= e($rp['name']) ?>" aria-hidden="true" tabindex="-1">
               <?php if ($rImg !== ''): ?>
-                <picture>
-                  <?php if ($rSrcset !== ''): ?><source type="image/webp" srcset="<?= e($rSrcset) ?>"<?= $rSizes !== '' ? ' sizes="' . e($rSizes) . '"' : '' ?>><?php endif; ?>
-                  <img class="product-card__img" src="<?= e($rImg) ?>" alt="<?= e($rp['name']) ?>" loading="lazy" decoding="async">
-                </picture>
+                <?php /* S8: без <picture> (инцидент «серые прямоугольники») —
+                       srcset/sizes прямо на <img>, eager */ ?>
+                <img class="product-card__img" src="<?= e($rImg) ?>" alt="<?= e($rp['name']) ?>"<?php if ($rSrcset !== ''): ?> srcset="<?= e($rSrcset) ?>"<?php if ($rSizes !== ''): ?> sizes="<?= e($rSizes) ?>"<?php endif; ?><?php endif; ?> loading="eager" decoding="async">
               <?php else: ?>
                 <svg viewBox="0 0 80 94" style="width:30%;margin:auto;color:var(--blue)" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="40" cy="30" r="11"/><circle cx="26" cy="38" r="8"/><circle cx="54" cy="38" r="8"/><path d="M40 41v20M40 61c-8 6-14 14-16 25M40 61c8 6 14 14 16 25"/></svg>
               <?php endif; ?>
@@ -868,12 +867,11 @@ $breadcrumbItems[] = ['@type' => 'ListItem', 'position' => count($breadcrumbItem
           <div class="product-gallery__viewport" id="productGalleryTrack">
             <div class="product-gallery__track">
               <figure class="product-gallery__slide" data-lightbox-trigger data-lightbox-src="<?= e($imgWebpOk ? $imgWebp : $img) ?>" data-lightbox-alt="<?= e($product['name']) ?>">
-                <picture>
-                  <?php /* W97-fixB3b (B3b-2e): srcset 600w/900w/оригинал — рассчитан на
-                     слот ~560px (sizes), на 390/DPR1 выбирается 600w; eager+high — LCP */ ?>
-                  <?php if ($galSrcsetStr !== ''): ?><source type="image/webp" srcset="<?= e($galSrcsetStr) ?>" sizes="<?= e($galSizes) ?>"><?php elseif ($imgWebpOk): ?><source type="image/webp" srcset="<?= e($imgWebp) ?>"><?php endif; ?>
-                  <img class="product-gallery__img" src="<?= e($img) ?>" alt="<?= e($product['name']) ?>" loading="eager" fetchpriority="high"<?= $ogDim !== false ? ' width="' . (int)$ogDim[0] . '" height="' . (int)$ogDim[1] . '"' : '' ?>>
-                </picture>
+                <?php /* W97-fixB3b (B3b-2e): srcset 600w/900w/оригинал — рассчитан на
+                     слот ~560px (sizes), на 390/DPR1 выбирается 600w; eager+high — LCP.
+                     S8: без <picture> (инцидент «серые прямоугольники») —
+                     srcset/sizes прямо на <img> */ ?>
+                <img class="product-gallery__img" src="<?= e($img) ?>" alt="<?= e($product['name']) ?>"<?php if ($galSrcsetStr !== ''): ?> srcset="<?= e($galSrcsetStr) ?>" sizes="<?= e($galSizes) ?>"<?php endif; ?> loading="eager" fetchpriority="high"<?= $ogDim !== false ? ' width="' . (int)$ogDim[0] . '" height="' . (int)$ogDim[1] . '"' : '' ?>>
                 <figcaption class="product-gallery__cap">Общий вид</figcaption>
               </figure>
               <figure class="product-gallery__slide" data-lightbox-trigger data-lightbox-src="<?= e($image2Ok ? $image2Lb : ($imgWebpOk ? $imgWebp : $img)) ?>" data-lightbox-alt="<?= e($product['name']) ?> — крупный план">
@@ -922,13 +920,12 @@ $breadcrumbItems[] = ['@type' => 'ListItem', 'position' => count($breadcrumbItem
           <div class="fc-product__media product-page__media" data-lightbox-trigger data-lightbox-src="<?= e($img) ?>" data-lightbox-alt="<?= e($product['name']) ?>">
             <?php if ($img !== ''): ?><?= $stampSvg ?><?php endif; ?>
             <?php if ($img !== ''): ?>
-              <picture>
-                <?php /* W97-fixB3b (B3b-2e): тот же srcset-набор и в варианте без
-                   галереи — этот снимок и есть LCP страницы */ ?>
-                <?php if ($galSrcsetStr !== ''): ?><source type="image/webp" srcset="<?= e($galSrcsetStr) ?>" sizes="<?= e($galSizes) ?>"><?php elseif ($imgWebpOk): ?><source type="image/webp" srcset="<?= e($imgWebp) ?>"><?php endif; ?>
-                <?php /* W96-fix3a (T2b): LCP-снимок (вариант без галереи) — eager + приоритет */ ?>
-                <img class="product-gallery__img" src="<?= e($img) ?>" alt="<?= e($product['name']) ?>" loading="eager" fetchpriority="high"<?= $ogDim !== false ? ' width="' . (int)$ogDim[0] . '" height="' . (int)$ogDim[1] . '"' : '' ?>>
-              </picture>
+              <?php /* W97-fixB3b (B3b-2e): тот же srcset-набор и в варианте без
+                   галереи — этот снимок и есть LCP страницы.
+                   S8: без <picture> — srcset/sizes прямо на <img> (инцидент
+                   «серые прямоугольники», синхронно с главным слайдом) */ ?>
+              <?php /* W96-fix3a (T2b): LCP-снимок (вариант без галереи) — eager + приоритет */ ?>
+              <img class="product-gallery__img" src="<?= e($img) ?>" alt="<?= e($product['name']) ?>"<?php if ($galSrcsetStr !== ''): ?> srcset="<?= e($galSrcsetStr) ?>" sizes="<?= e($galSizes) ?>"<?php endif; ?> loading="eager" fetchpriority="high"<?= $ogDim !== false ? ' width="' . (int)$ogDim[0] . '" height="' . (int)$ogDim[1] . '"' : '' ?>>
             <?php else: ?>
               <div class="product-gallery__slide--placeholder">
                 <svg viewBox="0 0 80 94" style="width:30%;margin:auto;color:var(--blue)" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="40" cy="30" r="11"/><circle cx="26" cy="38" r="8"/><circle cx="54" cy="38" r="8"/><path d="M40 41v20M40 61c-8 6-14 14-16 25M40 61c8 6 14 14 16 25"/></svg>

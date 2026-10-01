@@ -441,23 +441,29 @@ function render_product_card(array $p, array $ctx): void
     $deliveryText = trim((string)setting('card_delivery_text', 'Сегодня за 1–2 часа'));
     /* S6: подпись ссылки 1-клика — полный текст настройки. */
     $oneclickFull = trim((string)setting('card_btn_oneclick', 'Купить в 1 клик'));
-    ?>
-        <article class="product-card reveal"<?= $isCarousel
+    /* S8-инцидент «серые прямоугольники» на проде: связка <picture><source
+       srcset sizes> + loading="lazy" — браузер НЕ ЗАПРАШИВАЕТ файлы
+       (naturalWidth=0, ноль запросов /img/products/ в network), клиенты
+       видят серые плашки. Эмпирически подтверждено на проде: plain
+       <img srcset sizes lazy> загружается, тот же файл внутри <picture> — нет.
+       ФИКС (fail-closed): БЕЗ <picture>, webp-srcset прямо на <img>,
+       loading="eager" + decoding="async" — браузер обязан запросить файл
+       немедленно, никакой ленивой механики на карточках. */ ?>
+        <article class="product-card"<?= $isCarousel
             ? ''
             : ' data-category-id="' . (int)($p['category_id'] ?? 0) . '" data-price="' . (int)$price . '" data-hit="' . (int)($p['is_hit'] ?? 0) . '" data-premium="' . (int)($p['is_premium'] ?? 0) . '" data-search="' . e($searchIndex) . '"' . $upsellAttr . $tagsAttr ?>>
           <div class="product-card__media">
-          <?php /* фото 4:5, скругление 12, без внутренних рамок */ ?>
+          <?php /* фото 4:5, r12; БЕЗ <picture> и БЕЗ lazy (S8-инцидент):
+                 srcset/sizes прямо на <img>, eager — файл запрашивается
+                 сразу, карточка не зависит ни от какого JS */ ?>
             <a class="product-card__media-link" href="<?= e($link) ?>" aria-label="<?= e($p['name']) ?>" aria-hidden="true" tabindex="-1">
               <?php if ($img !== ''): ?>
-                <picture>
-                  <?php if ($srcset !== ''): ?><source type="image/webp" srcset="<?= e($srcset) ?>"<?= $thumb !== '' ? ' sizes="' . e($sizes) . '"' : '' ?>><?php endif; ?>
-                  <img class="product-card__img" src="<?= e($img) ?>" alt="<?= e($p['name']) ?>" loading="lazy" decoding="async">
-                </picture>
+                <img class="product-card__img" src="<?= e($img) ?>" alt="<?= e($p['name']) ?>"<?php if ($srcset !== ''): ?> srcset="<?= e($srcset) ?>"<?php if ($thumb !== ''): ?> sizes="<?= e($sizes) ?>"<?php endif; ?><?php endif; ?> loading="eager" decoding="async">
               <?php else: ?>
                 <svg viewBox="0 0 80 94" style="width:30%;margin:auto;color:var(--ink-muted)" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="40" cy="30" r="11"/><circle cx="26" cy="38" r="8"/><circle cx="54" cy="38" r="8"/><path d="M40 41v20M40 61c-8 6-14 14-16 25M40 61c8 6 14 14 16 25"/></svg>
               <?php endif; ?>
               <?php if ($img2Url !== ''): ?>
-                <img class="product-card__img2" src="<?= e($img2Url) ?>" alt="" aria-hidden="true" loading="lazy" decoding="async">
+                <img class="product-card__img2" src="<?= e($img2Url) ?>" alt="" aria-hidden="true" loading="eager" decoding="async">
               <?php endif; ?>
             </a>
             <?php /* на фото ТОЛЬКО жёлтый «Хит» (#FFB800) и скидка (белая
@@ -696,6 +702,11 @@ foreach ($products as $p) {
 }
 usort($premiumCandidates, static fn (array $a, array $b): int => productPrice($b) <=> productPrice($a));
 $shelfPremium = array_merge($premiumCandidates, $plainCandidates, $sweetCandidates);
+
+/* S8: ЕДИНАЯ ВИТРИНА — один плоский массив вместо трёх полок: хиты →
+   авторские/розы → премиум/остаток/сладости (коммерческий ритм без
+   заголовков-разделителей; каждый товар ровно один раз). */
+$gridAll = array_merge($shelfHits, $shelfAuthor, $shelfPremium);
 
 /* счётчики плашек бюджета: те же правила, что фильтр (low ≤ N, N ≤ mid ≤ M,
    high ≥ M — границы принадлежат обоим диапазонам; premium — по флагу) */
@@ -1118,20 +1129,20 @@ echo json_encode([
         <span class="fc-budget__count"><?= $cntHigh ?>&nbsp;<?= e($pluralBuket($cntHigh)) ?></span>
       </button>
       <?php endif; ?>
-      <?php if ($cntPremium > 0): ?>
-      <button type="button" class="fc-chip fc-budget__card fc-budget__card--premium" data-chip="premium" aria-pressed="false">
-        <span class="fc-budget__label">Премиум</span>
-        <span class="fc-budget__count"><?= $cntPremium ?>&nbsp;<?= e($pluralBuket($cntPremium)) ?></span>
+      <?php if ($cntHit > 0): ?>
+      <button type="button" class="fc-chip fc-budget__card fc-budget__card--hit" data-chip="hit" aria-pressed="false">
+        <span class="fc-budget__label">Хиты</span>
+        <span class="fc-budget__count"><?= $cntHit ?>&nbsp;<?= e($pluralBuket($cntHit)) ?></span>
       </button>
       <?php endif; ?>
     </div>
   </section>
 
   <?php /* ===== ЛЕНТА ЧИПСОВ (липкая) =====
-         «Все» → «Хиты» → теги-коллекции (Розы/Пионы/Гортензии/В коробках/
-         Подарки — настройка chips_tags). Ценовые чипы переехали в плашки
-         бюджета выше; порядок и матчинг — прежние (PHP $nfTagMatch =
-         JS nfTagMatch, контракт .fc-chip[data-chip]/[data-tag] цел). */ ?>
+         «Все» → теги-коллекции (Розы/Пионы/Гортензии/В коробках/
+         Подарки — настройка chips_tags). Ценовые фильтры живут в плашках
+         бюджета выше (4-я плашка — «Хиты»); порядок и матчинг — прежние
+         (PHP $nfTagMatch = JS nfTagMatch, контракт .fc-chip[data-chip]/[data-tag] цел). */ ?>
   <?php if ($featChips): ?>
   <?php
   $chipsTags = array_values(array_filter(array_map('trim', explode(',', setting('chips_tags', ''))), fn($t) => $t !== ''));
@@ -1165,9 +1176,6 @@ echo json_encode([
         <button type="button" class="fc-chip fc-chip--all is-active" data-chip="all" aria-pressed="true">
           <span class="fc-chip__title"><?= e(setting('chips_all_text', 'Все')) ?></span>
         </button>
-        <button type="button" class="fc-chip fc-chip--hit" data-chip="hit" aria-pressed="false">
-          <span class="fc-chip__title">Хиты</span>
-        </button>
         <?php foreach ($chipsTags as $chipTag):
           $cntTag = 0;
           foreach ($products as $pc) {
@@ -1188,13 +1196,12 @@ echo json_encode([
   <?php /* W96 (5cv): trust-strip убран — роль играют чипы и карточка доставки в hero.
      W103 (F1): marquee ВЕРНУЛСЯ (см. блок выше) — ритм-разделитель под hero. */ ?>
 
-  <?php /* S7: КАТАЛОГ = ТЕМАТИЧЕСКИЕ ПОЛКИ (вместо одной общей свалки).
-         Три секции с заголовками 22–26px bold и ровным ритмом сетки; каждый
-         товар — ровно один раз (полка хитов → авторские → премиум/коробки).
-         Фильтры (плашки бюджета, чипы, поиск) скрывают карточки ВО ВСЕХ
-         полках, пустые полки тихо исчезают (js/catalog-filter.js apply()).
-         JS-контракт #catalogGrid — теперь ОБОЛОЧКА полок (не сама сетка):
-         .product-card внутри .catalog__grid каждой полки. */ ?>
+  <?php /* ===== S8: ЕДИНАЯ ВИТРИНА 5CV — ОДНА МОНОЛИТНАЯ СЕТКА =====
+         (ликвидация «пустых полок»: деление на 3 тематические секции убрано —
+         все букеты из базы выводятся подряд в ровном ритме: хиты →
+         авторские/розы → премиум/остаток/сладости; каждый товар 1 раз.
+         Фильтры (плашки бюджета, чипы, поиск) скрывают карточки той же
+         механикой catalog-filter.js apply().) */ ?>
   <section class="fc-section fc-catalog" id="catalog">
     <div class="wrap">
       <?php /* индикатор активного поиска — пилюля «Поиск: «запрос» ✕»
@@ -1204,36 +1211,9 @@ echo json_encode([
         <span class="catalog-search-chip__x" aria-hidden="true">&#10005;</span>
       </button>
       <div id="catalogGrid">
-        <?php if ($shelfHits !== []): ?>
-        <section class="fc-shelf" aria-label="Хиты продаж">
-          <div class="fc-shelf__head">
-            <h2 class="fc-shelf__title"><?= e(setting('shelf_hits_title', '🔥 Хиты продаж')) ?></h2>
-          </div>
-          <div class="catalog__grid">
-            <?php foreach ($shelfHits as $p) { render_product_card($p, $cardCtx); } ?>
-          </div>
-        </section>
-        <?php endif; ?>
-        <?php if ($shelfAuthor !== []): ?>
-        <section class="fc-shelf" aria-label="Авторские букеты и розы">
-          <div class="fc-shelf__head">
-            <h2 class="fc-shelf__title"><?= e(setting('shelf_author_title', '🌸 Авторские букеты и розы')) ?></h2>
-          </div>
-          <div class="catalog__grid">
-            <?php foreach ($shelfAuthor as $p) { render_product_card($p, $cardCtx); } ?>
-          </div>
-        </section>
-        <?php endif; ?>
-        <?php if ($shelfPremium !== []): ?>
-        <section class="fc-shelf" aria-label="Премиум композиции и коробки">
-          <div class="fc-shelf__head">
-            <h2 class="fc-shelf__title"><?= e(setting('shelf_premium_title', '✨ Премиум композиции и коробки')) ?></h2>
-          </div>
-          <div class="catalog__grid">
-            <?php foreach ($shelfPremium as $p) { render_product_card($p, $cardCtx); } ?>
-          </div>
-        </section>
-        <?php endif; ?>
+        <div class="catalog__grid">
+          <?php foreach ($gridAll as $p) { render_product_card($p, $cardCtx); } ?>
+        </div>
       </div>
       <?php /* Empty-state: при 0 карточек от всех фильтров — подсказка + сброс. */ ?>
       <div class="catalog-empty" id="catalogEmpty" hidden style="text-align:center;padding:44px 20px;border:1px dashed var(--line);border-radius:16px;margin-top:14px">
@@ -1371,12 +1351,11 @@ echo json_encode([
                 if ($__ocDim !== false) { $__ocParts[] = $__ocWebp . ' ' . (int)$__ocDim[0] . 'w'; }
             }
             ?>
-            <picture>
-              <?php if ($__ocParts !== []): ?>
-              <source type="image/webp" srcset="<?= e(implode(', ', $__ocParts)) ?>" sizes="(max-width:899px) 44vw, 280px">
-              <?php endif; ?>
-              <img class="fc-occasion__img" src="<?= e($__ocImg) ?>" alt="<?= e($t['photo_alt'] !== '' ? $t['photo_alt'] : $t['title']) ?>" loading="lazy" decoding="async">
-            </picture>
+            <?php /* S8: без <picture> (инцидент «серые прямоугольники») —
+                   webp-srcset прямо на <img>; lazy оставлен: plain-img
+                   lazy загружается надёжно (подтверждено на проде),
+                   поводы — нише первого экрана */ ?>
+            <img class="fc-occasion__img" src="<?= e($__ocImg) ?>" alt="<?= e($t['photo_alt'] !== '' ? $t['photo_alt'] : $t['title']) ?>"<?php if ($__ocParts !== []): ?> srcset="<?= e(implode(', ', $__ocParts)) ?>" sizes="(max-width:899px) 44vw, 280px"<?php endif; ?> loading="lazy" decoding="async">
           <?php else: ?>
             <?php /* W103 (F1): типографическая плитка без фото — ink-фон, amber-индекс,
                    Playfair-курсив в подписи (стили five.css; старый SVG-цветок убран) */ ?>

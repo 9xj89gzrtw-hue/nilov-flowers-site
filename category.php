@@ -224,22 +224,21 @@ function render_product_card(array $p, array $ctx): void
     /* S6: подпись ссылки 1-клика — полный текст настройки. */
     $oneclickFull = trim((string)setting('card_btn_oneclick', 'Купить в 1 клик'));
     ?>
-        <article class="product-card reveal"<?= $isCarousel
+        <article class="product-card"<?= $isCarousel
             ? ''
             : ' data-category-id="' . (int)($p['category_id'] ?? 0) . '" data-price="' . (int)$price . '" data-hit="' . (int)($p['is_hit'] ?? 0) . '" data-premium="' . (int)($p['is_premium'] ?? 0) . '" data-search="' . e($searchIndex) . '"' . $upsellAttr . $tagsAttr ?>>
           <div class="product-card__media">
-          <?php /* фото 4:5, скругление 12, без внутренних рамок */ ?>
+          <?php /* S8-инцидент «серые прямоугольники»: БЕЗ <picture>, srcset/sizes
+                 прямо на <img>, loading="eager" + decoding="async" — файл
+                 запрашивается немедленно (синхронно с index.php). */ ?>
             <a class="product-card__media-link" href="<?= e($link) ?>" aria-label="<?= e($p['name']) ?>" aria-hidden="true" tabindex="-1">
               <?php if ($img !== ''): ?>
-                <picture>
-                  <?php if ($srcset !== ''): ?><source type="image/webp" srcset="<?= e($srcset) ?>"<?= $thumb !== '' ? ' sizes="' . e($sizes) . '"' : '' ?>><?php endif; ?>
-                  <img class="product-card__img" src="<?= e($img) ?>" alt="<?= e($p['name']) ?>" loading="lazy" decoding="async">
-                </picture>
+                <img class="product-card__img" src="<?= e($img) ?>" alt="<?= e($p['name']) ?>"<?php if ($srcset !== ''): ?> srcset="<?= e($srcset) ?>"<?php if ($thumb !== ''): ?> sizes="<?= e($sizes) ?>"<?php endif; ?><?php endif; ?> loading="eager" decoding="async">
               <?php else: ?>
                 <svg viewBox="0 0 80 94" style="width:30%;margin:auto;color:var(--ink-muted)" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="40" cy="30" r="11"/><circle cx="26" cy="38" r="8"/><circle cx="54" cy="38" r="8"/><path d="M40 41v20M40 61c-8 6-14 14-16 25M40 61c8 6 14 14 16 25"/></svg>
               <?php endif; ?>
               <?php if ($img2Url !== ''): ?>
-                <img class="product-card__img2" src="<?= e($img2Url) ?>" alt="" aria-hidden="true" loading="lazy" decoding="async">
+                <img class="product-card__img2" src="<?= e($img2Url) ?>" alt="" aria-hidden="true" loading="eager" decoding="async">
               <?php endif; ?>
             </a>
             <?php /* на фото ТОЛЬКО жёлтый «Хит» (#FFB800) и скидка (белая

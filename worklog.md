@@ -609,3 +609,24 @@ Work Log:
 Stage Summary:
 - Прод flowers.interfood-catering.ru работает на S7: товарные полки 5cv, эталонная карточка, один стиль five.css, деплой ×3 зелёный.
 - Хвосты владельца: добавить премиум-букеты (появятся плашка «Премиум» и полка ✨), теги «Пионы»/«Гортензии»/«В коробках» (появятся чипы), отзывы к товарам (счётчик в карточке).
+
+---
+Task ID: S8-fix-images
+Agent: main (Z.ai Code)
+Task: КРИТИЧЕСКИЙ инцидент проде — «серые прямоугольники» вместо фото букетов. Вернуть 100% отображение фото, единую витрину 5cv (без полок), карточку-эталон, fail-closed контроль до пуша.
+
+Work Log:
+- Диагностика НА ЖИВОМ ПРОДЕ (agent-browser + eval): .product-card__img complete=false, naturalWidth=0 у ВСЕХ карточек при css opacity:1/visible и box валиден; в network — ноль запросов к /img/products/ (css/js/logo/hero-eager грузятся). curl картинок = 200 — файлы целы.
+- Бисекция вживую на проде: (1) removeAttribute loading+src переприсвоение → грузится; (2) поштучно overflow/clip-path/style-recalc/pb-1px → недетерминированно (мутация стиля может пнуть загрузку); (3) РЕШИО: разворот c4 <picture> → plain <img srcset sizes lazy> → ГРУЗИТСЯ, контроль c5 в <picture> — нет. КОРЕНЬ: <picture><source srcset sizes> + loading="lazy" = браузер не запрашивает файл (лавка occasions plain-img+srcset+lazy на той же странице грузилась).
+- index.php render_product_card: убран <picture>/<source>, srcset/sizes прямо на <img>, loading="eager" decoding="async" (и img2 тоже eager); класс reveal снят с <article> карточки.
+- category.php/occasion.php/product.php (related + галерея LCP ×2): тот же анварп (второй слайд PDP — прежний data-gallery-srcset JS-контракт, не тронут).
+- index.php: $gridAll = merge(shelfHits, shelfAuthor, shelfPremium) — ЕДИНАЯ .catalog__grid вместо 3 fc-shelf секций; 4-я плашка бюджета data-chip="hit" «Хиты» (была premium); чип «Хиты» из ленты убран.
+- five.css: .catalog__grid 2кол/12px → 3кол/16px@768 → 4кол/20px@1024 (5-кол убран); .product-card__img — жёсткие !important (block/100%/100%/cover/opacity1/visible); media r12 + #F7F7F8; цена 20/22px; «В корзину» 42px/r10; «В 1 клик» — белая кнопка с контуром r10 (мобайл 38px); убраны .catalog__grid .reveal каскад и clip-path правила.
+- minify-css.py прогнан; php -l ×4 ok; node --check ok.
+- Локальная верификация: 23/23 img главной, category 5/5, PDP main+3/3 related; h-scroll нет (390); плашка hit→6/23, чип Розы→9/23, сброс→23; scripts/check-card-media.py — НОВЫЙ пиксель-контроль (avg≈#F0F0F0/#F7F7F8 или std<6 = БЛОКИРУЮЩАЯ ОШИБКА): мобайл 12/12 ok, десктоп 8/8 ok; VLM ×3 — «фотореалистичные фото букетов, пустых серых прямоугольников нет, 2 колонки / 4 колонки, плашки бюджета 2×2, брака нет».
+
+Stage Summary:
+- Корень инцидента: <picture>+source(srcset/sizes)+loading=lazy — браузер не делает запрос; S7-отбивка «артефакт эмуляции» была ошибкой, VLM был прав.
+- Витрина = единая монолитная сетка 5cv (2/12px мобайл, 4/20px десктоп), плашки low/mid/high/hit + чипы Все→теги, карточка-эталон (цена→название→⚡★→чёрная 42px/r10 + белая «В 1 клик»).
+- Fail-closed протокол создан: scripts/check-card-media.py (пиксели .card-media) + VLM-гейт; push выполняется только после зелёного пиксель-скрипта.
+- След. шаг: commit + push main → деплой → контрольный скриншот ПРОДА (мобайл 390 + десктоп 1440) + пиксель-скрипт + VLM на боевом домене.

@@ -114,6 +114,38 @@
 - Форма заказа: fieldset/payment min-width:0 (было только в style.css —
   без него mobile scrollWidth 458).
 
+## Сессия S8 (02.10.2026, инцидент «серые прямоугольники» на проде) — сделано
+- **КОРНЕВАЯ ПРИЧИНА** (подтверждена на живом проде): связка
+  `<picture><source srcset sizes>` + `loading="lazy"` — браузер НЕ
+  запрашивал файлы (naturalWidth=0, ноль запросов /img/products/ в network
+  при visible/внутри вьюпорта). Plain `<img srcset sizes lazy>` — грузился,
+  тот же файл внутри `<picture>` — нет (бисекция вживую на проде).
+  VLM-предупреждение о серых карточках в S7 было ПРАВОЙ, «артефакт
+  эмуляции» — ошибочная отбивка.
+- **ФИКС (fail-closed)**: во всех карточках (index/category/occasion/
+  product-related) БЕЗ `<picture>` — `<img src srcset sizes
+  loading="eager" decoding="async">`; PDP-галерея LCP — eager без picture
+  (второй слайд image2 — прежний JS-контракт data-gallery-srcset без
+  изменений). Класс `reveal` снят с карточек (сетка не зависит от
+  reveal.js/IO). five.css: `.product-card__img` — жёсткая видимость
+  (!important block/100%/cover/opacity:1/visibility), media r12,
+  убраны clip-path правила и `.catalog__grid .reveal` каскад.
+- **ЕДИНАЯ ВИТРИНА 5cv**: 3 полки (fc-shelf) → ОДНА монолитная
+  `.catalog__grid` ($gridAll = hits → author → premium/остаток/сладости);
+  сетка: 2 кол gap 12px (мобайл) / 3 кол 16px (768) / 4 кол 20px (1024),
+  5-кол правило убрано; 4-я плашка бюджета — «Хиты» (была «Премиум»);
+  чип «Хиты» из ленты убран (Все → теги). Плашки/чипы фильтруют общую
+  сетку прежним catalog-filter.js apply() (полки в нём — no-op).
+- **Карточка S8**: фото 4:5 r12 #F0F0F0 контур; цена 20/22px; «В корзину»
+  42px r10; «В 1 клик» — полноценная белая кнопка с контуром (r10,
+  38px мобайл) на всю ширину.
+- **Верификация (fail-closed, до пуша)**: `scripts/check-card-media.py`
+  (пиксель-контроль .card-media: avg≈#F0F0F0/F7F7F8 или std<6 = FAIL) —
+  12/12 мобайл + 8/8 десктоп ok; VLM ×3 (мобайл-фулл/десктоп-фулл/
+  мобайл-топ): фото букетов реальные, 2/4 колонки, плашки 2×2, брака нет;
+  интерактив: плашки/чипы/сброс/поиск; category 5/5 + PDP 3/3 img;
+  h-scroll нет (390px).
+
 ## Окружение локальной разработки
 - **PHP:** `/home/z/tools/php` (8.4.12 static, GD+SQLite; источник — static-php.dev). Сервер: `PHP_CLI_SERVER_WORKERS=8 /home/z/tools/php -S 127.0.0.1:8090 router.php` в корне репо. БД `db/flowers.db` создатся автоматически (seed).
 - **Не трогать** порт 3000 (песочница Next.js my-project) и repo `newsite` (кейтеринг, отдельный проект).

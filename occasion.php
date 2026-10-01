@@ -191,11 +191,12 @@ function render_occasion_card(array $p): void
           <div class="product-card__media">
             <?php /* W99-fixG (G11): img-ссылка дублирует title-ссылку — прячем от
                    скринридера и Tab-фокуса (href сохранён: клик мышью работает) */ ?>
+            <?php /* S8: без <picture> (инцидент «серые прямоугольники») —
+                   srcset/sizes прямо на <img>, eager (синхронно с index.php) */ ?>
             <a class="product-card__media-link" href="<?= e($link) ?>" aria-label="<?= e($p['name']) ?>" aria-hidden="true" tabindex="-1">
-              <picture>
-                <?php if ($srcset !== ''): ?><source type="image/webp" srcset="<?= e($srcset) ?>"<?= $sizes !== '' ? ' sizes="' . e($sizes) . '"' : '' ?>><?php endif; ?>
-                <img class="product-card__img" src="<?= e($img) ?>" alt="<?= e($p['name']) ?>" loading="lazy" decoding="async">
-              </picture>
+              <?php if ($img !== ''): ?>
+                <img class="product-card__img" src="<?= e($img) ?>" alt="<?= e($p['name']) ?>"<?php if ($srcset !== ''): ?> srcset="<?= e($srcset) ?>"<?php if ($sizes !== ''): ?> sizes="<?= e($sizes) ?>"<?php endif; ?><?php endif; ?> loading="eager" decoding="async">
+              <?php endif; ?>
             </a>
             <?php if ($isSale): $offPct = (int)$p['price'] > 0 ? (int)round((1 - $price / (int)$p['price']) * 100) : 0; ?><span class="product-card__badge product-card__badge--sale"><?= $offPct > 0 ? '&#8722;' . (int)$offPct . '%' : e(setting('badge_sale_text', 'Скидка')) ?></span><?php endif; ?>
             <?php if ($isUrgent): ?><span class="product-card__badge product-card__badge--urgent"><?= e(setting('badge_urgent_text', 'Успеть сегодня')) ?></span><?php endif; ?>
