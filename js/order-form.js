@@ -930,7 +930,16 @@
           delivery_zone: deliveryZoneInput ? deliveryZoneInput.value : '',
           delivery_address: deliveryAddressInput ? deliveryAddressInput.value.trim() : '',
           payment_method: chosenPaymentMethod(),
-          comment: commentInput ? commentInput.value.trim() : '',
+          /* S11 ЗОНА 2 (шаг 5): выбранная пилюля оплаты (СБП/карта/при
+             получении) — все исполняются курьером, поэтому в API уходит
+             честный payment_method=cash, а предпочтение покупателя
+             прикладывается к комментарию — флорист видит его в админке. */
+          comment: (function () {
+            const base = commentInput ? commentInput.value.trim() : '';
+            const pref = form.querySelector('input[name="payment_pref"]:checked');
+            if (!pref || !pref.value) return base;
+            return base ? base + ' · Оплата: ' + pref.value : 'Оплата: ' + pref.value;
+          })(),
           /* Критик functional: gift-UX + слоты (пустые не шлём, сервер и так обрежет) */
           recipient_name: (document.getElementById('orderRecipientName') || {value:''}).value.trim(),
           recipient_phone: (document.getElementById('orderRecipientPhone') || {value:''}).value.trim(),

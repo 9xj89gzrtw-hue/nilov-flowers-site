@@ -1,14 +1,12 @@
 <?php
-/* Оформление заказа — отдельная страница (W106-E1, Нильсен P0 + спешащий P1:
-   «чекаут заперт в лендинге» — кнопка «Оформить заказ» с вторичных страниц
-   телепортировала на главную #order). Форма — тот же partials/order-form.php,
-   что рендет главная (единый контракт id полей для js/order-form.js).
-   Сверху — сводка корзины: корзина живёт в localStorage (JS), поэтому блок —
-   плейсхолдер, который заполняет js/cart-ui.js (renderCheckoutSummary) при
-   загрузке и на каждое cart:change / смену района доставки.
-   URL: /checkout.php (роутер отдаёт физический файл; ЧПУ /checkout потребовал
-   бы правки router.php — вне зоны волны). meta robots — noindex: дублирующий
-   функционал главной, канонический путь покупки индексировать не нужно. */
+/* Оформление заказа — S11 ЗОНА 2, чекаут 2026:
+   • Пустая корзина → аккуратный экран «Ваша корзина пуста» + кнопка
+     «Перейти к выбору букетов» (JS-переключатель ниже).
+   • Товары есть → 2 колонки на десктопе (шаги слева, липкая сводка
+     справа), 1 колонка на мобильном (сводка сверху, шаги ниже).
+   • Шаги: 1 Контакты → 2 Получатель → 3 Доставка по СПб → 4 Подарки →
+     5 Оплата (partials/order-form.php, контракт id полей сохранён).
+   URL: /checkout.php; meta robots — noindex (служебная страница воронки). */
 declare(strict_types=1);
 require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/db.php';
@@ -16,8 +14,8 @@ require_once __DIR__ . '/includes/util.php';
 
 $shopName = setting('shop_name', 'Nilov Flowers');
 $pageTitle = 'Оформление заказа — ' . $shopName;
-/* Сводка/форма не тянут тяжёлых расчётов — зоны достанет сам partial */
 $secondaryCssV = substr((string)@md5_file(__DIR__ . '/css/secondary.css'), 0, 8);
+$checkoutCssV = substr((string)@md5_file(__DIR__ . '/css/five.css'), 0, 8);
 ?><!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -26,8 +24,8 @@ $secondaryCssV = substr((string)@md5_file(__DIR__ . '/css/secondary.css'), 0, 8)
 <meta name="description" content="Оформление заказа букета с доставкой по Санкт-Петербургу — соберём за 1–2 часа и привезём сегодня.">
 <?php require __DIR__ . '/partials/head.php'; ?>
 <link rel="stylesheet" href="/css/secondary.css?v=<?= e($secondaryCssV) ?>">
-<?php /* NILOV_CONFIG — тот же конфиг, что печатает index.php в hero (js/order-form.js
-       читает freeDeliveryThreshold для «К оплате»; на чекауте hero нет — конфиг здесь). */ ?>
+<?php /* NILOV_CONFIG — тот же конфиг, что печатает index.php (js/order-form.js
+       читает freeDeliveryThreshold для «К оплате»; на чекауте hero нет). */ ?>
 <script>window.NILOV_CONFIG = {
   deadlineHour: <?= (int)(setting('order_deadline_hour', '20')) ?>,
   deadlineMinute: <?= (int)(setting('order_deadline_minute', '0')) ?>,
@@ -39,10 +37,6 @@ $secondaryCssV = substr((string)@md5_file(__DIR__ . '/css/secondary.css'), 0, 8)
   freeDeliveryThreshold: <?= (int) setting('free_delivery_threshold', '0') ?>
 };</script>
 </head>
-<?php /* F2 (P0-3, моб-критик волны 4): класс страницы — CSS (five.css F2-3)
-       делает хедер компактным (лого + трубка + корзина, 64/56px вместо
-       72/145px) и прячет мобильный таб-бар (в чекауте — шум, паттерн
-       body.page-product). */ ?>
 <body class="page-checkout">
 <?php require __DIR__ . '/partials/header.php'; ?>
 
@@ -52,50 +46,102 @@ $secondaryCssV = substr((string)@md5_file(__DIR__ . '/css/secondary.css'), 0, 8)
       <nav class="breadcrumbs" aria-label="Хлебные крошки">
         <a href="/">Главная</a> / <span aria-current="page">Оформление заказа</span>
       </nav>
-      <?php /* page-hero — паттерн вторичных страниц (category.php): Playfair H1,
-             первое слово — italic-акцент pink-deep. */ ?>
       <div class="page-hero">
         <h1 class="page-hero__title"><em class="page-hero__accent">Оформление</em> заказа</h1>
-        <?php /* W106-E1: единая SLA-формула сайта (корректор P0) */ ?>
-        <p class="section-sub">Проверьте букеты и заполните форму — соберём за 1–2 часа и привезём сегодня. Позвоним для подтверждения.</p>
+        <p class="section-sub">Заполните шаги — соберём за 1–2 часа и привезём сегодня. Позвоним для подтверждения.</p>
       </div>
     </div>
   </section>
 
-  <?php /* СВОДКА КОРЗИНЫ (W106-E1): корзина в localStorage → блок-плейсхолдер,
-         товары/цены/промо/итог рисует js/cart-ui.js (renderCheckoutSummary):
-         как drawer, только компактной таблицей. Район доставки берётся из
-         селекта формы ниже (делегированный change) — итог живой. */ ?>
-  <section class="fc-section checkout-summary-section" id="checkoutSummarySection" aria-label="Корзина">
+  <?php /* ===== СЦЕНАРИЙ 1: пустая корзина — аккуратный экран-заглушка =====
+         (переключает инлайн-скрипт внизу страницы; по умолчанию скрыт).
+         Возврат «Назад» из bfcache ловит pageshow — экран честен всегда. */ ?>
+  <section class="fc-section" id="checkoutEmptyScreen" hidden>
     <div class="wrap">
-      <div class="checkout-summary" id="checkoutSummary">
-        <div class="checkout-summary__head">
-          <p class="checkout-summary__title">Ваш заказ</p>
-          <a class="checkout-summary__link" href="/#catalog">Добавить букеты</a>
+      <div class="checkout-empty">
+        <div class="checkout-empty__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h13l-1.5 8.5H7.2L5 4H2"/><circle cx="8.5" cy="19" r="1.4"/><circle cx="14.5" cy="19" r="1.4"/><path d="M10 10.5l4 4M14 10.5l-4 4"/></svg>
         </div>
-        <ul class="checkout-summary__items" id="checkoutSummaryItems"></ul>
-        <p class="checkout-summary__empty" id="checkoutSummaryEmpty" hidden>В корзине пока пусто — выберите букет в каталоге, и он появится здесь.</p>
-        <div class="checkout-summary__rows">
-          <p class="checkout-summary__row" id="checkoutSummaryPromoRow" hidden><span id="checkoutSummaryPromoLabel"></span><span id="checkoutSummaryPromoValue"></span></p>
-          <p class="checkout-summary__row"><span>Букеты</span><span id="checkoutSummaryItemsTotal">—</span></p>
-          <p class="checkout-summary__row"><span>Доставка</span><span id="checkoutSummaryDelivery">—</span></p>
-          <p class="checkout-summary__row checkout-summary__row--total"><span>Итого</span><span id="checkoutSummaryTotal">—</span></p>
-        </div>
-        <?php /* G-g2 (редактор P1: «Промокод применяется в корзине» путало —
-               поле промо теперь реально живёт ниже, в форме заказа:
-               partials/order-form.php → js/cart-ui.js, тот же PROMO_STATE,
-               что drawer) */ ?>
-        <p class="checkout-summary__note">Оплата — курьеру при получении: наличными или картой.<?= setting('feature_promo', '1') === '1' ? ' Промокод можно указать ниже, в форме.' : '' ?></p>
+        <h2 class="checkout-empty__title">Ваша корзина пуста</h2>
+        <p class="checkout-empty__text">Выберите букет в каталоге — свежие цветы на любой бюджет, доставка по СПб за 1–2 часа.</p>
+        <a class="btn btn--accent checkout-empty__cta" href="/#catalog">Перейти к выбору букетов</a>
       </div>
     </div>
   </section>
 
-  <?php /* Форма заказа — тот же partial, что на главной. H2 секции не печатаем:
-         его роль несёт page-hero H1 выше ($orderHideTitle). */ ?>
-  <?php $orderHideTitle = true; ?>
-  <?php require __DIR__ . '/partials/order-form.php'; ?>
+  <?php /* ===== СЦЕНАРИЙ 2: заказ — 2 колонки (шаги + липкая сводка) ===== */ ?>
+  <div id="checkoutMain">
+  <div class="wrap">
+    <div class="checkout-layout">
+
+      <?php /* Левая колонка — ШАГИ ОФОРМЛЕНИЯ (форма; partial без секции —
+             $orderBare убирает обёртку fc-section/wrap, сеткой управляет
+             .checkout-layout) */ ?>
+      <div class="checkout-steps">
+        <?php
+        $orderHideTitle = true;
+        $orderBare = true;
+        require __DIR__ . '/partials/order-form.php';
+        ?>
+      </div>
+
+      <?php /* Правая колонка — ЛИПКАЯ СВОДКА ЗАКАЗА: мини-фото букетов,
+             название, цена, стоимость доставки по выбранному району и
+             итоговая сумма (js/cart-ui.js renderCheckoutSummary — обновление
+             на cart:change и смену района). */ ?>
+      <aside class="checkout-aside" aria-label="Сводка заказа">
+        <div class="checkout-summary" id="checkoutSummary">
+          <div class="checkout-summary__head">
+            <p class="checkout-summary__title">Ваш заказ</p>
+            <a class="checkout-summary__link" href="/#catalog">Добавить букеты</a>
+          </div>
+          <ul class="checkout-summary__items" id="checkoutSummaryItems"></ul>
+          <p class="checkout-summary__empty" id="checkoutSummaryEmpty" hidden>В корзине пока пусто — выберите букет в каталоге, и он появится здесь.</p>
+          <div class="checkout-summary__rows">
+            <p class="checkout-summary__row" id="checkoutSummaryPromoRow" hidden><span id="checkoutSummaryPromoLabel"></span><span id="checkoutSummaryPromoValue"></span></p>
+            <p class="checkout-summary__row"><span>Букеты</span><span id="checkoutSummaryItemsTotal">—</span></p>
+            <p class="checkout-summary__row"><span>Доставка</span><span id="checkoutSummaryDelivery">—</span></p>
+            <p class="checkout-summary__row checkout-summary__row--total"><span>Итого</span><span id="checkoutSummaryTotal">—</span></p>
+          </div>
+          <p class="checkout-summary__note">Оплата — при получении: наличными, картой или по СБП.<?= setting('feature_promo', '1') === '1' ? ' Промокод можно указать в шаге 5.' : '' ?></p>
+          <?php /* Мини-бейджи доверия под сводкой (5cv-паттерн) */ ?>
+          <ul class="checkout-summary__trust" aria-label="Гарантии">
+            <li>⚡ Доставим за 1–2 часа</li>
+            <li>📷 Фото букета перед отправкой</li>
+            <li>🌿 Аквабокс и Кризал в подарок</li>
+          </ul>
+        </div>
+      </aside>
+
+    </div>
+  </div>
+  </div><?php /* /#checkoutMain */ ?>
 </main>
 
 <?php require __DIR__ . '/partials/footer.php'; ?>
+
+<?php /* S11: переключатель сценариев чекаута — пустая корзина против заказа.
+       Тот же источник данных, что cart-ui.js (localStorage корзины);
+       события cart:change + pageshow держат экран честным в любой гонке. */ ?>
+<script>
+(function () {
+  var emptyScreen = document.getElementById('checkoutEmptyScreen');
+  var main = document.getElementById('checkoutMain');
+  if (!emptyScreen || !main) return;
+  function sync() {
+    var items = window.cart ? window.cart.getItems() : [];
+    var isEmpty = items.length === 0;
+    emptyScreen.hidden = !isEmpty;
+    main.style.display = isEmpty ? 'none' : '';
+  }
+  document.addEventListener('cart:change', sync);
+  window.addEventListener('pageshow', sync);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', sync);
+  } else {
+    sync();
+  }
+})();
+</script>
 </body>
 </html>

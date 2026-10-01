@@ -191,8 +191,12 @@ html{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
 }
 
 /* ============ 4. ШАПКА (чистая белая, без стекла) ============ */
+/* S11 ДЕФЕКТ 1: жёсткий sticky-контекст шапки — position:sticky;top:0;
+   z-index:100; непрозрачно-белый фон. Поверх контента шапка не «залипает
+   посреди страницы»: ниже — контейнер .fc-catalog-zone ограничивает
+   sticky-полёт ленты чипсов зоной каталога. */
 .fc-header{
-  position:sticky;top:0;z-index:50;
+  position:sticky;top:0;z-index:100;
   background:#FFFFFF;
   border-bottom:1px solid #EBEBEB; /* S7: тонкая серая линия, как на 5cv.ru */
 }
@@ -638,23 +642,24 @@ html{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
   display:flex;flex-direction:column;gap:6px;
 }
 .product-card__actions{display:flex;flex-direction:column;gap:0;width:100%}
-/* СТРОКА 4 (S10 ДЕФЕКТ 3): утончённая кнопка «В корзину» — высота 38px,
-   скругление 8px, глубокий графит #18181B, белый 13px semibold;
-   покупка в 1 клик — неброская текстовая ссылка под кнопкой (12px). */
+/* СТРОКА 4 (S11 ЗОНА 1-2): ЛЁГКАЯ кнопка «В корзину» — белый фон #FFFFFF,
+   тонкий графитовый контур 1.5px solid #18181B, цвет текста #18181B,
+   скругление 8px, высота 36px. Ховер — мягкая заливка чёрным (фон #18181B,
+   белый текст). Прежняя глухая чёрная плашка («стена кирпичей») упразднена. */
 .product-card__cta{
   /* нейтрализуем легаси-кружок из style.css:178 (W65-эра: absolute
      right/bottom 12px + 44×44 + opacity:0 — на проде давал stray-квадрат
      в углу вьюпорта; S6/S9 возвращает кнопку в поток карточки) */
   position:static;right:auto;bottom:auto;
   width:100%;height:auto;opacity:1;transform:none;
-  min-height:38px;border:none;border-radius:8px;
-  background:#18181B;color:#fff;
+  min-height:36px;border:1.5px solid #18181B;border-radius:8px;
+  background:#FFFFFF;color:#18181B;
   font:600 .8125rem var(--font-ui);cursor:pointer;
   display:inline-flex;align-items:center;justify-content:center;gap:6px;
   padding:0 10px;
-  transition:background .15s;
+  transition:background .15s,color .15s;
 }
-.product-card__cta:hover{background:#000;opacity:1;transform:none}
+.product-card__cta:hover{background:#18181B;color:#fff;border-color:#18181B;opacity:1;transform:none}
 .product-card__cta:active{transform:scale(.98)}
 .product-card__cta:focus-visible{outline:3px solid rgba(24,24,27,.35);outline-offset:2px}
 /* «Купить в 1 клик» — тихая ссылка-строка по центру (не кирпич!) */
@@ -670,8 +675,7 @@ html{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
 .btn-oneclick-link:hover{color:#18181B;text-decoration:underline;text-underline-offset:3px}
 .btn-oneclick-link:active{transform:scale(.98)}
 .btn-oneclick-link:focus-visible{outline:3px solid rgba(24,24,27,.25);outline-offset:2px;border-radius:8px}
-/* тач-таргет (S10): кнопка 38px по ТЗ и на таче — карточка лёгкая,
-   как на 5cv.ru; ссылка-строка — вторичная, ей достаточно отступа */
+/* тач-таргет (S11): кнопка 36px по ТЗ; на таче чуть выше — палец ловит */
 @media(hover:none){
   .product-card__cta{min-height:38px}
 }
@@ -712,15 +716,21 @@ html{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
 .fc-budget .fc-chip.is-active .fc-budget__label{color:#fff}
 .fc-budget .fc-chip.is-active .fc-budget__count{color:rgba(255,255,255,.72)}
 
-/* липкая лента чипсов — под шапкой (top = высота sticky-шапки) */
+/* липкая лента чипсов — под шапкой (top = ЖИВАЯ высота sticky-шапки,
+   S11: js/five.js пишет CSS-переменную --fc-header-h при загрузке/ресайзе;
+   фолбэки — прежние замеры 69px/105px) */
 .fc-chips-bar{
-  position:sticky;top:69px;z-index:45;
+  position:sticky;top:var(--fc-header-h,69px);z-index:45;
   background:#FFFFFF;
   border-bottom:1px solid var(--line);
 }
 @media(max-width:899px){
-  .fc-chips-bar{top:105px} /* мобайл: ряд1 56px + строка поиска 44+4 + линия (замер 390px) */
+  .fc-chips-bar{top:var(--fc-header-h,105px)} /* мобайл: ряд1 56px + строка поиска 44+4 + линия (замер 390px) */
 }
+/* S11 ДЕФЕКТ 1: sticky-контекст ленты чипсов = ТОЛЬКО зона каталога
+   (index.php: .fc-chips-bar + section#catalog в общем .fc-catalog-zone);
+   ниже каталога (мастерская/поводы/FAQ) лента больше не парит поверх текста */
+.fc-catalog-zone{display:block}
 .fc-chips-bar .fc-chips{margin:0;padding:8px 20px}
 .fc-chips-bar .fc-chips .fc-chip{min-height:38px}
 
@@ -1079,9 +1089,11 @@ html{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
 .fc-store__rating svg{width:16px;height:16px;color:var(--amber)}
 .fc-store__rating b,
 .fc-store__rating-num{font-weight:700;color:var(--ink)}
-.fc-seo{background:var(--surface-warm);border-radius:24px;padding:28px 32px;max-width:840px;margin:0 auto}
+/* S11 ЗОНА 1-5: SEO-блок доставки — компактно и аккуратно: БЕЗ серой
+   траурной подложки/рамки, чистый белый фон, узкая колонка 840px. */
+.fc-seo{background:transparent;border-radius:0;padding:8px 0 0;max-width:840px;margin:0 auto}
 @media(min-width:900px) {
-.fc-seo{padding:32px 40px}
+.fc-seo{padding:8px 0 0}
 }
 .fc-seo__title{
   font-family:var(--font-display);
@@ -1158,28 +1170,121 @@ html{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
 .cart-upsell-item__add{background:var(--ink)}
 .cart-upsell-item__add:hover{background:#2F2F33}
 .order{background:var(--surface-subtle)}
+/* ============ S11 ЗОНА 2: ЧЕКАУТ-2026 — пять понятных шагов ============
+   Форма = столбец карточек-шагов (.ostep): белая карточка, тонкий контур
+   #EBEBEB, radius 16px; номер шага — круглая плашка 28px графит.
+   Двухколоночный каркас задаёт .checkout-layout (шаги + липкая сводка). */
 .order-form{
-  background:#fff;border:1px solid var(--line);border-radius:16px;
-  padding:32px 36px;max-width:880px;margin-inline:auto;
-  display:grid;gap:16px;
+  background:transparent;border:none;border-radius:0;
+  padding:0;max-width:none;margin:0;
+  display:grid;gap:14px;
   box-shadow:none;
 }
+.ostep{
+  background:#fff;border:1px solid #EBEBEB;border-radius:16px;
+  padding:20px 20px 18px;margin:0;min-width:0;
+}
 @media(min-width:900px) {
-.order-form{padding:36px 40px}
+.ostep{padding:24px 26px 22px}
 }
 @media(max-width:719px) {
-.order-form{padding:24px 20px}
+.ostep{padding:18px 16px 16px}
+}
+.ostep__legend{
+  display:flex;align-items:center;gap:12px;
+  font:700 1.0625rem/1.25 var(--font-ui);color:#1A1A1A;
+  padding:0;margin:0 0 14px;letter-spacing:-.01em;
+}
+.ostep__num{
+  flex:none;width:28px;height:28px;border-radius:50%;
+  background:#18181B;color:#fff;
+  font:700 .875rem/28px var(--font-ui);text-align:center;
+}
+.ostep__body{display:grid;gap:14px}
+/* пара полей в ряд (Имя+Телефон, Район+Адрес, Дата+Интервал) */
+.order-form__grid2{display:grid;gap:14px;min-width:0}
+@media(min-width:720px) {
+.order-form__grid2{grid-template-columns:1fr 1fr}
 }
 @media(min-width:720px) {
-.order-form{grid-template-columns:1fr 1fr}
-.order-form__payment,
-.order-form__nested,
+.order-form__field--full{grid-column:1/-1}
+}
 .order-form__status,
 .order-form__submit,
 .order-form__total,
 .order-form__checkbox,
-.order-form>p{grid-column:1/-1}
+.order-form>p{grid-column:auto}
+/* чекбокс-строка (согласие, «узнать адрес») */
+.order-form__check{
+  display:flex;align-items:flex-start;gap:10px;
+  font:400 .875rem/1.5 var(--font-ui);color:var(--ink);cursor:pointer;
+  min-height:44px;padding:6px 0;margin:0;
 }
+.order-form__check input{margin:2px 0 0;flex:none;width:18px;height:18px;accent-color:#18181B}
+.order-form__check small{color:var(--ink-muted)}
+
+/* ---- Шаг 2: пилюли «Заберу сам» / «Доставка получателю в подарок» ---- */
+.order-form__gift-toggle{display:grid;grid-template-columns:1fr;gap:8px}
+@media(min-width:720px){.order-form__gift-toggle{grid-template-columns:1fr 1fr}}
+.order-form__gift-pill input{position:absolute;opacity:0;pointer-events:none}
+.order-form__gift-pill span{
+  display:flex;align-items:center;justify-content:center;text-align:center;
+  min-height:48px;padding:10px 14px;border-radius:12px;
+  border:1.5px solid #EBEBEB;background:#fff;cursor:pointer;
+  font:600 .875rem/1.3 var(--font-ui);color:#1A1A1A;
+  transition:border-color .15s,background .15s;
+}
+.order-form__gift-pill:hover span{border-color:#18181B}
+.order-form__gift-pill input:checked + span{
+  background:#18181B;border-color:#18181B;color:#fff;
+}
+.order-form__gift-pill input:focus-visible + span{outline:3px solid rgba(24,24,27,.25);outline-offset:2px}
+
+/* ---- Шаг 4: подарки (открытка + Кризал) — белые строки с чекбоксом ---- */
+.ogift{
+  border:1px solid #EBEBEB;border-radius:12px;padding:12px 14px;
+  background:#fff;
+}
+.ogift--last{margin-top:0}
+.ogift__check span strong{font-weight:600}
+.ogift__price{font-style:normal;font-weight:700;color:#1A1A1A}
+.ogift__check small{font-size:.8125rem}
+.ogift__textarea{margin-top:4px}
+.ogift__textarea textarea{
+  width:100%;min-width:0;background:var(--surface-subtle);border:1.5px solid transparent;border-radius:12px;
+  padding:12px 14px;font:500 .9375rem var(--font-ui);color:var(--ink);
+  transition:border-color .15s,background .15s;resize:vertical;
+}
+.ogift__textarea textarea:focus{background:#fff;border-color:var(--pink);outline:none}
+
+/* ---- Шаг 5: способы оплаты — три карточки-переключателя ---- */
+.opay{display:grid;grid-template-columns:1fr;gap:8px}
+@media(min-width:720px){.opay{grid-template-columns:repeat(3,1fr)}}
+.opay__opt{
+  position:relative;display:block;cursor:pointer;
+}
+.opay__opt input{position:absolute;opacity:0;pointer-events:none}
+.opay__opt span{
+  display:grid;gap:3px;padding:12px 14px;border-radius:12px;
+  border:1.5px solid #EBEBEB;background:#fff;
+  transition:border-color .15s,background .15s;
+}
+.opay__opt:hover span{border-color:#18181B}
+.opay__opt input:checked + span{background:#18181B;border-color:#18181B}
+.opay__title{font:600 .9375rem/1.2 var(--font-ui);color:#1A1A1A}
+.opay__sub{font:400 .75rem/1.35 var(--font-ui);color:#767676}
+.opay__opt input:checked + span .opay__title{color:#fff}
+.opay__opt input:checked + span .opay__sub{color:rgba(255,255,255,.72)}
+.opay__opt input:focus-visible + span{outline:3px solid rgba(24,24,27,.25);outline-offset:2px}
+
+/* ---- Кнопка «Подтвердить заказ» — яркая, заметная, доверия ---- */
+.order-form__submit{
+  width:100%;min-height:52px;border-radius:12px;
+  font:700 1rem var(--font-ui);letter-spacing:.01em;
+  background:#18181B;
+}
+.order-form__submit:hover{background:#000}
+.order-form__submit:disabled{opacity:.6;cursor:wait}
 .order-form__field{display:flex;flex-direction:column;gap:10px}
 .order-form__field label{font-weight:700;font-size:.8125rem;color:var(--ink)}
 .order-form__field input,
@@ -1224,24 +1329,28 @@ html{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
 }
 .order-form input::placeholder,
 .order-form textarea::placeholder{color:var(--ink-muted)}
+/* S11 ЗОНА 1-4: ПОДВАЛ СВЕТЛЫЙ И БЛАГОРОДНЫЙ — фон #F7F7F8 с тонкой линией
+   1px #EBEBEB сверху, текст графитовый #1A1A1A, вторичный #767676.
+   Прежний глухой чёрный + «белый прямоугольник карты» упразднены. */
 .site-footer{
-  background:var(--ink);color:rgba(255,255,255,.75);
+  background:#F7F7F8;color:#767676;
+  border-top:1px solid #EBEBEB;
   padding:40px 0 48px;font-size:.875rem; 
 }
-.site-footer p{color:rgba(255,255,255,.75)}
-.site-footer p[style]{color:rgba(255,255,255,.6)!important}
-.site-footer__name{font-family:var(--font-ui);font-weight:700;font-size:1.125rem;color:#fff;margin-bottom:6px;letter-spacing:-.01em}
-.site-footer__phone{color:#fff;font-weight:700}
-.site-footer a{color:rgba(255,255,255,.85)}
-.site-footer a:hover{color:var(--pink);text-decoration:underline;text-underline-offset:3px}
+.site-footer p{color:#767676}
+.site-footer p[style]{color:#767676!important}
+.site-footer__name{font-family:var(--font-ui);font-weight:700;font-size:1.125rem;color:#1A1A1A;margin-bottom:6px;letter-spacing:-.01em}
+.site-footer__phone{color:#1A1A1A;font-weight:700}
+.site-footer a{color:#1A1A1A}
+.site-footer a:hover{color:#1A1A1A;text-decoration:underline;text-underline-offset:3px}
 .site-footer__messengers a{
-  background:rgba(255,255,255,.1);border-radius:999px;
-  padding:12px 18px;min-height:44px;line-height:1.2;
-  transition:background .15s,color .15s;
+  background:#FFFFFF;border:1px solid #EBEBEB;border-radius:999px;
+  padding:12px 18px;min-height:44px;line-height:1.2;color:#1A1A1A;
+  transition:border-color .15s,box-shadow .15s;
 }
-.site-footer__messengers a:hover{background:rgba(255,255,255,.2);color:#fff;text-decoration:none}
-.site-footer span a{padding:14px 8px}
-.site-footer span a:hover{color:var(--pink)}
+.site-footer__messengers a:hover{border-color:#18181B;box-shadow:0 4px 12px rgba(0,0,0,.05);color:#1A1A1A;text-decoration:none}
+.site-footer span a{padding:14px 8px;color:#767676}
+.site-footer span a:hover{color:#1A1A1A}
 @media(max-width:820px) {
 .mnav{
     background:#FFFFFF;
@@ -1468,17 +1577,17 @@ html{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
 .faq-item__q::after{color:var(--ink)}
 .site-footer .fc-footer__grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1.2fr;gap:32px;align-items:start}
 .fc-footer__brand .site-footer__name{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.fc-footer__about{font-size:.875rem;line-height:1.55;color:rgba(255,255,255,.75);max-width:34ch}
+.fc-footer__about{font-size:.875rem;line-height:1.55;color:#767676;max-width:34ch}
 .fc-footer__heading{
   font-weight:700;font-size:.8rem;text-transform:uppercase;letter-spacing:.14em;
-  color:rgba(255,255,255,.55);margin:0 0 14px;
+  color:#1A1A1A;margin:0 0 14px;
 }
 .fc-footer__links{list-style:none;margin:0;padding:0;display:grid;gap:8px}
-.fc-footer__links a{color:rgba(255,255,255,.85)}
-.fc-footer__links a:hover{color:var(--pink)}
-.fc-footer__links .fc-footer__muted{color:rgba(255,255,255,.75);font-size:.875rem}
+.fc-footer__links a{color:#1A1A1A}
+.fc-footer__links a:hover{color:#1A1A1A;text-decoration:underline;text-underline-offset:3px}
+.fc-footer__links .fc-footer__muted{color:#767676;font-size:.875rem}
 .fc-footer__brand .site-footer__messengers{margin-top:16px}
-.fc-footer__legal{font-size:.78rem;color:rgba(255,255,255,.6);margin:0 0 10px}
+.fc-footer__legal{font-size:.78rem;color:#767676;margin:0 0 10px}
 @media(max-width:899px) {
 .site-footer .fc-footer__grid{grid-template-columns:1fr 1fr;gap:24px}
 }
@@ -1708,21 +1817,23 @@ body.cookie-visible{padding-bottom:188px}
 .fc-premium__cards::-webkit-scrollbar{display:none}
 .fc-premium__card{flex:0 0 min(64vw,300px);height:clamp(380px,100vw,460px);scroll-snap-align:start}
 }
+/* S11 ЗОНА 1-4: тэглайн над подвалом — светлый (прежде — чёрная плашка,
+   сливавшаяся с тёмным футером в «глухую стену»). */
 .fc-footer-tagline{
-  background:var(--ink);
-  padding:clamp(48px,7vw,84px) 0 16px;
+  background:#FFFFFF;
+  padding:clamp(36px,5vw,64px) 0 8px;
   text-align:center;
 }
 .fc-footer-tagline__text{
   margin:0;
-  font:600 clamp(1.75rem,3.5vw,2.6rem)/1.25 var(--font-ui);
-  color:#fff;letter-spacing:-.015em;text-wrap:balance; 
+  font:600 clamp(1.5rem,3vw,2.25rem)/1.25 var(--font-ui);
+  color:#1A1A1A;letter-spacing:-.015em;text-wrap:balance; 
 }
 .fc-footer-tagline__text::before{
   content:"✿";
   display:block;
   font:700 .8125rem/1 var(--font-ui); 
-  color:var(--gold);margin-bottom:18px;
+  color:var(--amber,#E09F3E);margin-bottom:16px;
 }
 /* S6: плёночное зерно-оверлей удалено — стерильная чистота */
 body::after{content:none}
@@ -1923,32 +2034,15 @@ body:not(.page-checkout) #orderForm{display:grid!important}
 .fc-row__eyebrow{font-weight:600;font-size:11px;letter-spacing:.14em;color:var(--ink-muted)}
 .fc-row__eyebrow em{font-size:11px}
 .fc-row__heading{position:relative}
-.fc-row__heading[data-numeral]::before{
-  content:attr(data-numeral);
-  position:absolute;top:-.34em;left:-.05em;z-index:-1;
-  font:600 clamp(5rem,10vw,8rem)/1 var(--font-ui);
-  color:rgba(28,26,30,.07);
-  letter-spacing:-.015em; 
-  pointer-events:none;user-select:none;white-space:nowrap;
-}
+/* S11 ЗОНА 1-3: oversize-нумералы «01/02/…» (гигантская цифра на фоне
+   заголовка) ПОЛНОСТЬЮ УДАЛЕНЫ — CSS и разметка (editorial-мусор). */
 .fc-premium__info{position:relative}
-.fc-premium__info[data-numeral]::before{
-  content:attr(data-numeral);
-  position:absolute;top:-.42em;left:-.06em;z-index:0;
-  font:600 clamp(5rem,10vw,8rem)/1 var(--font-ui);
-  color:rgba(255,255,255,.08);
-  letter-spacing:-.015em; 
-  pointer-events:none;user-select:none;white-space:nowrap;
-}
 .fc-premium__title,
 .fc-premium__sub,
 .fc-premium__price-row,
 .fc-premium__cta{position:relative;z-index:1}
 @media(max-width:899px) {
-.fc-row__heading[data-numeral]::before,
-.fc-premium__info[data-numeral]::before{
-    font-size:clamp(3.25rem,15vw,5rem);top:-.38em;
-  }
+/* S11: mobile-нумералы упразднены вместе с основными правилами */
 }
 @media(max-width:899px) {
 }
@@ -2496,15 +2590,46 @@ body.cookie-visible #cartToast{bottom:190px}
 @media(prefers-reduced-motion:reduce) {
 #cartToast{transition:none}
 }
+/* ============ S11 ЗОНА 2: каркас чекаута — шаги + липкая сводка ============
+   Десктоп ≥1024px: 2 колонки (шаги 1fr + сводка 380px), сводка —
+   position:sticky под шапкой. Мобильный: 1 колонка, сводка ПЕРВОЙ
+   (покупатель видит состав заказа до шагов). */
+.checkout-layout{
+  display:grid;grid-template-columns:1fr;
+  gap:16px;align-items:start;
+}
+.checkout-layout .checkout-aside{order:-1}
+@media(min-width:1024px){
+  .checkout-layout{grid-template-columns:minmax(0,1fr) 380px;gap:24px}
+  .checkout-layout .checkout-aside{order:0}
+}
+.checkout-aside{
+  position:sticky;
+  top:calc(var(--fc-header-h,70px) + 16px);
+}
+/* Сценарий пустой корзины — аккуратный экран-заглушка */
+.checkout-empty{
+  max-width:520px;margin:24px auto 48px;text-align:center;
+  padding:48px 24px;
+}
+.checkout-empty__icon{
+  width:88px;height:88px;margin:0 auto 18px;border-radius:50%;
+  background:#F7F7F8;display:grid;place-items:center;color:#767676;
+}
+.checkout-empty__icon svg{width:40px;height:40px}
+.checkout-empty__title{font:700 1.5rem/1.2 var(--font-ui);color:#1A1A1A;margin:0 0 10px;letter-spacing:-.01em}
+.checkout-empty__text{font:400 .9375rem/1.55 var(--font-ui);color:#767676;margin:0 0 22px}
+.checkout-empty__cta{min-height:52px;padding:14px 28px;border-radius:12px;font-size:1rem}
+
 .checkout-summary-section{padding-top:8px}
 .checkout-summary{
-  background:#fff;border:1.5px solid var(--line);border-radius:24px;
-  padding:24px 28px;max-width:880px;margin-inline:auto;
+  background:#fff;border:1.5px solid var(--line);border-radius:16px;
+  padding:20px 22px;max-width:none;margin-inline:auto;
   box-shadow:none;
   display:grid;gap:14px;
 }
 @media(max-width:719px) {
-.checkout-summary{padding:20px 18px}
+.checkout-summary{padding:18px 16px}
 }
 .checkout-summary__head{
   display:flex;align-items:baseline;justify-content:space-between;gap:12px;
@@ -2525,11 +2650,19 @@ body.cookie-visible #cartToast{bottom:190px}
   display:grid;gap:2px;
 }
 .checkout-summary__item{
-  display:flex;justify-content:space-between;gap:16px;align-items:baseline;
+  display:flex;justify-content:space-between;gap:12px;align-items:center;
   padding:8px 0;border-bottom:1px solid var(--line);
   font-size:.9375rem;color:var(--ink);
 }
-.checkout-summary__name{min-width:0;overflow:hidden;text-overflow:ellipsis}
+/* S11: мини-фото букета в сводке — 44×55 (4:5), radius 8, контур */
+.checkout-summary__thumb{
+  flex:none;width:44px;height:55px;border-radius:8px;overflow:hidden;
+  background:#F7F7F8;border:1px solid #EBEBEB;
+  display:grid;place-items:center;color:#B9B9BE;
+}
+.checkout-summary__thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.checkout-summary__thumb svg{width:20px;height:26px}
+.checkout-summary__name{min-width:0;overflow:hidden;text-overflow:ellipsis;flex:1}
 .checkout-summary__price{
   flex:none;font-weight:600;font-variant-numeric:tabular-nums;
 }
@@ -2554,6 +2687,16 @@ body.cookie-visible #cartToast{bottom:190px}
 }
 .checkout-summary__note{
   margin:0;font-size:.8125rem;color:var(--ink-muted);max-width:60ch;
+}
+/* S11: мини-бейджи доверия под сводкой */
+.checkout-summary__trust{
+  list-style:none;margin:2px 0 0;padding:12px 0 0;
+  border-top:1px solid var(--line);
+  display:grid;gap:8px;
+}
+.checkout-summary__trust li{
+  display:flex;align-items:center;gap:8px;
+  font:500 .8125rem/1.4 var(--font-ui);color:var(--ink-muted);
 }
 #catalog.fc-section--tint{background:var(--surface,#fff)}
 .order-form__checkbox{

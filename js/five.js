@@ -51,9 +51,26 @@
     return 'букетов';
   }
 
+  /* S11 ЗОНА 1-1: живая высота sticky-шапки → CSS-переменная --fc-header-h.
+     Липкая лента чипсов (.fc-chips-bar{top:var(--fc-header-h)}) прижимается
+     к РЕАЛЬНОЙ нижней кромке шапки на любом экране (раньше — хардкод
+     69px/105px, рассинхрон при вариациях высоты давал нахлёст). */
+  function headerHeightVar() {
+    var h = document.querySelector('.fc-header');
+    if (!h) return;
+    function sync() {
+      var px = h.offsetHeight;
+      if (px > 0) document.documentElement.style.setProperty('--fc-header-h', px + 1 + 'px');
+    }
+    sync();
+    window.addEventListener('resize', sync);
+    window.addEventListener('orientationchange', sync);
+  }
+
   ready(function () {
     cityMenu(); /* W106-C1: дропдаун города в шапке/футере */
     burgerMenu(); /* W106-C1: мобильный бургер ≤899px */
+    headerHeightVar(); /* S11: --fc-header-h для sticky-ленты чипсов */
     carousels();
     catalogFilters(); /* чипы + поиск + сброс — общее состояние (AND) */
     rowLinks();

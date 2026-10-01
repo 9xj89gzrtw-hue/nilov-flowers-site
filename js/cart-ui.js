@@ -947,8 +947,14 @@
         return;
       }
       if (emptyEl) emptyEl.hidden = true;
+      /* S11 ЗОНА 2: мини-фото выбранных букетов в сводке (карточка CTA
+         пишет image в мету корзины; PDP-кнопка — data-product-image) */
       itemsEl.innerHTML = items.map(function (item) {
+        var img = item.image
+          ? '<img src="' + escapeHtml(String(item.image)) + '" alt="" width="44" height="55" loading="lazy" decoding="async">'
+          : '<svg viewBox="0 0 80 94" width="22" height="30" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><circle cx="40" cy="30" r="11"/><circle cx="26" cy="38" r="8"/><circle cx="54" cy="38" r="8"/><path d="M40 41v20M40 61c-8 6-14 14-16 25M40 61c8 6 14 14 16 25"/></svg>';
         return '<li class="checkout-summary__item">'
+          + '<span class="checkout-summary__thumb" aria-hidden="true">' + img + '</span>'
           + '<span class="checkout-summary__name">' + escapeHtml(item.name || 'Букет')
           + (item.qty > 1 ? ' × ' + item.qty : '') + '</span>'
           + '<span class="checkout-summary__price">' + formatPrice(item.price * item.qty) + '\u00A0₽</span>'

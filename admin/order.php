@@ -371,8 +371,10 @@ flash();
   .print-note__items{margin:0;padding-left:5mm;font-size:13pt;line-height:1.55;list-style:disc}
   .print-note__row{margin:0 0 1.5mm;font-size:11.5pt;line-height:1.4}
   .print-note__surprise{margin:4mm 0;padding:3mm 4mm;background:#F4DEE3;color:#8E3B54;font-weight:800;font-size:10.5pt;text-transform:uppercase;letter-spacing:.06em;text-align:center;border-radius:2mm}
-  .print-note__card{border:1.5px dashed #143C2B;border-radius:3mm;padding:4mm;margin-top:2mm}
-  .print-note__card-text{font-family:'Playfair Display',Georgia,serif;font-size:16pt;line-height:1.5;margin:0;min-height:30mm;word-break:break-word}
+  .print-note__card{border:1.5px dashed #143C2B;border-radius:3mm;padding:5mm;margin-top:3mm}
+  /* S11 ЗОНА 4: текст открытки — КРУПНЫЙ (26pt, по центру блока) — флорист
+     читает его с расстояния при вписывании в открытку от руки */
+  .print-note__card-text{font-family:'Playfair Display',Georgia,serif;font-size:26pt;line-height:1.35;margin:0;min-height:45mm;word-break:break-word;display:flex;align-items:center;justify-content:center;text-align:center}
   .print-note__foot{display:flex;justify-content:space-between;margin-top:4mm;padding-top:2mm;border-top:1px solid #E8E6E1;font-size:9pt;color:#6E6A72}
 }
 </style>

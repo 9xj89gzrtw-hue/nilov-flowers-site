@@ -86,7 +86,7 @@ $__nfIsProduct = (bool)preg_match('#^/product(/|$)#', $__nfPath)
         <?php if ($emailOn): ?><a href="mailto:<?= e(setting('shop_email')) ?>"><?= e(setting('shop_email')) ?></a><?php endif; ?>
       </p>
       <?php if ($igDisclaimer): ?>
-      <p style="font-size:.72rem;color:rgba(255,255,255,.55);margin-top:4px">* Instagram принадлежит Meta, признанной экстремистской организацией, деятельность которой запрещена на территории РФ.</p>
+      <p style="font-size:.72rem;color:#767676;margin-top:4px">* Instagram принадлежит Meta, признанной экстремистской организацией, деятельность которой запрещена на территории РФ.</p>
       <?php endif; ?>
       <?php endif; ?>
     </div>

@@ -581,9 +581,9 @@ function render_fc_row(string $title, string $sub, array $items, array $ctx, str
       <div class="<?= $rowClass ?>"><div class="fc-row__head">
         <?php /* W103 (F1): обёртка heading — eyebrow над H2 не ломает flex-строку
                шапки секции (заголовок+подпись группируются в один блок).
-               W104: data-numeral — oversize-индекс секции за заголовком (::before,
-               five.css). */ ?>
-        <div class="fc-row__heading"<?= $numeral !== '' ? ' data-numeral="' . e($numeral) . '"' : '' ?>>
+               S11: oversize-нумерал (data-numeral, гигантская цифра «01» на
+               фоне) УДАЛЁН — editorial-макулатура по требованию владельца. */ ?>
+        <div class="fc-row__heading">
         <?php render_fc_eyebrow($eyebrow); ?>
         <h2 class="fc-row__title"><?= e($title) ?></h2>
         <?php if ($sub !== ''): ?><p class="fc-row__sub"><?= e($sub) ?></p><?php endif; ?>
@@ -790,7 +790,7 @@ function render_fc_collage(string $title, string $sub, array $items, array $ctx,
     ?>
     <section class="fc-section fc-hits"><div class="wrap">
       <div class="fc-row__head">
-        <div class="fc-row__heading" data-numeral="<?= e($numeral) ?>">
+        <div class="fc-row__heading">
         <?php render_fc_eyebrow($eyebrow); ?>
         <h2 class="fc-row__title"><?= e($title) ?></h2>
         <?php if ($sub !== ''): ?><p class="fc-row__sub"><?= e($sub) ?></p><?php endif; ?>
@@ -822,18 +822,9 @@ function render_fc_collage(string $title, string $sub, array $items, array $ctx,
 $fcProdSeq = 0;
 $fcEditorialDone = [];
 
-/* W104-α (M): единая система оглавления — сквозная нумерация контентных
-   секций главной (01 хиты → 02/03 категорийные → 04 премиум → 05 «До N ₽» →
-   06 «Дополните» → 07 каталог → 08 поводы → 09 FAQ). Авто-последовательность
-   самовосстанавливается при выключении секций тумблерами — ручные настройки
-   section_numeral_* (ломали порядок) упразднены. */
-$fcNumeralSeq = 0;
-function fc_next_numeral(): string
-{
-    global $fcNumeralSeq;
-    $fcNumeralSeq++;
-    return sprintf('%02d', $fcNumeralSeq);
-}
+/* W104-α (M): СКВОЗНАЯ НУМЕРАЦИЯ СЕКЦИЙ УПРАЗДНЕНА (S11): oversize-цифры
+   «01/02/…» на фоне — editorial-мусор, владелец приказал удалить полностью
+   (гигантская «01» висела в блоке FAQ поверх текста). */
 
 /* ---- Карусели (5cv): хиты / по категориям / премиум / до N ₽ ---- */
 
@@ -1216,12 +1207,18 @@ echo json_encode([
          Подарки — настройка chips_tags). Ценовые фильтры живут в плашках
          бюджета выше (4-я плашка — «Хиты»); порядок и матчинг — прежние
          (PHP $nfTagMatch = JS nfTagMatch, контракт .fc-chip[data-chip]/[data-tag] цел). */ ?>
+  <?php /* S11 ДЕФЕКТ 1 (sticky): лента чипсов + каталог — в одном .fc-catalog-zone
+         контейнере. Раньше .fc-chips-bar (position:sticky; top:105px) был
+         прямым потомком <main> и залипал НАД секциями мастерской/поводов/FAQ,
+         паря поверх текста при скролле ниже каталога. Теперь sticky-контекст
+         = только зона каталога: доехали до конца каталога — лента уплыла. */ ?>
   <?php if ($featChips): ?>
   <?php
   $chipsTags = array_values(array_filter(array_map('trim', explode(',', setting('chips_tags', ''))), fn($t) => $t !== ''));
   /* S9: $nfTagMatch определён выше (до плашек бюджета) — здесь только
          использование: тег-чипы ленты матчатся тем же матчером, что и
          счётчики плашек (контракт PHP = JS nfTagMatch). */ ?>
+  <div class="fc-catalog-zone">
   <div class="fc-chips-bar">
     <div class="wrap">
       <div class="fc-chips" id="fcChips">
@@ -1243,6 +1240,8 @@ echo json_encode([
       </div>
     </div>
   </div>
+  <?php else: ?>
+  <div class="fc-catalog-zone">
   <?php endif; ?>
 
   <?php /* W96 (5cv): trust-strip убран — роль играют чипы и карточка доставки в hero.
@@ -1276,6 +1275,7 @@ echo json_encode([
       </div>
     </div>
   </section>
+  </div><?php /* /.fc-catalog-zone — конец sticky-контекста ленты чипсов (S11) */ ?>
 
   <?php /* ===== S7: МАСТЕРСКАЯ В СПБ + ОТЗЫВЫ (блок доверия под каталогом) =====
          Слева — мастерская: адрес (shop_address), часы (workshop_hours),
@@ -1439,7 +1439,7 @@ echo json_encode([
              «H2 → контент», что у остальных секций (margin-bottom 26px);
              без неё FAQ-заголовок прилипал к первому вопросу. */ ?>
       <div class="fc-row__head">
-      <div class="fc-row__heading" data-numeral="<?= e(fc_next_numeral()) ?>">
+      <div class="fc-row__heading">
       <h2 class="section-title"><?= e(setting('faq_title', 'Частые вопросы')) ?></h2>
       </div>
       </div>
