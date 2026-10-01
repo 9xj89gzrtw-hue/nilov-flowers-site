@@ -616,7 +616,7 @@ html:not(.js-ready) .catalog__grid .reveal{opacity:1;transform:none}
 }
 @media(max-width:899px) {
 }
-[data-citybar-h[hidden]{display:none!important}
+[data-citybar-hidden]{display:none!important}
 .fc-search{flex:1;max-width:480px;position:relative;display:flex;min-width:120px}
 .fc-search input,
 .fc-search__input{
@@ -1390,7 +1390,6 @@ body::after{
 .fc-premium__card:hover{transform:none}
 .fc-premium__card:hover .fc-premium__photo img{transform:none}
 }
-}
 .fc-carousel>.reveal:nth-child(2),
 .fc-collage>.fc-collage__cell:nth-child(2) .reveal{--i:1}
 .fc-carousel>.reveal:nth-child(3),
@@ -1482,8 +1481,8 @@ details:not([open]) .faq-item__a-wrap{grid-template-rows:0fr}
   to{opacity:1}
 }
 @supports not (transition-behavior: allow-discrete){
-  #cartPanel:not([h[hidden]) .cart-panel__drawer{animation:fc-drawer-in .32s cubic-bezier(.4,0,.2,1)}
-  #cartPanel:not([h[hidden]) .cart-panel__backdrop{animation:fc-backdrop-in .24s cubic-bezier(.4,0,.2,1)}
+  #cartPanel:not([hidden]) .cart-panel__drawer{animation:fc-drawer-in .32s cubic-bezier(.4,0,.2,1)}
+  #cartPanel:not([hidden]) .cart-panel__backdrop{animation:fc-backdrop-in .24s cubic-bezier(.4,0,.2,1)}
 }
 @supports (transition-behavior: allow-discrete){
   #cartPanel{transition:display .24s allow-discrete}
@@ -1493,11 +1492,11 @@ details:not([open]) .faq-item__a-wrap{grid-template-rows:0fr}
   #cartPanel .cart-panel__backdrop{
     transition:opacity .24s cubic-bezier(.4,0,.2,1);
   }
-  #cartPanel[h[hidden] .cart-panel__drawer{
+  #cartPanel[hidden] .cart-panel__drawer{
     transform:translateX(100%);
     transition:transform .24s ease-in;
   }
-  #cartPanel[h[hidden] .cart-panel__backdrop{
+  #cartPanel[hidden] .cart-panel__backdrop{
     opacity:0;
     transition:opacity .24s ease-in;
   }
@@ -2304,7 +2303,7 @@ body.page-checkout .cookie-banner.cookie-banner--bar{
 body.page-checkout.cookie-visible.nf-cookie-pill{padding-bottom:0}
 }
 .oneclick{position:fixed;inset:0;z-index:120;display:grid;place-items:center;padding:18px}
-.oneclick[h[hidden]{display:none}
+.oneclick[hidden]{display:none}
 .oneclick__backdrop{position:absolute;inset:0;background:rgba(24,24,27,.5);backdrop-filter:blur(2px)}
 .oneclick__dialog{position:relative;width:min(430px,100%);max-height:calc(100dvh - 36px);overflow-y:auto;background:#fff;border-radius:20px;padding:24px 22px 22px;box-shadow:0 30px 80px -30px rgba(24,24,27,.5)}
 .oneclick__close{position:absolute;top:10px;right:10px;width:44px;height:44px;border:none;background:transparent;font-size:1.6rem;color:var(--ink-muted);cursor:pointer;border-radius:12px}
