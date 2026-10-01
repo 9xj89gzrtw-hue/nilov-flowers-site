@@ -15,6 +15,8 @@ export function CartDrawer({ upsells, settings }: { upsells: Upsell[]; settings:
 
   const [promoInput, setPromoInput] = useState("")
   const [promoBusy, setPromoBusy] = useState(false)
+  // Раунд 3 (критик 13, P2): персистентная ошибка промокода — не только toast
+  const [promoError, setPromoError] = useState<string | null>(null)
 
   const sum = cartSum(cart)
   const discount = promoDiscount(sum, promo)
@@ -40,6 +42,7 @@ export function CartDrawer({ upsells, settings }: { upsells: Upsell[]; settings:
   const applyPromo = async () => {
     if (!promoInput.trim()) return
     setPromoBusy(true)
+    setPromoError(null)
     try {
       const r = await fetch("/api/promo", {
         method: "POST",
@@ -48,13 +51,14 @@ export function CartDrawer({ upsells, settings }: { upsells: Upsell[]; settings:
       })
       const data = await r.json()
       if (!r.ok) {
+        setPromoError(data.error || "Промокод не подошёл")
         toast.error(data.error)
         return
       }
       setPromo(data.promo)
       toast.success(`Промокод ${data.promo.code} применён: ${data.promo.label}`)
     } catch {
-      toast.error("Сеть недоступна")
+      setPromoError("Сеть недоступна — попробуйте ещё раз")
     } finally {
       setPromoBusy(false)
     }
@@ -133,12 +137,18 @@ export function CartDrawer({ upsells, settings }: { upsells: Upsell[]; settings:
                       Доставка по СПб — бесплатно
                     </p>
                   )}
-                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white">
-                    <motion.div
-                      className="h-full rounded-full bg-pine"
-                      initial={false}
-                      animate={{ width: `${progress}%` }}
-                      transition={{ duration: 0.4 }}
+            {/* Раунд 3 (критик 13, P1): бар рендерится и без rAF (headless/дев-артефакты) + ARIA */}
+                  <div
+                    className="mt-2 h-1.5 overflow-hidden rounded-full bg-white"
+                    role="progressbar"
+                    aria-label="Прогресс до бесплатной доставки"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={progress}
+                  >
+                    <div
+                      className="h-full rounded-full bg-pine transition-[width] duration-500 ease-out"
+                      style={{ width: `${progress}%` }}
                     />
                   </div>
                 </div>
@@ -173,9 +183,14 @@ export function CartDrawer({ upsells, settings }: { upsells: Upsell[]; settings:
                       </button>
                     </div>
                   )}
-                  <p className="mt-1.5 text-[11px] text-muted-foreground">
-                    Порог промокода зависит от суммы букетов — проверим автоматически
-                  </p>
+                  {promoError && (
+                    <p className="mt-1.5 text-[11.5px] font-medium text-berry" role="alert">{promoError}</p>
+                  )}
+                  {!promo && !promoError && (
+                    <p className="mt-1.5 text-[11px] text-muted-foreground">
+                      Порог промокода зависит от суммы букетов — проверим автоматически
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex-1 overflow-y-auto nice-scroll px-5 py-4">
@@ -238,14 +253,14 @@ export function CartDrawer({ upsells, settings }: { upsells: Upsell[]; settings:
                               toast.success(`${u.name} — добавлено`)
                             }}
                             disabled={inCart(u.slug)}
-                            className="rounded-2xl border border-pine/15 bg-white p-3 text-left transition-colors hover:border-pine/40 hover:bg-accent disabled:opacity-50 disabled:cursor-default"
+                            className="rounded-2xl border border-pine/15 bg-white p-3 text-left transition-colors hover:border-pine/40 hover:bg-accent disabled:opacity-60 disabled:cursor-default"
                           >
                             <span className="block text-[13px] font-semibold leading-snug text-foreground">{u.name}</span>
                             <span className="mt-0.5 line-clamp-2 block text-[11.5px] leading-snug text-muted-foreground">
                               {u.description}
                             </span>
                             <span className="mt-1.5 inline-block rounded-full bg-pine/10 px-2 py-0.5 text-[11px] font-bold text-pine">
-                              0 ₽ · добавить
+                              {inCart(u.slug) ? "✓ уже в корзине" : "0 ₽ · добавить"}
                             </span>
                           </button>
                         ))}

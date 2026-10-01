@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import Image from "next/image"
 import { AnimatePresence, motion } from "framer-motion"
 import { Check, Flower2, Minus, Plus, ShoppingBag, X, Zap } from "lucide-react"
@@ -9,7 +9,6 @@ import type { Product } from "@/lib/types"
 import { money, splitPrice } from "@/lib/types"
 import { useStore } from "@/lib/store"
 
-// Универсальная модалка: bottom-sheet на мобиле, центрированная на десктопе
 export function ModalShell({
   open,
   onClose,
@@ -27,7 +26,12 @@ export function ModalShell({
     if (!open) return
     const prev = document.body.style.overflow
     document.body.style.overflow = "hidden"
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose()
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return
+      // Раунд 3 (критик 11, P2): Esc закрывает верхний слой — лайтбокс отдельно от модалки
+      if (document.querySelector("[data-lightbox-open]")) return
+      onClose()
+    }
     document.addEventListener("keydown", onKey)
     return () => {
       document.body.style.overflow = prev
@@ -76,15 +80,36 @@ export function QuickView({ products }: { products: Product[]; upsellHints: unkn
   const setQuickView = useStore((s) => s.setQuickView)
   const addProduct = useStore((s) => s.addProduct)
   const setOneClick = useStore((s) => s.setOneClick)
+  // Раунд 3 (хвост критика 6, P1): лайтбокс-зум фото — рассмотреть букет за 18 900 ₽
+  const [lightbox, setLightbox] = useState(false)
 
   const product = products.find((p) => p.id === quickViewId) || null
   const open = !!product
 
+  const closeModal = () => {
+    setQuickView(null)
+    setLightbox(false)
+  }
+
   return (
-    <ModalShell open={open} onClose={() => setQuickView(null)} label="Быстрый просмотр букета" wide>
+    <ModalShell open={open} onClose={closeModal} label="Быстрый просмотр букета" wide>
       {product && (
+        <>
         <div className="grid max-h-[92dvh] grid-cols-1 overflow-y-auto nice-scroll sm:grid-cols-2">
           <div className="relative aspect-[3/4] bg-secondary sm:aspect-auto sm:min-h-[540px]">
+            <button
+              type="button"
+              onClick={() => setLightbox(true)}
+              aria-label="Увеличить фото букета"
+              className="group absolute inset-0 z-10"
+            >
+              <span className="absolute bottom-3 right-3 grid h-10 w-10 place-items-center rounded-full bg-white/90 text-pine opacity-0 shadow-md transition-opacity group-hover:opacity-100">
+                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="m21 21-4.3-4.3M11 8v6M8 11h6" />
+                </svg>
+              </span>
+            </button>
             <Image
               src={product.photos[0] || "/img/products/gen1.webp"}
               alt={`Букет «${product.name}»`}
@@ -192,6 +217,48 @@ export function QuickView({ products }: { products: Product[]; upsellHints: unkn
             </div>
           </div>
         </div>
+
+        {/* Лайтбокс-зум (Раунд 3): клик по фото → полноэкранный просмотр */}
+        <AnimatePresence>
+          {lightbox && (
+            <motion.div
+              data-lightbox-open
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setLightbox(false)}
+              className="fixed inset-0 z-[80] grid cursor-zoom-out place-items-center bg-pine-deep/90 p-4"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Фото букета крупно"
+            >
+              {/* Раунд 3 (критик 11, P1): настоящая полноэкранность — до 94vw / 1100px */}
+              <motion.div
+                initial={{ scale: 0.94, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.96, opacity: 0 }}
+                transition={{ type: "spring", damping: 26, stiffness: 300 }}
+                className="relative aspect-[3/4] max-h-[90dvh] w-full max-w-[min(94vw,1100px)]"
+              >
+                <Image
+                  src={product.photos[0] || "/img/products/gen1.webp"}
+                  alt={`Букет «${product.name}» крупным планом`}
+                  fill
+                  sizes="(max-width: 640px) 100vw, 640px"
+                  className="rounded-2xl object-contain"
+                />
+              </motion.div>
+              <button
+                onClick={() => setLightbox(false)}
+                aria-label="Закрыть фото"
+                className="absolute right-4 top-4 grid h-11 w-11 place-items-center rounded-full bg-white/10 text-cream backdrop-blur hover:bg-white/20 min-h-[44px] min-w-[44px]"
+              >
+                <X className="h-5 w-5" aria-hidden />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        </>
       )}
     </ModalShell>
   )

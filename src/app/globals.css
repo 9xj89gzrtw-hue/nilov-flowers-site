@@ -115,6 +115,11 @@
       font-size: 16px !important;
     }
   }
+  /* Раунд 3 (критик 14, P2): инлайн-подсветка незаполненных обязательных полей */
+  input:user-invalid,
+  textarea:user-invalid {
+    border-color: var(--berry) !important;
+  }
   ::selection {
     background: #f4dee3;
     color: #143c2b;

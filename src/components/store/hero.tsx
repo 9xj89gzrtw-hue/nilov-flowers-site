@@ -33,11 +33,14 @@ export function Hero({ settings, minPrice }: { settings: ShopSettings; minPrice:
               <Star className="h-4 w-4 fill-hit text-hit" aria-hidden />
               {String(settings.rating_badge || "5.0 на Яндекс Картах")}
             </span>
-            {/* Раунд 1 (критик 3, P2): ценовой якорь в hero */}
+            {/* Раунд 3 (критик 11, P2): ценовой якорь — кликабелен, ведёт в каталог */}
             {minPrice > 0 && (
-              <span className="w-full text-[13px] font-medium text-muted-foreground sm:w-auto">
+              <a
+                href="#catalog"
+                className="w-full text-[13px] font-medium text-muted-foreground underline decoration-pine/30 underline-offset-4 transition-colors hover:text-pine sm:w-auto"
+              >
                 Готовые букеты — <b className="font-grotesk text-foreground tnum">от {money(minPrice)}</b> · в наличии сегодня
-              </span>
+              </a>
             )}
           </div>
 

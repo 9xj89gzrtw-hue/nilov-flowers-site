@@ -98,6 +98,10 @@ export function AdminUpsells({
                       const n = Number(e.target.value.replace(/\D/g, "")) || 0
                       if (n !== u.price) void patch(u.id, { price: n })
                     }}
+                    onKeyDown={(e) => {
+                      // Раунд 3 (критик 12, P2): Enter сохраняет цену сразу
+                      if (e.key === "Enter") (e.target as HTMLInputElement).blur()
+                    }}
                     inputMode="numeric"
                     className="h-11 w-24 rounded-lg border border-input bg-white px-2 text-right font-grotesk text-[13px] font-bold outline-none focus:border-pine/50 tnum min-h-[44px]"
                     aria-label={`Цена ${u.slug}`}

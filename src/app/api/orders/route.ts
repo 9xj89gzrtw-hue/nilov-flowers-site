@@ -110,49 +110,50 @@ export async function POST(req: Request) {
 
     const total = Math.max(0, itemsTotal - discount) + deliveryPrice
 
-    const order = await db.order.create({
-      data: {
-        number: "NF-TEMP",
-        status: "new",
-        customerName: name,
-        customerPhone: phone,
-        customerEmail: b.customerEmail?.trim() || null,
-        comment: b.comment?.trim() || null,
-        recipientName: b.recipientName?.trim() || null,
-        recipientPhone: b.recipientPhone?.trim() || null,
-        surprise: !!b.surprise,
-        pickup: !!b.pickup,
-        knowAddress: !!b.knowAddress,
-        zoneId,
-        address: b.pickup ? null : b.address?.trim() || null,
-        deliveryDate: b.pickup ? null : b.deliveryDate || null,
-        deliverySlot: b.pickup ? null : b.deliverySlot || null,
-        cardText: b.cardText?.trim() || null,
-        paymentMethod: b.paymentMethod === "cash" ? "cash" : "online",
-        deliveryPrice,
-        itemsTotal,
-        total,
-        items: {
-          create: lines.map((l) => ({
-            productId: l.productId,
-            title: l.title,
-            price: l.price,
-            qty: l.qty,
-            photo: l.photo,
-          })),
+    const order = await db.$transaction(async (tx) => {
+      const created = await tx.order.create({
+        data: {
+          number: `NF-${Date.now().toString(36).toUpperCase()}`, // временный, заменяется в транзакции
+          status: "new",
+          customerName: name,
+          customerPhone: phone,
+          customerEmail: b.customerEmail?.trim() || null,
+          comment: b.comment?.trim() || null,
+          recipientName: b.recipientName?.trim() || null,
+          recipientPhone: b.recipientPhone?.trim() || null,
+          surprise: !!b.surprise,
+          pickup: !!b.pickup,
+          knowAddress: !!b.knowAddress,
+          zoneId,
+          address: b.pickup ? null : b.address?.trim() || null,
+          deliveryDate: b.pickup ? null : b.deliveryDate || null,
+          deliverySlot: b.pickup ? null : b.deliverySlot || null,
+          cardText: b.cardText?.trim() || null,
+          paymentMethod: b.paymentMethod === "cash" ? "cash" : "online",
+          deliveryPrice,
+          itemsTotal,
+          total,
+          items: {
+            create: lines.map((l) => ({
+              productId: l.productId,
+              title: l.title,
+              price: l.price,
+              qty: l.qty,
+              photo: l.photo,
+            })),
+          },
         },
-      },
-      include: { items: true, zone: true },
+        include: { items: true, zone: true },
+      })
+      // Раунд 3 (критик 15, P2): номер заказа присваивается в той же транзакции — без race
+      return tx.order.update({
+        where: { id: created.id },
+        data: { number: `NF-${1000 + created.id}` },
+        include: { items: true, zone: true },
+      })
     })
 
-    const number = `NF-${1000 + order.id}`
-    const finalOrder = await db.order.update({
-      where: { id: order.id },
-      data: { number },
-      include: { items: true, zone: true },
-    })
-
-    return Response.json({ ok: true, order: finalOrder })
+    return Response.json({ ok: true, order })
   } catch (e) {
     console.error("order create error", e)
     return Response.json({ error: "Не удалось оформить заказ. Позвоните нам — поможем." }, { status: 500 })
