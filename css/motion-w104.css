@@ -151,20 +151,27 @@ html.js-ready details.fc-seo__more.is-closing > .faq-item__a-wrap {
   to   { opacity: 1; transform: none; }
 }
 
-/* --- 4e. Карточки: idle-тень долой, transition на системную кривую ---
+/* --- 4e. Карточки: transition на системную кривую ---
    C1-M P0-2(а): box-shadow 0 1px 2px на каждой из 55 карточек рендерился
    постоянно (на скролле — лишняя работа растеризатору); тень теперь
    только hover-состояние. Голый ease в transition → системная кривая.
    W105 (5-a): hover-тень убрана вовсе — 5cv flat-язык; вместо неё
    волосяная линия на фото-плитке (five.css W105-2, ::after-кольцо);
    физику подъёма карточки см. 6b.
-   W105-8fix1 (мошн-критик 8-c P2 «лотерея каскада»): дубль-правило
+   W105-8fix1 (мошн-критик 8-c P2 «лоткея каскада»): дубль-правило
    .product-card:hover{box-shadow:none} удалено — единственный автор
-   «без тени» теперь five.css (блок W105-5a); здесь — только база. */
+   «без тени» теперь five.css (блок W105-5a); здесь — только база.
+   S5 (бутик-тюнинг, ЭТАП 1): idle-тень ВЕРНУЛАСЬ — ультра-мягкая
+   рассеянная 0 10px 30px -10px rgba(0,0,0,.06), hover 0 20px 40px
+   -15px rgba(0,0,0,.12) (токены --shadow-card в five.css). На слабом
+   железе (motion-lite) остаётся flat: 0 теней на ~55 карточках —
+   p95 скролла дороже эстетики. */
 .product-card {
-  box-shadow: none;
   transition: transform .25s cubic-bezier(0.4, 0, 0.2, 1),
               box-shadow .25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+html.motion-lite .product-card {
+  box-shadow: none;
 }
 
 /* --- 4f. Marquee: играет только в вьюпорте ---

@@ -236,6 +236,30 @@ function splitLabel(int $price): string
     );
 }
 
+/* S5 (бутик-тюнинг): текст платежа для сплит-пилюли карточки —
+   «4 платежа по 875 ₽». Шаблон — настройка card_split_format
+   ({div} — число платежей, {per} — платёж); слово «платеж…» после
+   {div} согласуем с числом (4 платежа / 6 платежей). */
+function splitPaymentText(int $price): string
+{
+    if (setting('split_enabled', '1') !== '1' || $price <= 0) {
+        return '';
+    }
+    $format = trim((string)setting('card_split_format', '{div} платежа по {per} ₽'));
+    if ($format === '' || mb_strpos($format, '{per}') === false) {
+        return splitLabel($price);
+    }
+    $div = max(2, (int)setting('split_divider', '4'));
+    $n10 = $div % 10;
+    $n100 = $div % 100;
+    $word = ($n10 === 1 && $n100 !== 11) ? 'платёж'
+        : (($n10 >= 2 && $n10 <= 4 && ($n100 < 12 || $n100 > 14)) ? 'платежа' : 'платежей');
+    $text = str_replace(['{div}', '{per}'], [(string)$div, formatSum(splitMonthly($price))], $format);
+    /* согласование склонения, если формат начинается с «{div} платеж…» */
+    $text = (string)preg_replace('/^(\d+)\s+платеж[а-яё]*/ui', '$1 ' . $word, $text);
+    return $text;
+}
+
 /* S3: список тегов товара → массив нижнего регистра ('розы, монобукеты' →
    ['розы','монобукеты']). Список чипсов каталога — настройка chips_tags. */
 function productTagsList(array $p): array

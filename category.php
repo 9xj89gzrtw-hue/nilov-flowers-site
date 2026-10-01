@@ -190,7 +190,12 @@ function render_product_card(array $p, array $ctx): void
     $link = '/product/' . rawurlencode($p['slug']);
     $searchIndex = mb_strtolower(trim($p['name'] . ' ' . ($p['category_name'] ?? '') . ' ' . ($p['description'] ?? '')));
     $comp = trim((string)($p['composition'] ?? ''));
-    $splitText = splitLabel($price);
+    /* S5: размер ⌀/↕ + сплит-пилюля — синхронно с index.php */
+    $sizeText = trim((string)($p['size_text'] ?? ''));
+    $sizeIsDia = mb_strpos($sizeText, '⌀') === 0;
+    $sizeClean = trim((string)preg_replace('/^[⌀↕]\s*/u', '', $sizeText));
+    $splitText = splitPaymentText($price);
+    $splitChip = trim((string)setting('split_chip_text', 'Сплит'));
     $deliveryText = trim((string)setting('card_delivery_text', 'Сегодня за 1–2 часа'));
     $oneclickFull = trim((string)setting('card_btn_oneclick', 'Купить в 1 клик'));
     $oneclickShort = trim((string)preg_replace('/^купить\s+(в\s+)?/iu', '', $oneclickFull));
@@ -214,7 +219,13 @@ function render_product_card(array $p, array $ctx): void
             <?php if ($ctx['featFavorites']): ?><button type="button" class="product-card__fav" data-fav-id="<?= (int)$p['id'] ?>" data-fav-name="<?= e($p['name']) ?>" aria-label="В избранное: <?= e($p['name']) ?>" title="В избранное">♡</button><?php endif; ?>
           </div>
           <div class="product-card__body">
-            <?php if ($deliveryText !== ''): ?><p class="product-card__delivery"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><?= e($deliveryText) ?></p><?php endif; ?>
+            <?php /* мета-ряд: время доставки + микро-бейдж размера (⌀/↕) */ ?>
+            <div class="product-card__meta">
+              <?php if ($deliveryText !== ''): ?><p class="product-card__delivery"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><?= e($deliveryText) ?></p><?php endif; ?>
+              <?php if ($sizeClean !== ''): ?>
+              <p class="product-card__size"><?php if ($sizeIsDia): ?><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M6.5 17.5 17.5 6.5"/></svg><?php else: ?><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M8 7l4-4 4 4M8 17l4 4 4-4"/></svg><?php endif; ?><span class="product-card__size-text"><?= e($sizeClean) ?></span></p>
+              <?php endif; ?>
+            </div>
             <p class="product-card__price">
               <?php if ($isSale): ?>
                 <span class="product-card__price--discount"><?= formatPrice($price) ?></span>
@@ -223,7 +234,9 @@ function render_product_card(array $p, array $ctx): void
                 <?= formatPrice($price) ?>
               <?php endif; ?>
             </p>
-            <?php if ($splitText !== ''): ?><p class="product-card__split"><?= e($splitText) ?></p><?php endif; ?>
+            <?php if ($splitText !== ''): ?>
+            <p class="product-card__split"><span class="product-card__split-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="7.5" height="14" rx="1.5"/><rect x="13.5" y="5" width="7.5" height="14" rx="1.5"/></svg><?= e($splitChip !== '' ? $splitChip : 'Сплит') ?></span><span class="product-card__split-text"><?= e($splitText) ?></span></p>
+            <?php endif; ?>
             <a class="product-card__name" href="<?= e($link) ?>"><?= e($p['name']) ?></a>
             <?php if ($comp !== ''): ?><p class="product-card__comp"><?= e($comp) ?></p><?php endif; ?>
             <?php if ((int)($p['is_urgent'] ?? 0) === 1): ?>

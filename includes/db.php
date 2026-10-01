@@ -1404,6 +1404,42 @@ $pdo->exec("UPDATE occasions SET faq_q1 = replace(faq_q1, 'Какую карту
         $pdo->exec("UPDATE settings SET value = '0' WHERE key = 'feature_price_filter' AND value = '1'");
         $pdo->exec("INSERT OR IGNORE INTO settings (key, value) VALUES ('s4_defaults_applied', '1')");
     }
+
+    /* ===== S5 (v2026.5, бутик-тюнинг): живой таймер + сплит-пилюля + quick view =====
+       1) delivery_now_* — живой расчёт «Ближайшая доставка по СПб: сегодня к 15:30»
+          (СПб + N минут, округление к 15-мин границе; рендер js/five.js).
+       2) card_split_format + split_chip_text — сплит-пилюля карточки
+          «[Сплит] 4 платежа по 875 ₽» (splitPaymentText в util.php).
+       3) quickview_* — тексты модалки быстрого просмотра (js/quickview.js).
+       4) Guard-UPDATE по ТОЧНЫМ старым сид-значениям (правленое владельцем
+          не трогаем): инфо-полоса шапки — «Санкт-Петербург • Доставка от
+          60 минут • Фото готового букета в WhatsApp до отправки»; чип «Все»
+          → «Все букеты»; теги чипсов — порядок 5cv с «В коробках»/«Подарок». */
+    $pdo->exec("INSERT OR IGNORE INTO settings (key, value) VALUES
+        ('feature_delivery_now', '1'),
+        ('delivery_now_text', 'Ближайшая доставка по СПб: сегодня к {time}'),
+        ('delivery_now_tomorrow', 'Ближайшая доставка по СПб: завтра к {time}'),
+        ('delivery_now_short', 'Доставим сегодня к {time}'),
+        ('delivery_now_minutes', '90'),
+        ('card_split_format', '{div} платежа по {per} ₽'),
+        ('split_chip_text', 'Сплит'),
+        ('feature_quickview', '1'),
+        ('quickview_comp_title', 'Состав'),
+        ('quickview_extras_title', 'Дополнить букет'),
+        ('quickview_chrysal_text', 'Кризал — подкормка для свежести'),
+        ('quickview_card_label', 'Открытка в подарок — напишем от руки'),
+        ('quickview_card_placeholder', 'Текст открытки'),
+        ('quickview_full_link', 'Полное описание букета')");
+    $s5guard = $pdo->prepare("UPDATE settings SET value = :nv WHERE key = :k AND value = :ov");
+    $s5guard->execute([':nv' => 'Санкт-Петербург', ':k' => 'infobar_text_1', ':ov' => 'Доставка цветов по СПб от 60 минут']);
+    $s5guard->execute([':nv' => 'Доставка от 60 минут', ':k' => 'infobar_text_2', ':ov' => 'Фото букета до отправки']);
+    $s5guard->execute([':nv' => 'Фото готового букета в WhatsApp до отправки', ':k' => 'infobar_text_3', ':ov' => 'Бесплатная открытка']);
+    $s5guard->execute([':nv' => 'Все букеты', ':k' => 'chips_all_text', ':ov' => 'Все']);
+    $s5guard->execute([
+        ':nv' => 'Пионы,Французские розы,Гортензии,В коробках,Подарок',
+        ':k' => 'chips_tags',
+        ':ov' => 'Пионы,Гортензии,Французские розы,Монобукеты,В шляпных коробках,Подарок девушке',
+    ]);
 }
 
 /* S3 (v2026.3): теги/состав/размеры демо-букетов — общий хелпер для свежих

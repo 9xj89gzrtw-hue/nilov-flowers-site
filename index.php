@@ -419,7 +419,14 @@ function render_product_card(array $p, array $ctx): void
     }
     $comp = trim((string)($p['composition'] ?? ''));
     $sizeText = trim((string)($p['size_text'] ?? ''));
-    $splitText = splitLabel($price);
+    /* S5: микро-бейдж размера — ⌀ (диаметр) если size_text начинается с ⌀,
+       иначе ↕ (высота). Текст без дублирования символа. */
+    $sizeIsDia = mb_strpos($sizeText, '⌀') === 0;
+    $sizeClean = trim((string)preg_replace('/^[⌀↕]\s*/u', '', $sizeText));
+    /* S5: сплит-виджет-пилюля «[Сплит] 4 платежа по 875 ₽» (splitPaymentText —
+       util.php; настройки card_split_format + split_chip_text) */
+    $splitText = splitPaymentText($price);
+    $splitChip = trim((string)setting('split_chip_text', 'Сплит'));
     /* S4: компактная строка доставки под ценой («Сегодня за 1–2 часа»,
        настройка card_delivery_text; пусто — не печатаем). */
     $deliveryText = trim((string)setting('card_delivery_text', 'Сегодня за 1–2 часа'));
@@ -465,8 +472,14 @@ function render_product_card(array $p, array $ctx): void
             <?php if (!empty($ctx['feature'])): ?>
             <span class="product-card__feature-label"><?= e(setting('feature_card_label', 'Выбор флориста')) ?></span>
             <?php endif; ?>
-            <?php /* время доставки — маленькая серая строка над ценой */ ?>
-            <?php if ($deliveryText !== ''): ?><p class="product-card__delivery"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><?= e($deliveryText) ?></p><?php endif; ?>
+            <?php /* мета-ряд: время доставки + микро-бейдж размера (⌀/↕) —
+                   того, чего нет на 5cv.ru */ ?>
+            <div class="product-card__meta">
+              <?php if ($deliveryText !== ''): ?><p class="product-card__delivery"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><?= e($deliveryText) ?></p><?php endif; ?>
+              <?php if ($sizeClean !== ''): ?>
+              <p class="product-card__size"><?php if ($sizeIsDia): ?><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M6.5 17.5 17.5 6.5"/></svg><?php else: ?><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M8 7l4-4 4 4M8 17l4 4 4-4"/></svg><?php endif; ?><span class="product-card__size-text"><?= e($sizeClean) ?></span></p>
+              <?php endif; ?>
+            </div>
             <p class="product-card__price">
               <?php if ($isSale): ?>
                 <span class="product-card__price--discount"><?= formatPrice($price) ?></span>
@@ -475,8 +488,10 @@ function render_product_card(array $p, array $ctx): void
                 <?= formatPrice($price) ?>
               <?php endif; ?>
             </p>
-            <?php /* Сплит — аккуратная серая строка под ценой («от N ₽ × 4») */ ?>
-            <?php if ($splitText !== ''): ?><p class="product-card__split"><?= e($splitText) ?></p><?php endif; ?>
+            <?php /* Сплит — виджет-пилюля: графитовый чип + «4 платежа по 875 ₽» */ ?>
+            <?php if ($splitText !== ''): ?>
+            <p class="product-card__split"><span class="product-card__split-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="7.5" height="14" rx="1.5"/><rect x="13.5" y="5" width="7.5" height="14" rx="1.5"/></svg><?= e($splitChip !== '' ? $splitChip : 'Сплит') ?></span><span class="product-card__split-text"><?= e($splitText) ?></span></p>
+            <?php endif; ?>
             <a class="product-card__name" href="<?= e($link) ?>"><?= e($p['name']) ?></a>
             <?php if ($comp !== ''): ?><p class="product-card__comp"><?= e($comp) ?></p><?php endif; ?>
             <?php if ($isSturdy || $isFresh): ?>
@@ -1019,7 +1034,9 @@ echo json_encode([
         </div>
         <?php endif; ?>
         </div>
-        <?php /* NILOV_CONFIG — общий конфиг JS (порог бесплатной доставки и др.) */ ?>
+        <?php /* NILOV_CONFIG — общий конфиг JS (порог бесплатной доставки и др.).
+               S5: + живой таймер доставки (deliveryNowMinutes/Text/Tomorrow/Short —
+               настройки delivery_now_*; рендерит js/five.js deliveryNow()). */ ?>
         <script>window.NILOV_CONFIG = {
           deadlineHour: <?= (int)(setting('order_deadline_hour', '20')) ?>,
           deadlineMinute: <?= (int)(setting('order_deadline_minute', '0')) ?>,
@@ -1028,7 +1045,11 @@ echo json_encode([
           nightText: <?= json_encode(setting('countdown_night_text', 'Примем заказ сейчас — доставим с 9:00 утра'), JSON_UNESCAPED_UNICODE) ?>,
           countdownText: <?= json_encode(setting('countdown_text', 'Заказ до {D} — доставим сегодня'), JSON_UNESCAPED_UNICODE) ?>,
           closedText: <?= json_encode(setting('countdown_closed_text', 'Приём заказов на сегодня закрыт — доставим завтра с 9:00'), JSON_UNESCAPED_UNICODE) ?>,
-          freeDeliveryThreshold: <?= (int) setting('free_delivery_threshold', '0') ?>
+          freeDeliveryThreshold: <?= (int) setting('free_delivery_threshold', '0') ?>,
+          deliveryNowMinutes: <?= (int) setting('delivery_now_minutes', '90') ?>,
+          deliveryNowText: <?= json_encode(setting('delivery_now_text', 'Ближайшая доставка по СПб: сегодня к {time}'), JSON_UNESCAPED_UNICODE) ?>,
+          deliveryNowTomorrow: <?= json_encode(setting('delivery_now_tomorrow', 'Ближайшая доставка по СПб: завтра к {time}'), JSON_UNESCAPED_UNICODE) ?>,
+          deliveryNowShort: <?= json_encode(setting('delivery_now_short', 'Доставим сегодня к {time}'), JSON_UNESCAPED_UNICODE) ?>
         };</script>
       </div>
     </div>
@@ -1062,13 +1083,12 @@ echo json_encode([
   ?>
   <div class="wrap">
     <div class="fc-chips" id="fcChips">
-      <?php /* S3 (v2026.3): «Все» — сброс фильтров (двойное назначение: выбор
-             вкладки категории + чипы/поиск). */ ?>
+      <?php /* S5 (ЭТАП 4): порядок ленты 5cv — «Все букеты» → цены → «Премиум» →
+             теги-коллекции (Пионы / Французские розы / Гортензии / В коробках /
+             Подарок) → хвост «Хиты» и «от 7 000 ₽» (функциональность жива,
+             JS-контракты data-chip/data-tag/data-max/data-min не менялись). */ ?>
       <button type="button" class="fc-chip fc-chip--all is-active" data-chip="all" aria-pressed="true">
-        <span class="fc-chip__title"><?= e(setting('chips_all_text', 'Все')) ?></span>
-      </button>
-      <button type="button" class="fc-chip fc-chip--hit" data-chip="hit" aria-pressed="false">
-        <span class="fc-chip__title">Хиты</span>
+        <span class="fc-chip__title"><?= e(setting('chips_all_text', 'Все букеты')) ?></span>
       </button>
       <button type="button" class="fc-chip fc-chip--low" data-chip="low" data-max="<?= $chipsN ?>" aria-pressed="false">
         <span class="fc-chip__title">до&nbsp;<?= formatSum($chipsN) ?>&nbsp;₽</span>
@@ -1076,8 +1096,8 @@ echo json_encode([
       <button type="button" class="fc-chip fc-chip--mid" data-chip="mid" data-min="<?= $chipsN ?>" data-max="<?= $chipsM ?>" aria-pressed="false">
         <span class="fc-chip__title"><?= formatSum($chipsN) ?>–<?= formatSum($chipsM) ?>&nbsp;₽</span>
       </button>
-      <button type="button" class="fc-chip fc-chip--high" data-chip="high" data-min="<?= $chipsM ?>" aria-pressed="false">
-        <span class="fc-chip__title">от&nbsp;<?= formatSum($chipsM) ?>&nbsp;₽</span>
+      <button type="button" class="fc-chip fc-chip--premium" data-chip="premium" aria-pressed="false">
+        <span class="fc-chip__title">Премиум</span>
       </button>
       <?php /* S3 (v2026.3): чипсы-теги — из настройки chips_tags (через запятую),
              матчатся по data-tags карточек (стем первых 4 букв слова / подстрока
@@ -1085,20 +1105,28 @@ echo json_encode([
              js/catalog-filter.js (nf_tag_match). */ ?>
       <?php
       $chipsTags = array_values(array_filter(array_map('trim', explode(',', setting('chips_tags', ''))), fn($t) => $t !== ''));
+      /* S5: матчинг тегов — ВСЕ слова чипа должны найтись в тегах карточки
+             (по стему первых 4 букв, как однословный). «В коробках» матчит
+             «в шляпных коробках», «Подарок» — «подарок девушке».
+             ИДЕНТИЧНО js/catalog-filter.js nfTagMatch (контракт!). */
       $nfTagMatch = static function (string $chip, array $p): bool {
           $chipN = mb_strtolower(preg_replace('/\s+/u', ' ', trim($chip)) ?? '', 'UTF-8');
           $chipN = str_replace('ё', 'е', $chipN);
           if ($chipN === '') { return false; }
           $tagsN = str_replace('ё', 'е', mb_strtolower(preg_replace('/\s+/u', ' ', trim((string)($p['tags'] ?? ''))) ?? '', 'UTF-8'));
           if ($tagsN === '') { return false; }
-          if (str_contains($chipN, ' ')) {
-              return str_contains($tagsN, $chipN);
+          $chipWords = preg_split('/[\s,]+/u', $chipN) ?: [];
+          $tagWords = preg_split('/[\s,]+/u', $tagsN) ?: [];
+          foreach ($chipWords as $cw) {
+              if ($cw === '') { continue; }
+              $stem = mb_substr($cw, 0, 4, 'UTF-8');
+              $found = false;
+              foreach ($tagWords as $tw) {
+                  if ($tw !== '' && mb_strpos($tw, $stem, 0, 'UTF-8') === 0) { $found = true; break; }
+              }
+              if (!$found) { return false; }
           }
-          $stem = mb_substr($chipN, 0, 4, 'UTF-8');
-          foreach (preg_split('/[\s,]+/u', $tagsN) ?: [] as $w) {
-              if (mb_strpos($w, $stem, 0, 'UTF-8') === 0) { return true; }
-          }
-          return false;
+          return $chipWords !== [];
       };
       foreach ($chipsTags as $chipTag):
           $cntTag = 0;
@@ -1111,8 +1139,13 @@ echo json_encode([
         <span class="fc-chip__title"><?= e($chipTag) ?></span>
       </button>
       <?php endforeach; ?>
-      <button type="button" class="fc-chip fc-chip--premium" data-chip="premium" aria-pressed="false">
-        <span class="fc-chip__title">Премиум</span>
+      <?php /* S5: хвост ленты — «Хиты» и «от 7 000 ₽» (функциональные фильтры,
+             вынесены после коллекций-тегов по эталону 5cv) */ ?>
+      <button type="button" class="fc-chip fc-chip--hit" data-chip="hit" aria-pressed="false">
+        <span class="fc-chip__title">Хиты</span>
+      </button>
+      <button type="button" class="fc-chip fc-chip--high" data-chip="high" data-min="<?= $chipsM ?>" aria-pressed="false">
+        <span class="fc-chip__title">от&nbsp;<?= formatSum($chipsM) ?>&nbsp;₽</span>
       </button>
       <span class="fc-chips__count" aria-live="polite" style="flex:none;align-self:center;white-space:nowrap;font-size:.85rem;font-weight:600;color:var(--ink-muted)"></span>
     </div>
@@ -1127,6 +1160,12 @@ echo json_encode([
      после двух тёмных фулл-блидов (манифест + премиум) белый грид каталога
      сливался с белыми секциями ниже — теперь ритм: dark → крем-каталог →
      soft «Дополните» → белый отзывы → soft поводы → тёплая форма. */ ?>
+  <?php /* S5: ЖИВОЙ ТАЙМЕР ДОСТАВКИ (Conversion Booster) — 🟢 «Ближайшая
+       доставка по СПб: сегодня к 15:30». Время считает js/five.js
+       (СПб + delivery_now_minutes, округление к 15 мин); без JS — скрыт.
+       На мобиле живёт в одной строке с меткой «КАТАЛОГ» (ноль доп. высоты —
+       сетка букетов остаётся в первом экране), на десктопе — под H2. */ ?>
+  <?php $featDeliveryNow = setting('feature_delivery_now', '1') === '1'; ?>
   <?php $fcProdSeq++; ?>
   <section class="fc-section fc-section--tint" id="catalog">
     <div class="wrap">
@@ -1139,6 +1178,13 @@ echo json_encode([
         <h2 class="fc-row__title"><?= e(setting('catalog_title', 'Каталог')) ?></h2>
         <?php $catalogSub = setting('catalog_subtitle', 'Выбирайте букет — соберём и привезём сегодня'); /* W104-λ (C4-T4): было «…в день заказа» — дублировало формулу hero/SEO */ ?>
         <?php if ($catalogSub !== ''): ?><p class="fc-row__sub"><?= e($catalogSub) ?></p><?php endif; ?>
+        <?php if ($featDeliveryNow): ?>
+        <p class="fc-delivery-now" id="fcDeliveryNow" hidden>
+          <span class="fc-delivery-now__dot" aria-hidden="true"></span>
+          <span class="fc-delivery-now__full"></span>
+          <span class="fc-delivery-now__short"></span>
+        </p>
+        <?php endif; ?>
         </div>
       </div>
       <?php /* W105-8fix1 (критик-UX 8-b P1#2): индикатор активного поиска — пилюля

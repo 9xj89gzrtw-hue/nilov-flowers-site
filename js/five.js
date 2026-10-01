@@ -63,6 +63,7 @@
     cartTotalPulse(); /* W103 (6-b, M7): пульс итога корзины при изменении */
     faqSmoothClose(); /* W104-β (C1-M P0): FAQ/SEO-details — плавное закрытие 1fr→0fr */
     marqueePlayback(); /* W104-β (C1-M P0): marquee-лента играет только в вьюпорте */
+    deliveryNow(); /* S5: живой таймер «Ближайшая доставка по СПб: сегодня к 15:30» */
   });
 
   /* ---------- 1. W106-C1: Город — компактный дропдаун (шапка + футер) ----------
@@ -681,4 +682,87 @@
     }
   }
   mnavBar();
+
+  /* ---------- S5 (ЭТАП 2): живой таймер доставки — Conversion Booster ----------
+     🟢 «Ближайшая доставка по СПб: сегодня к 15:30»: берём текущее время в СПб
+     (tz из NILOV_CONFIG), прибавляем delivery_now_minutes (90), округляем
+     ВВЕРХ к 15-минутной границе. Порядок приёма исчерпан (order_deadline_hour)
+     или слот переходит за полночь — «завтра к 10:00». Обновление раз в 30с;
+     контейнер #fcDeliveryNow без JS остаётся скрытым (hidden в PHP-разметке). */
+  function deliveryNow() {
+    var box = document.getElementById('fcDeliveryNow');
+    if (!box) return;
+    var cfg = window.NILOV_CONFIG || {};
+
+    function pad2(n) { return (n < 10 ? '0' : '') + n; }
+    function fmtHM(mins) {
+      return pad2(Math.floor(mins / 60) % 24) + ':' + pad2(mins % 60);
+    }
+    /* текущее время (минуты суток) в часовом поясе магазина */
+    function tzMinutes() {
+      try {
+        var parts = new Intl.DateTimeFormat('ru-RU', {
+          timeZone: cfg.tz || 'Europe/Moscow',
+          hour: '2-digit', minute: '2-digit', hour12: false
+        }).formatToParts(new Date());
+        var h = 0, m = 0;
+        for (var i = 0; i < parts.length; i++) {
+          if (parts[i].type === 'hour') h = parseInt(parts[i].value, 10) || 0;
+          if (parts[i].type === 'minute') m = parseInt(parts[i].value, 10) || 0;
+        }
+        if (h === 24) h = 0;
+        return h * 60 + m;
+      } catch (e) {
+        var d = new Date();
+        return d.getHours() * 60 + d.getMinutes();
+      }
+    }
+    function timeSpan(t) {
+      var s = document.createElement('span');
+      s.className = 'fc-delivery-now__time';
+      s.textContent = t;
+      return s;
+    }
+    /* {time} в шаблоне — жирным акцентом, остальное текстом */
+    function fill(el, template, timeStr) {
+      if (!el) return;
+      el.textContent = '';
+      var idx = template.indexOf('{time}');
+      if (idx === -1) {
+        el.appendChild(timeSpan(timeStr));
+        return;
+      }
+      el.appendChild(document.createTextNode(template.slice(0, idx)));
+      el.appendChild(timeSpan(timeStr));
+      el.appendChild(document.createTextNode(template.slice(idx + 6)));
+    }
+
+    function render() {
+      var nowM = tzMinutes();
+      var addM = parseInt(cfg.deliveryNowMinutes, 10) || 90;
+      var deadline = (parseInt(cfg.deadlineHour, 10) || 20) * 60
+        + (parseInt(cfg.deadlineMinute, 10) || 0);
+      var target = nowM + addM;
+      var tomorrow = target >= 24 * 60 || nowM >= deadline;
+      var timeStr, fullTpl, shortTpl;
+      if (tomorrow) {
+        var open = ((parseInt(cfg.openHour, 10) || 9) + 1) % 24;
+        timeStr = pad2(open) + ':00';
+        fullTpl = cfg.deliveryNowTomorrow || 'Ближайшая доставка по СПб: завтра к {time}';
+        shortTpl = (cfg.deliveryNowShort || 'Доставим сегодня к {time}').replace('сегодня', 'завтра');
+      } else {
+        target = Math.ceil(target / 15) * 15; /* к следующей 15-минутной границе */
+        if (target >= 24 * 60) { target -= 24 * 60; }
+        timeStr = fmtHM(target);
+        fullTpl = cfg.deliveryNowText || 'Ближайшая доставка по СПб: сегодня к {time}';
+        shortTpl = cfg.deliveryNowShort || 'Доставим сегодня к {time}';
+      }
+      fill(box.querySelector('.fc-delivery-now__full'), fullTpl, timeStr);
+      fill(box.querySelector('.fc-delivery-now__short'), shortTpl, timeStr);
+      box.hidden = false;
+    }
+
+    render();
+    setInterval(render, 30000);
+  }
 })();

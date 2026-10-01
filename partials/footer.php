@@ -326,6 +326,46 @@ $__mnavWa = setting('wa_enabled', '1') === '1' ? trim(setting('shop_whatsapp', '
 <?php if ($__nfIsHome): ?>
 <script src="/js/catalog-filter.js?v=<?= e($__vjs('catalog-filter.js')) ?>" defer></script>
 <?php endif; ?>
+<?php /* S5 (ЭТАП 5): QUICK VIEW — модалка быстрого просмотра (главная +
+       посадочные категории): слайдер ракурсов, состав поштучно, бесплатная
+       открытка, Кризал 0 ₽ и сладкие подарки (живые товары из БД — их чекбоксы
+       добавляются в корзину вместе с букетом). Тумблер — feature_quickview. */ ?>
+<?php $__nfIsCategory = (bool)preg_match('#^/category(/|$)#', $__nfPath); ?>
+<?php if (setting('feature_quickview', '1') === '1' && ($__nfIsHome || $__nfIsCategory)): ?>
+<?php
+$__qvSweets = [];
+try {
+    $__qvRows = db()->query("SELECT id, name, price, image FROM products
+        WHERE is_active = 1 AND (tags LIKE '%сладости%' OR tags LIKE '%сладост%') AND image != ''
+        ORDER BY sort, id LIMIT 3")->fetchAll();
+    foreach ($__qvRows as $__qvR) {
+        $__qvSweets[] = [
+            'id' => (int)$__qvR['id'],
+            'name' => (string)$__qvR['name'],
+            'price' => productPrice($__qvR) ?: (int)$__qvR['price'],
+            'image' => static_img_v('/img/products/' . rawurlencode((string)$__qvR['image'])),
+        ];
+    }
+} catch (Throwable $__qvE) {
+    $__qvSweets = [];
+}
+?>
+<script>window.NF_QUICKVIEW = {
+  enabled: 1,
+  tocart: <?= json_encode(setting('card_btn_cart', 'В корзину'), JSON_UNESCAPED_UNICODE) ?>,
+  oneclick: <?= json_encode(mb_strimwidth(trim((string)preg_replace('/^купить\s+(в\s+)?/iu', '', (string)setting('card_btn_oneclick', 'Купить в 1 клик'))) ?: 'В 1 клик', 0, 12, '…'), JSON_UNESCAPED_UNICODE) ?>,
+  hitText: <?= json_encode(setting('badge_hit_text', 'Хит'), JSON_UNESCAPED_UNICODE) ?>,
+  splitChip: <?= json_encode(setting('split_chip_text', 'Сплит'), JSON_UNESCAPED_UNICODE) ?>,
+  compTitle: <?= json_encode(setting('quickview_comp_title', 'Состав'), JSON_UNESCAPED_UNICODE) ?>,
+  extrasTitle: <?= json_encode(setting('quickview_extras_title', 'Дополнить букет'), JSON_UNESCAPED_UNICODE) ?>,
+  chrysalText: <?= json_encode(setting('quickview_chrysal_text', 'Кризал — подкормка для свежести'), JSON_UNESCAPED_UNICODE) ?>,
+  cardLabel: <?= json_encode(setting('quickview_card_label', 'Открытка в подарок — напишем от руки'), JSON_UNESCAPED_UNICODE) ?>,
+  cardPlaceholder: <?= json_encode(setting('quickview_card_placeholder', 'Текст открытки'), JSON_UNESCAPED_UNICODE) ?>,
+  fullLink: <?= json_encode(setting('quickview_full_link', 'Полное описание букета'), JSON_UNESCAPED_UNICODE) ?>,
+  sweets: <?= json_encode($__qvSweets, JSON_UNESCAPED_UNICODE) ?>
+};</script>
+<script src="/js/quickview.js?v=<?= e($__vjs('quickview.js')) ?>" defer></script>
+<?php endif; ?>
 <?php /* W96 (5cv): город-бар, карусели, чипы цен, поиск — поверх catalog-filter.js */ ?>
 <script src="/js/five.js?v=<?= e($__vjs('five.js')) ?>" defer></script>
 <?php /* A9: галерея/лайтбокс — только страница товара (разметку рендерит product.php) */ ?>

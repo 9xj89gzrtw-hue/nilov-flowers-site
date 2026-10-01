@@ -99,6 +99,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
         'chips_all_text','chips_tags',
         'badge_fresh_text','badge_sturdy_text',
         'card_btn_cart','card_btn_oneclick','card_delivery_text',
+        /* S5 (бутик-тюнинг): живой таймер доставки, сплит-пилюля, quick view */
+        'delivery_now_text','delivery_now_tomorrow','delivery_now_short','delivery_now_minutes',
+        'card_split_format','split_chip_text',
+        'quickview_comp_title','quickview_extras_title','quickview_chrysal_text',
+        'quickview_card_label','quickview_card_placeholder','quickview_full_link',
         'gift_self_label','gift_other_label',
         /* W96 (редизайн 5cv): тексты новых блоков витрины — город, hero-промо, чипы цен,
            секции хитов/премиума/бюджета/допов, поводы, магазины, SEO-текст, журнал */
@@ -194,7 +199,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
               'feature_marquee',
               'feature_chips', 'feature_carousels',
               'feature_section_hits', 'feature_section_premium', 'feature_section_budget', 'feature_section_addons',
-              'feature_occasions', 'feature_stores', 'feature_seotext', 'feature_journal'] as $cb) {
+              'feature_occasions', 'feature_stores', 'feature_seotext', 'feature_journal',
+              /* S5: живой таймер доставки + модалка быстрого просмотра */
+              'feature_delivery_now', 'feature_quickview'] as $cb) {
         if (!$cbTrackAll && !in_array($cb, $cbRendered, true)) { continue; } // не в форме — не трогаем
         $values[$cb] = isset($_POST[$cb]) ? '1' : '0';
     }
@@ -888,10 +895,71 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
     <input class="input" id="s-btn2" name="card_btn_oneclick" value="<?= sv('card_btn_oneclick', $s) ?>">
     <label class="f" for="s-cdeliv">Строка доставки в карточке (пусто — скрыть)</label>
     <input class="input" id="s-cdeliv" name="card_delivery_text" value="<?= sv('card_delivery_text', $s) ?>">
+    <label class="f" for="s-splitchip">Чип сплита в карточке</label>
+    <input class="input" id="s-splitchip" name="split_chip_text" value="<?= sv('split_chip_text', $s) ?>">
+    <label class="f" for="s-splitfmt">Формат платежа сплита ({div} — число платежей, {per} — платёж)</label>
+    <input class="input" id="s-splitfmt" name="card_split_format" value="<?= sv('card_split_format', $s) ?>">
     <label class="f" for="s-bf">Бейдж «Свежая поставка» (по тегу «свеж…»)</label>
     <input class="input" id="s-bf" name="badge_fresh_text" value="<?= sv('badge_fresh_text', $s) ?>">
     <label class="f" for="s-bs">Бейдж «Стойкие» (по тегу «стой…»)</label>
     <input class="input" id="s-bs" name="badge_sturdy_text" value="<?= sv('badge_sturdy_text', $s) ?>">
+
+    <p style="font-size:.9rem;font-weight:700;margin:18px 0 6px">Живой таймер доставки (шапка каталога)</p>
+    <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+      <input type="checkbox" name="feature_delivery_now" style="width:auto" <?= sv('feature_delivery_now', $s) !== '0' ? 'checked' : '' ?>>
+      «Ближайшая доставка по СПб: сегодня к 15:30» (живой расчёт времени)
+    </label>
+    <div class="grid2" style="margin-top:8px">
+      <div>
+        <label class="f" for="s-dnm">Минут на сборку и доставку</label>
+        <input class="input" id="s-dnm" name="delivery_now_minutes" type="number" min="30" max="360" step="15" value="<?= sv('delivery_now_minutes', $s) !== '' ? sv('delivery_now_minutes', $s) : '90' ?>">
+      </div>
+      <div>
+        <label class="f" for="s-dns">Короткий текст (мобайл) — {time} = время</label>
+        <input class="input" id="s-dns" name="delivery_now_short" value="<?= sv('delivery_now_short', $s) ?>">
+      </div>
+    </div>
+    <label class="f" for="s-dnt">Полный текст «сегодня» — {time} = время</label>
+    <input class="input" id="s-dnt" name="delivery_now_text" value="<?= sv('delivery_now_text', $s) ?>">
+    <label class="f" for="s-dntm">Полный текст «завтра» — {time} = время</label>
+    <input class="input" id="s-dntm" name="delivery_now_tomorrow" value="<?= sv('delivery_now_tomorrow', $s) ?>">
+
+    <p style="font-size:.9rem;font-weight:700;margin:18px 0 6px">Быстрый просмотр (клик по фото букета)</p>
+    <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+      <input type="checkbox" name="feature_quickview" style="width:auto" <?= sv('feature_quickview', $s) !== '0' ? 'checked' : '' ?>>
+      Модалка быстрого просмотра: слайдер, состав, открытка, Кризал 0 ₽, сладости
+    </label>
+    <div class="grid2" style="margin-top:8px">
+      <div>
+        <label class="f" for="s-qvc">Заголовок состава</label>
+        <input class="input" id="s-qvc" name="quickview_comp_title" value="<?= sv('quickview_comp_title', $s) ?>">
+      </div>
+      <div>
+        <label class="f" for="s-qve">Заголовок дополнений</label>
+        <input class="input" id="s-qve" name="quickview_extras_title" value="<?= sv('quickview_extras_title', $s) ?>">
+      </div>
+    </div>
+    <div class="grid2" style="margin-top:8px">
+      <div>
+        <label class="f" for="s-qvh">Строка Кризала</label>
+        <input class="input" id="s-qvh" name="quickview_chrysal_text" value="<?= sv('quickview_chrysal_text', $s) ?>">
+      </div>
+      <div>
+        <label class="f" for="s-qvl">Строка открытки</label>
+        <input class="input" id="s-qvl" name="quickview_card_label" value="<?= sv('quickview_card_label', $s) ?>">
+      </div>
+    </div>
+    <div class="grid2" style="margin-top:8px">
+      <div>
+        <label class="f" for="s-qvp">Плейсхолдер текста открытки</label>
+        <input class="input" id="s-qvp" name="quickview_card_placeholder" value="<?= sv('quickview_card_placeholder', $s) ?>">
+      </div>
+      <div>
+        <label class="f" for="s-qvf">Ссылка «полное описание»</label>
+        <input class="input" id="s-qvf" name="quickview_full_link" value="<?= sv('quickview_full_link', $s) ?>">
+      </div>
+    </div>
+    <p style="font-size:.78rem;color:var(--ink-soft);margin:6px 0 0">Сладости в быстром просмотре — живые товары с тегом «сладости» (раздел «Товары»).</p>
 
     <p style="font-size:.9rem;font-weight:700;margin:18px 0 6px">Чекаут: «Себе» / «Сюрприз другому» + мобильная панель</p>
     <label class="f" for="s-gs">Пилюля «Себе»</label>

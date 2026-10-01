@@ -145,21 +145,29 @@
 
   /* Чип задаёт диапазон: data-min — исключительно («от M»), data-max — включительно
      («до N»). kind=hit/premium — по флагам карточки (data-hit / data-premium).
-     S3 (v2026.3): kind=all — сброс (матчит всё); kind=tag-* — чип-тег: матч
-     по data-tags карточки — многословный тег как подстрока, однословный —
-     по стемму первых 4 символов (как PHP-предподсчёт в index.php). */
+     S3 (v2026.3): kind=all — сброс (матчит всё); kind=tag-* — чип-тег.
+     S5: многословный чип матчит ВСЕ слова по стему первых 4 символов
+     («В коробках» → «в шляпных коробках», «Подарок» → «подарок девушке»);
+     ИДЕНТИЧНО PHP-предподсчёту $nfTagMatch в index.php. */
   function nfTagMatch(chipTag, cardTags) {
     var ct = (chipTag || '').toLowerCase().replace(/ё/g, 'е').replace(/\s+/g, ' ').trim();
     if (!ct) return false;
     var tags = (cardTags || '').toLowerCase().replace(/ё/g, 'е').replace(/\s+/g, ' ').trim();
     if (!tags) return false;
-    if (ct.indexOf(' ') !== -1) return tags.indexOf(ct) !== -1;
-    var stem = ct.slice(0, 4);
-    var words = tags.split(/[\s,]+/);
-    for (var i = 0; i < words.length; i++) {
-      if (words[i].indexOf(stem) === 0) return true;
+    var chipWords = ct.split(/[\s,]+/);
+    var tagWords = tags.split(/[\s,]+/);
+    var w, i, j, stem, found;
+    for (i = 0; i < chipWords.length; i++) {
+      w = chipWords[i];
+      if (!w) continue;
+      stem = w.slice(0, 4);
+      found = false;
+      for (j = 0; j < tagWords.length; j++) {
+        if (tagWords[j] && tagWords[j].indexOf(stem) === 0) { found = true; break; }
+      }
+      if (!found) return false;
     }
-    return false;
+    return chipWords.length > 0;
   }
 
   function chipMatch(card, chip) {
