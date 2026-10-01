@@ -961,7 +961,9 @@ html:not(.js-ready) .catalog__grid .reveal{opacity:1;transform:none}
 .cookie-settings .cookie-banner__btn:hover{background:#33303a}
 @media (max-width:899px) {
 .cookie-banner.cookie-banner--bar{
-    left:0;right:0;bottom:calc(58px + env(safe-area-inset-bottom));
+    /* S4: в самый низ — не перекрывает ЦЕНЫ первой карточки каталога
+       (нижняя панель под cookie-баром закрывается одним тапом «Хорошо») */
+    left:0;right:0;bottom:calc(0px + env(safe-area-inset-bottom));
     width:auto;max-width:none;
     border-radius:0;border-left:none;border-right:none;border-bottom:none;
     box-shadow:0 -12px 32px -18px rgba(28,26,30,.35);
