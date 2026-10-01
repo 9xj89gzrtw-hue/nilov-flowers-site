@@ -1392,6 +1392,18 @@ $pdo->exec("UPDATE occasions SET faq_q1 = replace(faq_q1, 'Какую карту
         ('card_delivery_text', 'Сегодня за 1–2 часа')");
     $s4split = $pdo->prepare("UPDATE settings SET value = :nv WHERE key = 'split_label' AND value = :ov");
     $s4split->execute([':nv' => 'Сплит: от {price} ₽ × {div}', ':ov' => 'Сплит: от {price} ₽/мес']);
+    /* S4: одноразовое выключение дублирующих фильтров тулбара каталога
+       (селект цены дублирует чипсы low/mid/high; инпут района — дублирует
+       выбор района в чекауте и меню города). Значения '1' в БД пришли из
+       старых дефолтов кода (админ-форма сохраняла чекбоксы пачкой), а не
+       из осознанного включения. Маркер s4_defaults_applied гарантирует
+       однократность: повторное включение владельцем в админке — святое. */
+    $s4defaultsDone = $pdo->query("SELECT value FROM settings WHERE key = 's4_defaults_applied'")->fetchColumn();
+    if ($s4defaultsDone === false) {
+        $pdo->exec("UPDATE settings SET value = '0' WHERE key = 'feature_zone_check' AND value = '1'");
+        $pdo->exec("UPDATE settings SET value = '0' WHERE key = 'feature_price_filter' AND value = '1'");
+        $pdo->exec("INSERT OR IGNORE INTO settings (key, value) VALUES ('s4_defaults_applied', '1')");
+    }
 }
 
 /* S3 (v2026.3): теги/состав/размеры демо-букетов — общий хелпер для свежих

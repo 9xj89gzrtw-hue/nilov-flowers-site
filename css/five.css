@@ -240,13 +240,16 @@ html{scrollbar-width:thin;scrollbar-color:var(--line) transparent}
 .fc-burger-panel__phone svg{width:16px;height:16px}
 .fc-burger-panel__phone:hover{text-decoration:underline;text-underline-offset:4px}
 
-/* Мобайл <900px: ряд 1 — лого+трубка+иконки+бургер; ряд 2 — поиск */
+/* Мобайл <900px: ряд 1 — лого+трубка+иконки+бургер; ряд 2 — поиск.
+   WA/TG-иконки шапки скрываем (WhatsApp живёт в нижней панели mnav,
+   Telegram — в футере): ряд на 390px остаётся в одну строку. */
 @media(max-width:899px){
   .fc-header__inner{min-height:54px;gap:8px}
   .fc-search{order:9;flex:1 1 100%;max-width:none;margin:0 0 8px}
   .fc-search input,.fc-search__input{min-height:44px}
   .fc-header__phone,.fc-header__city{display:none}
   .fc-header .fc-city{display:none}
+  .fc-header__wa,.fc-header__tg{display:none}
   .fc-burger{display:flex}
   .fc-header__call{display:grid}
 }
