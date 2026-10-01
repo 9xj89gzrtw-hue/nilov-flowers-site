@@ -1205,8 +1205,8 @@ body > div[role="region"][aria-label="Установка приложения"] 
 .cookie-banner{min-height:0}
 }
 @media(max-width:899px) {
-.cookie-banner{bottom:calc(74px + env(safe-area-inset-bottom))}
-body.cookie-visible{padding-bottom:calc(268px + env(safe-area-inset-bottom))}
+.cookie-banner{bottom:calc(12px + env(safe-area-inset-bottom))}
+body.cookie-visible{padding-bottom:calc(97px + env(safe-area-inset-bottom))}
 }
 @media(min-width:821px) {
 body.cookie-visible{padding-bottom:188px}
