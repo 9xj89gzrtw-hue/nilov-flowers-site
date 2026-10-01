@@ -51,18 +51,20 @@ $shopPhone = setting('shop_phone', '');
 $pageTitle = 'Где мой заказ? — ' . setting('shop_name', 'Nilov Flowers');
 
 /* W99-fixG (G12): статусы — чистый текст без emoji (цвет статуса несёт
-   пилюля .track-card__status); «Шаг N из 3» — отдельная visually-hidden строка */
+   пилюля .track-card__status); «Шаг N из 5» — отдельная visually-hidden строка.
+   S3 (v2026.3): курьерский поток этапов — new → photo → florist → courier → done. */
 $statusText = [
     'new' => 'Новый',
-    'confirmed' => 'Подтверждён',
-    'in_progress' => 'В работе',
-    'done' => 'Выполнен',
+    'photo' => 'Согласование фото',
+    'florist' => 'Флорист собирает',
+    'courier' => 'У курьера',
+    'done' => 'Доставлен',
     'canceled' => 'Отменён',
     'unredeemed' => 'Не выкуплен',
 ];
 function trackStep(string $status): int {
     return match ($status) {
-        'new' => 1, 'confirmed' => 2, 'done' => 3, default => 0,
+        'new' => 1, 'photo' => 2, 'florist' => 3, 'courier' => 4, 'done' => 5, default => 0,
     };
 }
 ?><!DOCTYPE html>
@@ -78,8 +80,10 @@ function trackStep(string $status): int {
 .track-card__top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
 .track-card__id{font-weight:700;color:var(--ink)}
 .track-card__status{padding:3px 12px;border-radius:999px;font-size:.8rem;font-weight:700;white-space:nowrap}
-.track-card__status.new{background:var(--surface-warm);color:var(--pink-dark)}
-.track-card__status.confirmed{background:#e8f0fb;color:#3a6db3}
+.track-card__status.new{background:var(--surface-warm);color:var(--pine,#143C2B)}
+.track-card__status.photo{background:#e8f0fb;color:#3a6db3}
+.track-card__status.florist{background:#fdf1dc;color:#8C5E00}
+.track-card__status.courier{background:#eef0fa;color:#4a4f9e}
 .track-card__status.done{background:#e7f5ec;color:#2e7d4f}
 .track-card__status.canceled,.track-card__status.unredeemed{background:var(--surface-subtle);color:var(--ink-muted)}
 .track-card__meta{color:var(--ink-muted);font-size:.88rem;margin:8px 0 0;line-height:1.55}
@@ -140,21 +144,25 @@ function trackStep(string $status): int {
             <p class="track-card__meta">
               <?= e($addr) ?> · Сумма: <strong><?= formatPrice((int)$o['total']) ?></strong>
               <?php if ($o['status'] === 'new'): ?><br><?= e(trim(setting('thanks_call_text', 'Мы позвоним в течение 15 минут для подтверждения'))) ?>
-              <?php elseif ($o['status'] === 'confirmed'): ?><br>Букет собираем — фото пришлём до отправки.
+              <?php elseif ($o['status'] === 'photo'): ?><br>Пришлём фото готового букета на согласование.
+              <?php elseif ($o['status'] === 'florist'): ?><br>Флорист собирает букет — фото пришлём до отправки.
+              <?php elseif ($o['status'] === 'courier'): ?><br>Курьер в пути с вашим букетом.
               <?php elseif ($o['status'] === 'done'): ?><br>Доставлено. Спасибо, что выбираете нас!
               <?php endif; ?><?php if (!empty($o['handover_photo'])): ?><br>Фото вручения: <a href="/img/uploads/<?= e($o['handover_photo']) ?>" target="_blank" rel="noopener">посмотреть</a><?php endif; ?>
             </p>
             <?php if ($step > 0): ?>
             <?php /* W99-fixG (G12): точки-прогресс — декоративны (aria-hidden).
-                   K8 (W101): видимый текст «Шаг N из 3 · {Статус}» под точками —
-                   статус с названием (фактические статусы из кода: Новый →
-                   Подтверждён → Выполнен), SR читает ту же строку. */ ?>
+                   K8 (W101): видимый текст «Шаг N из 5 · {Статус}» под точками —
+                   статус с названием (S3 v2026.3: Новый → Согласование фото →
+                   Флорист собирает → У курьера → Доставлен), SR читает ту же строку. */ ?>
             <div class="track-steps" aria-hidden="true">
               <span class="<?= $step >= 1 ? 'on' : '' ?>"></span>
               <span class="<?= $step >= 2 ? 'on' : '' ?>"></span>
               <span class="<?= $step >= 3 ? 'on' : '' ?>"></span>
+              <span class="<?= $step >= 4 ? 'on' : '' ?>"></span>
+              <span class="<?= $step >= 5 ? 'on' : '' ?>"></span>
             </div>
-            <p class="track-steps__label">Шаг <?= (int)$step ?> из 3 · <?= e($statusText[$o['status']] ?? $o['status']) ?></p>
+            <p class="track-steps__label">Шаг <?= (int)$step ?> из 5 · <?= e($statusText[$o['status']] ?? $o['status']) ?></p>
             <?php endif; ?>
           </div>
           <?php endforeach; ?>

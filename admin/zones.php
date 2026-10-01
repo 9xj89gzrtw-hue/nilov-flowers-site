@@ -22,14 +22,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $name = trim((string)($_POST['name'] ?? ''));
         $price = max(0, (int)($_POST['price'] ?? 0));
         $sort = (int)($_POST['sort'] ?? 0);
+        /* S3 (v2026.3): время доставки зоны — «60–90 мин», показывается в форме
+           заказа (data-time) и зона-чекe каталога. */
+        $time = mb_substr(trim((string)($_POST['time'] ?? '')), 0, 40);
         if ($name !== '') {
             if ($id > 0) {
-                $pdo->prepare('UPDATE delivery_zones SET name = :n, price = :p, sort = :s WHERE id = :i')
-                    ->execute([':n' => $name, ':p' => $price, ':s' => $sort, ':i' => $id]);
+                $pdo->prepare('UPDATE delivery_zones SET name = :n, price = :p, sort = :s, time = :t WHERE id = :i')
+                    ->execute([':n' => $name, ':p' => $price, ':s' => $sort, ':t' => $time, ':i' => $id]);
                 flash('Зона обновлена');
             } else {
-                $pdo->prepare('INSERT INTO delivery_zones (name, price, sort) VALUES (:n, :p, :s)')
-                    ->execute([':n' => $name, ':p' => $price, ':s' => $sort]);
+                $pdo->prepare('INSERT INTO delivery_zones (name, price, sort, time) VALUES (:n, :p, :s, :t)')
+                    ->execute([':n' => $name, ':p' => $price, ':s' => $sort, ':t' => $time]);
                 flash('Зона добавлена');
             }
         }
@@ -69,6 +72,10 @@ flash();
       <label class="f" for="z-price">Стоимость, ₽</label>
       <input class="input" id="z-price" name="price" type="number" min="0" value="<?= $editing ? (int)$editing['price'] : 0 ?>">
     </div>
+    <div style="width:150px">
+      <label class="f" for="z-time">Время (напр. 60–90 мин)</label>
+      <input class="input" id="z-time" name="time" placeholder="60–90 мин" value="<?= $editing ? e((string)($editing['time'] ?? '')) : '' ?>">
+    </div>
     <div style="width:110px">
       <label class="f" for="z-sort">Сортировка</label>
       <input class="input" id="z-sort" name="sort" type="number" value="<?= $editing ? (int)$editing['sort'] : 0 ?>">
@@ -80,11 +87,12 @@ flash();
 
 <div class="card">
   <div class="table-scroll"><table>
-    <tr><th>Район</th><th>Стоимость</th><th>Сортировка</th><th></th></tr>
+    <tr><th>Район</th><th>Стоимость</th><th>Время</th><th>Сортировка</th><th></th></tr>
     <?php foreach ($zones as $z): ?>
     <tr>
       <td><strong><?= e($z['name']) ?></strong></td>
       <td><?= formatPrice((int)$z['price']) ?></td>
+      <td><?= e((string)($z['time'] ?? '')) ?: '—' ?></td>
       <td><?= (int)$z['sort'] ?></td>
       <td>
         <div class="row-actions">

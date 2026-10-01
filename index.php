@@ -13,7 +13,7 @@ $pdo = db();
 $categories = $pdo->query('SELECT id, name FROM categories ORDER BY sort, id')->fetchAll();
 $products = $pdo->query('SELECT p.*, c.name AS category_name FROM products p
     LEFT JOIN categories c ON c.id = p.category_id WHERE p.is_active = 1 ORDER BY p.sort, p.id')->fetchAll();
-$zones = $pdo->query('SELECT id, name, price FROM delivery_zones ORDER BY sort, id')->fetchAll();
+$zones = $pdo->query('SELECT id, name, price, time FROM delivery_zones ORDER BY sort, id')->fetchAll();
 
 /* Внешний вид: hero-текст можно отключить тумблером */
 $heroTextEnabled = setting('hero_text_enabled', '1') === '1';
@@ -427,10 +427,29 @@ function render_product_card(array $p, array $ctx): void
        Как и остальные фильтрационные атрибуты — только на каталог-карточке
        (карусельные копии без них, паттерн G2). */
     $upsellAttr = (!$isCarousel && (int)($p['show_in_upsell'] ?? 0) === 1) ? ' data-upsell="1"' : '';
+    /* S3 (v2026.3): теги — источник чипсов-фильтров; второй ракурс (image2) —
+       CSS-подмена при hover; состав/размер — строки под названием; Сплит —
+       шильдик «от N ₽/мес» под ценой (splitLabel, настройка split_divider). */
+    $tagsAttr = trim((string)($p['tags'] ?? '')) !== ''
+        ? ' data-tags="' . e(mb_strtolower(str_replace('ё', 'е', preg_replace('/\s+/u', ' ', trim((string)$p['tags'])) ?? ''), 'UTF-8')) . '"'
+        : '';
+    $img2 = trim((string)($p['image2'] ?? ''));
+    $img2Url = '';
+    if ($img2 !== '' && is_file(IMG_PRODUCTS_DIR . '/' . $img2)) {
+        $img2Url = '/img/products/' . rawurlencode($img2);
+    }
+    $comp = trim((string)($p['composition'] ?? ''));
+    $sizeText = trim((string)($p['size_text'] ?? ''));
+    $splitText = splitLabel($price);
+    $isSturdy = false; $isFresh = false;
+    foreach (productTagsList($p) as $tl) {
+        if (str_starts_with($tl, 'стой')) { $isSturdy = true; }
+        if (str_starts_with($tl, 'свеж')) { $isFresh = true; }
+    }
     ?>
         <article class="product-card reveal"<?= $isCarousel
             ? ''
-            : ' data-category-id="' . (int)($p['category_id'] ?? 0) . '" data-price="' . (int)$price . '" data-hit="' . (int)($p['is_hit'] ?? 0) . '" data-premium="' . (int)($p['is_premium'] ?? 0) . '" data-search="' . e($searchIndex) . '"' . $upsellAttr ?>>
+            : ' data-category-id="' . (int)($p['category_id'] ?? 0) . '" data-price="' . (int)$price . '" data-hit="' . (int)($p['is_hit'] ?? 0) . '" data-premium="' . (int)($p['is_premium'] ?? 0) . '" data-search="' . e($searchIndex) . '"' . $upsellAttr . $tagsAttr ?>>
           <div class="product-card__media">
           <?php /* W99-fixG (G11): img-ссылка дублирует title-ссылку — прячем от
              скринридера и Tab-фокуса (href сохранён: клик мышью работает) */ ?>
@@ -443,20 +462,23 @@ function render_product_card(array $p, array $ctx): void
               <?php else: ?>
                 <svg viewBox="0 0 80 94" style="width:30%;margin:auto;color:var(--blue)" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="40" cy="30" r="11"/><circle cx="26" cy="38" r="8"/><circle cx="54" cy="38" r="8"/><path d="M40 41v20M40 61c-8 6-14 14-16 25M40 61c8 6 14 14 16 25"/></svg>
               <?php endif; ?>
+              <?php /* S3: второй ракурс — подмена при hover (CSS .product-card__media:hover);
+                     печатаем только если файл существует (is_file-guard). */ ?>
+              <?php if ($img2Url !== ''): ?>
+                <img class="product-card__img2" src="<?= e($img2Url) ?>" alt="" aria-hidden="true" loading="lazy" decoding="async">
+              <?php endif; ?>
             </a>
             <?php if ($isSale): $offPct = (int)$p['price'] > 0 ? (int)round((1 - $price / (int)$p['price']) * 100) : 0; ?><span class="product-card__badge product-card__badge--sale"><?= $offPct > 0 ? '&#8722;' . (int)$offPct . '%' : e(setting('badge_sale_text', 'Скидка')) /* W104-α (C): только «−16%» типографским минусом — слово «Скидка» убрано, без процента — текст настройки */ ?></span><?php endif; ?>
             <?php if ((int)($p['is_urgent'] ?? 0) === 1): ?><span class="product-card__badge product-card__badge--urgent"><?= e(setting('badge_urgent_text', 'Успеть сегодня')) ?></span><?php endif; ?>
-            <?php /* Бейджи 5cv: «Хит» (amber) и «Премиум» (ink) — по флагам товара */ ?>
+            <?php /* Бейджи 5cv: «Хит» (amber) и «Премиум» (ink) — по флагам товара.
+                   S3 (v2026.3): «Стойкие»/«Свежая поставка» — по тегам товара
+                   (задаются в админке через поле «Теги»). */ ?>
             <?php if ($isHit): ?><span class="product-card__badge product-card__badge--hit"><?= e(setting('badge_hit_text', 'Хит')) ?></span><?php endif; ?>
             <?php if ($isPremium): ?><span class="product-card__badge product-card__badge--premium"><?= e(setting('badge_premium_text', 'Премиум')) ?></span><?php endif; ?>
+            <?php if ($isSturdy): ?><span class="product-card__badge product-card__badge--sturdy"><?= e(setting('badge_sturdy_text', 'Стойкие')) ?></span><?php endif; ?>
+            <?php if ($isFresh): ?><span class="product-card__badge product-card__badge--fresh"><?= e(setting('badge_fresh_text', 'Свежая поставка')) ?></span><?php endif; ?>
             <?php /* Конкурентный бейдж (критерий 13, EXPRESS-паттерн): тариф зоны владельца. Текст редактируется (критерий 16). */ ?>
             <?php if ($ctx['featDeliveryBadge']): ?><span class="product-card__badge product-card__badge--deliv"><?= e(setting('delivery_badge_text', 'Доставка по Санкт-Петербургу')) ?></span><?php endif; ?>
-            <button type="button" class="product-card__cta" data-order-cta
-              data-product-id="<?= (int)$p['id'] ?>"
-              data-product-name="<?= e($p['name']) ?>"
-              data-product-price-raw="<?= $price ?>"
-              data-product-image="<?= e($img) ?>"
-              aria-label="Добавить в корзину: <?= e($p['name']) ?>" title="Добавить в корзину">+</button>
             <?php /* Избранное (критерий 13, Русский Букет-паттерн): сердечко на карточке, localStorage. Отключаем (критерий 16). */ ?>
             <?php if ($ctx['featFavorites']): ?><button type="button" class="product-card__fav" data-fav-id="<?= (int)$p['id'] ?>" data-fav-name="<?= e($p['name']) ?>" aria-label="В избранное: <?= e($p['name']) ?>" title="В избранное">♡</button><?php endif; ?>
           </div>
@@ -477,10 +499,33 @@ function render_product_card(array $p, array $ctx): void
               <?php endif; ?>
             </p>
             <a class="product-card__name" href="<?= e($link) ?>"><?= e($p['name']) ?></a>
+            <?php /* S3 (v2026.3): состав и ориентировочные размеры — по данным
+                   товара (админка), строками под названием (как у 5cv). */ ?>
+            <?php if ($comp !== ''): ?><p class="product-card__comp"><?= e($comp) ?></p><?php endif; ?>
+            <?php if ($sizeText !== ''): ?><p class="product-card__size"><?= e($sizeText) ?></p><?php endif; ?>
+            <?php /* S3: шильдик Яндекс Сплит / Долями — «Сплит: от N ₽/мес»
+                   (split_divider, по умолчанию 4 платежа). */ ?>
+            <?php if ($splitText !== ''): ?><p class="product-card__split"><?= e($splitText) ?></p><?php endif; ?>
             <?php if ((int)($p['is_urgent'] ?? 0) === 1): ?>
             <?php /* W104: зелёная строка доставки #1B7A43 с zap-иконкой (стили five.css) */ ?>
             <p class="product-card__urgent-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>Соберём за 1–2 часа и привезём сегодня — количество ограничено</p> <?php /* W106-E1: единая SLA-формула (было «в течение дня») */ ?>
             <?php endif; ?>
+            <?php /* S3: две кнопки карточки — «В корзину» (контракт cart-cta.js
+                   data-order-cta) и «Купить в 1 клик» (js/oneclick.js). */ ?>
+            <div class="product-card__actions">
+              <button type="button" class="product-card__cta" data-order-cta
+                data-product-id="<?= (int)$p['id'] ?>"
+                data-product-name="<?= e($p['name']) ?>"
+                data-product-price-raw="<?= $price ?>"
+                data-product-image="<?= e($img) ?>"
+                aria-label="Добавить в корзину: <?= e($p['name']) ?>" title="Добавить в корзину"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span><?= e(setting('card_btn_cart', 'В корзину')) ?></span></button>
+              <button type="button" class="product-card__oneclick" data-oneclick
+                data-product-id="<?= (int)$p['id'] ?>"
+                data-product-name="<?= e($p['name']) ?>"
+                data-product-price-raw="<?= $price ?>"
+                data-product-image="<?= e($img) ?>"
+                aria-label="Купить в 1 клик: <?= e($p['name']) ?>"><?= e(setting('card_btn_oneclick', 'Купить в 1 клик')) ?></button>
+            </div>
           </div>
         </article>
     <?php
@@ -1260,6 +1305,11 @@ echo json_encode([
   ?>
   <div class="wrap">
     <div class="fc-chips" id="fcChips">
+      <?php /* S3 (v2026.3): «Все» — сброс фильтров (двойное назначение: выбор
+             вкладки категории + чипы/поиск). */ ?>
+      <button type="button" class="fc-chip fc-chip--all is-active" data-chip="all" aria-pressed="true">
+        <span class="fc-chip__title"><?= e(setting('chips_all_text', 'Все')) ?></span>
+      </button>
       <button type="button" class="fc-chip fc-chip--hit" data-chip="hit" aria-pressed="false">
         <span class="fc-chip__title">Хиты</span>
         <span class="fc-chip__count"><?= $cntHit ?>&nbsp;<?= e($pluralBuket($cntHit)) ?></span>
@@ -1276,6 +1326,39 @@ echo json_encode([
         <span class="fc-chip__title">от&nbsp;<?= formatSum($chipsM) ?>&nbsp;₽</span>
         <span class="fc-chip__count"><?= $cntHigh ?>&nbsp;<?= e($pluralBuket($cntHigh)) ?></span>
       </button>
+      <?php /* S3 (v2026.3): чипсы-теги — из настройки chips_tags (через запятую),
+             матчатся по data-tags карточек (стем первых 4 букв слова / подстрока
+             для многословных). Счётчик — PHP-предподсчёт по тем же правилам, что
+             js/catalog-filter.js (nf_tag_match). */ ?>
+      <?php
+      $chipsTags = array_values(array_filter(array_map('trim', explode(',', setting('chips_tags', ''))), fn($t) => $t !== ''));
+      $nfTagMatch = static function (string $chip, array $p): bool {
+          $chipN = mb_strtolower(preg_replace('/\s+/u', ' ', trim($chip)) ?? '', 'UTF-8');
+          $chipN = str_replace('ё', 'е', $chipN);
+          if ($chipN === '') { return false; }
+          $tagsN = str_replace('ё', 'е', mb_strtolower(preg_replace('/\s+/u', ' ', trim((string)($p['tags'] ?? ''))) ?? '', 'UTF-8'));
+          if ($tagsN === '') { return false; }
+          if (str_contains($chipN, ' ')) {
+              return str_contains($tagsN, $chipN);
+          }
+          $stem = mb_substr($chipN, 0, 4, 'UTF-8');
+          foreach (preg_split('/[\s,]+/u', $tagsN) ?: [] as $w) {
+              if (mb_strpos($w, $stem, 0, 'UTF-8') === 0) { return true; }
+          }
+          return false;
+      };
+      foreach ($chipsTags as $chipTag):
+          $cntTag = 0;
+          foreach ($products as $pc) {
+              if ($nfTagMatch($chipTag, $pc)) { $cntTag++; }
+          }
+          if ($cntTag === 0) { continue; } /* чип без товаров — не печатаем */
+      ?>
+      <button type="button" class="fc-chip fc-chip--tag" data-chip="tag-<?= e(mb_strtolower(str_replace('ё', 'е', preg_replace('/\s+/u', ' ', trim($chipTag)) ?? ''), 'UTF-8')) ?>" data-tag="<?= e($chipTag) ?>" aria-pressed="false">
+        <span class="fc-chip__title"><?= e($chipTag) ?></span>
+        <span class="fc-chip__count"><?= $cntTag ?>&nbsp;<?= e($pluralBuket($cntTag)) ?></span>
+      </button>
+      <?php endforeach; ?>
       <button type="button" class="fc-chip fc-chip--premium" data-chip="premium" aria-pressed="false">
         <span class="fc-chip__title">Премиум</span>
         <span class="fc-chip__count"><?= $cntPremium ?>&nbsp;<?= e($pluralBuket($cntPremium)) ?></span>

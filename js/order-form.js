@@ -934,7 +934,21 @@
           /* Критик functional: gift-UX + слоты (пустые не шлём, сервер и так обрежет) */
           recipient_name: (document.getElementById('orderRecipientName') || {value:''}).value.trim(),
           recipient_phone: (document.getElementById('orderRecipientPhone') || {value:''}).value.trim(),
-          card_text: (document.getElementById('orderCardText') || {value:''}).value.trim(),
+          card_text: (function(){
+            /* S3 (v2026.3): открытка из бесплатных допов корзины имеет
+               приоритет, если поле формы не трогали — иначе последнее
+               редактирование (двусторонняя синхронизация в cart-ui.js). */
+            var formVal = (document.getElementById('orderCardText') || {value:''}).value.trim();
+            if (formVal !== '') return formVal;
+            var ex = window.NF_CART_EXTRAS;
+            if (ex && ex.postcard && ex.postcardText) return String(ex.postcardText).slice(0, 500);
+            return formVal;
+          })(),
+          /* S3: бесплатные допы корзины (открытка/Кризал) — сервер пишет в orders.extras */
+          extras: (function(){
+            var ex = window.NF_CART_EXTRAS || {};
+            return { postcard: !!ex.postcard, chrysal: !!ex.chrysal };
+          })(),
           delivery_date: (document.getElementById('orderDeliveryDate') || {value:''}).value
             ? (function(){ var v=(document.getElementById('orderDeliveryDate')||{value:''}).value; var d=v.split('-'); return d.length===3? d[2]+'.'+d[1]+'.'+d[0] : v; })() : '',
           delivery_slot: (document.getElementById('orderDeliverySlot') || {value:''}).value,
@@ -961,6 +975,8 @@
         }
         nfGoal('purchase', { order_price: orderTotal, currency: 'RUB' });
         if (window.cart) window.cart.clear();
+        /* S3: бесплатные допы (открытка/Кризал) заказ унёс — сбрасываем состояние */
+        if (typeof window.nfCartExtrasReset === 'function') window.nfCartExtrasReset();
         /* Промокод одноразовый — после успешного заказа сбрасываем (server инкрементнул used) */
         if (window.PROMO_STATE) { window.PROMO_STATE.code = ''; window.PROMO_STATE.discount = 0; }
         form.reset();

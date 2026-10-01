@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
            ошибочный статус восстанавливаем из любого живого (селект ниже
            печатает тот же набор переходов). */
         $allowedLocal = orderTransitions()[$curSt] ?? [];
-        if (in_array($curSt, ['confirmed', 'in_progress'], true) && !in_array('new', $allowedLocal, true)) {
+        if (in_array($curSt, ['photo', 'florist', 'courier'], true) && !in_array('new', $allowedLocal, true)) {
             $allowedLocal[] = 'new';
         }
         if (array_key_exists($status, statuses()) && $status !== 'done' && in_array($status, $allowedLocal, true)) {
@@ -108,11 +108,41 @@ $items = $items->fetchAll();
    снова. Аналогичная фиксация — в ленте /admin/index.php. */
 $_SESSION['admin_new_seen'] = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'new'")->fetchColumn();
 
+/* S3 (v2026.3): WhatsApp-сообщение по шаблону статуса — подстановка данных
+   заказа ({id}, {name}, {time}, {phone}). Шаблоны редактируются в админке
+   (wa_template_new/photo/courier). Номер получателя: получатель → заказчик. */
+$waPhone = trim((string)($order['recipient_phone'] ?? '')) ?: trim((string)$order['phone']);
+$waDigits = preg_replace('/\D/', '', $waPhone) ?: '';
+$waTemplateKey = 'wa_template_' . ($order['status'] === 'new' ? 'new'
+    : ($order['status'] === 'photo' ? 'photo'
+    : ($order['status'] === 'courier' ? 'courier' : 'new')));
+$waText = str_replace(
+    ['{id}', '{name}', '{time}', '{phone}'],
+    [(string)$order['id'], (string)$order['customer_name'], trim((string)($order['delivery_slot'] ?? '') ?: 'в течение дня'), $waPhone],
+    setting($waTemplateKey, 'Здравствуйте! Ваш букет №{id} собран — отправляем фото на согласование 📸')
+);
+$waHref = $waDigits !== '' ? 'https://wa.me/' . $waDigits . '?text=' . rawurlencode($waText) : '';
+
+/* S3: допы заказа (extras JSON) — открытка/Кризал из корзины */
+$orderExtras = json_decode((string)($order['extras'] ?? ''), true);
+$orderExtras = is_array($orderExtras) ? $orderExtras : [];
+
 adminHeader('Заказ №' . $id, 'index');
 flash();
 ?>
 <p><a class="back-link" href="/admin/index.php" style="color:var(--ink-soft);font-size:.85rem">← Все заказы</a></p>
 <h1>Заказ № <?= (int)$order['id'] ?> <span class="status-badge <?= e($order['status']) ?>"><?= e(statuses()[$order['status']] ?? $order['status']) ?></span></h1>
+
+<?php /* S3 (v2026.3): панель быстрых действий — записка флористу (печать А5)
+       и WhatsApp с шаблоном статуса. */ ?>
+<div class="card" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:14px 16px">
+  <button type="button" class="btn btn--accent" onclick="window.print()">🖨 Печать записки к букету</button>
+  <?php if ($waHref !== ''): ?>
+  <a class="btn btn--wa" href="<?= e($waHref) ?>" target="_blank" rel="noopener" title="Откроется WhatsApp с готовым текстом">💬 Написать в WhatsApp</a>
+  <?php endif; ?>
+  <a class="btn btn--ghost" href="tel:<?= e(preg_replace('/\D/', '', (string)$order['phone'])) ?>">📞 Позвонить</a>
+  <span style="font-size:.8rem;color:var(--ink-soft)">Записка — А5 для флориста: состав, адрес, открытка. WhatsApp — с шаблоном текущего этапа.</span>
+</div>
 
 <div class="card">
   <div class="grid2">
@@ -140,6 +170,12 @@ flash();
       <?php endif; ?>
       <?php if (($order['card_text'] ?? '') !== ''): ?>
         <p style="margin-top:6px"><strong>Открытка:</strong> «<?= e((string)$order['card_text']) ?>»</p>
+      <?php endif; ?>
+      <?php /* S3 (v2026.3): бесплатные допы корзины */ ?>
+      <?php if (!empty($orderExtras['postcard']) || !empty($orderExtras['chrysal'])): ?>
+      <p style="margin-top:6px"><strong>Допы к букету:</strong>
+        <?= !empty($orderExtras['postcard']) ? 'открытка' : '' ?><?= !empty($orderExtras['postcard']) && !empty($orderExtras['chrysal']) ? ' + ' : '' ?><?= !empty($orderExtras['chrysal']) ? 'подкормка Chrysal' : '' ?>
+      </p>
       <?php endif; ?>
       <?php if (($order['delivery_date'] ?? '') !== '' || ($order['delivery_slot'] ?? '') !== ''): ?>
         <p style="margin-top:6px"><strong>Хочет доставку:</strong> <?= e(trim((string)(($order['delivery_date'] ?? '') . ' ' . ($order['delivery_slot'] ?? '')))) ?></p>
@@ -193,7 +229,7 @@ flash();
     <span style="font-size:.85rem;color:var(--ink-soft)">Заказ вернётся в ленту новых — можно подтвердить заново.</span>
   </form>
 </div>
-<?php elseif (in_array($order['status'], ['new', 'confirmed', 'in_progress'], true)): /* W70 (владелец NEW-1): «В работе» больше не тупик — вручение доступно */ ?>
+<?php elseif (in_array($order['status'], ['new', 'photo', 'florist', 'courier'], true)): /* W70 (владелец NEW-1): «Флорист собирает» больше не тупик — вручение доступно */ ?>
 <div class="card">
   <h2 style="font-family:var(--font-display);font-size:1.05rem;margin-bottom:6px">Изменить статус</h2>
   <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
@@ -203,10 +239,10 @@ flash();
       <select name="status" style="width:auto">
         <?php /* W70 (владелец NEW-2): только легальные переходы — тот же словарь, что в ленте.
                W105-8fix1 (админ-критик 8-c P2): «Новый» вернулся в селект и для
-               «В работе» (раньше — только кнопкой из «Подтверждён»): ошибочное
-               подтверждение восстанавливаемо. Набор = тому, что принимает POST выше. */
+               «Флорист собирает» (раньше — только кнопкой): ошибочный
+               перевод этапа восстанавливаем. Набор = тому, что принимает POST выше. */
                $allowed = orderTransitions()[$order['status']] ?? [];
-               if (in_array($order['status'], ['confirmed', 'in_progress'], true)
+               if (in_array($order['status'], ['photo', 'florist', 'courier'], true)
                    && !in_array('new', $allowed, true)) {
                    $allowed[] = 'new';
                }
@@ -217,8 +253,8 @@ flash();
       </select>
       <button class="btn" type="submit">Применить</button>
     </form>
-    <?php /* W98-fixD (D9): из «Подтверждён» — назад в «Новые» одним шагом, как соседние переходы */
-    if ($order['status'] === 'confirmed'): ?>
+    <?php /* W98-fixD (D9): из «Согласование фото» — назад в «Новые» одним шагом */
+    if ($order['status'] === 'photo'): ?>
     <form method="post" onsubmit="return confirm('Вернуть заказ №<?= (int)$id ?> в «Новые»? Он снова появится в ленте новых заказов.')">
       <?= csrf_field() ?>
       <input type="hidden" name="action" value="status">
@@ -255,4 +291,89 @@ flash();
     </form>
   </details>
 </div>
+
+<?php /* S3 (v2026.3): ЗАПИСКА ФЛОРИСТУ ДЛЯ ПЕЧАТИ (А5). В @media print остаётся
+       только .print-note: шапка-номер, состав (по позициям), адрес/интервал,
+       телефон, КРУПНЫЙ текст открытки с пожеланием, СЮРПРИЗ-плашка при
+       получателе≠заказчику. Кнопка «Печать записки» сверху страницы вызывает
+       window.print() — эта разметка и есть то, что уйдёт на принтер. */ ?>
+<div class="print-note" aria-label="Печатная записка к букету">
+  <div class="print-note__page">
+    <header class="print-note__head">
+      <span class="print-note__brand"><?= e(setting('shop_name', 'Nilov Flowers')) ?></span>
+      <span class="print-note__num">Заказ № <?= (int)$order['id'] ?></span>
+    </header>
+
+    <section class="print-note__block">
+      <h3 class="print-note__cap">Состав букета</h3>
+      <ul class="print-note__items">
+        <?php foreach ($items as $it): ?>
+        <li><?= e($it['name']) ?> × <?= (int)$it['qty'] ?></li>
+        <?php endforeach; ?>
+        <?php if (!empty($orderExtras['chrysal'])): ?><li>Подкормка Chrysal (пакетик в коробку)</li><?php endif; ?>
+        <?php if (!empty($orderExtras['postcard']) || ($order['card_text'] ?? '') !== ''): ?><li>Открытка — текст ниже, написать от руки</li><?php endif; ?>
+      </ul>
+    </section>
+
+    <section class="print-note__block">
+      <h3 class="print-note__cap">Доставка по Санкт-Петербургу</h3>
+      <p class="print-note__row">
+        <?= $order['delivery_zone_id'] !== null
+            ? e((string)$order['zone_name']) . ($order['delivery_address'] !== '' ? ' · ' . e((string)$order['delivery_address']) : '')
+            : 'Самовывоз: ' . e(trim(setting('pickup_address', '')) ?: 'адрес уточнить у менеджера') ?>
+      </p>
+      <p class="print-note__row">
+        <?= ($order['delivery_date'] ?? '') !== '' ? e((string)$order['delivery_date']) . ' · ' : '' ?><?= e((string)($order['delivery_slot'] ?? '') ?: 'время согласовано по телефону') ?>
+      </p>
+      <?php if (($order['recipient_name'] ?? '') !== '' || ($order['recipient_phone'] ?? '') !== ''): ?>
+      <p class="print-note__row"><strong><?= e((string)($order['recipient_name'] ?? '')) ?></strong><?= ($order['recipient_phone'] ?? '') !== '' ? ' · ' . e((string)$order['recipient_phone']) : '' ?></p>
+      <?php endif; ?>
+      <p class="print-note__row">Заказчик: <?= e((string)$order['customer_name']) ?><?= $order['phone'] !== '' ? ' · ' . e((string)$order['phone']) : '' ?></p>
+    </section>
+
+    <?php if (($order['recipient_name'] ?? '') !== ''): ?>
+    <p class="print-note__surprise">Сюрприз — имя отправителя получателю не называть</p>
+    <?php endif; ?>
+
+    <?php if (($order['card_text'] ?? '') !== ''): ?>
+    <section class="print-note__card">
+      <h3 class="print-note__cap">Текст открытки — написать крупно и разборчиво</h3>
+      <p class="print-note__card-text">«<?= e((string)$order['card_text']) ?>»</p>
+    </section>
+    <?php endif; ?>
+
+    <footer class="print-note__foot">
+      <span><?= e(date('d.m.Y H:i', strtotime((string)$order['created_at']))) ?></span>
+      <span><?= $order['payment_method'] === 'online' ? 'оплачен онлайн' : 'оплата при получении · ' . formatPrice((int)$order['total']) ?></span>
+    </footer>
+  </div>
+</div>
+
+<style>
+/* S3: печатная записка — экран: спрятана; печать: одна страница А5 (или А6
+   при масштабе 2 на лист). Кнопки/навигация админки в печать не идут. */
+.print-note{display:none}
+.btn--wa{background:#1FAF54;color:#fff}
+.btn--wa:hover{background:#178f45}
+
+@media print{
+  @page{size:A5 portrait;margin:8mm}
+  body *{visibility:hidden!important}
+  .print-note,.print-note *{visibility:visible!important}
+  .print-note{display:block!important;position:absolute;inset:0;width:100%}
+  .admin-top,main.wrap>*:not(.print-note){display:none!important}
+  .print-note__page{font-family:'Golos Text',system-ui,sans-serif;color:#18181B;background:#fff;padding:2mm}
+  .print-note__head{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #143C2B;padding-bottom:3mm;margin-bottom:4mm}
+  .print-note__brand{font-weight:800;font-size:13pt;letter-spacing:.02em}
+  .print-note__num{font-weight:700;font-size:12pt;color:#143C2B}
+  .print-note__cap{font-size:8.5pt;text-transform:uppercase;letter-spacing:.1em;color:#6E6A72;margin:0 0 2mm;font-weight:700}
+  .print-note__block{margin-bottom:4mm}
+  .print-note__items{margin:0;padding-left:5mm;font-size:13pt;line-height:1.55;list-style:disc}
+  .print-note__row{margin:0 0 1.5mm;font-size:11.5pt;line-height:1.4}
+  .print-note__surprise{margin:4mm 0;padding:3mm 4mm;background:#F4DEE3;color:#8E3B54;font-weight:800;font-size:10.5pt;text-transform:uppercase;letter-spacing:.06em;text-align:center;border-radius:2mm}
+  .print-note__card{border:1.5px dashed #143C2B;border-radius:3mm;padding:4mm;margin-top:2mm}
+  .print-note__card-text{font-family:'Playfair Display',Georgia,serif;font-size:16pt;line-height:1.5;margin:0;min-height:30mm;word-break:break-word}
+  .print-note__foot{display:flex;justify-content:space-between;margin-top:4mm;padding-top:2mm;border-top:1px solid #E8E6E1;font-size:9pt;color:#6E6A72}
+}
+</style>
 <?php adminFooter(); ?>

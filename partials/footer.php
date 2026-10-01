@@ -159,26 +159,40 @@ $__nfIsProduct = (bool)preg_match('#^/product(/|$)#', $__nfPath)
 
 <?php /* W99-fixG (G13): aria-current="page" на активной ссылке таббара. Роутинга
        в partial нет — матчим REQUEST_URI-префиксами (переменная $__nfPath выше):
-       главная и /product|/category → «Каталог»; /occasion → «Поводы»;
-       /track|/policy|/offer → «Контакты»; /order-thanks → «Заказать». */ ?>
+       главная и /product|/category → «Каталог».
+       S3 (v2026.3): состав панели — как у 5cv: Каталог / Поиск / Корзина с суммой /
+       WhatsApp (фолбэк без WhatsApp — звонок). Тумблер mobilebar_enabled. */ ?>
 <?php
 $__mnavActive = '';
 if (preg_match('#^/occasion(\.php)?(/|$)#', $__nfPath)) { $__mnavActive = 'occasions'; }
 elseif (preg_match('#^/(track|policy|offer)(\.php)?(/|$)#', $__nfPath)) { $__mnavActive = 'contacts'; }
 elseif (preg_match('#^/order-thanks(\.php)?(/|$)#', $__nfPath) || $__nfIsCheckout) { $__mnavActive = 'order'; }
 elseif ($__nfIsHome || preg_match('#^/(product|category)(\.php)?(/|$)#', $__nfPath)) { $__mnavActive = 'catalog'; }
+$__mnavOn = setting('mobilebar_enabled', '1') === '1';
+$__mnavWa = setting('wa_enabled', '1') === '1' ? trim(setting('shop_whatsapp', '')) : '';
 ?>
+<?php if ($__mnavOn): ?>
 <nav class="mnav" aria-label="Мобильная навигация">
-  <?php /* W96-fix3b (D4): «Каталог» — иконка-грид (сердце неверно семантически) */ ?>
   <a href="/#catalog"<?= $__mnavActive === 'catalog' ? ' aria-current="page"' : '' ?>><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Каталог</a>
-  <?php /* W96 (5cv): «Как работаем» → «Поводы» (how-it-works на витрине больше нет) */ ?>
-  <a href="/#occasions"<?= $__mnavActive === 'occasions' ? ' aria-current="page"' : '' ?>><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="2.6"/></svg>Поводы</a>
-  <a href="/#contacts"<?= $__mnavActive === 'contacts' ? ' aria-current="page"' : '' ?>><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.6 10.8c1.4 2.8 3.8 5.2 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.4c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.4 0 .8-.2 1L6.6 10.8z"/></svg>Контакты</a>
-  <?php /* W106-E1 (Нильсен P0 «телепорт на главную»): «Заказать» со вторичных
-         страниц ведёт на /checkout.php (было /#order — переброс на лендинг);
-         на главной и на самом чекауте форма на этой же странице — якорь #order. */ ?>
-  <a href="<?= ($__nfIsHome || $__nfIsCheckout) ? '#order' : '/checkout.php' ?>"<?= $__mnavActive === 'order' ? ' aria-current="page"' : '' ?>><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h13l-1.5 8.5H7.2L5 4H2"/><circle cx="8.5" cy="19" r="1.4"/><circle cx="14.5" cy="19" r="1.4"/></svg>Заказать</a>
+  <?php /* S3: «Поиск» — фокус в поисковую пилюлю шапки (#fcSearch; на вторичных
+         страницах она там же) — обработчик в js/five.js (делегирование .mnav__search). */ ?>
+  <button type="button" class="mnav__search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>Поиск</button>
+  <?php /* S3: «Корзина» — открывает drawer (контракт #cartToggle в cart-ui.js —
+         дублируем клик), сумма заказа — #mnavCartSum рядом с подписью. */ ?>
+  <button type="button" class="mnav__cart" id="mnavCartBtn" aria-label="Открыть корзину">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h13l-1.5 8.5H7.2L5 4H2"/><circle cx="8.5" cy="19" r="1.4"/><circle cx="14.5" cy="19" r="1.4"/></svg>Корзина<span class="mnav__cart-sum" id="mnavCartSum" hidden></span>
+  </button>
+  <?php if ($__mnavWa !== ''): ?>
+  <a class="mnav__wa" href="https://wa.me/<?= e(preg_replace('/[^0-9]/', '', $__mnavWa)) ?>" target="_blank" rel="noopener" aria-label="Написать в WhatsApp">
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm0 18.12c-1.5 0-2.97-.4-4.26-1.16l-.3-.18-3.12.82.83-3.04-.2-.31a8.26 8.26 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24s8.24 3.7 8.24 8.24-3.7 8.25-8.17 8.25zm4.52-6.16c-.25-.12-1.47-.72-1.69-.8-.23-.09-.4-.13-.56.12-.17.25-.64.8-.8.97-.14.16-.29.18-.54.06-.25-.12-1.05-.39-2-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.02-.38.11-.51.11-.11.25-.29.37-.43.12-.14.16-.25.25-.41.08-.17.04-.31-.02-.43-.06-.12-.56-1.34-.76-1.84-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.22.25-.86.85-.86 2.07 0 1.22.89 2.4 1.01 2.56.12.17 1.75 2.67 4.23 3.74.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.48-.07 1.47-.6 1.67-1.18.21-.58.21-1.07.14-1.18-.06-.1-.22-.16-.47-.28z"/></svg>WhatsApp
+  </a>
+  <?php else: ?>
+  <a class="mnav__wa" href="tel:<?= e(preg_replace('/\D/', '', $phone)) ?>" aria-label="Позвонить">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Позвонить
+  </a>
+  <?php endif; ?>
 </nav>
+<?php endif; ?>
 
 <div class="cart-panel" id="cartPanel" hidden>
   <div class="cart-panel__backdrop" id="cartBackdrop"></div>
@@ -190,8 +204,57 @@ elseif ($__nfIsHome || preg_match('#^/(product|category)(\.php)?(/|$)#', $__nfPa
       <div class="cart-panel__title"><?= e(setting('cart_title', 'Корзина')) ?></div>
       <button type="button" class="cart-panel__close" id="cartClose" aria-label="Закрыть корзину">&times;</button>
     </div>
+    <?php /* S3 (v2026.3): прогресс до бесплатной доставки (порог free_delivery_threshold,
+           рендер и обновление — js/cart-ui.js по контракту #cartFreeBar/#cartFreeText). */ ?>
+    <?php
+      $freeThreshold = (int)setting('free_delivery_threshold', '0');
+      if (setting('cart_free_progress_enabled', '1') === '1' && $freeThreshold > 0):
+    ?>
+    <div class="cart-free" id="cartFreeBar" role="progressbar" aria-valuemin="0" aria-valuemax="<?= $freeThreshold ?>" aria-valuenow="0" aria-label="Прогресс до бесплатной доставки">
+      <div class="cart-free__track"><div class="cart-free__fill" id="cartFreeFill"></div></div>
+      <p class="cart-free__text" id="cartFreeText"></p>
+    </div>
+    <?php endif; ?>
     <div class="cart-panel__items" id="cartItems"></div>
     <p class="cart-panel__empty" id="cartEmpty"><?= e(setting('cart_empty_text', 'Корзина пуста — выберите букет в каталоге')) ?></p>
+    <?php /* S3 (v2026.3): бесплатные допы — открытка с текстом (0 ₽) и подкормка
+           Chrysal (0 ₽). Состояние — localStorage корзины (cart-ui.js), открытка
+           синхронизируется с полем «Текст открытки» формы заказа; в заказ уходит
+           через extras (api/orders.php) и card_text. */ ?>
+    <?php
+      $postcardOn = setting('cart_extra_postcard_enabled', '1') === '1';
+      $chrysalOn = setting('cart_extra_chrysal_enabled', '1') === '1';
+    ?>
+    <?php if ($postcardOn || $chrysalOn): ?>
+    <div class="cart-extras" id="cartExtras">
+      <p class="cart-extras__title"><?= e(setting('cart_extras_title', 'Дополните букет')) ?></p>
+      <?php if ($postcardOn): ?>
+      <div class="cart-extra<?= $chrysalOn ? ' cart-extra--last' : '' ?>" id="cartExtraPostcard">
+        <label class="cart-extra__check">
+          <input type="checkbox" id="cartExtraPostcardOn">
+          <span class="cart-extra__info">
+            <span class="cart-extra__name"><?= e(setting('cart_extra_postcard_title', 'Открытка с вашим текстом')) ?> <em class="cart-extra__price">0&nbsp;₽</em></span>
+            <span class="cart-extra__note"><?= e(setting('cart_extra_postcard_text', 'Напишем от руки и вложим в букет')) ?></span>
+          </span>
+        </label>
+        <div class="cart-extra__text" id="cartExtraPostcardWrap" hidden>
+          <textarea id="cartExtraPostcardText" maxlength="500" rows="2" placeholder="С днём рождения! — от Евгения" aria-label="Текст открытки"></textarea>
+        </div>
+      </div>
+      <?php endif; ?>
+      <?php if ($chrysalOn): ?>
+      <div class="cart-extra cart-extra--last" id="cartExtraChrysal">
+        <label class="cart-extra__check">
+          <input type="checkbox" id="cartExtraChrysalOn">
+          <span class="cart-extra__info">
+            <span class="cart-extra__name"><?= e(setting('cart_extra_chrysal_title', 'Подкормка Chrysal')) ?> <em class="cart-extra__price">0&nbsp;₽</em></span>
+            <span class="cart-extra__note"><?= e(setting('cart_extra_chrysal_text', 'Питательный гель — букет простоит дольше')) ?></span>
+          </span>
+        </label>
+      </div>
+      <?php endif; ?>
+    </div>
+    <?php endif; ?>
     <div class="cart-upsell" id="cartUpsell" hidden>
       <p class="cart-upsell__title"><?= e(setting('upsell_title', 'Добавьте к букету')) ?></p>
       <div class="cart-upsell__items" id="cartUpsellItems"></div>
@@ -248,10 +311,13 @@ elseif ($__nfIsHome || preg_match('#^/(product|category)(\.php)?(/|$)#', $__nfPa
        ПОСЛЕ своей инициализации). */ ?>
 <script src="/js/grid-tail.js?v=<?= e($__vjs('grid-tail.js')) ?>" defer></script>
 <script src="/js/cart.js?v=<?= e($__vjs('cart.js')) ?>" defer></script>
-<script>window.UPSELL_LIMIT = <?= max(1, min(6, (int) setting('upsell_limit', '3'))) ?>; window.UPSELL_ENABLED = <?= setting('upsell_enabled', '1') === '1' ? 1 : 0 ?>; window.UPSELL_CATEGORIES = <?= json_encode(array_filter(array_map('trim', explode(',', setting('upsell_categories', ''))))) ?>;</script>
+<script>window.UPSELL_LIMIT = <?= max(1, min(6, (int) setting('upsell_limit', '3'))) ?>; window.UPSELL_ENABLED = <?= setting('upsell_enabled', '1') === '1' ? 1 : 0 ?>; window.UPSELL_CATEGORIES = <?= json_encode(array_filter(array_map('trim', explode(',', setting('upsell_categories', ''))))) ?>; window.FREE_DELIVERY_FROM = <?= (int)setting('free_delivery_threshold', '0') ?>; window.CART_FREE_PROGRESS_UNDER = <?= json_encode(setting('cart_free_progress_under', 'Добавьте ещё {left} ₽ — и доставка бесплатна'), JSON_UNESCAPED_UNICODE) ?>; window.CART_FREE_PROGRESS_REACHED = <?= json_encode(setting('cart_free_progress_reached', 'Доставка бесплатно 🎉'), JSON_UNESCAPED_UNICODE) ?>;</script>
 <script src="/js/cart-ui.js?v=<?= e($__vjs('cart-ui.js')) ?>" defer></script>
 <?php if (setting('feature_favicon_badge', '1') === '1'): ?><script src="/js/favicon-badge.js?v=<?= e($__vjs('favicon-badge.js')) ?>" defer></script><?php endif; ?>
 <script src="/js/cart-cta.js?v=<?= e($__vjs('cart-cta.js')) ?>" defer></script>
+<?php /* S3 (v2026.3): «Купить в 1 клик» — модалка имя+телефон → POST /api/orders
+       (кнопки [data-oneclick] на карточках каталога/каруселей и PDP). */ ?>
+<script src="/js/oneclick.js?v=<?= e($__vjs('oneclick.js')) ?>" defer></script>
 <?php /* A9: #orderForm живёт на главной и /checkout.php (W106-E1 — частичный
        order-form.php); #catalogGrid/#catalogTabs — только главная. */ ?>
 <?php if ($__nfIsHome || $__nfIsCheckout): ?>

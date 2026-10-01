@@ -20,7 +20,7 @@ declare(strict_types=1);
 
 if (!isset($zones)) {
     try {
-        $zones = db()->query('SELECT id, name, price FROM delivery_zones ORDER BY sort, id')->fetchAll();
+        $zones = db()->query('SELECT id, name, price, time FROM delivery_zones ORDER BY sort, id')->fetchAll();
     } catch (Throwable $e) {
         $zones = [];
     }
@@ -82,7 +82,9 @@ $featGiftFields = $featGiftFields ?? (setting('feature_gift_fields', '1') === '1
                        (formatPrice — тысячи через пробел); value/data-price НЕ трогаем:
                        js/order-form.js берёт data-price, value=id зоны. Имена зон короткие,
                        W70-сокращение (р-н) сохранено. */ ?>
-                <option value="<?= (int)$z['id'] ?>" data-price="<?= (int)$z['price'] ?>" title="<?= e($zFull) ?> · <?= (int)$z['price'] ?> ₽"><?= e($zShort . ' · ' . formatPrice((int)$z['price'])) ?></option>
+                <?php /* S3 (v2026.3): data-time — время доставки зоны (админка:
+                       «Зоны доставки»); зона-чек каталога показывает рядом с ценой. */ ?>
+                <option value="<?= (int)$z['id'] ?>" data-price="<?= (int)$z['price'] ?>"<?= trim((string)($z['time'] ?? '')) !== '' ? ' data-time="' . e(trim((string)$z['time'])) . '"' : '' ?> title="<?= e($zFull) ?> · <?= (int)$z['price'] ?> ₽"><?= e($zShort . ' · ' . formatPrice((int)$z['price'])) ?></option>
               <?php endforeach; ?>
             </select>
             <?php if ($pickupAddr !== ''): ?>
@@ -130,9 +132,18 @@ $featGiftFields = $featGiftFields ?? (setting('feature_gift_fields', '1') === '1
         <?php if ($featGiftFields): ?>
         <?php /* Критик functional (gift-UX): цветы дарят — кому и что написать на открытке.
                  Все поля необязательные; пустые просто не попадают в заказ.
-                 D-d1: группа «Кто получит» идёт второй — поток подарка (куда → кому → от кого). */ ?>
+                 D-d1: группа «Кто получит» идёт второй — поток подарка (куда → кому → от кого).
+                 S3 (v2026.3): пилюли «Себе» / «Сюрприз другому» (5cv) — при «Себе»
+                 поля получателя скрываются (курьер позвонит заказчику), открытка
+                 остаётся. Инлайн-скрипт — состояние не переживает страницы,
+                 дефолт «Сюрприз другому» (основной сценарий цветочного). */ ?>
         <fieldset class="order-form__nested order-form__group">
           <legend><?= e(setting('fieldset_recipient_legend', 'Кто получит')) ?></legend>
+          <div class="order-form__gift-toggle" role="radiogroup" aria-label="Кому доставить букет" id="orderGiftToggle">
+            <label class="order-form__gift-pill"><input type="radio" name="gift_recipient" value="other" checked><span><?= e(setting('gift_other_label', 'Сюрприз другому')) ?></span></label>
+            <label class="order-form__gift-pill"><input type="radio" name="gift_recipient" value="self"><span><?= e(setting('gift_self_label', 'Себе')) ?></span></label>
+          </div>
+          <div id="orderRecipientFields">
           <div class="order-form__field">
             <label for="orderRecipientName">Имя получателя</label>
             <input type="text" id="orderRecipientName" name="recipient_name" maxlength="120" autocomplete="off" placeholder="Например: Анна">
@@ -144,12 +155,32 @@ $featGiftFields = $featGiftFields ?? (setting('feature_gift_fields', '1') === '1
             <span class="order-form__error" id="orderRecipientPhoneError"></span>
             <p class="order-form__hint">Курьер позвонит получателю, а не вам</p>
           </div>
+          </div>
           <div class="order-form__field order-form__field--full">
             <label for="orderCardText">Текст открытки</label>
             <textarea id="orderCardText" name="card_text" rows="2" maxlength="500" placeholder="С днём рождения! — от Евгения"></textarea>
             <p class="order-form__hint">Напишем от руки и вложим в букет · бесплатно</p>
           </div>
         </fieldset>
+        <script>
+        (function () {
+          var box = document.getElementById('orderGiftToggle');
+          var fields = document.getElementById('orderRecipientFields');
+          if (!box || !fields) return;
+          function sync() {
+            var self = box.querySelector('input[value="self"]').checked;
+            fields.style.display = self ? 'none' : '';
+            if (self) {
+              var n = document.getElementById('orderRecipientName');
+              var p = document.getElementById('orderRecipientPhone');
+              if (n) n.value = '';
+              if (p) p.value = '';
+            }
+          }
+          box.addEventListener('change', sync);
+          sync();
+        })();
+        </script>
         <?php endif; ?>
         <fieldset class="order-form__nested order-form__group">
           <legend><?= e(setting('fieldset_contacts_legend', 'Ваши контакты')) ?></legend>

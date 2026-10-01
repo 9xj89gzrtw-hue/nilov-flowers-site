@@ -144,11 +144,32 @@
   }
 
   /* Чип задаёт диапазон: data-min — исключительно («от M»), data-max — включительно
-     («до N»). kind=hit/premium — по флагам карточки (data-hit / data-premium). */
+     («до N»). kind=hit/premium — по флагам карточки (data-hit / data-premium).
+     S3 (v2026.3): kind=all — сброс (матчит всё); kind=tag-* — чип-тег: матч
+     по data-tags карточки — многословный тег как подстрока, однословный —
+     по стемму первых 4 символов (как PHP-предподсчёт в index.php). */
+  function nfTagMatch(chipTag, cardTags) {
+    var ct = (chipTag || '').toLowerCase().replace(/ё/g, 'е').replace(/\s+/g, ' ').trim();
+    if (!ct) return false;
+    var tags = (cardTags || '').toLowerCase().replace(/ё/g, 'е').replace(/\s+/g, ' ').trim();
+    if (!tags) return false;
+    if (ct.indexOf(' ') !== -1) return tags.indexOf(ct) !== -1;
+    var stem = ct.slice(0, 4);
+    var words = tags.split(/[\s,]+/);
+    for (var i = 0; i < words.length; i++) {
+      if (words[i].indexOf(stem) === 0) return true;
+    }
+    return false;
+  }
+
   function chipMatch(card, chip) {
     var kind = chip.getAttribute('data-chip');
+    if (kind === 'all') return true;
     if (kind === 'hit') return card.getAttribute('data-hit') === '1';
     if (kind === 'premium') return card.getAttribute('data-premium') === '1';
+    if (kind && kind.indexOf('tag-') === 0) {
+      return nfTagMatch(chip.getAttribute('data-tag') || '', card.getAttribute('data-tags') || '');
+    }
     var price = parseInt(card.getAttribute('data-price'), 10) || 0;
     var min = chip.hasAttribute('data-min') ? parseInt(chip.getAttribute('data-min'), 10) : null;
     var max = chip.hasAttribute('data-max') ? parseInt(chip.getAttribute('data-max'), 10) : null;
@@ -165,6 +186,17 @@
 
   function apply() {
     var chip = document.querySelector('.fc-chip.is-active');
+    /* S3 (v2026.3): ни один чип не активен (сброс пустым кликом/кнопкой
+       «Сбросить фильтры») — активируем «Все», пустого состояния чипов
+       больше не бывает (принцип 5cv). */
+    if (!chip) {
+      var allChip = document.querySelector('.fc-chip[data-chip="all"]');
+      if (allChip) {
+        allChip.classList.add('is-active');
+        allChip.setAttribute('aria-pressed', 'true');
+        chip = allChip;
+      }
+    }
     var min = null, max = null;
     if (priceSel && priceSel.selectedIndex >= 0) {
       var opt = priceSel.options[priceSel.selectedIndex];

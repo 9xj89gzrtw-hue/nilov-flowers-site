@@ -173,30 +173,79 @@ function pluralRu(int $n, array $forms): string
 }
 
 /* W70 (владелец NEW-2): ОДИН словарь переходов для ленты и деталки.
-   new→confirmed/in_progress/canceled; confirmed→canceled/unredeemed; in_progress→confirmed/canceled
-   (+«Выполнен» только через handover); canceled/unredeemed→new; done — финальный. */
+   S3 (v2026.3): курьерский поток этапов — new → photo (согласование фото) →
+   florist (флорист собирает) → courier (у курьера) → done (доставлен);
+   canceled/unredeemed — возврат в новые; done — финален. Прежние
+   confirmed/in_progress мигрированы в photo/florist (db.php S3). */
 function orderTransitions(): array
 {
     return [
-        'new' => ['confirmed', 'in_progress', 'canceled'],
-        'confirmed' => ['in_progress', 'canceled', 'unredeemed'],
-        'in_progress' => ['confirmed', 'canceled'],
+        'new' => ['photo', 'florist', 'courier', 'done', 'canceled'],
+        'photo' => ['florist', 'courier', 'done', 'canceled'],
+        'florist' => ['photo', 'courier', 'done', 'canceled'],
+        'courier' => ['done', 'canceled'],
         'canceled' => ['new'],
         'unredeemed' => ['new'],
         'done' => [],
     ];
 }
 
+/* S3 (v2026.3): этапы канбана в порядке следования (владелец/флористы).
+   statuses() — полный словарь (включая отменённые/невыкупленные). */
+function kanbanStages(): array
+{
+    return ['new', 'photo', 'florist', 'courier', 'done'];
+}
+
 function statuses(): array
 {
     return [
         'new' => 'Новый',
-        'confirmed' => 'Подтверждён',
-        'in_progress' => 'В работе',
-        'done' => 'Выполнен',
+        'photo' => 'Согласование фото',
+        'florist' => 'Флорист собирает',
+        'courier' => 'У курьера',
+        'done' => 'Доставлен',
         'canceled' => 'Отменён',
         'unredeemed' => 'Не выкуплен',
     ];
+}
+
+/* S3 (v2026.3): Яндекс Сплит / Долями — платёж делится на N частей
+   (настройка split_divider, по умолчанию 4). Первую платят сразу,
+   витрина показывает «от X ₽/мес»: цена / делитель, округление вверх,
+   чтобы не обещать меньше минимального платежа. */
+function splitMonthly(int $price): int
+{
+    $div = max(2, (int)setting('split_divider', '4'));
+    return (int)ceil($price / $div);
+}
+
+/* S3: печать шильдика Сплит по шаблону настройки split_label
+   ('Сплит: от {price} ₽/мес'). Пустая настройка split_enabled — не печатаем. */
+function splitLabel(int $price): string
+{
+    if (setting('split_enabled', '1') !== '1' || $price <= 0) {
+        return '';
+    }
+    return str_replace('{price}', formatSum(splitMonthly($price)), setting('split_label', 'Сплит: от {price} ₽/мес'));
+}
+
+/* S3: список тегов товара → массив нижнего регистра ('розы, монобукеты' →
+   ['розы','монобукеты']). Список чипсов каталога — настройка chips_tags. */
+function productTagsList(array $p): array
+{
+    $raw = (string)($p['tags'] ?? '');
+    if ($raw === '') {
+        return [];
+    }
+    $out = [];
+    foreach (explode(',', $raw) as $t) {
+        $t = mb_strtolower(trim($t), 'UTF-8');
+        if ($t !== '') {
+            $out[] = $t;
+        }
+    }
+    return $out;
 }
 
 /**

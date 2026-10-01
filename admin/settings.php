@@ -87,6 +87,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
         'hero_eyebrow',
         /* Порог бесплатной доставки (критерий 13/16): 0 = выключено */
         'free_delivery_threshold',
+        /* S3 (v2026.3): коммерческий слой — инфо-бар, Сплит/Долями, бесплатные
+           допы корзины, шаблоны WhatsApp, 1-клик, чипсы-теги, кнопки карточки */
+        'infobar_text_1','infobar_text_2','infobar_text_3',
+        'split_divider','split_label','split_note',
+        'cart_extras_title','cart_extra_postcard_title','cart_extra_postcard_text',
+        'cart_extra_chrysal_title','cart_extra_chrysal_text',
+        'cart_free_progress_under','cart_free_progress_reached',
+        'wa_template_new','wa_template_photo','wa_template_courier',
+        'oneclick_title','oneclick_note','oneclick_btn',
+        'chips_all_text','chips_tags',
+        'badge_fresh_text','badge_sturdy_text',
+        'card_btn_cart','card_btn_oneclick',
+        'gift_self_label','gift_other_label',
         /* W96 (редизайн 5cv): тексты новых блоков витрины — город, hero-промо, чипы цен,
            секции хитов/премиума/бюджета/допов, поводы, магазины, SEO-текст, журнал */
         'citybar_text','city_label','search_placeholder','catalog_btn_text',
@@ -147,6 +160,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
     if (array_key_exists('chips_price_low', $_POST)) {
         $values['chips_price_low'] = (string)max(0, (int)($_POST['chips_price_low'] ?? 3500));
     }
+    /* S3: делитель Сплит — 2..12 платежей; порог бесплатной доставки — целое */
+    if (array_key_exists('split_divider', $_POST)) {
+        $values['split_divider'] = (string)max(2, min(12, (int)($_POST['split_divider'] ?? 4)));
+    }
+    if (array_key_exists('free_delivery_threshold', $_POST)) {
+        $values['free_delivery_threshold'] = (string)max(0, (int)($_POST['free_delivery_threshold'] ?? 0));
+    }
     if (array_key_exists('chips_price_high', $_POST)) {
         $values['chips_price_high'] = (string)max(0, (int)($_POST['chips_price_high'] ?? 7000));
     }
@@ -168,6 +188,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
               /* W96 (редизайн 5cv): новые блоки витрины — город, hero-промо, чипы, карусели,
                  секции каталога, поводы, магазины, SEO-текст, журнал */
               'feature_citybar', 'hero_promo_enabled', 'hero_delivery_card_enabled',
+              /* S3 (v2026.3): коммерческий слой — тумблеры новых блоков */
+              'infobar_enabled', 'split_enabled', 'cart_extra_postcard_enabled', 'cart_extra_chrysal_enabled',
+              'cart_free_progress_enabled', 'mobilebar_enabled',
               'feature_marquee',
               'feature_chips', 'feature_carousels',
               'feature_section_hits', 'feature_section_premium', 'feature_section_budget', 'feature_section_addons',
@@ -326,6 +349,7 @@ flash();
   <a href="#s-common">Общие</a>
   <a href="#s-main">Главная</a>
   <a href="#s-5cv">Витрина 5cv</a>
+  <a href="#s-commerce">Продажи</a>
   <a href="#s-w103">Имиджевые блоки</a>
   <a href="#s-look">Вид</a>
   <a href="#s-features">Функции</a>
@@ -776,6 +800,108 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
 
   <?php /* W103 (F1, редизайн главной): имиджевые блоки — marquee, manifesto,
      премиум-разворот, ghost-CTA, тэглайн футера, eyebrow-метки секций */ ?>
+  <div class="card" id="s-commerce">
+    <h2 style="font-family:var(--font-display);font-size:1.2rem;margin-bottom:8px">Продажи: инфо-бар, Сплит, допы, WhatsApp, 1-клик</h2>
+    <p style="font-size:.85rem;color:var(--ink-soft);margin:0 0 14px">S3 (v2026.3). Плашка преимуществ в шапке, калькулятор Яндекс&nbsp;Сплит/Долями, бесплатные допы корзины, шаблоны сообщений WhatsApp, быстрый заказ и чипсы-теги каталога. Всё сохраняется в базу и мгновенно обновляется на витрине.</p>
+
+    <p style="font-size:.9rem;font-weight:700;margin:0 0 6px">Инфо-бар над шапкой (плашка преимуществ)</p>
+    <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+      <input type="checkbox" name="infobar_enabled" style="width:auto" <?= sv('infobar_enabled', $s) !== '0' ? 'checked' : '' ?>>
+      Показывать инфо-бар
+    </label>
+    <label class="f" for="s-ib1">Строка 1 (доставка)</label>
+    <input class="input" id="s-ib1" name="infobar_text_1" value="<?= sv('infobar_text_1', $s) ?>">
+    <label class="f" for="s-ib2">Строка 2 (фото)</label>
+    <input class="input" id="s-ib2" name="infobar_text_2" value="<?= sv('infobar_text_2', $s) ?>">
+    <label class="f" for="s-ib3">Строка 3 (открытка)</label>
+    <input class="input" id="s-ib3" name="infobar_text_3" value="<?= sv('infobar_text_3', $s) ?>">
+    <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Пустая строка не печатается; между строками — янтарная точка-разделитель.</p>
+
+    <p style="font-size:.9rem;font-weight:700;margin:18px 0 6px">Яндекс Сплит / Долями</p>
+    <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+      <input type="checkbox" name="split_enabled" style="width:auto" <?= sv('split_enabled', $s) !== '0' ? 'checked' : '' ?>>
+      Показывать шильдик «Сплит: от N ₽/мес» в карточках и на странице букета
+    </label>
+    <label class="f" for="s-split">На сколько платежей делить цену</label>
+    <input class="input" id="s-split" name="split_divider" type="number" min="2" max="12" value="<?= sv('split_divider', $s) ?: '4' ?>">
+    <label class="f" for="s-splabel">Шаблон шильдика ({price} — сумма платежа)</label>
+    <input class="input" id="s-splabel" name="split_label" value="<?= sv('split_label', $s) ?>">
+    <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Например: «Сплит: от {price} ₽/мес». Первую часть клиент платит сразу, остальные — раз в месяц.</p>
+
+    <p style="font-size:.9rem;font-weight:700;margin:18px 0 6px">Бесплатная доставка: порог и прогресс-бар в корзине</p>
+    <label class="f" for="s-free">Порог бесплатной доставки, ₽ (0 — выключить)</label>
+    <input class="input" id="s-free" name="free_delivery_threshold" type="number" min="0" value="<?= sv('free_delivery_threshold', $s) ?>">
+    <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+      <input type="checkbox" name="cart_free_progress_enabled" style="width:auto" <?= sv('cart_free_progress_enabled', $s) !== '0' ? 'checked' : '' ?>>
+      Показывать прогресс-бар до бесплатной доставки в корзине
+    </label>
+    <label class="f" for="s-fpu">Текст под прогресс-баром ({left} — сколько осталось)</label>
+    <input class="input" id="s-fpu" name="cart_free_progress_under" value="<?= sv('cart_free_progress_under', $s) ?>">
+    <label class="f" for="s-fpr">Текст при достигнутом пороге</label>
+    <input class="input" id="s-fpr" name="cart_free_progress_reached" value="<?= sv('cart_free_progress_reached', $s) ?>">
+
+    <p style="font-size:.9rem;font-weight:700;margin:18px 0 6px">Бесплатные допы в корзине (0 ₽)</p>
+    <label class="f" for="s-cet">Заголовок блока допов</label>
+    <input class="input" id="s-cet" name="cart_extras_title" value="<?= sv('cart_extras_title', $s) ?>">
+    <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+      <input type="checkbox" name="cart_extra_postcard_enabled" style="width:auto" <?= sv('cart_extra_postcard_enabled', $s) !== '0' ? 'checked' : '' ?>>
+      Открытка с текстом клиента (0 ₽)
+    </label>
+    <label class="f" for="s-pct">Название открытки</label>
+    <input class="input" id="s-pct" name="cart_extra_postcard_title" value="<?= sv('cart_extra_postcard_title', $s) ?>">
+    <label class="f" for="s-pctx">Подпись открытки</label>
+    <input class="input" id="s-pctx" name="cart_extra_postcard_text" value="<?= sv('cart_extra_postcard_text', $s) ?>">
+    <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+      <input type="checkbox" name="cart_extra_chrysal_enabled" style="width:auto" <?= sv('cart_extra_chrysal_enabled', $s) !== '0' ? 'checked' : '' ?>>
+      Подкормка Chrysal (0 ₽)
+    </label>
+    <label class="f" for="s-cht">Название подкормки</label>
+    <input class="input" id="s-cht" name="cart_extra_chrysal_title" value="<?= sv('cart_extra_chrysal_title', $s) ?>">
+    <label class="f" for="s-chtx">Подпись подкормки</label>
+    <input class="input" id="s-chtx" name="cart_extra_chrysal_text" value="<?= sv('cart_extra_chrysal_text', $s) ?>">
+
+    <p style="font-size:.9rem;font-weight:700;margin:18px 0 6px">Шаблоны WhatsApp (кнопки в заказах и канбане)</p>
+    <p style="font-size:.78rem;color:var(--ink-soft);margin:0 0 8px">Подстановки: {id} — номер заказа, {name} — имя клиента, {time} — интервал доставки, {phone} — телефон. Номер получателя — получатель, если указан, иначе заказчик.</p>
+    <label class="f" for="s-wan">Шаблон «Новый заказ»</label>
+    <textarea class="input" id="s-wan" name="wa_template_new" rows="2" style="padding:10px 12px"><?= sv('wa_template_new', $s) ?></textarea>
+    <label class="f" for="s-wap">Шаблон «Согласование фото»</label>
+    <textarea class="input" id="s-wap" name="wa_template_photo" rows="2" style="padding:10px 12px"><?= sv('wa_template_photo', $s) ?></textarea>
+    <label class="f" for="s-wac">Шаблон «Курьер выехал»</label>
+    <textarea class="input" id="s-wac" name="wa_template_courier" rows="2" style="padding:10px 12px"><?= sv('wa_template_courier', $s) ?></textarea>
+
+    <p style="font-size:.9rem;font-weight:700;margin:18px 0 6px">Купить в 1 клик</p>
+    <label class="f" for="s-oct">Заголовок модалки</label>
+    <input class="input" id="s-oct" name="oneclick_title" value="<?= sv('oneclick_title', $s) ?>">
+    <label class="f" for="s-ocn">Обещание под заголовком</label>
+    <input class="input" id="s-ocn" name="oneclick_note" value="<?= sv('oneclick_note', $s) ?>">
+    <label class="f" for="s-ocb">Текст кнопки</label>
+    <input class="input" id="s-ocb" name="oneclick_btn" value="<?= sv('oneclick_btn', $s) ?>">
+
+    <p style="font-size:.9rem;font-weight:700;margin:18px 0 6px">Чипсы каталога и кнопки карточки</p>
+    <label class="f" for="s-chips">Чипсы-теги (через запятую; теги букетов — в «Товарах»)</label>
+    <input class="input" id="s-chips" name="chips_tags" value="<?= sv('chips_tags', $s) ?>">
+    <label class="f" for="s-chipa">Текст чипа «Все»</label>
+    <input class="input" id="s-chipa" name="chips_all_text" value="<?= sv('chips_all_text', $s) ?>">
+    <label class="f" for="s-btn1">Кнопка в карточке — добавить в корзину</label>
+    <input class="input" id="s-btn1" name="card_btn_cart" value="<?= sv('card_btn_cart', $s) ?>">
+    <label class="f" for="s-btn2">Кнопка в карточке — быстрый заказ</label>
+    <input class="input" id="s-btn2" name="card_btn_oneclick" value="<?= sv('card_btn_oneclick', $s) ?>">
+    <label class="f" for="s-bf">Бейдж «Свежая поставка» (по тегу «свеж…»)</label>
+    <input class="input" id="s-bf" name="badge_fresh_text" value="<?= sv('badge_fresh_text', $s) ?>">
+    <label class="f" for="s-bs">Бейдж «Стойкие» (по тегу «стой…»)</label>
+    <input class="input" id="s-bs" name="badge_sturdy_text" value="<?= sv('badge_sturdy_text', $s) ?>">
+
+    <p style="font-size:.9rem;font-weight:700;margin:18px 0 6px">Чекаут: «Себе» / «Сюрприз другому» + мобильная панель</p>
+    <label class="f" for="s-gs">Пилюля «Себе»</label>
+    <input class="input" id="s-gs" name="gift_self_label" value="<?= sv('gift_self_label', $s) ?>">
+    <label class="f" for="s-go">Пилюля «Сюрприз другому»</label>
+    <input class="input" id="s-go" name="gift_other_label" value="<?= sv('gift_other_label', $s) ?>">
+    <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+      <input type="checkbox" name="mobilebar_enabled" style="width:auto" <?= sv('mobilebar_enabled', $s) !== '0' ? 'checked' : '' ?>>
+      Мобильная нижняя панель: Каталог · Поиск · Корзина с суммой · WhatsApp
+    </label>
+  </div>
+
   <div class="card" id="s-w103">
     <h2 style="font-family:var(--font-display);font-size:1.2rem;margin-bottom:8px">Имиджевые блоки (W103)</h2>
     <p style="font-size:.85rem;color:var(--ink-soft);margin:0 0 14px">Новые блоки главной страницы: бегущая лента, фотополоса-манифест, тёмный премиум-разворот, тихая ссылка в hero и крупная подпись футера. Пустые тексты = значения по умолчанию из кода.</p>

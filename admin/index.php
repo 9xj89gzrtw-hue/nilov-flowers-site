@@ -43,7 +43,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'statu
     } else {
         flash('Недопустимый переход статуса', true);
     }
-    header('Location: /admin/index.php' . (isset($_POST['page']) && (int)$_POST['page'] > 1 ? '?page=' . (int)$_POST['page'] : ''));
+    /* S3 (v2026.3): сохраняем режим канбана в редиректе после смены статуса */
+    $backView = ($_POST['view'] ?? '') === 'kanban' ? '?view=kanban' : (isset($_POST['page']) && (int)$_POST['page'] > 1 ? '?page=' . (int)$_POST['page'] : '');
+    header('Location: /admin/index.php' . $backView);
     exit;
 }
 
@@ -51,6 +53,8 @@ $statusFilter = (string)($_GET['status'] ?? '');
 if ($statusFilter !== '' && !array_key_exists($statusFilter, statuses())) {
     $statusFilter = '';
 }
+/* S3 (v2026.3): вид ленты — таблица (легаси) или канбан-доска этапов */
+$view = ($_GET['view'] ?? 'table') === 'kanban' ? 'kanban' : 'table';
 $dateFrom = trim((string)($_GET['date_from'] ?? ''));
 $dateTo = trim((string)($_GET['date_to'] ?? ''));
 /* W98-fixD (D1): планирование по дате ДОСТАВКИ — диапазон + быстрые чипы.
@@ -130,7 +134,7 @@ $range = (string)($_GET['range'] ?? '30');
 if (!in_array($range, ['1', '7', '30', '90', 'all'], true)) {
     $range = '30';
 }
-$revenueStatuses = "('confirmed','done','unredeemed')";
+$revenueStatuses = "('photo','florist','courier','done','unredeemed')";
 /* Операционный критик W38: «как сегодня?» — главный вопрос флориста; range=1 = с полуночи.
    W98-fixD (D6): SQLite datetime('now','localtime') живёт по таймзоне ОС (на стенде UTC —
    на 3 часа позади MSK), а магазин — по Europe/Moscow (date_default_timezone_set в config.php).
@@ -498,12 +502,146 @@ $dashqs = fn(string $r) => '/admin/index.php?' . e(http_build_query(array_merge(
         <a class="btn btn--ghost" href="/admin/index.php">Сбросить</a>
       <?php endif; ?>
       <a class="btn btn--ghost" href="/admin/export.php?<?= e(http_build_query(array_filter($_GET, fn($v) => $v !== ''))) ?>">Экспорт в CSV</a>
+      <?php /* S3 (v2026.3): переключатель вида — таблица / канбан-доска этапов */ ?>
+      <span style="margin-left:auto;display:inline-flex;border:1.5px solid var(--line);border-radius:12px;overflow:hidden">
+        <a href="/admin/index.php?<?= e(http_build_query(array_merge($qs, ['view' => 'table']))) ?>" class="view-toggle<?= $view === 'table' ? ' is-active' : '' ?>" style="padding:9px 14px">📋 Таблица</a>
+        <a href="/admin/index.php?<?= e(http_build_query(array_merge($qs, ['view' => 'kanban']))) ?>" class="view-toggle<?= $view === 'kanban' ? ' is-active' : '' ?>" style="padding:9px 14px">🗂 Канбан</a>
+      </span>
     </div>
   </form>
 </div>
 
 <?php if (!$orders): ?>
 <div class="card"><div class="empty-state"><strong><?= ($statusFilter !== '' || $dateFrom !== '' || $dateTo !== '' || $deliveryFrom !== '' || $deliveryTo !== '' || $deliveryChip !== '') ? 'По этим фильтрам заказов нет' : 'Заказов пока нет' ?></strong><?= ($statusFilter !== '' || $dateFrom !== '' || $dateTo !== '' || $deliveryFrom !== '' || $deliveryTo !== '' || $deliveryChip !== '') ? 'Попробуйте расширить диапазон или сбросить фильтры.' : 'Появятся после первого заказа с сайта.' ?></div></div>
+<?php elseif ($view === 'kanban'): ?>
+<?php
+/* S3 (v2026.3): КАНАБН-ДОСКА ЭТАПОВ — Новый → Согласование фото → Флорист собирает
+   → У курьера → Доставлен. Карточка перетаскивается (HTML5 DnD) в соседнюю
+   колонку — статус сохраняется POST-ом (валидация переходов на сервере).
+   Отменённые/невыкупленные — мини-колонка справа. Фильтры/чипы дат работают
+   как в таблице; вместо пагинации — 200 свежейших заказов выборки. */
+$kbQ = $pdo->prepare($sql . ' LIMIT 200');
+$kbQ->execute($params);
+$kbOrders = $kbQ->fetchAll();
+$kbStages = kanbanStages();
+$kbByStatus = array_fill_keys(array_keys(statuses()), []);
+foreach ($kbOrders as $kbO) {
+    $kbByStatus[$kbO['status']][] = $kbO;
+}
+$kbItemsStmt = $pdo->prepare('SELECT name, qty FROM order_items WHERE order_id = :i');
+$kbWa = setting('wa_enabled', '1') === '1' ? trim(setting('shop_whatsapp', '')) : '';
+?>
+<div class="kanban" id="kanbanBoard">
+  <?php foreach ($kbStages as $kbKey): ?>
+  <section class="kanban__col" data-status="<?= e($kbKey) ?>">
+    <header class="kanban__col-head">
+      <span class="kanban__col-title"><?= e(statuses()[$kbKey]) ?></span>
+      <span class="kanban__col-count"><?= count($kbByStatus[$kbKey]) ?></span>
+    </header>
+    <div class="kanban__cards">
+      <?php foreach ($kbByStatus[$kbKey] as $kbO):
+        $kbItemsStmt->execute([':i' => $kbO['id']]);
+        $kbIts = $kbItemsStmt->fetchAll();
+        $kbAllowed = orderTransitions()[$kbKey] ?? [];
+        $kbWaPhone = trim((string)($kbO['recipient_phone'] ?? '')) ?: (string)$kbO['phone'];
+        $kbWaDigits = preg_replace('/\D/', '', $kbWaPhone);
+        $kbWaTemplateKey = 'wa_template_' . ($kbKey === 'new' ? 'new' : ($kbKey === 'photo' ? 'photo' : ($kbKey === 'courier' ? 'courier' : 'new')));
+        $kbWaText = str_replace(['{id}', '{name}', '{time}'], [(string)$kbO['id'], (string)$kbO['customer_name'], trim((string)($kbO['delivery_slot'] ?? '') ?: 'в течение дня')], setting($kbWaTemplateKey, 'Здравствуйте! Ваш букет №{id} собран 🌸'));
+      ?>
+      <article class="kanban__card" draggable="true" data-id="<?= (int)$kbO['id'] ?>" data-status="<?= e($kbKey) ?>"
+        data-allowed="<?= e(implode(',', $kbAllowed)) ?>">
+        <div class="kanban__card-top">
+          <a class="kanban__num" href="/admin/order.php?id=<?= (int)$kbO['id'] ?>">№ <?= (int)$kbO['id'] ?></a>
+          <span class="kanban__sum"><?= formatPrice((int)$kbO['total']) ?></span>
+        </div>
+        <p class="kanban__client"><?= e($kbO['customer_name']) ?><?php if (($kbO['recipient_name'] ?? '') !== ''): ?> <span class="kanban__surprise" title="Сюрприз — отправителя не называть">🎁 <?= e((string)$kbO['recipient_name']) ?></span><?php endif; ?></p>
+        <p class="kanban__addr"><?= $kbO['zone_name'] !== null ? e((string)$kbO['zone_name']) : 'Самовывоз' ?><?= ($kbO['delivery_date'] ?? '') !== '' ? ' · ' . e(date('d.m', strtotime((string)$kbO['delivery_date']))) : '' ?><?= ($kbO['delivery_slot'] ?? '') !== '' ? ', ' . e(mb_substr((string)$kbO['delivery_slot'], 0, 14)) : '' ?></p>
+        <?php if ($kbIts): ?><p class="kanban__items"><?= e(implode(' · ', array_map(fn($i) => $i['name'] . '×' . (int)$i['qty'], $kbIts))) ?></p><?php endif; ?>
+        <?php if (($kbO['card_text'] ?? '') !== ''): ?><p class="kanban__card-note">💌 <?= e(mb_substr((string)$kbO['card_text'], 0, 60)) ?><?= mb_strlen((string)$kbO['card_text']) > 60 ? '…' : '' ?></p><?php endif; ?>
+        <div class="kanban__card-actions">
+          <?php if ($kbWaDigits !== ''): ?><a class="kanban__btn kanban__btn--wa" href="https://wa.me/<?= e($kbWaDigits) ?>?text=<?= e(rawurlencode($kbWaText)) ?>" target="_blank" rel="noopener" title="WhatsApp с шаблоном этапа">💬</a><?php endif; ?>
+          <a class="kanban__btn" href="tel:<?= e(preg_replace('/\D/', '', (string)$kbO['phone'])) ?>" title="Позвонить заказчику">📞</a>
+          <a class="kanban__btn kanban__btn--print" href="/admin/order.php?id=<?= (int)$kbO['id'] ?>" title="Открыть заказ (печать записки А5)">🖨</a>
+        </div>
+      </article>
+      <?php endforeach; ?>
+      <?php if ($kbByStatus[$kbKey] === []): ?><p class="kanban__empty">—</p><?php endif; ?>
+    </div>
+  </section>
+  <?php endforeach; ?>
+  <?php /* мини-колонка: отменённые + невыкупленные */ ?>
+  <?php $kbSide = array_merge($kbByStatus['canceled'], $kbByStatus['unredeemed']); ?>
+  <section class="kanban__col kanban__col--side" data-status="">
+    <header class="kanban__col-head"><span class="kanban__col-title">Отменён / не выкуплен</span><span class="kanban__col-count"><?= count($kbSide) ?></span></header>
+    <div class="kanban__cards">
+      <?php foreach ($kbSide as $kbO): ?>
+      <article class="kanban__card kanban__card--muted">
+        <div class="kanban__card-top"><a class="kanban__num" href="/admin/order.php?id=<?= (int)$kbO['id'] ?>">№ <?= (int)$kbO['id'] ?></a><span class="kanban__sum"><?= formatPrice((int)$kbO['total']) ?></span></div>
+        <p class="kanban__client"><?= e($kbO['customer_name']) ?></p>
+        <form method="post" style="margin-top:6px">
+          <?= csrf_field() ?>
+          <input type="hidden" name="action" value="status"><input type="hidden" name="id" value="<?= (int)$kbO['id'] ?>">
+          <input type="hidden" name="status" value="new"><input type="hidden" name="view" value="kanban">
+          <button type="submit" class="btn btn--ghost" style="min-height:34px;padding:5px 12px;font-size:.78rem">↩ В новые</button>
+        </form>
+      </article>
+      <?php endforeach; ?>
+      <?php if ($kbSide === []): ?><p class="kanban__empty">—</p><?php endif; ?>
+    </div>
+  </section>
+</div>
+<form method="post" id="kanbanMoveForm" hidden>
+  <?= csrf_field() ?>
+  <input type="hidden" name="action" value="status">
+  <input type="hidden" name="view" value="kanban">
+  <input type="hidden" name="id" value="">
+  <input type="hidden" name="status" value="">
+</form>
+<script>
+/* S3: drag-n-drop канбана — ванильный HTML5 DnD (тач-фолбэк: стрелки
+   на странице заказа). Бросание карточки в колонку шлёт POST status. */
+(function () {
+  var board = document.getElementById('kanbanBoard');
+  if (!board) return;
+  var dragged = null;
+  board.querySelectorAll('.kanban__card').forEach(function (card) {
+    card.addEventListener('dragstart', function (e) {
+      dragged = card;
+      card.classList.add('is-dragging');
+      e.dataTransfer.setData('text/plain', card.getAttribute('data-id'));
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    card.addEventListener('dragend', function () {
+      card.classList.remove('is-dragging');
+      dragged = null;
+      board.querySelectorAll('.kanban__col').forEach(function (c) { c.classList.remove('is-over'); });
+    });
+  });
+  board.querySelectorAll('.kanban__col[data-status]:not([data-status=""])').forEach(function (col) {
+    col.addEventListener('dragover', function (e) {
+      if (!dragged) return;
+      var allowed = (dragged.getAttribute('data-allowed') || '').split(',');
+      var target = col.getAttribute('data-status');
+      if (target !== dragged.getAttribute('data-status') && allowed.indexOf(target) !== -1) {
+        e.preventDefault();
+        col.classList.add('is-over');
+      }
+    });
+    col.addEventListener('dragleave', function () { col.classList.remove('is-over'); });
+    col.addEventListener('drop', function (e) {
+      e.preventDefault();
+      if (!dragged) return;
+      var target = col.getAttribute('data-status');
+      var allowed = (dragged.getAttribute('data-allowed') || '').split(',');
+      if (target === dragged.getAttribute('data-status') || allowed.indexOf(target) === -1) return;
+      var form = document.getElementById('kanbanMoveForm');
+      form.querySelector('[name=id]').value = dragged.getAttribute('data-id');
+      form.querySelector('[name=status]').value = target;
+      form.submit();
+    });
+  });
+})();
+</script>
 <?php else: foreach ($orders as $o): ?>
 <div class="card">
   <div class="table-scroll"><table>
@@ -548,12 +686,14 @@ $dashqs = fn(string $r) => '/admin/index.php?' . e(http_build_query(array_merge(
         <span class="status-badge <?= e($o['status']) ?>"><?= e(statuses()[$o['status']] ?? $o['status']) ?></span>
         <div class="row-actions" style="margin-top:8px">
           <a href="/admin/order.php?id=<?= (int)$o['id'] ?>">Открыть заказ</a>
+          <?php /* S3 (v2026.3): поток этапов — Подтвердить → Согласование фото;
+                 далее канбан/страница заказа ведут по этапам. */ ?>
           <?php if ($o['status'] === 'new'): ?>
-          <form method="post" onsubmit="return confirm('Подтвердить заказ №<?= (int)$o['id'] ?>?')">
+          <form method="post" onsubmit="return confirm('Подтвердить заказ №<?= (int)$o['id'] ?> и запросить фото букета на согласование?')">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="status"><input type="hidden" name="id" value="<?= (int)$o['id'] ?>">
-            <input type="hidden" name="status" value="confirmed"><input type="hidden" name="page" value="<?= $page ?>">
-            <button type="submit" class="primary-action">Подтвердить</button>
+            <input type="hidden" name="status" value="photo"><input type="hidden" name="page" value="<?= $page ?>">
+            <button type="submit" class="primary-action">Согласование фото</button>
           </form>
           <form method="post" onsubmit="return confirm('Отменить заказ №<?= (int)$o['id'] ?>?')">
             <?= csrf_field() ?>
@@ -561,12 +701,12 @@ $dashqs = fn(string $r) => '/admin/index.php?' . e(http_build_query(array_merge(
             <input type="hidden" name="status" value="canceled"><input type="hidden" name="page" value="<?= $page ?>">
             <button type="submit" class="danger">Отменить</button>
           </form>
-          <?php elseif ($o['status'] === 'confirmed'): ?>
+          <?php elseif ($o['status'] === 'photo'): ?>
           <form method="post">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="status"><input type="hidden" name="id" value="<?= (int)$o['id'] ?>">
-            <input type="hidden" name="status" value="in_progress"><input type="hidden" name="page" value="<?= $page ?>">
-            <button type="submit" class="primary-action">🚚 В работу</button>
+            <input type="hidden" name="status" value="florist"><input type="hidden" name="page" value="<?= $page ?>">
+            <button type="submit" class="primary-action">🌸 Флорист собирает</button>
           </form>
           <a class="primary-action" href="/admin/order.php?id=<?= (int)$o['id'] ?>">Вручение →</a>
           <form method="post" onsubmit="return confirm('Отметить заказ №<?= (int)$o['id'] ?> как «Не выкуплен»?')">
@@ -575,12 +715,31 @@ $dashqs = fn(string $r) => '/admin/index.php?' . e(http_build_query(array_merge(
             <input type="hidden" name="status" value="unredeemed"><input type="hidden" name="page" value="<?= $page ?>">
             <button type="submit" class="danger">Не выкуплен</button>
           </form>
-          <?php elseif ($o['status'] === 'in_progress'): ?>
-          <a class="primary-action" href="/admin/order.php?id=<?= (int)$o['id'] ?>">✅ Выполнен →</a>
-          <form method="post" onsubmit="return confirm('Вернуть заказ №<?= (int)$o['id'] ?> в «Подтверждён»?')">
+          <?php elseif ($o['status'] === 'florist'): ?>
+          <form method="post">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="status"><input type="hidden" name="id" value="<?= (int)$o['id'] ?>">
-            <input type="hidden" name="status" value="confirmed"><input type="hidden" name="page" value="<?= $page ?>">
+            <input type="hidden" name="status" value="courier"><input type="hidden" name="page" value="<?= $page ?>">
+            <button type="submit" class="primary-action">🚚 У курьера</button>
+          </form>
+          <form method="post" onsubmit="return confirm('Вернуть заказ №<?= (int)$o['id'] ?> на «Согласование фото»?')">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="status"><input type="hidden" name="id" value="<?= (int)$o['id'] ?>">
+            <input type="hidden" name="status" value="photo"><input type="hidden" name="page" value="<?= $page ?>">
+            <button type="submit">↩ Назад</button>
+          </form>
+          <form method="post" onsubmit="return confirm('Отменить заказ №<?= (int)$o['id'] ?>?')">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="status"><input type="hidden" name="id" value="<?= (int)$o['id'] ?>">
+            <input type="hidden" name="status" value="canceled"><input type="hidden" name="page" value="<?= $page ?>">
+            <button type="submit" class="danger">Отменить</button>
+          </form>
+          <?php elseif ($o['status'] === 'courier'): ?>
+          <a class="primary-action" href="/admin/order.php?id=<?= (int)$o['id'] ?>">✅ Доставлен →</a>
+          <form method="post" onsubmit="return confirm('Вернуть заказ №<?= (int)$o['id'] ?> на «Флорист собирает»?')">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="status"><input type="hidden" name="id" value="<?= (int)$o['id'] ?>">
+            <input type="hidden" name="status" value="florist"><input type="hidden" name="page" value="<?= $page ?>">
             <button type="submit">↩ Назад</button>
           </form>
           <form method="post" onsubmit="return confirm('Отменить заказ №<?= (int)$o['id'] ?>?')">

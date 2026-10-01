@@ -69,6 +69,14 @@ $comment = mb_substr(trim((string)($data['comment'] ?? '')), 0, 2000);
 $recipientName = mb_substr(trim((string)($data['recipient_name'] ?? '')), 0, 120);
 $recipientPhone = trim((string)($data['recipient_phone'] ?? ''));
 $cardText = mb_substr(trim((string)($data['card_text'] ?? '')), 0, 500);
+/* S3 (v2026.3): бесплатные допы корзины (открытка/Кризал) — булев флаги в JSON,
+   сервер пишет в orders.extras; текст открытки по-прежнему в card_text (общий
+   канал с формой). */
+$extrasIn = is_array($data['extras'] ?? null) ? $data['extras'] : [];
+$extrasJson = json_encode([
+    'postcard' => !empty($extrasIn['postcard']),
+    'chrysal' => !empty($extrasIn['chrysal']),
+], JSON_UNESCAPED_UNICODE) ?: '';
 /* Критик functional (слоты доставки): дата ДД.ММ.ГГГГ и интервал из настроек. */
 $deliveryDate = trim((string)($data['delivery_date'] ?? ''));
 $deliverySlot = mb_substr(trim((string)($data['delivery_slot'] ?? '')), 0, 60);
@@ -228,8 +236,8 @@ $pdo->beginTransaction();
 try {
     $stmt = $pdo->prepare('INSERT INTO orders (customer_name, phone, email, delivery_zone_id, delivery_address,
         comment, payment_method, total, status, payment_token, consent_log,
-        recipient_name, recipient_phone, card_text, delivery_date, delivery_slot, promo_code)
-        VALUES (:n, :ph, :em, :z, :a, :c, :pm, :t, :st, :pt, :cl, :rn, :rp, :ct, :dd, :ds, :pc)');
+        recipient_name, recipient_phone, card_text, delivery_date, delivery_slot, promo_code, extras)
+        VALUES (:n, :ph, :em, :z, :a, :c, :pm, :t, :st, :pt, :cl, :rn, :rp, :ct, :dd, :ds, :pc, :ex)');
     $stmt->execute([
         ':n' => $name, ':ph' => $phone, ':em' => $email,
         ':z' => $zone !== null ? (int)$zone['id'] : null,
@@ -239,6 +247,7 @@ try {
             $_SERVER['REMOTE_ADDR'] ?? 'unknown', setting('policy_updated', '01.09.2026')),
         ':rn' => $recipientName, ':rp' => $recipientPhone, ':ct' => $cardText,
         ':dd' => $deliveryDate, ':ds' => $deliverySlot, ':pc' => $promoCode,
+        ':ex' => $extrasJson,
     ]);
     $orderId = (int)$pdo->lastInsertId();
 

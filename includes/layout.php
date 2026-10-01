@@ -152,24 +152,84 @@ label.f{display:block;font-size:.8rem;font-weight:600;margin:12px 0 4px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 28px;align-items:start}
 @media(max-width:700px){.grid2{grid-template-columns:1fr}}
 .status-badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.75rem;font-weight:600;background:var(--bg-alt)}
-/* Дружелюбные статусы: эмодзи + цвет (доступность — не только цвет, паттерн UXPin 2026) */
+/* Дружелюбные статусы: эмодзи + цвет (доступность — не только цвет, паттерн UXPin 2026).
+   S3 (v2026.3): этапы курьерского потока — new/photo/florist/courier/done. */
 .status-badge.new{background:var(--rose)}
 .status-badge.new::before{content:"✨ ";font-size:.7rem}
-.status-badge.confirmed{background:var(--blue)}
-.status-badge.confirmed::before{content:"📞 ";font-size:.7rem}
+.status-badge.photo{background:var(--blue)}
+.status-badge.photo::before{content:"📷 ";font-size:.7rem}
+.status-badge.florist{background:#FFE9C7;color:#7a4a00}
+.status-badge.florist::before{content:"🌸 ";font-size:.7rem}
+.status-badge.courier{background:#E4EEF8;color:#2c4e7a}
+.status-badge.courier::before{content:"🚚 ";font-size:.7rem}
 .status-badge.done{background:var(--mint)}
 .status-badge.done::before{content:"💐 ";font-size:.7rem}
 .status-badge.canceled{background:#eee;opacity:.85}
 .status-badge.canceled::before{content:"✖ ";font-size:.7rem}
-.status-badge.unredeemed{background:#DCD3F0;color:#3d2e66} /* W71: не персик — путался с in_progress */
+.status-badge.unredeemed{background:#DCD3F0;color:#3d2e66}
 .status-badge.unredeemed::before{content:"🕒 ";font-size:.7rem}
-.status-badge.in_progress{background:#FFE9C7;color:#7a4a00}
-.status-badge.in_progress::before{content:"🚚 ";font-size:.7rem}
 /* W68 (владелец #2): лента дашборда на телефоне — ссылки «№ id»/телефон были 37×17px
    (9 из 19 тап-целей <44). Инлайн-ссылки в ячейке получают min-height и воздух. */
 a.order-link{display:inline-block;min-height:28px;line-height:28px}
 .card a[href^="tel:"]{display:inline-block;min-height:28px;line-height:28px;padding-right:8px}
 .back-link{display:inline-flex;align-items:center;min-height:28px}
+
+/* ================================================================
+   S3 (v2026.3): КАНАБН-ДОСКА ЗАКАЗОВ (admin/index.php?view=kanban)
+   ================================================================ */
+.view-toggle{font:600 .85rem var(--font-ui);color:var(--ink-soft);background:#fff;min-height:44px;display:inline-flex;align-items:center;text-decoration:none;transition:background .15s ease,color .15s ease}
+.view-toggle:hover{background:var(--bg-alt)}
+.view-toggle.is-active{background:var(--ink);color:#fff}
+.kanban{display:grid;grid-template-columns:repeat(5,minmax(232px,1fr)) 200px;gap:12px;overflow-x:auto;padding-bottom:8px;align-items:start}
+.kanban__col{background:var(--bg-alt);border-radius:var(--radius-lg);border:1px solid var(--line);min-height:220px;display:flex;flex-direction:column;transition:background .15s ease,border-color .15s ease}
+.kanban__col.is-over{background:#fff;border-color:var(--rose-cta);box-shadow:0 0 0 3px rgba(174,74,113,.15)}
+.kanban__col--side{grid-column:auto}
+.kanban__col-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px 8px}
+.kanban__col-title{font:700 .82rem var(--font-ui);color:var(--ink)}
+.kanban__col-count{font:700 .72rem var(--font-ui);background:#fff;border:1px solid var(--line);border-radius:999px;padding:2px 9px;color:var(--ink-soft)}
+.kanban__cards{display:flex;flex-direction:column;gap:8px;padding:4px 10px 10px;max-height:62vh;overflow-y:auto}
+.kanban__card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 12px;cursor:grab;box-shadow:0 1px 3px rgba(43,45,47,.06);transition:box-shadow .15s ease,transform .12s ease,opacity .15s ease}
+.kanban__card:hover{box-shadow:0 6px 18px -8px rgba(43,45,47,.3)}
+.kanban__card.is-dragging{opacity:.45;transform:rotate(1.5deg) scale(.98);cursor:grabbing}
+.kanban__card--muted{opacity:.75;cursor:default}
+.kanban__card-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.kanban__num{font-weight:800;font-size:.92rem;color:var(--ink);text-decoration:underline}
+.kanban__sum{font:700 .8rem var(--font-ui);color:var(--ink-soft);white-space:nowrap}
+.kanban__client{margin:5px 0 0;font:600 .85rem var(--font-ui);color:var(--ink)}
+.kanban__surprise{display:inline-block;background:#F4DEE3;color:#8E3B54;border-radius:999px;padding:1px 7px;font:600 .68rem var(--font-ui)}
+.kanban__addr{margin:3px 0 0;font:400 .76rem/1.35 var(--font-ui);color:var(--ink-soft)}
+.kanban__items{margin:5px 0 0;font:500 .76rem/1.35 var(--font-ui);color:var(--ink)}
+.kanban__card-note{margin:5px 0 0;font:400 .75rem/1.35 var(--font-ui);color:#8E3B54;background:#FDF4F6;border-radius:8px;padding:4px 8px}
+.kanban__card-actions{display:flex;gap:6px;margin-top:8px}
+.kanban__btn{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;min-width:34px;min-height:34px;border-radius:10px;border:1px solid var(--line);background:#fff;font-size:.95rem;text-decoration:none;transition:background .15s ease,border-color .15s ease}
+.kanban__btn:hover{background:var(--bg-alt);border-color:var(--ink-soft)}
+.kanban__btn--wa{border-color:rgba(31,175,84,.4);color:#1FAF54}
+.kanban__btn--wa:hover{background:#E9F8EF}
+.kanban__btn--print{color:var(--ink-soft)}
+.kanban__empty{text-align:center;color:var(--ink-soft);font-size:.8rem;padding:14px 0;opacity:.7}
+@media(max-width:820px){
+  .kanban{grid-template-columns:repeat(5,minmax(262px,78vw)) 190px}
+  .kanban__cards{max-height:52vh}
+  .kanban__card{cursor:default}
+}
+
+/* ================================================================
+   S3 (v2026.3): тумблер наличия + инлайн-цена в списке товаров
+   ================================================================ */
+.stock-switch{display:inline-flex;align-items:center;gap:8px;border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:5px 12px 5px 14px;min-height:38px;cursor:pointer;font:600 .8rem var(--font-ui);color:var(--ink-soft);transition:all .15s ease}
+.stock-switch .stock-switch__knob{width:30px;height:18px;border-radius:999px;background:#D8D5CE;position:relative;flex:none;transition:background .18s ease}
+.stock-switch .stock-switch__knob::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(43,45,47,.35);transition:transform .18s ease}
+.stock-switch.is-on{border-color:rgba(46,125,79,.45);color:#2E7D4F;background:#F0F7F2}
+.stock-switch.is-on .stock-switch__knob{background:#2E7D4F}
+.stock-switch.is-on .stock-switch__knob::after{transform:translateX(12px)}
+.stock-switch:hover{border-color:var(--ink-soft)}
+.stock-switch:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.price-quick summary{cursor:pointer;list-style:none;font-weight:700;white-space:nowrap}
+.price-quick summary::-webkit-details-marker{display:none}
+.price-quick summary:hover{text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px;color:var(--rose-cta)}
+.price-quick[open] summary{color:var(--rose-cta)}
+@media(hover:none),(pointer:coarse){.stock-switch,.price-quick summary{min-height:44px}}
+
 summary.del-summary{cursor:pointer;color:var(--err,#C43A3A);font-size:.9rem;font-weight:600;display:inline-flex;align-items:center;min-height:32px}
 .bulk-hit{display:grid;place-items:center;min-height:44px;min-width:44px;width:calc(100% + 12px);margin:-6px;cursor:pointer} /* W74 (владелец NEW): растяжка на всю ячейку — мёртвых краёв td нет */
 .bulk-check{appearance:none;-webkit-appearance:none;width:22px;height:22px;border:1.5px solid rgba(43,45,47,.35);border-radius:6px;background:#fff;cursor:pointer;display:inline-grid;place-content:center;vertical-align:middle}

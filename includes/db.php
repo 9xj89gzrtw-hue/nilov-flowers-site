@@ -212,6 +212,10 @@ function seedDemoData(PDO $pdo): void
        product_id резолвится по slug, а не хардкодится. Guard внутри —
        повторный прогон no-op. */
     seedReviewsOnce($pdo);
+    /* S3 (v2026.3): теги/состав/размеры демо-каталога — тот же guard-паттерн
+       (migrateSchema сеет в существующие БД ДО вставки товаров, здесь —
+       сразу после; результат идентичен). */
+    seedS3CatalogMeta($pdo);
 }
 
 /* Миграции для существующих БД: колонки заказов под подтверждение вручения,
@@ -1256,6 +1260,153 @@ $pdo->exec("UPDATE occasions SET faq_q1 = replace(faq_q1, 'Какую карту
         ('hero_delivery_point_2', 'Фото до отправки'),
         ('catalog_strip_text', 'Каждый букет собираем утром — и фотографируем до отправки')");
 
+    /* ===== S3 (v2026.3, 01.10.2026): коммерческий слой 5cv-класса =====
+       1) products: tags (чипсы-фильтры каталога), composition (состав в
+          карточке), size_text (ориентировочные размеры).
+       2) delivery_zones: time (время доставки зоны: «60–90 мин»).
+       3) orders: extras (JSON бесплатных допов корзины: открытка/Кризал).
+       4) Статусы-этапы курьерского потока: confirmed → photo («Согласование
+          фото»), in_progress → florist («Флорист собирает»); новые courier
+          («У курьера») добавляет statuses() в util.php. Идемпотентно: после
+          первого применения старых статусов в БД нет.
+       5) ~45 новых настроек (инфо-бар, Сплит, бесплатные допы, шаблоны
+          WhatsApp, 1-клик, чипсы-теги, мобильная панель) — INSERT OR IGNORE.
+       6) delivery_slots: честные 2-часовые интервалы (guard по старому
+          3-слотовому дефолту; правленое владельцем не трогаем). */
+    $prodColsS3 = array_column($pdo->query("PRAGMA table_info(products)")->fetchAll(), 'name');
+    foreach ([
+        ['tags', "TEXT NOT NULL DEFAULT ''"],
+        ['composition', "TEXT NOT NULL DEFAULT ''"],
+        ['size_text', "TEXT NOT NULL DEFAULT ''"],
+    ] as [$s3col, $s3def]) {
+        if (!in_array($s3col, $prodColsS3, true)) {
+            $pdo->exec("ALTER TABLE products ADD COLUMN {$s3col} {$s3def}");
+        }
+    }
+    $zoneColsS3 = array_column($pdo->query("PRAGMA table_info(delivery_zones)")->fetchAll(), 'name');
+    if (!in_array('time', $zoneColsS3, true)) {
+        $pdo->exec("ALTER TABLE delivery_zones ADD COLUMN time TEXT NOT NULL DEFAULT ''");
+    }
+    $ordColsS3 = array_column($pdo->query("PRAGMA table_info(orders)")->fetchAll(), 'name');
+    if (!in_array('extras', $ordColsS3, true)) {
+        $pdo->exec("ALTER TABLE orders ADD COLUMN extras TEXT NOT NULL DEFAULT ''");
+    }
+    $pdo->exec("UPDATE orders SET status = 'photo' WHERE status = 'confirmed'");
+    $pdo->exec("UPDATE orders SET status = 'florist' WHERE status = 'in_progress'");
+    $pdo->exec("INSERT OR IGNORE INTO settings (key, value) VALUES
+        ('infobar_enabled', '1'),
+        ('infobar_text_1', 'Доставка цветов по СПб от 60 минут'),
+        ('infobar_text_2', 'Фото букета до отправки'),
+        ('infobar_text_3', 'Бесплатная открытка'),
+        ('split_enabled', '1'),
+        ('split_divider', '4'),
+        ('split_label', 'Сплит: от {price} ₽/мес'),
+        ('split_note', '{n} платежа без переплат'),
+        ('cart_extras_title', 'Дополните букет'),
+        ('cart_extra_postcard_enabled', '1'),
+        ('cart_extra_postcard_title', 'Открытка с вашим текстом'),
+        ('cart_extra_postcard_text', 'Напишем от руки и вложим в букет'),
+        ('cart_extra_chrysal_enabled', '1'),
+        ('cart_extra_chrysal_title', 'Подкормка Chrysal'),
+        ('cart_extra_chrysal_text', 'Питательный гель — букет простоит дольше'),
+        ('cart_free_progress_enabled', '1'),
+        ('cart_free_progress_under', 'Добавьте ещё {left} ₽ — и доставка бесплатна'),
+        ('cart_free_progress_reached', 'Доставка бесплатно 🎉'),
+        ('wa_template_new', 'Здравствуйте! Спасибо за заказ №{id} 🌷 Уточним детали доставки: удобно ли вам созвониться?'),
+        ('wa_template_photo', 'Здравствуйте! Ваш букет №{id} собран — отправляем фото на согласование 📸 Нравится, оставляем как есть?'),
+        ('wa_template_courier', 'Курьер выехал с вашим букетом №{id}! 🌸 Доставим {time} — получателю можно уже ничего не говорить, пусть будет сюрприз.'),
+        ('oneclick_title', 'Купить в 1 клик'),
+        ('oneclick_note', 'Перезвоним в течение 15 минут, подтвердим букет и доставку'),
+        ('oneclick_btn', 'Оформить быстрый заказ'),
+        ('chips_all_text', 'Все'),
+        ('chips_tags', 'Пионы,Гортензии,Французские розы,Монобукеты,В шляпных коробках,Подарок девушке'),
+        ('badge_fresh_text', 'Свежая поставка'),
+        ('badge_sturdy_text', 'Стойкие'),
+        ('card_btn_cart', 'В корзину'),
+        ('card_btn_oneclick', 'Купить в 1 клик'),
+        ('gift_self_label', 'Себе'),
+        ('gift_other_label', 'Сюрприз другому'),
+        ('mobilebar_enabled', '1'),
+        ('kanban_enabled', '1'),
+        ('free_delivery_threshold', '5000')");
+    /* 2-часовые интервалы доставки: только нетронутый 3-слотовый дефолт
+       (правленое владельцем значение не трогаем). */
+    $s3slots = $pdo->prepare("UPDATE settings SET value = :nv WHERE key = 'delivery_slots' AND value = :ov");
+    $s3slots->execute([':nv' => "09:00–11:00\n11:00–13:00\n13:00–15:00\n15:00–17:00\n17:00–19:00\n19:00–21:00",
+        ':ov' => "Утро 9:00–14:00\nДень 14:00–18:00\nВечер 18:00–22:00"]);
+
+    /* Время доставки зон (заполняем ТОЛЬКО пустые — правленое владельцем не
+       трогаем) + пригороды ЛО (Кудрово/Мурино — только если зоны ещё нет).
+       Честные интервалы «с момента готовности букета». */
+    $s3zoneTime = $pdo->prepare('UPDATE delivery_zones SET time = :t WHERE name = :n AND time = :empty');
+    foreach ([
+        ['Центральный (и Петроградка)', '60–90 мин'],
+        ['Василеостровский', '60–90 мин'],
+        ['Адмиралтейский', '60–90 мин'],
+        ['Выборгский', '90–120 мин'],
+        ['Калининский', '90–120 мин'],
+        ['Приморский', '90–120 мин'],
+        ['Московский', '90–120 мин'],
+        ['Фрунзенский', '90–120 мин'],
+        ['Невский', '90–120 мин'],
+        ['Красногвардейский', '90–120 мин'],
+        ['Кировский (и Красносельский)', '120–150 мин'],
+        ['Пушкин (Павловск, Петергоф)', '150–180 мин'],
+    ] as [$s3zn, $s3zt]) {
+        $s3zoneTime->execute([':n' => $s3zn, ':t' => $s3zt, ':empty' => '']);
+    }
+    $s3zoneIns = $pdo->prepare('INSERT INTO delivery_zones (name, price, sort, time)
+        SELECT :n, :p, :s, :t WHERE NOT EXISTS (SELECT 1 FROM delivery_zones WHERE name = :n2)');
+    foreach ([
+        ['Кудрово', 700, 130, '120–150 мин'],
+        ['Мурино (Девяткино)', 700, 140, '120–150 мин'],
+        ['Всеволожск', 800, 150, '150–180 мин'],
+        ['Гатчина', 900, 160, '180–240 мин'],
+    ] as [$s3in, $s3ip, $s3is, $s3it]) {
+        $s3zoneIns->execute([':n' => $s3in, ':n2' => $s3in, ':p' => $s3ip, ':s' => $s3is, ':t' => $s3it]);
+    }
+
+    /* Сид тегов/состава/размеров демо-каталога (guard: только пустые поля).
+       Вызывается и здесь (существующие БД), и из seedDemoData (свежие) —
+       как seedReviewsOnce: миграция и сид дают одинаковый результат. */
+    seedS3CatalogMeta($pdo);
+}
+
+/* S3 (v2026.3): теги/состав/размеры демо-букетов — общий хелпер для свежих
+   и существующих БД. Guard по slug + пустому полю: правленое владельцем
+   через админку не трогаем, повторный прогон — no-op. Теги — источник
+   чипсов-фильтров каталога (chips_tags), состав и размеры печатаются в
+   карточке и PDP; на каталоге владельца сид тихо не найдёт слугов → no-op. */
+function seedS3CatalogMeta(PDO $pdo): void
+{
+    $st = $pdo->prepare('UPDATE products SET tags = :t, composition = :c, size_text = :s WHERE slug = :sl AND tags = :empty');
+    foreach ([
+        ['buket-iz-roz', 'розы, монобукеты, стойкие', 'Роза Freedom 60 см · рускус', '≈40–45 см'],
+        ['vesennij-etyud', 'сборные букеты, подарок девушке', 'Тюльпаны · нарциссы · сезонная зелень', '≈40–45 см'],
+        ['polevye-tsvety', 'полевые цветы, монобукеты', 'Ромашки · колокольчики · сезонные травы', '≈35–40 см'],
+        ['buket-7-alstromerii-miks', 'монобукеты, альстромерии', 'Альстромерия ×7 · гипсофила', '≈35–40 см'],
+        ['buket-19-roz-evkalipt', 'розы, монобукеты', 'Роза эквадорская 50 см ×19 · эвкалипт', '≈50–55 см'],
+        ['buket-51-pion', 'пионы, монобукеты, стойкие', 'Пионовидная роза ×51 · эвкалипт', '≈50–55 см'],
+        ['gortenzii-shlyapnaya-korobka', 'гортензии, в шляпных коробках', 'Гортензия белая и голубая · флористическая губка', '⌀ 30–35 см'],
+        ['buket-5-rozovyh-roz', 'розы, монобукеты, подарок девушке', 'Роза эквадорская розовая ×5', '≈30–35 см'],
+        ['klubnika-shokolad-mini', 'сладости', 'Клубника в бельгийском шоколаде · ~200 г', ''],
+        ['9-roz-shlyapnaya-korobka', 'розы, в шляпных коробках', 'Роза красная ×9 · гипсофила · шляпная коробка', '⌀ 25–30 см'],
+        ['vesennij-buket-tyulpany', 'монобукеты, тюльпаны', 'Тюльпан голландский ×25', '≈35–40 см'],
+        ['avtorskij-rozovoe-oblako', 'сборные букеты, подарок девушке', 'Гортензия · роза · альстромерия', '≈45 см'],
+        ['buket-belaya-nezhnost', 'сборные букеты, стойкие', 'Роза белая · эвкалипт цинерея', '≈40–45 см'],
+        ['pionovidnaya-klassika', 'французские розы, пионовидные, стойкие', 'Пионовидная роза ×15', '≈50 см'],
+        ['solnechnyj-miks', 'сборные букеты, подарок девушке', 'Хризантема · гербера · солидаго', '≈40 см'],
+        ['krasnyj-akcent', 'розы, монобукеты, стойкие', 'Роза Freedom ×15 · сезонная зелень', '≈45 см'],
+        ['romantika', 'подарок девушке, сборные букеты', 'Роза кустовая пастельная · гипсофила', '≈40 см'],
+        ['avtorskij-kremovyj-son', 'французские розы, авторские', 'Ранункулюс · лизиантус', '≈40–45 см'],
+        ['25-roz-gortenzii-korobka', 'в шляпных коробках', 'Роза ×25 · гортензия · шляпная коробка', '⌀ 35 см'],
+        ['buket-godovshina-krasnoe-beloe', 'розы, подарок девушке', 'Роза красная и белая ×25 · гипсофила', '≈45–50 см'],
+        ['25-roz-cherno-zoloto', 'французские розы, монобукеты', 'Роза Freedom 60 см ×25 · премиум-упаковка', '≈50–55 см'],
+        ['orhidei-rozy-kvadrat-korobka', 'орхидеи, в шляпных коробках', 'Орхидея цимбидиум · роза · квадратная коробка', '30 × 35 см'],
+        ['klubnika-makarony-korobka', 'сладости', 'Клубника в шоколаде · макаруны · ~250 г', ''],
+    ] as [$slug, $tags, $comp, $size]) {
+        $st->execute([':sl' => $slug, ':t' => $tags, ':c' => $comp, ':s' => $size, ':empty' => '']);
+    }
 }
 
 /* A-b4/W106: сид отзывов — ОБЩИЙ для свежих и существующих БД (сид для

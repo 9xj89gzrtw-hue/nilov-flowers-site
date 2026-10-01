@@ -401,8 +401,10 @@
     var m = match(v);
     if (m) {
       var price = parseInt(m.getAttribute('data-price'), 10) || 0;
+      /* S3 (v2026.3): время доставки зоны (data-time опции) — рядом с ценой */
+      var zTime = m.getAttribute('data-time') || '';
       out.style.color = 'var(--ink)';
-      out.textContent = price === 0 ? '✓ 0\u00A0₽' : price + '\u00A0₽';
+      out.textContent = (price === 0 ? '✓ 0\u00A0₽' : price + '\u00A0₽') + (zTime ? ' · ' + zTime : '');
       if (sel) sel.value = m.value; // подстановка в чекаут
       lastMatched = m.value;
     } else {

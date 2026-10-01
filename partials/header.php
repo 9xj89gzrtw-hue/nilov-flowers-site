@@ -18,6 +18,23 @@ $headerPhone = setting('header_phone', '') !== '' ? setting('header_phone', '') 
    hybrid — только по клику на иконку; page — иконка ведёт к форме заказа. */
 $cartMode = in_array(setting('cart_mode', 'drawer'), ['drawer', 'hybrid', 'page'], true)
     ? setting('cart_mode', 'drawer') : 'drawer';
+/* S3 (v2026.3): инфо-бар преимуществ над шапкой — три сегмента из настроек
+   (тексты/тумблер), между ними точка-разделитель. Пустые сегменты не печатаются. */
+$infobarOn = setting('infobar_enabled', '1') === '1';
+$infobarItems = array_values(array_filter([
+    trim(setting('infobar_text_1', '')),
+    trim(setting('infobar_text_2', '')),
+    trim(setting('infobar_text_3', '')),
+], fn($t) => $t !== ''));
+/* S3: прямые кнопки WhatsApp/Telegram в шапке (глобальные тумблеры + контакты) */
+$headerWa = setting('wa_enabled', '1') === '1' ? trim(setting('shop_whatsapp', '')) : '';
+$headerTg = setting('tg_enabled', '1') === '1' ? trim(setting('shop_telegram', '')) : '';
+/* S3: список районов для выпадающей панели города (зоны доставки из БД) */
+try {
+    $headerZones = db()->query('SELECT name FROM delivery_zones ORDER BY sort, id LIMIT 10')->fetchAll(PDO::FETCH_COLUMN);
+} catch (Throwable $e) {
+    $headerZones = [];
+}
 ?>
 <?php /* a11y-критик re-check: skip-link в общем header.php — есть на каждой витрина-страница
    (home, product, offer, policy, track), а не только на главной.
@@ -25,6 +42,16 @@ $cartMode = in_array(setting('cart_mode', 'drawer'), ['drawer', 'hybrid', 'page'
    первым элементом DOM (первый фокус с Tab); флаг $skipLinkRendered не даёт продублировать. */ ?>
 <?php if (empty($skipLinkRendered)): ?>
 <a class="skip-link" href="#main">Перейти к содержимому</a>
+<?php endif; ?>
+<?php if ($infobarOn && $infobarItems !== []): ?>
+<div class="fc-infobar" role="note">
+  <div class="wrap fc-infobar__inner">
+    <?php foreach ($infobarItems as $i => $infobarText): ?>
+      <?= $i > 0 ? '<span class="fc-infobar__dot" aria-hidden="true"></span>' : '' ?>
+      <span class="fc-infobar__item"><?= e($infobarText) ?></span>
+    <?php endforeach; ?>
+  </div>
+</div>
 <?php endif; ?>
 <header class="fc-header">
   <div class="wrap fc-header__inner">
@@ -72,14 +99,36 @@ $cartMode = in_array(setting('cart_mode', 'drawer'), ['drawer', 'hybrid', 'page'
                «Выбрать другой»: география + вход к зонам/ценам (якорь #delivery —
                группа «Как получить» формы заказа) + честная строка про другой
                город. js/five.js cityMenu() контракт не менялся (.fc-city__btn /
-               .fc-city-menu__opt[data-city] / закрытие по клику на любую ссылку). */ ?>
+               .fc-city-menu__opt[data-city] / закрытие по клику на любую ссылку).
+               S3 (v2026.3): список районов доставки из БД — покупатель видит
+               географию до скролла к форме (первые 10 зон, клик — к ценам). */ ?>
         <p class="fc-city-menu__note">Доставляем по Санкт-Петербургу и пригородам</p>
+        <?php if ($headerZones !== []): ?>
+        <div class="fc-city-menu__zones">
+          <?php foreach ($headerZones as $hz): ?>
+            <a class="fc-city-menu__zone" href="#delivery" title="Зоны и цены доставки"><?= e((string)preg_replace('/\s*\([^)]*\)/u', '', (string)$hz)) ?></a>
+          <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
         <button type="button" class="fc-city-menu__opt is-current" data-city="<?= e(setting('city_label', 'Санкт-Петербург')) ?>"><?= e(setting('city_label', 'Санкт-Петербург')) ?>&nbsp;<span aria-hidden="true">✓</span></button>
         <a class="fc-city-menu__link" href="#delivery">Зоны и цены<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
         <a class="fc-city-menu__other" href="#contacts"><?= e(setting('citybar_no_text', 'Другой город — самовывоз или обсудим по телефону')) ?></a>
       </div>
     </div>
     <?php if ($headerPhone !== ''): ?><a class="fc-header__phone" href="tel:+<?= e(preg_replace('/\D/', '', $headerPhone)) ?>"><?= e($headerPhone) ?></a><?php endif; ?>
+    <?php /* S3 (v2026.3): прямые мессенджеры в ряду иконок шапки — раунд-кнопки
+           WhatsApp (фирменный зелёный) и Telegram (фирменный синий), только
+           если контакт заполнен и не выключен тумблером. */ ?>
+    <?php if ($headerWa !== ''): ?>
+    <a class="fc-header__icon fc-header__wa" href="https://wa.me/<?= e(preg_replace('/[^0-9]/', '', $headerWa)) ?>" target="_blank" rel="noopener" aria-label="Написать в WhatsApp" title="Написать в WhatsApp">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm0 18.12c-1.5 0-2.97-.4-4.26-1.16l-.3-.18-3.12.82.83-3.04-.2-.31a8.26 8.26 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24s8.24 3.7 8.24 8.24-3.7 8.25-8.17 8.25zm4.52-6.16c-.25-.12-1.47-.72-1.69-.8-.23-.09-.4-.13-.56.12-.17.25-.64.8-.8.97-.14.16-.29.18-.54.06-.25-.12-1.05-.39-2-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.02-.38.11-.51.11-.11.25-.29.37-.43.12-.14.16-.25.25-.41.08-.17.04-.31-.02-.43-.06-.12-.56-1.34-.76-1.84-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.22.25-.86.85-.86 2.07 0 1.22.89 2.4 1.01 2.56.12.17 1.75 2.67 4.23 3.74.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.48-.07 1.47-.6 1.67-1.18.21-.58.21-1.07.14-1.18-.06-.1-.22-.16-.47-.28z"/></svg>
+    </a>
+    <?php endif; ?>
+    <?php if ($headerTg !== ''): ?>
+    <a class="fc-header__icon fc-header__tg" href="https://t.me/<?= e($headerTg) ?>" target="_blank" rel="noopener" aria-label="Написать в Telegram" title="Написать в Telegram">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.94 4.6 19.02 19.1c-.22 1-.8 1.24-1.62.77l-4.47-3.3-2.16 2.08c-.24.24-.44.44-.9.44l.32-4.55 8.28-7.48c.36-.32-.08-.5-.56-.18L7.68 13.18l-4.4-1.38c-.96-.3-.98-.96.2-1.42L20.6 3.24c.8-.3 1.5.18 1.34 1.36z"/></svg>
+    </a>
+    <?php endif; ?>
     <?php /* W106-C1 (моб-критик P1-12): компактный бургер ≤899px с выпадающей
        панелью (паттерн admin-гамбургера W105-b: Escape/тап-вне/клик-по-ссылке
        закрывают; js/five.js burgerMenu()). «Каталог»-иконка из первого ряда
@@ -104,10 +153,13 @@ $cartMode = in_array(setting('cart_mode', 'drawer'), ['drawer', 'hybrid', 'page'
       <a class="fc-header__icon" href="/#catalog" aria-label="Избранное — в каталоге">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-4.6-7-10a4.5 4.5 0 0 1 7-3.7A4.5 4.5 0 0 1 19 11c0 5.4-7 10-7 10z"/></svg>
       </a>
-      <?php /* Кнопка корзины — контракт cart-ui.js, разметку не меняем (CSS перекрасит) */ ?>
+      <?php /* Кнопка корзины — контракт cart-ui.js, разметку не меняем (CSS перекрасит).
+         S3 (v2026.3): под иконкой — динамическая сумма заказа (#cartSum обновляет
+         cart-ui.js вместе с #cartCount) — «Корзина с бейджем количества и суммы». */ ?>
       <button type="button" class="cart-toggle" id="cartToggle" data-cart-mode="<?= e($cartMode) ?>" aria-label="Корзина" aria-haspopup="dialog" aria-expanded="false">
         <svg class="cart-toggle__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/><path d="M2.5 3h2l2.6 12.4a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 2-1.6L21 7H6"/></svg>
         <span class="cart-toggle__count" id="cartCount" hidden>0</span>
+        <span class="cart-toggle__sum" id="cartSum" hidden></span>
       </button>
     </div>
   </div>

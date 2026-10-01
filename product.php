@@ -950,6 +950,16 @@ $breadcrumbItems[] = ['@type' => 'ListItem', 'position' => count($breadcrumbItem
           </p>
           <?php endif; ?>
           <h1 class="fc-product__title"><?= e($product['name']) ?></h1>
+          <?php /* S3 (v2026.3): состав и размеры — из полей товара (админка);
+                   приоритет над парсингом описания в спек-чипах ниже. */ ?>
+          <?php $s3Comp = trim((string)($product['composition'] ?? '')); ?>
+          <?php $s3Size = trim((string)($product['size_text'] ?? '')); ?>
+          <?php if ($s3Comp !== '' || $s3Size !== ''): ?>
+          <ul class="pdp-specs pdp-specs--db" aria-label="Состав и размеры">
+            <?php if ($s3Comp !== ''): ?><li class="pdp-specs__chip"><span class="pdp-specs__value"><?= e($s3Comp) ?></span><span class="pdp-specs__caption">Состав</span></li><?php endif; ?>
+            <?php if ($s3Size !== ''): ?><li class="pdp-specs__chip"><span class="pdp-specs__value"><?= e($s3Size) ?></span><span class="pdp-specs__caption">Размер</span></li><?php endif; ?>
+          </ul>
+          <?php endif; ?>
           <p class="fc-product__price">
             <?php if ($isSale): ?>
               <span class="fc-product__price--old"><?= formatPrice((int)$product['price']) ?></span>
@@ -958,6 +968,10 @@ $breadcrumbItems[] = ['@type' => 'ListItem', 'position' => count($breadcrumbItem
               <span><?= formatPrice($price) ?></span>
             <?php endif; ?>
           </p>
+          <?php /* S3 (v2026.3): шильдик Сплит — «Сплит: от N ₽/мес» (4 платежа) —
+                   единый с карточками каталога (splitLabel). */ ?>
+          <?php $s3Split = splitLabel($price); ?>
+          <?php if ($s3Split !== ''): ?><p class="product-card__split product-card__split--pdp"><?= e($s3Split) ?></p><?php endif; ?>
           <?php /* B5/W106 → D2 (маркетолог P0 + конкурент): бейдж рейтинга рядом
              с ценой — у ВСЕХ товаров (раньше только у отозванных), живой
              агрегат ВСЕХ отзывов сайта (getRatingAggregate, без фильтра по
@@ -1011,6 +1025,14 @@ $breadcrumbItems[] = ['@type' => 'ListItem', 'position' => count($breadcrumbItem
               aria-label="Добавить в корзину: <?= e($product['name']) ?>">
               Добавить в корзину · <span class="product-page__cta-price"><?= formatPrice($price) /* W105-7fix1 (7-b P2f): 700 vs глагол 600 — стили product-extras.css 4c */ ?></span>
             </button>
+            <?php /* S3 (v2026.3): «Купить в 1 клик» на PDP — модалка имя+телефон
+                   (js/oneclick.js), паттерн двух кнопок карточки каталога. */ ?>
+            <button type="button" class="btn btn--outline product-page__oneclick" data-oneclick
+              data-product-id="<?= (int)$product['id'] ?>"
+              data-product-name="<?= e($product['name']) ?>"
+              data-product-price-raw="<?= $price ?>"
+              data-product-image="<?= e($img) ?>"
+              aria-label="Купить в 1 клик: <?= e($product['name']) ?>"><?= e(setting('card_btn_oneclick', 'Купить в 1 клик')) ?></button>
             <?php if ($featFavorites): ?>
             <button type="button" class="product-page__fav fc-fav-inline" data-fav-toggle data-fav-inline data-fav-id="<?= (int)$product['id'] ?>" data-fav-name="<?= e($product['name']) ?>" aria-pressed="false" aria-label="В избранное" title="В избранное">♡</button>
             <?php endif; ?>

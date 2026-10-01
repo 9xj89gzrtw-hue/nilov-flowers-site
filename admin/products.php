@@ -71,6 +71,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save'
     $isHit = isset($_POST['is_hit']) ? 1 : 0;
     $isPremium = isset($_POST['is_premium']) ? 1 : 0;
     $sort = (int)($_POST['sort'] ?? 0);
+    /* S3 (v2026.3): теги (чипсы-фильтры каталога), состав и размеры — из
+       полей редактирования; теги — через запятую, нормализуем регистр/пробелы. */
+    $tags = mb_substr(trim((string)($_POST['tags'] ?? '')), 0, 300);
+    $tags = implode(', ', array_filter(array_map('trim', explode(',', $tags)), fn($t) => $t !== ''));
+    $composition = mb_substr(trim((string)($_POST['composition'] ?? '')), 0, 300);
+    $sizeText = mb_substr(trim((string)($_POST['size_text'] ?? '')), 0, 60);
 
     if ($name === '' || $price <= 0) {
         flash('Укажите название и цену товара', true);
@@ -94,11 +100,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save'
         }
         $pdo->prepare('UPDATE products SET category_id = :c, name = :n, slug = :sl, price = :p,
                 sale_price = :sp, description = :d, is_active = :a, show_in_upsell = :u,
-                is_hit = :ih, is_premium = :ip, sort = :s,
+                is_hit = :ih, is_premium = :ip, sort = :s, tags = :tg, composition = :comp, size_text = :sz,
                 updated_at = :ua WHERE id = :i')
             ->execute([':c' => $categoryId, ':n' => $name, ':sl' => slugify($name), ':p' => $price,
                 ':sp' => $salePrice, ':d' => $description, ':a' => $isActive, ':u' => $showInUpsell,
-                ':ih' => $isHit, ':ip' => $isPremium, ':s' => $sort, ':ua' => $nowMs, ':i' => $id]);
+                ':ih' => $isHit, ':ip' => $isPremium, ':s' => $sort, ':tg' => $tags, ':comp' => $composition, ':sz' => $sizeText,
+                ':ua' => $nowMs, ':i' => $id]);
         flash('Товар обновлён');
     } else {
         $slug = slugify($name);
@@ -107,11 +114,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save'
         while ((int)$pdo->query('SELECT COUNT(*) FROM products WHERE slug = ' . $pdo->quote($slug))->fetchColumn() > 0) {
             $slug = $base . '-' . (++$n);
         }
-        $pdo->prepare('INSERT INTO products (category_id, name, slug, price, sale_price, description, image, is_active, show_in_upsell, is_hit, is_premium, sort, updated_at)
-                VALUES (:c, :n, :sl, :p, :sp, :d, :img, :a, :u, :ih, :ip, :s, :ua)')
+        $pdo->prepare('INSERT INTO products (category_id, name, slug, price, sale_price, description, image, is_active, show_in_upsell, is_hit, is_premium, sort, tags, composition, size_text, updated_at)
+                VALUES (:c, :n, :sl, :p, :sp, :d, :img, :a, :u, :ih, :ip, :s, :tg, :comp, :sz, :ua)')
             ->execute([':c' => $categoryId, ':n' => $name, ':sl' => $slug, ':p' => $price,
                 ':sp' => $salePrice, ':d' => $description, ':img' => $image, ':a' => $isActive, ':u' => $showInUpsell,
-                ':ih' => $isHit, ':ip' => $isPremium, ':s' => $sort, ':ua' => $nowMs]);
+                ':ih' => $isHit, ':ip' => $isPremium, ':s' => $sort, ':tg' => $tags, ':comp' => $composition, ':sz' => $sizeText, ':ua' => $nowMs]);
         flash('Товар добавлен');
     }
     /* Операционный критик W38: после сохранения не «терять» товар — возврат на ту же
@@ -177,6 +184,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'bulk_
     }
     /* W45 P2 (владелец): ±% не должен терять поиск/фильтр — как toggle в W44 */
     header('Location: /admin/products.php' . (trim((string)($_POST['back_qs'] ?? '')) !== '' ? '?' . trim((string)$_POST['back_qs']) : ''));
+    exit;
+}
+
+/* S3 (v2026.3): быстрая цена — клик по цифре в таблице списка, Enter — сохранить. */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'quick_price') {
+    $qpId = (int)($_POST['id'] ?? 0);
+    $qpPrice = (int)($_POST['price'] ?? 0);
+    if ($qpId > 0 && $qpPrice > 0) {
+        $pdo->prepare('UPDATE products SET price = :p, updated_at = :ua WHERE id = :i')
+            ->execute([':p' => $qpPrice, ':ua' => date('Y-m-d H:i:s'), ':i' => $qpId]);
+        flash('Цена обновлена');
+    } else {
+        flash('Цена должна быть больше нуля', true);
+    }
+    $qpBack = trim((string)($_POST['back_qs'] ?? ''));
+    header('Location: /admin/products.php' . ($qpBack !== '' ? '?' . $qpBack : ''));
     exit;
 }
 
@@ -387,10 +410,18 @@ flash();
         <input class="input" id="p-price" name="price" type="number" min="1" required value="<?= $editing ? (int)$editing['price'] : '' ?>">
         <label class="f" for="p-sale">Цена по акции, ₽ (пусто — без скидки)</label>
         <input class="input" id="p-sale" name="sale_price" type="number" min="0" value="<?= $editing && $editing['sale_price'] !== null ? (int)$editing['sale_price'] : '' ?>">
+        <?php /* S3 (v2026.3): теги — источник чипсов каталога (chips_tags в настройках) */ ?>
+        <label class="f" for="p-tags">Теги (через запятую — для чипсов каталога)</label>
+        <input class="input" id="p-tags" name="tags" maxlength="300" placeholder="розы, монобукеты, подарок девушке" value="<?= $editing ? e((string)($editing['tags'] ?? '')) : '' ?>">
       </div>
       <div>
         <label class="f" for="p-desc">Описание</label>
         <textarea id="p-desc" name="description" rows="4"><?= $editing ? e($editing['description']) : '' ?></textarea>
+        <?php /* S3: состав и размеры карточки (5cv-паттерн — «Роза Freedom · рускус») */ ?>
+        <label class="f" for="p-comp">Состав (коротко — «Роза Freedom · рускус»)</label>
+        <input class="input" id="p-comp" name="composition" maxlength="300" value="<?= $editing ? e((string)($editing['composition'] ?? '')) : '' ?>">
+        <label class="f" for="p-size">Размеры (напр. «≈40–45 см» или «⌀ 30 см»)</label>
+        <input class="input" id="p-size" name="size_text" maxlength="60" value="<?= $editing ? e((string)($editing['size_text'] ?? '')) : '' ?>">
         <label class="f" for="p-img">Фото <?= $editing && $editing['image'] !== '' ? '(заменить)' : '' ?></label>
         <input class="input" id="p-img" name="image" type="file" accept="image/*">
         <?php if ($editing && $editing['image'] !== ''): ?>
@@ -491,20 +522,37 @@ flash();
       <td><?= $p['image'] !== '' ? '<img class="thumb" src="/img/products/' . e($p['image']) . '" alt="">' : '<div class="thumb"></div>' ?></td>
       <td><strong><?= e($p['name']) ?></strong><?= (int)($p['is_hit'] ?? 0) === 1 ? ' <span style="display:inline-block;background:#f5b301;color:#1c1a1e;border-radius:999px;padding:2px 8px;font-size:.68rem;font-weight:700;vertical-align:middle">Хит</span>' : '' ?><?= (int)($p['is_premium'] ?? 0) === 1 ? ' <span style="display:inline-block;background:#1c1a1e;color:#fff;border-radius:999px;padding:2px 8px;font-size:.68rem;font-weight:700;vertical-align:middle">Премиум</span>' : '' ?><br><small style="color:var(--ink-soft)"><?= e($p['slug']) ?></small></td>
       <td><?= e($p['category_name'] ?? '—') ?></td>
-      <td><?= formatPrice((int)$p['price']) ?></td>
+      <td><?php /* S3: клик по цене → инлайн-редактор (Enter — сохранить) */ ?>
+        <details class="price-quick">
+          <summary title="Нажмите, чтобы изменить цену"><?= formatPrice((int)$p['price']) ?></summary>
+          <form method="post" style="display:flex;gap:4px;margin-top:4px">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="quick_price"><input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
+            <input type="hidden" name="back_qs" value="<?= e($_SERVER['QUERY_STRING'] ?? '') ?>">
+            <input class="input" type="number" min="1" name="price" value="<?= (int)$p['price'] ?>" style="width:86px;min-height:34px;padding:4px 8px" aria-label="Новая цена">
+            <button type="submit" class="btn" style="min-height:34px;padding:4px 10px;font-size:.78rem">✓</button>
+          </form>
+        </details>
+      </td>
       <td><?= $p['sale_price'] !== null ? formatPrice((int)$p['sale_price']) : '—' ?></td>
       <td><?= (int)$p['sort'] ?></td>
-      <td><?= (int)$p['is_active'] === 1 ? 'Показан' : 'Скрыт' ?><?= (int)($p['show_in_upsell'] ?? 0) === 1 ? ' <span style="display:inline-block;background:var(--rose-cta,#AE4A71);color:#fff;border-radius:999px;padding:2px 8px;font-size:.68rem;font-weight:700;vertical-align:middle">К корзине</span>' : '' ?></td>
+      <td><?php /* S3: статус теперь несёт тумблер в actions — здесь только бейджи */ ?><?= (int)($p['show_in_upsell'] ?? 0) === 1 ? '<span style="display:inline-block;background:var(--rose-cta,#AE4A71);color:#fff;border-radius:999px;padding:2px 8px;font-size:.68rem;font-weight:700">К корзине</span>' : '' ?></td>
       <?php /* Операционный-критик W32: видна свежесть карточки (обновления/черновики) */ ?>
       <td><small style="color:var(--ink-soft)"><?= $p['updated_at'] !== '' ? e(date('d.m', strtotime((string)$p['updated_at']))) : '—' ?></small></td>
       <td>
         <div class="row-actions">
           <a href="/admin/products.php?edit=<?= (int)$p['id'] ?><?= $ctxQ ?>">Изменить</a>
+          <?php /* S3: тумблер «В наличии / Закончился» — 1 клик, без входа в карточку */ ?>
           <form method="post">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="toggle"><input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
             <input type="hidden" name="back_qs" value="<?= e($_SERVER['QUERY_STRING'] ?? '') ?>">
-            <button type="submit"><?= (int)$p['is_active'] === 1 ? 'Скрыть' : 'Показать' ?></button>
+            <button type="submit" class="stock-switch<?= (int)$p['is_active'] === 1 ? ' is-on' : '' ?>" role="switch"
+              aria-checked="<?= (int)$p['is_active'] === 1 ? 'true' : 'false' ?>"
+              title="<?= (int)$p['is_active'] === 1 ? 'В наличии — клик снимет букет с витрины' : 'Закончился — клик вернёт букет на витрину' ?>">
+              <span class="stock-switch__label"><?= (int)$p['is_active'] === 1 ? 'В наличии' : 'Закончился' ?></span>
+              <span class="stock-switch__knob" aria-hidden="true"></span>
+            </button>
           </form>
           <form method="post">
             <?= csrf_field() ?>

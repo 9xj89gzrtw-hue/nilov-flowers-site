@@ -330,15 +330,18 @@
     });
 
     /* Чипы: единственный активный; повторный клик — снять. Сами карточки
-       фильтрует NfCatalogApply (читает .fc-chip.is-active). */
+       фильтрует NfCatalogApply (читает .fc-chip.is-active).
+       S3 (v2026.3): чип «Все» (data-chip="all") не тогглится — клик всегда
+       сбрасывает фильтры к полному каталогу (принцип 5cv). */
     chips.forEach(function (chip) {
       chip.addEventListener('click', function () {
+        var isAll = chip.getAttribute('data-chip') === 'all';
         var wasActive = chip.classList.contains('is-active');
         chips.forEach(function (c) {
           c.classList.remove('is-active');
           c.setAttribute('aria-pressed', 'false');
         });
-        if (!wasActive) {
+        if (!wasActive || isAll) {
           chip.classList.add('is-active');
           chip.setAttribute('aria-pressed', 'true');
         }
@@ -647,4 +650,35 @@
       io.observe(t);
     });
   }
+
+  /* ---------- 10. S3 (v2026.3): мобильная липкая панель (mnav) ----------
+     «Поиск» — фокус в поисковую пилюлю шапки (#fcSearch) + мягкий скролл
+     к шапке (панель fixed — поле может быть за пределами экрана).
+     «Корзина» — дублируем клик по #cartToggle (контракт cart-ui.js:
+     тот вешает свой слушатель на кнопку шапки — вызовем его клик). */
+  function mnavBar() {
+    var searchBtn = document.querySelector('.mnav__search');
+    if (searchBtn) {
+      searchBtn.addEventListener('click', function () {
+        var inp = document.getElementById('fcSearch');
+        if (!inp) { location.href = '/#catalog'; return; }
+        var r = inp.getBoundingClientRect();
+        if (r.top < 0 || r.bottom > window.innerHeight) {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          setTimeout(function () { inp.focus(); }, 420);
+        } else {
+          inp.focus();
+        }
+      });
+    }
+    var cartBtn = document.getElementById('mnavCartBtn');
+    if (cartBtn) {
+      cartBtn.addEventListener('click', function () {
+        var t = document.getElementById('cartToggle');
+        if (t) { t.click(); return; }
+        location.href = '/checkout.php';
+      });
+    }
+  }
+  mnavBar();
 })();

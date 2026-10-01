@@ -293,6 +293,25 @@
     count.textContent = String(totalQty);
     count.hidden = totalQty === 0;
 
+    /* S3 (v2026.3): сумма заказа рядом со счётчиком — в шапке (#cartSum под
+       иконкой) и в мобильной панели (#mnavCartSum у «Корзина»). Промо-скидку
+       НЕ учитываем: это стоимость букетов, итог с промо виден в drawer/форме. */
+    const cartSum = document.getElementById('cartSum');
+    if (cartSum) {
+      const t = items.length > 0 ? window.cart.getTotal() : 0;
+      cartSum.textContent = items.length > 0 ? formatPrice(t) + '\u00A0₽' : '';
+      cartSum.hidden = items.length === 0;
+    }
+    const mnavSum = document.getElementById('mnavCartSum');
+    if (mnavSum) {
+      mnavSum.textContent = items.length > 0 ? formatPrice(window.cart.getTotal()) + '\u00A0₽' : '';
+      mnavSum.hidden = items.length === 0;
+    }
+
+    /* S3: прогресс до бесплатной доставки (порог FREE_DELIVERY_FROM из footer.php;
+       прогресс-бар #cartFreeBar печатается только при включённой настройке). */
+    updateFreeBar(window.cart.getTotal());
+
     itemsEl.innerHTML = items.map(itemRowHtml).join('');
     emptyEl.hidden = items.length > 0;
     /* A-b3 (3): CTA пустой корзины живёт в тандеме с подписью — виден только
@@ -390,6 +409,109 @@
     orderEmptyEl.style.display = itemsNow.length === 0 ? 'block' : 'none';
     if (orderFormEl) orderFormEl.style.display = itemsNow.length === 0 ? 'none' : '';
   }
+
+  /* ============ S3 (v2026.3): прогресс бесплатной доставки + бесплатные допы ============
+
+     Прогресс: заполняемость трека = subtotal / FREE_DELIVERY_FROM; под треком —
+     текст из настроек ({left} — сколько осталось). Порог достигнут — зелёный
+     текст-достижение. Рендер без rAF: ширина через style.width (паттерн S2). */
+  function updateFreeBar(subtotal) {
+    var bar = document.getElementById('cartFreeBar');
+    if (!bar) return;
+    var from = Number(window.FREE_DELIVERY_FROM) || 0;
+    if (from <= 0) { bar.hidden = true; return; }
+    var fill = document.getElementById('cartFreeFill');
+    var text = document.getElementById('cartFreeText');
+    var pct = Math.max(0, Math.min(100, Math.round((subtotal / from) * 100)));
+    if (fill) fill.style.width = pct + '%';
+    bar.setAttribute('aria-valuenow', String(Math.min(subtotal, from)));
+    bar.classList.toggle('is-reached', subtotal >= from);
+    if (text) {
+      if (subtotal >= from) {
+        text.textContent = window.CART_FREE_PROGRESS_REACHED || 'Доставка бесплатно 🎉';
+      } else {
+        var left = Math.max(0, from - subtotal);
+        text.textContent = (window.CART_FREE_PROGRESS_UNDER || 'Добавьте ещё {left} ₽ — и доставка бесплатна')
+          .replace('{left}', formatPrice(left));
+      }
+    }
+  }
+
+  /* Бесплатные допы корзины: открытка (с текстом) и подкормка Chrysal.
+     Состояние — localStorage nf_cart_extras; открытка синхронизируется с
+     полем #orderCardText формы заказа (пользователь может редактировать
+     в любом из мест); order-form.js перед отправкой читает window.NF_CART_EXTRAS
+     и прикладывает к POST /api/orders (extras + card_text). */
+  var cartExtras = { postcard: false, postcardText: '', chrysal: false };
+  try {
+    var savedExtras = JSON.parse(localStorage.getItem('nf_cart_extras') || '{}');
+    if (savedExtras && typeof savedExtras === 'object') {
+      cartExtras.postcard = !!savedExtras.postcard;
+      cartExtras.postcardText = typeof savedExtras.postcardText === 'string' ? savedExtras.postcardText.slice(0, 500) : '';
+      cartExtras.chrysal = !!savedExtras.chrysal;
+    }
+  } catch (e) { /* битый JSON — начинаем с чистого состояния */ }
+
+  function saveExtras() {
+    try { localStorage.setItem('nf_cart_extras', JSON.stringify(cartExtras)); } catch (e) {}
+    window.NF_CART_EXTRAS = { postcard: cartExtras.postcard, postcardText: cartExtras.postcardText, chrysal: cartExtras.chrysal };
+    /* двусторонняя синхронизация с полем открытки в форме заказа */
+    var formCard = document.getElementById('orderCardText');
+    if (formCard && cartExtras.postcard && formCard.value !== cartExtras.postcardText) {
+      formCard.value = cartExtras.postcardText;
+    }
+  }
+  window.NF_CART_EXTRAS = { postcard: cartExtras.postcard, postcardText: cartExtras.postcardText, chrysal: cartExtras.chrysal };
+  window.nfCartExtrasReset = function () {
+    cartExtras.postcard = false; cartExtras.postcardText = ''; cartExtras.chrysal = false;
+    saveExtras();
+    syncExtrasUi();
+  };
+
+  function syncExtrasUi() {
+    var pc = document.getElementById('cartExtraPostcardOn');
+    if (pc) pc.checked = cartExtras.postcard;
+    var pcw = document.getElementById('cartExtraPostcardWrap');
+    if (pcw) pcw.hidden = !cartExtras.postcard;
+    var pct = document.getElementById('cartExtraPostcardText');
+    if (pct && document.activeElement !== pct) pct.value = cartExtras.postcardText;
+    var ch = document.getElementById('cartExtraChrysalOn');
+    if (ch) ch.checked = cartExtras.chrysal;
+  }
+
+  (function initCartExtras() {
+    var extrasBox = document.getElementById('cartExtras');
+    if (!extrasBox) { saveExtras(); return; }
+    extrasBox.addEventListener('change', function (e) {
+      var t = e.target;
+      if (t.id === 'cartExtraPostcardOn') {
+        cartExtras.postcard = t.checked;
+        if (!t.checked) { cartExtras.postcardText = ''; }
+      } else if (t.id === 'cartExtraChrysalOn') {
+        cartExtras.chrysal = t.checked;
+      }
+      saveExtras();
+      syncExtrasUi();
+    });
+    extrasBox.addEventListener('input', function (e) {
+      if (e.target.id === 'cartExtraPostcardText') {
+        cartExtras.postcardText = e.target.value.slice(0, 500);
+        saveExtras();
+      }
+    });
+    /* редактирование открытки в форме заказа — обратно в корзину */
+    var formCard = document.getElementById('orderCardText');
+    if (formCard) {
+      formCard.addEventListener('input', function () {
+        if (cartExtras.postcard) {
+          cartExtras.postcardText = formCard.value.slice(0, 500);
+          saveExtras();
+        }
+      });
+    }
+    syncExtrasUi();
+    saveExtras();
+  })();
 
   /* K6 (W101): пустая корзина видна на #order сразу при загрузке страницы
      (и после bfcache-возврата) — не только после первого события корзины. */
