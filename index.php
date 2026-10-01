@@ -1097,22 +1097,33 @@ echo json_encode([
          чипов; JS-контракт data-chip=low|mid|high|premium не менялся. */ ?>
   <section class="fc-budget" aria-label="Букеты по бюджету">
     <div class="wrap fc-budget__grid">
+      <?php /* S7-fix: пустые сегменты не печатаем (паттерн тег-чипов —
+             «0 букетов» на проде выглядит незаполненным каталогом;
+             появятся товары — плашка вернётся автоматически). */ ?>
+      <?php if ($cntLow > 0): ?>
       <button type="button" class="fc-chip fc-budget__card" data-chip="low" data-max="<?= $chipsN ?>" aria-pressed="false">
         <span class="fc-budget__label">До&nbsp;<?= formatSum($chipsN) ?>&nbsp;₽</span>
         <span class="fc-budget__count"><?= $cntLow ?>&nbsp;<?= e($pluralBuket($cntLow)) ?></span>
       </button>
+      <?php endif; ?>
+      <?php if ($cntMid > 0): ?>
       <button type="button" class="fc-chip fc-budget__card" data-chip="mid" data-min="<?= $chipsN ?>" data-max="<?= $chipsM ?>" aria-pressed="false">
         <span class="fc-budget__label"><?= formatSum($chipsN) ?>&nbsp;–&nbsp;<?= formatSum($chipsM) ?>&nbsp;₽</span>
         <span class="fc-budget__count"><?= $cntMid ?>&nbsp;<?= e($pluralBuket($cntMid)) ?></span>
       </button>
+      <?php endif; ?>
+      <?php if ($cntHigh > 0): ?>
       <button type="button" class="fc-chip fc-budget__card" data-chip="high" data-min="<?= $chipsM ?>" aria-pressed="false">
         <span class="fc-budget__label">От&nbsp;<?= formatSum($chipsM) ?>&nbsp;₽</span>
         <span class="fc-budget__count"><?= $cntHigh ?>&nbsp;<?= e($pluralBuket($cntHigh)) ?></span>
       </button>
+      <?php endif; ?>
+      <?php if ($cntPremium > 0): ?>
       <button type="button" class="fc-chip fc-budget__card fc-budget__card--premium" data-chip="premium" aria-pressed="false">
         <span class="fc-budget__label">Премиум</span>
         <span class="fc-budget__count"><?= $cntPremium ?>&nbsp;<?= e($pluralBuket($cntPremium)) ?></span>
       </button>
+      <?php endif; ?>
     </div>
   </section>
 
