@@ -19,6 +19,33 @@
   поля теги/состав/размеры; настройки: секция **«Продажи»** (s-commerce, 35+ ключей).
 - **Минификация CSS**: `python3 scripts/minify-css.py` — запускать после правок css/*.css (head.php отдаёт .min только если он свежее исходника).
 
+## Сессия S5 (01.10.2026, бутик-тюнинг) — сделано
+- **Дизайн-система S5** (деплой 7b427b9, прод верифицирован): молоко #FAF9F6 (body),
+  белые карточки + бордер rgba(0,0,0,.05) + тени --shadow-card (idle/hover),
+  хвойный эспрессо #12281D (--pine), янтарь #E09F3E (--amber, «Хит» с белым текстом),
+  графит #141416/#6E6E77, --surface-soft #F1EFEA, radius 16, tabular-nums + -.02em.
+  Idle-тень карточек вернулась (motion-w104 §4e); motion-lite — по-прежнему flat.
+- **Живой таймер доставки** (Conversion Booster): #fcDeliveryNow в шапке каталога
+  (мобайл — в строке с меткой «КАТАЛОГ», ноль высоты), js/five.js deliveryNow():
+  СПб (NILOV_CONFIG.tz) + delivery_now_minutes (90), округление вверх к 15 мин,
+  за deadline/полночь — «завтра к 10:00»; пульс-точка; ключи delivery_now_*.
+- **Карточка**: зум .6s bezier(.16,1,.3,1), стеклянный бейдж скидки, Хит #E09F3E,
+  поп сердечка, микро-бейдж ⌀/↕ (size_text), сплит-ПИЛЮЛЯ [Сплит]«4 платежа по N ₽»
+  (splitPaymentText() в util.php: card_split_format {div}/{per} + склонение;
+  PDP остался на splitLabel). Копия карточки в category.php синхронизирована.
+- **Чипсы**: порядок 5cv (Все букеты → цены → Премиум → теги → Хиты/от 7000);
+  guard-миграция chips_tags «Пионы,Французские розы,Гортензии,В коробках,Подарок»;
+  матчер ALL-WORDS по стему 4 букв (PHP $nfTagMatch = JS nfTagMatch) — «В коробках»
+  матчит «в шляпных коробках»; чип без товаров не печатается (прод-каталог сам решает).
+- **Quick View** (js/quickview.js + NF_QUICKVIEW из footer.php, гл.+/category/):
+  клик по фото → bottom-sheet(мобайл)/двухколонник(десктоп): слайдер image+image2,
+  состав поштучно (split «·»), открытка + Кризал 0 ₽ + сладости-чекбоксы (товары
+  с тегом «сладости» — cart.add), кнопки кликают живые CTA/[data-oneclick] карточки;
+  extras → nf_cart_extras + change/input-синхронизация с drawer (cart-ui — владелец).
+  Геометрия: grid-template-rows minmax(0,1fr) — кнопки достижимы при скролле инфо.
+- Тумблеры: feature_delivery_now / feature_quickview; 14 новых ключей в db.php S5
+  + allowlist/поля admin/settings.php (секция «Продажи»).
+
 ## Окружение локальной разработки
 - **PHP:** `/home/z/tools/php` (8.4.23 static, полный GD+SQLite). Сервер: `php -S 127.0.0.1:8090 router.php` в корне репо. БД `db/flowers.db` создатся автоматически (seed).
 - **Не трогать** порт 3000 (песочница Next.js my-project) и repo `newsite` (кейтеринг, отдельный проект).
