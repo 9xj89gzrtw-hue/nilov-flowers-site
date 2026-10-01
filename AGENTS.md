@@ -1,28 +1,37 @@
 # AGENTS.md — конспект для агентов по nilov-flowers-site
 
-**Что это:** цветочный магазин «Nilov Flowers» (СПб). Сессия **S2 завершена**: Next.js 16 витрина + Kanban-админка на живой БД (Prisma/SQLite) в этом же репо. Прод (SpaceWeb, Apache) продолжает обслуживать PHP+v2026 — S2 в деплой-rsync исключён, готов к переезду владельца на Node-хостинг (README-S2.md).
+**Что это:** цветочный магазин «Nilov Flowers» (СПб). Прод (SpaceWeb, Apache, flowers.interfood-catering.ru) = **PHP 8 + SQLite + vanilla JS** — ЭТО РАБОЧИЙ СТЕК. Сессии S1 (v2026 статика) и S2 (Next.js) — исторические артефакты в этом же репо, в деплой-rsync НЕ едут (EXC в .github/workflows/deploy.yml).
 
-## Окружение
-- **Порт 3000** — Next.js 16 (Turbopack, App Router): `bun run dev` в фоне. Логи: `dev.log`.
-- **БД:** `db/flowers.db` (SQLite, `DATABASE_URL` в .env; `NF_SESSION_SECRET` там же). Схема: `prisma/schema.prisma` (Product/Order/OrderItem/DeliveryZone/Upsell/Setting/PromoCode).
-- **Seed:** `bun scripts/seed.ts` — 24 букета (20 премиум из v2026/content.json + 4 классика из PHP-seed), 14 зон СПб, 5 апселлов, настройки, промокоды. ВНИМАНИЕ: seed стирает заказы; демо-заказы создавать через API с маппингом slug→id (id после re-seed сдвигаются!).
-- **Фото:** `img/products/` (webp+jpg+thumbs), раздаются в dev через симлинк `public/img → ../img`. Загрузки админки: `img/uploads/`.
-- **Панель флориста:** `http://localhost:3000/#admin`, пароль — настройка `admin_password` (по умолчанию `nilov2026`), сессия — httpOnly-кука (HMAC от пароля + NF_SESSION_SECRET).
+## Сессия S3 (01.10.2026, текущая) — сделано
+- **Коммерческий слой 5cv-класса** (деплой 2013d10 + фикс f774ca5, прод верифицирован):
+  палитра молоко #FAF9F6 / изумруд #143C2B / янтарь #F5B301 / пудра #F4DEE3 / графит #18181B;
+  инфо-бар над шапкой; WA/TG в шапке; районы в городе; сумма корзины (#cartSum);
+  чипсы: «Все»+цены+ТЕГИ (настройка chips_tags; матч по data-tags, стем 4 буквы; PHP и JS матчеры идентичны);
+  карточка: 2-й ракурс hover (image2, is_file-guard), состав/размер, «Сплит: от N ₽/мес» (split_divider, по умолч. 4),
+  бейджи Стойкие/Свежая поставка (по тегам «стой…»/«свеж…»), кнопки «В корзину»+«Купить в 1 клик» (js/oneclick.js);
+  корзина: прогресс до бесплатной доставки (free_delivery_threshold=5000), бесплатные допы открытка(текст)+Chrysal (orders.extras JSON);
+  чекаут: «Себе»/«Сюрприз другому»; 2-часовые слоты; мобильная панель Каталог/Поиск/Корзина+сумма/WA (mnav, 58px);
+  зоны: time («60–90 мин»), пригороды Кудрово/Мурино/Всеволожск/Гатчина.
+- **Статусы-этапы**: new → photo («Согласование фото») → florist («Флорист собирает») → courier («У курьера») → done («Доставлен»); миграция confirmed→photo, in_progress→florist; словарь в util.php (statuses/orderTransitions/kanbanStages).
+- **Админка**: канбан admin/index.php?view=kanban (DnD POST status, валидация переходов на сервере);
+  страница заказа: «Печать записки А5» (@media print .print-note: состав/адрес/интервал/КРУПНАЯ открытка/СЮРПРИЗ) + WA-кнопка (шаблоны wa_template_*);
+  товары: тумблер «В наличии/Закончился» (.stock-switch), инлайн-цена (details.price-quick, action=quick_price),
+  поля теги/состав/размеры; настройки: секция **«Продажи»** (s-commerce, 35+ ключей).
+- **Минификация CSS**: `python3 scripts/minify-css.py` — запускать после правок css/*.css (head.php отдаёт .min только если он свежее исходника).
 
-## Архитектура S2
-- `src/app/page.tsx` — витрина SSR из БД; клиентский стор — `src/components/store/store-app.tsx` (zustand-корзина, живой рефреш по `nf:data-updated`/focus).
-- API: `/api/public-data`, `/api/orders` (цены пересчитываются на сервере, промо, бесплатная доставка от `free_delivery_from`), `/api/promo`, `/api/admin/*` (login/session/orders/products/zones/settings/upsells/upload/img-list). Rate-limit: `src/lib/rate-limit.ts` (orders 8/мин, promo 20/мин, login 10/мин).
-- Админка: Kanban 6 статусов (dnd-kit, PATCH статуса), таблица, записка А5 (`#print-note` + @media print: раскладка цветов, СЮРПРИЗ, крупное пожелание), WhatsApp-шаблоны по статусам, тумблер `inStock` = мгновенное скрытие с витрины, инлайн-цены, no-code настройки с live-обновлением витрины.
-- Дизайн: молочный #FAF9F6 / хвойный #143C2B / амбер #F5B301 / пудра #F4DEE3; шрифты локальные (src/fonts: Golos/Montserrat/Playfair). Мобайл: 2 колонки, липкая панель, 16px полей.
+## Окружение локальной разработки
+- **PHP:** `/home/z/tools/php` (8.4.23 static, полный GD+SQLite). Сервер: `php -S 127.0.0.1:8090 router.php` в корне репо. БД `db/flowers.db` создатся автоматически (seed).
+- **Не трогать** порт 3000 (песочница Next.js my-project) и repo `newsite` (кейтеринг, отдельный проект).
+- Секреты: db/*.db, db/*.txt, .env — gitignored; пуш только в main, **никогда force-push**; перед пушем `php -l` (изменённое) + `node --check` (js) + `python3 scripts/minify-css.py` + live-прогон agent-browser.
 
 ## Правила (обязательны)
-1. Перед работой читать **worklog.md** (история S2: раунды критики, фиксы). После — append-секция (Task ID, Agent, Work Log, Stage Summary).
-2. Пуш только в main, **никогда force-push**. Перед пушем: `git diff` ревью + секреты не коммитить (.env, db/*.db, db/*.txt gitignored) + `bun run lint` + `bunx tsc --noEmit` (src) + живой прогон agent-browser.
-3. Менять Next.js-файлы можно свободно: деплой-workflow исключает их из rsync на прод (см. EXC в .github/workflows/deploy.yml) — прод = PHP+v2026 как прежде.
-4. Коммит-префикс `S2`. Процессные файлы (worklog/AGENTS/CRITIQUE_*/DIFF_LOG_*/README-S2) на прод не идут.
-5. Критики — свежие слепые (не читают worklog до вердикта), отдельные browser-сессии `--session cN`, после себя `close`. Итоги трёх раундов: CRITIQUE_ROUND_1/2/3.md + DIFF_LOG_1/2.md.
-6. Двойной parse JSON-полей запрещён: API `/api/admin/*` уже отдаёт распарсенные объекты, `safeJson` идемпотентен — не парсить повторно.
-7. Верификация = живой прогон (agent-browser): клики, консоль, `scrollWidth`, битые img. «Сделанный» фикс без проверки = не сделанный.
+1. Перед работой читать **worklog.md** (S1-S3) + этот файл. После — append-секция (Task ID, Agent, Work Log, Stage Summary).
+2. Все тексты витрины — из настроек БД (settings), ничего не хардкодить; новые ключи — INSERT OR IGNORE в db.php + allowlist admin/settings.php + (если чекбокс) список $cb.
+3. Миграции — идемпотентные guard-паттерны (см. S3-блок в db.php); прод-БД живая — UPDATE только по точному старому значению/пустому полю.
+4. JS-контракты: #cartToggle/#cartCount/#cartSum, #fcSearch, data-order-cta, [data-oneclick], .fc-chip[data-chip]/[data-tag], .mnav__search/#mnavCartBtn.
+5. Верификация = живой прогон: локально 8090, после деплоя — https://flowers.interfood-catering.ru/ (curl + agent-browser, десктоп и 390px).
 
-## Текущее состояние (01.10.2026, после S2)
-Три раунда слепой критики пройдены (15 критиков): финал 9/9/9/9/8.5, все вердикты «готово к сдаче». Консоль чистая, 0 битых фото, API 7–12 мс. Хвосты (владелец): пересъёмка каталога, избранное, реальные вторые ракурсы, ОГРНИП, прод-замер RSS после build.
+## Хвосты (владелец)
+- Проставить теги каталогу (админка → Товары) — появятся чипсы «Пионы»/«Гортензии»/«Французские розы».
+- WA/TG кнопки в шапке появятся после заполнения shop_whatsapp/shop_telegram (Настройки → Контакты).
+- Вторые ракурсы (image2): файлы волны B1 уже на проде; загружать через админку.
