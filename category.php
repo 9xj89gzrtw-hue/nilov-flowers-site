@@ -163,9 +163,6 @@ function meta_cut(string $s, int $max): string
    lazy, сердечко, «+» в корзину): та же разметка/классы, что в каталоге витрины */
 function render_product_card(array $p, array $ctx): void
 {
-    /* S4 (v2026.4): копия карточки index.php — дизайн 5cv-класса (фото 3:4,
-       бейджи «−N%»/«Хит» на фото, строка доставки, крупная цена, сплит × 4,
-       компактные кнопки «В корзину» + «1 клик»). */
     $price = productPrice($p);
     $isSale = $price !== (int)($p['price'] ?? 0);
     $isHit = (int)($p['is_hit'] ?? 0) === 1;
@@ -186,23 +183,52 @@ function render_product_card(array $p, array $ctx): void
     } else {
         $srcset = '';
     }
-    $sizes = '(max-width:359px) 92vw, (max-width:767px) 46vw, (max-width:1023px) 31vw, (max-width:1279px) 23vw, 288px';
+    $isCarousel = !empty($ctx['carousel']);
+    /* S4: сетка каталога 4/3/2 — sizes по фактическим слотам карточки */
+    $sizes = $isCarousel
+        ? '(max-width:899px) 72vw, 280px'
+        : '(max-width:359px) 92vw, (max-width:767px) 46vw, (max-width:1023px) 31vw, (max-width:1279px) 23vw, 288px';
     $link = '/product/' . rawurlencode($p['slug']);
-    $searchIndex = mb_strtolower(trim($p['name'] . ' ' . ($p['category_name'] ?? '') . ' ' . ($p['description'] ?? '')));
+    $searchIndex = $isCarousel ? '' : mb_strtolower(trim($p['name'] . ' ' . ($p['category_name'] ?? '') . ' ' . ($p['description'] ?? '')));
+    $upsellAttr = (!$isCarousel && (int)($p['show_in_upsell'] ?? 0) === 1) ? ' data-upsell="1"' : '';
+    $tagsAttr = trim((string)($p['tags'] ?? '')) !== ''
+        ? ' data-tags="' . e(mb_strtolower(str_replace('ё', 'е', preg_replace('/\s+/u', ' ', trim((string)$p['tags']))) ?? ''), 'UTF-8') . '"'
+        : '';
+    $img2 = trim((string)($p['image2'] ?? ''));
+    $img2Url = '';
+    if ($img2 !== '' && is_file(IMG_PRODUCTS_DIR . '/' . $img2)) {
+        $img2Url = '/img/products/' . rawurlencode($img2);
+    }
     $comp = trim((string)($p['composition'] ?? ''));
-    /* S5: размер ⌀/↕ + сплит-пилюля — синхронно с index.php */
     $sizeText = trim((string)($p['size_text'] ?? ''));
+    /* S6: состав и размер — скрытые носители данных для Quick View
+       (js/quickview.js читает их из DOM карточки; в карточке не видны). */
     $sizeIsDia = mb_strpos($sizeText, '⌀') === 0;
     $sizeClean = trim((string)preg_replace('/^[⌀↕]\s*/u', '', $sizeText));
-    $splitText = splitPaymentText($price);
-    $splitChip = trim((string)setting('split_chip_text', 'Сплит'));
+    /* S6: сплит — тихая серая строка «Сплит: от N ₽ × 4» (splitLabel —
+       util.php, настройка split_label; пилюля-виджет убрана по ТЗ) */
+    $splitText = splitLabel($price);
+    /* S6: рейтинг карточки — живой агрегат отзывов из БД (по товару,
+       фолбэк — общий агрегат магазина), «★ 5.0 (28)» жёлтой звездой */
+    global $productRatings;
+    $cardRating = $productRatings[(int)$p['id']] ?? null;
+    if ($cardRating === null) {
+        $shopAgg = getRatingAggregate();
+        if ($shopAgg['count'] > 0) {
+            $cardRating = $shopAgg;
+        }
+    }
+    /* S6: строка доставки под фото («Сегодня за 1–2 часа», настройка
+       card_delivery_text; пусто — не печатаем). */
     $deliveryText = trim((string)setting('card_delivery_text', 'Сегодня за 1–2 часа'));
+    /* S6: подпись ссылки 1-клика — полный текст настройки. */
     $oneclickFull = trim((string)setting('card_btn_oneclick', 'Купить в 1 клик'));
-    $oneclickShort = trim((string)preg_replace('/^купить\s+(в\s+)?/iu', '', $oneclickFull));
-    if ($oneclickShort === '') { $oneclickShort = $oneclickFull; }
     ?>
-        <article class="product-card reveal" data-category-id="<?= (int)($p['category_id'] ?? 0) ?>" data-price="<?= (int)$price ?>" data-hit="<?= (int)($p['is_hit'] ?? 0) ?>" data-premium="<?= (int)($p['is_premium'] ?? 0) ?>" data-search="<?= e($searchIndex) ?>">
+        <article class="product-card reveal"<?= $isCarousel
+            ? ''
+            : ' data-category-id="' . (int)($p['category_id'] ?? 0) . '" data-price="' . (int)$price . '" data-hit="' . (int)($p['is_hit'] ?? 0) . '" data-premium="' . (int)($p['is_premium'] ?? 0) . '" data-search="' . e($searchIndex) . '"' . $upsellAttr . $tagsAttr ?>>
           <div class="product-card__media">
+          <?php /* фото 4:5, скругление 12, без внутренних рамок */ ?>
             <a class="product-card__media-link" href="<?= e($link) ?>" aria-label="<?= e($p['name']) ?>" aria-hidden="true" tabindex="-1">
               <?php if ($img !== ''): ?>
                 <picture>
@@ -210,22 +236,31 @@ function render_product_card(array $p, array $ctx): void
                   <img class="product-card__img" src="<?= e($img) ?>" alt="<?= e($p['name']) ?>" loading="lazy" decoding="async">
                 </picture>
               <?php else: ?>
-                <svg viewBox="0 0 80 94" style="width:30%;margin:auto;color:var(--blue)" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="40" cy="30" r="11"/><circle cx="26" cy="38" r="8"/><circle cx="54" cy="38" r="8"/><path d="M40 41v20M40 61c-8 6-14 14-16 25M40 61c8 6 14 14 16 25"/></svg>
+                <svg viewBox="0 0 80 94" style="width:30%;margin:auto;color:var(--ink-muted)" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="40" cy="30" r="11"/><circle cx="26" cy="38" r="8"/><circle cx="54" cy="38" r="8"/><path d="M40 41v20M40 61c-8 6-14 14-16 25M40 61c8 6 14 14 16 25"/></svg>
+              <?php endif; ?>
+              <?php if ($img2Url !== ''): ?>
+                <img class="product-card__img2" src="<?= e($img2Url) ?>" alt="" aria-hidden="true" loading="lazy" decoding="async">
               <?php endif; ?>
             </a>
+            <?php /* на фото ТОЛЬКО жёлтый «Хит» (#FFB800) и скидка (белая
+                   плашка); «Премиум» — редкий третий, чёрный. */ ?>
             <?php if ($isSale): $offPct = (int)$p['price'] > 0 ? (int)round((1 - $price / (int)$p['price']) * 100) : 0; ?><span class="product-card__badge product-card__badge--sale"><?= $offPct > 0 ? '&#8722;' . (int)$offPct . '%' : e(setting('badge_sale_text', 'Скидка')) ?></span><?php endif; ?>
             <?php if ($isHit): ?><span class="product-card__badge product-card__badge--hit"><?= e(setting('badge_hit_text', 'Хит')) ?></span><?php endif; ?>
             <?php if ($isPremium): ?><span class="product-card__badge product-card__badge--premium"><?= e(setting('badge_premium_text', 'Премиум')) ?></span><?php endif; ?>
-            <?php if ($ctx['featFavorites']): ?><button type="button" class="product-card__fav" data-fav-id="<?= (int)$p['id'] ?>" data-fav-name="<?= e($p['name']) ?>" aria-label="В избранное: <?= e($p['name']) ?>" title="В избранное">♡</button><?php endif; ?>
           </div>
           <div class="product-card__body">
-            <?php /* мета-ряд: время доставки + микро-бейдж размера (⌀/↕) */ ?>
-            <div class="product-card__meta">
-              <?php if ($deliveryText !== ''): ?><p class="product-card__delivery"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><?= e($deliveryText) ?></p><?php endif; ?>
-              <?php if ($sizeClean !== ''): ?>
-              <p class="product-card__size"><?php if ($sizeIsDia): ?><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M6.5 17.5 17.5 6.5"/></svg><?php else: ?><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M8 7l4-4 4 4M8 17l4 4 4-4"/></svg><?php endif; ?><span class="product-card__size-text"><?= e($sizeClean) ?></span></p>
-              <?php endif; ?>
-            </div>
+            <?php if (!empty($ctx['feature'])): ?>
+            <span class="product-card__feature-label"><?= e(setting('feature_card_label', 'Выбор флориста')) ?></span>
+            <?php endif; ?>
+            <?php /* строка 1: иконка часов + серый «Сегодня за 1–2 часа» */ ?>
+            <?php if ($deliveryText !== ''): ?><p class="product-card__delivery"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><?= e($deliveryText) ?></p><?php endif; ?>
+            <?php /* строка 2: рейтинг «★ 5.0 (28)» жёлтой звездой */ ?>
+            <?php if ($cardRating !== null): ?>
+            <p class="product-card__rating"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg><span class="product-card__rating-num"><?= e(sprintf('%.1f', (float)$cardRating['avg'])) ?></span>&nbsp;<span class="product-card__rating-count">(<?= (int)$cardRating['count'] ?>)</span></p>
+            <?php endif; ?>
+            <?php /* строка 3: название — чёрный, 15–16px, medium, 1–2 строки */ ?>
+            <a class="product-card__name" href="<?= e($link) ?>"><?= e($p['name']) ?></a>
+            <?php /* строка 4: цена крупно жирным + зачёркнутая старая */ ?>
             <p class="product-card__price">
               <?php if ($isSale): ?>
                 <span class="product-card__price--discount"><?= formatPrice($price) ?></span>
@@ -234,14 +269,16 @@ function render_product_card(array $p, array $ctx): void
                 <?= formatPrice($price) ?>
               <?php endif; ?>
             </p>
+            <?php /* строка 5: аккуратный серый шильдик «Сплит: от N ₽ × 4» */ ?>
             <?php if ($splitText !== ''): ?>
-            <p class="product-card__split"><span class="product-card__split-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="7.5" height="14" rx="1.5"/><rect x="13.5" y="5" width="7.5" height="14" rx="1.5"/></svg><?= e($splitChip !== '' ? $splitChip : 'Сплит') ?></span><span class="product-card__split-text"><?= e($splitText) ?></span></p>
+            <p class="product-card__split"><span class="product-card__split-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="7.5" height="14" rx="1.5"/><rect x="13.5" y="5" width="7.5" height="14" rx="1.5"/></svg><?= e(trim((string)setting('split_chip_text', 'Сплит'))) ?></span><span class="product-card__split-text"><?= e($splitText) ?></span></p>
             <?php endif; ?>
-            <a class="product-card__name" href="<?= e($link) ?>"><?= e($p['name']) ?></a>
-            <?php if ($comp !== ''): ?><p class="product-card__comp"><?= e($comp) ?></p><?php endif; ?>
-            <?php if ((int)($p['is_urgent'] ?? 0) === 1): ?>
-            <p class="product-card__urgent-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>Соберём за 1–2 часа и привезём сегодня — количество ограничено</p>
+            <?php /* скрытые данные для Quick View (не отображаются) */ ?>
+            <?php if ($comp !== ''): ?><p class="product-card__comp" hidden><?= e($comp) ?></p><?php endif; ?>
+            <?php if ($sizeClean !== ''): ?>
+            <p class="product-card__size" hidden><?php if ($sizeIsDia): ?><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M6.5 17.5 17.5 6.5"/></svg><?php else: ?><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M8 7l4-4 4 4M8 17l4 4 4-4"/></svg><?php endif; ?><span class="product-card__size-text"><?= e($sizeClean) ?></span></p>
             <?php endif; ?>
+            <?php /* строка 6: «В корзину» (чёрная) + быстрая ссылка «Купить в 1 клик» */ ?>
             <div class="product-card__actions">
               <button type="button" class="product-card__cta" data-order-cta
                 data-product-id="<?= (int)$p['id'] ?>"
@@ -254,12 +291,13 @@ function render_product_card(array $p, array $ctx): void
                 data-product-name="<?= e($p['name']) ?>"
                 data-product-price-raw="<?= $price ?>"
                 data-product-image="<?= e($img) ?>"
-                aria-label="<?= e($oneclickFull) ?>: <?= e($p['name']) ?>" title="<?= e($oneclickFull) ?>"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg><span><?= e(mb_strimwidth($oneclickShort, 0, 12, '…')) ?></span></button>
+                aria-label="<?= e($oneclickFull) ?>: <?= e($p['name']) ?>" title="<?= e($oneclickFull) ?>"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg><span><?= e($oneclickFull) ?></span></button>
             </div>
           </div>
         </article>
     <?php
 }
+
 
 
 /* ---- Мета-контент страницы ---- */
@@ -327,7 +365,7 @@ $secondaryCssV = substr((string)@md5_file(__DIR__ . '/css/secondary.css'), 0, 8)
 <link rel="stylesheet" href="/css/category.css?v=<?= e($categoryCssV) ?>">
 <?php /* W103/G2: H1 выше фолда — Playfair, поэтому preload cyrillic-подмножества
        (21КБ, тот же паттерн product.php: FOUT на Georgia-фолбэке недопустим) */ ?>
-<link rel="preload" href="/fonts/PlayfairDisplay-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/Inter-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/css/secondary.css?v=<?= e($secondaryCssV) ?>">
 <?php /* BreadcrumbList — ОТДЕЛЬНЫЙ top-level JSON-LD (Главная → Каталог → категория),
    в SERP — хлебные крошки; noindex НЕ ставим */ ?>

@@ -756,7 +756,7 @@ $rvMonthsPdp = ['01' => 'января', '02' => 'февраля', '03' => 'ма�
    (версионирование ?v= — тот же md5-паттерн, кэш инвалидируется с файлом) */ ?>
 <?php /* H1 товара — Playfair Display (display-serif): preload cyrillic-подмножества
    (21КБ) — заголовок выше фолда, FOUT-мигание на Georgia-фолбэке недопустимо */ ?>
-<link rel="preload" href="/fonts/PlayfairDisplay-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/Inter-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/css/product-extras.css?v=<?= e(substr((string)@md5_file(__DIR__ . '/css/product-extras.css'), 0, 8)) ?>">
 <?php /* JSON-LD Product+Offer — canonical 2026 (ecorn.agency structured-data-ecommerce).
    W97-fixB3b (B3b-2а/g): BreadcrumbList ВЫНЕСЕН в отдельный top-level скрипт ниже

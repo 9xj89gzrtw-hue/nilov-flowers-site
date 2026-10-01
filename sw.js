@@ -1,5 +1,5 @@
 /* Service worker — Nilov Flowers. VERSION менять при каждом деплое. */
-const VERSION = 'w106g'; /* W106-g: поводы-лиды разные, тексты (пионовидные розы/увядшие цветы/укажите), PDP-атрибуция отзывов нейтральная, image2-миграция +6, перекраска gen1-4 светлый студийный, тост/cookie-pill/галерея-хореография/параллакс (G2), hero-колонка заполнена */
+const VERSION = 's6a'; /* S6-a: стерильный 5cv — белый #FFFFFF/#F7F7F8/#1A1A1A, Inter, чипы 5cv, карточка 6 строк, 4 бейджа доверия, топбар, без стекла/пульса/зерна */
 const STATIC_CACHE = `static-${VERSION}`;
 const PAGE_CACHE = `pages-${VERSION}`;
 const OFFLINE_URL = '/offline.html';

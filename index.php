@@ -410,7 +410,7 @@ function render_product_card(array $p, array $ctx): void
     $searchIndex = $isCarousel ? '' : mb_strtolower(trim($p['name'] . ' ' . ($p['category_name'] ?? '') . ' ' . ($p['description'] ?? '')));
     $upsellAttr = (!$isCarousel && (int)($p['show_in_upsell'] ?? 0) === 1) ? ' data-upsell="1"' : '';
     $tagsAttr = trim((string)($p['tags'] ?? '')) !== ''
-        ? ' data-tags="' . e(mb_strtolower(str_replace('ё', 'е', preg_replace('/\s+/u', ' ', trim((string)$p['tags'])) ?? ''), 'UTF-8')) . '"'
+        ? ' data-tags="' . e(mb_strtolower(str_replace('ё', 'е', preg_replace('/\s+/u', ' ', trim((string)$p['tags']))) ?? ''), 'UTF-8') . '"'
         : '';
     $img2 = trim((string)($p['image2'] ?? ''));
     $img2Url = '';
@@ -419,35 +419,34 @@ function render_product_card(array $p, array $ctx): void
     }
     $comp = trim((string)($p['composition'] ?? ''));
     $sizeText = trim((string)($p['size_text'] ?? ''));
-    /* S5: микро-бейдж размера — ⌀ (диаметр) если size_text начинается с ⌀,
-       иначе ↕ (высота). Текст без дублирования символа. */
+    /* S6: состав и размер — скрытые носители данных для Quick View
+       (js/quickview.js читает их из DOM карточки; в карточке не видны). */
     $sizeIsDia = mb_strpos($sizeText, '⌀') === 0;
     $sizeClean = trim((string)preg_replace('/^[⌀↕]\s*/u', '', $sizeText));
-    /* S5: сплит-виджет-пилюля «[Сплит] 4 платежа по 875 ₽» (splitPaymentText —
-       util.php; настройки card_split_format + split_chip_text) */
-    $splitText = splitPaymentText($price);
-    $splitChip = trim((string)setting('split_chip_text', 'Сплит'));
-    /* S4: компактная строка доставки под ценой («Сегодня за 1–2 часа»,
-       настройка card_delivery_text; пусто — не печатаем). */
-    $deliveryText = trim((string)setting('card_delivery_text', 'Сегодня за 1–2 часа'));
-    /* S4: теги «стойкие»/«свежая поставка» — тихие пилюли в теле карточки
-       (на фото остаются только «−N%» и «Хит»). */
-    $isSturdy = false; $isFresh = false;
-    foreach (productTagsList($p) as $tl) {
-        if (str_starts_with($tl, 'стой')) { $isSturdy = true; }
-        if (str_starts_with($tl, 'свеж')) { $isFresh = true; }
+    /* S6: сплит — тихая серая строка «Сплит: от N ₽ × 4» (splitLabel —
+       util.php, настройка split_label; пилюля-виджет убрана по ТЗ) */
+    $splitText = splitLabel($price);
+    /* S6: рейтинг карточки — живой агрегат отзывов из БД (по товару,
+       фолбэк — общий агрегат магазина), «★ 5.0 (28)» жёлтой звездой */
+    global $productRatings;
+    $cardRating = $productRatings[(int)$p['id']] ?? null;
+    if ($cardRating === null) {
+        $shopAgg = getRatingAggregate();
+        if ($shopAgg['count'] > 0) {
+            $cardRating = $shopAgg;
+        }
     }
-    /* S4: короткая подпись кнопки 1-клика («Купить в 1 клик» → «1 клик»);
-       полный текст настройки — в aria-label/title. */
+    /* S6: строка доставки под фото («Сегодня за 1–2 часа», настройка
+       card_delivery_text; пусто — не печатаем). */
+    $deliveryText = trim((string)setting('card_delivery_text', 'Сегодня за 1–2 часа'));
+    /* S6: подпись ссылки 1-клика — полный текст настройки. */
     $oneclickFull = trim((string)setting('card_btn_oneclick', 'Купить в 1 клик'));
-    $oneclickShort = trim((string)preg_replace('/^купить\s+(в\s+)?/iu', '', $oneclickFull));
-    if ($oneclickShort === '') { $oneclickShort = $oneclickFull; }
     ?>
         <article class="product-card reveal"<?= $isCarousel
             ? ''
             : ' data-category-id="' . (int)($p['category_id'] ?? 0) . '" data-price="' . (int)$price . '" data-hit="' . (int)($p['is_hit'] ?? 0) . '" data-premium="' . (int)($p['is_premium'] ?? 0) . '" data-search="' . e($searchIndex) . '"' . $upsellAttr . $tagsAttr ?>>
           <div class="product-card__media">
-          <?php /* фото — 80% карточки: строго 3:4, радиус 12-16, без фона */ ?>
+          <?php /* фото 4:5, скругление 12, без внутренних рамок */ ?>
             <a class="product-card__media-link" href="<?= e($link) ?>" aria-label="<?= e($p['name']) ?>" aria-hidden="true" tabindex="-1">
               <?php if ($img !== ''): ?>
                 <picture>
@@ -455,31 +454,31 @@ function render_product_card(array $p, array $ctx): void
                   <img class="product-card__img" src="<?= e($img) ?>" alt="<?= e($p['name']) ?>" loading="lazy" decoding="async">
                 </picture>
               <?php else: ?>
-                <svg viewBox="0 0 80 94" style="width:30%;margin:auto;color:var(--blue)" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="40" cy="30" r="11"/><circle cx="26" cy="38" r="8"/><circle cx="54" cy="38" r="8"/><path d="M40 41v20M40 61c-8 6-14 14-16 25M40 61c8 6 14 14 16 25"/></svg>
+                <svg viewBox="0 0 80 94" style="width:30%;margin:auto;color:var(--ink-muted)" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="40" cy="30" r="11"/><circle cx="26" cy="38" r="8"/><circle cx="54" cy="38" r="8"/><path d="M40 41v20M40 61c-8 6-14 14-16 25M40 61c8 6 14 14 16 25"/></svg>
               <?php endif; ?>
               <?php if ($img2Url !== ''): ?>
                 <img class="product-card__img2" src="<?= e($img2Url) ?>" alt="" aria-hidden="true" loading="lazy" decoding="async">
               <?php endif; ?>
             </a>
-            <?php /* бейджи на фото: скидка «−N%» и «Хит» (#F5B301) слева сверху;
-                   «Премиум» — редкий третий, тоже слева (лесенкой). */ ?>
+            <?php /* на фото ТОЛЬКО жёлтый «Хит» (#FFB800) и скидка (белая
+                   плашка); «Премиум» — редкий третий, чёрный. */ ?>
             <?php if ($isSale): $offPct = (int)$p['price'] > 0 ? (int)round((1 - $price / (int)$p['price']) * 100) : 0; ?><span class="product-card__badge product-card__badge--sale"><?= $offPct > 0 ? '&#8722;' . (int)$offPct . '%' : e(setting('badge_sale_text', 'Скидка')) ?></span><?php endif; ?>
             <?php if ($isHit): ?><span class="product-card__badge product-card__badge--hit"><?= e(setting('badge_hit_text', 'Хит')) ?></span><?php endif; ?>
             <?php if ($isPremium): ?><span class="product-card__badge product-card__badge--premium"><?= e(setting('badge_premium_text', 'Премиум')) ?></span><?php endif; ?>
-            <?php if ($ctx['featFavorites']): ?><button type="button" class="product-card__fav" data-fav-id="<?= (int)$p['id'] ?>" data-fav-name="<?= e($p['name']) ?>" aria-label="В избранное: <?= e($p['name']) ?>" title="В избранное">♡</button><?php endif; ?>
           </div>
           <div class="product-card__body">
             <?php if (!empty($ctx['feature'])): ?>
             <span class="product-card__feature-label"><?= e(setting('feature_card_label', 'Выбор флориста')) ?></span>
             <?php endif; ?>
-            <?php /* мета-ряд: время доставки + микро-бейдж размера (⌀/↕) —
-                   того, чего нет на 5cv.ru */ ?>
-            <div class="product-card__meta">
-              <?php if ($deliveryText !== ''): ?><p class="product-card__delivery"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><?= e($deliveryText) ?></p><?php endif; ?>
-              <?php if ($sizeClean !== ''): ?>
-              <p class="product-card__size"><?php if ($sizeIsDia): ?><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M6.5 17.5 17.5 6.5"/></svg><?php else: ?><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M8 7l4-4 4 4M8 17l4 4 4-4"/></svg><?php endif; ?><span class="product-card__size-text"><?= e($sizeClean) ?></span></p>
-              <?php endif; ?>
-            </div>
+            <?php /* строка 1: иконка часов + серый «Сегодня за 1–2 часа» */ ?>
+            <?php if ($deliveryText !== ''): ?><p class="product-card__delivery"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><?= e($deliveryText) ?></p><?php endif; ?>
+            <?php /* строка 2: рейтинг «★ 5.0 (28)» жёлтой звездой */ ?>
+            <?php if ($cardRating !== null): ?>
+            <p class="product-card__rating"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg><span class="product-card__rating-num"><?= e(sprintf('%.1f', (float)$cardRating['avg'])) ?></span>&nbsp;<span class="product-card__rating-count">(<?= (int)$cardRating['count'] ?>)</span></p>
+            <?php endif; ?>
+            <?php /* строка 3: название — чёрный, 15–16px, medium, 1–2 строки */ ?>
+            <a class="product-card__name" href="<?= e($link) ?>"><?= e($p['name']) ?></a>
+            <?php /* строка 4: цена крупно жирным + зачёркнутая старая */ ?>
             <p class="product-card__price">
               <?php if ($isSale): ?>
                 <span class="product-card__price--discount"><?= formatPrice($price) ?></span>
@@ -488,22 +487,16 @@ function render_product_card(array $p, array $ctx): void
                 <?= formatPrice($price) ?>
               <?php endif; ?>
             </p>
-            <?php /* Сплит — виджет-пилюля: графитовый чип + «4 платежа по 875 ₽» */ ?>
+            <?php /* строка 5: аккуратный серый шильдик «Сплит: от N ₽ × 4» */ ?>
             <?php if ($splitText !== ''): ?>
-            <p class="product-card__split"><span class="product-card__split-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="7.5" height="14" rx="1.5"/><rect x="13.5" y="5" width="7.5" height="14" rx="1.5"/></svg><?= e($splitChip !== '' ? $splitChip : 'Сплит') ?></span><span class="product-card__split-text"><?= e($splitText) ?></span></p>
+            <p class="product-card__split"><span class="product-card__split-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="7.5" height="14" rx="1.5"/><rect x="13.5" y="5" width="7.5" height="14" rx="1.5"/></svg><?= e(trim((string)setting('split_chip_text', 'Сплит'))) ?></span><span class="product-card__split-text"><?= e($splitText) ?></span></p>
             <?php endif; ?>
-            <a class="product-card__name" href="<?= e($link) ?>"><?= e($p['name']) ?></a>
-            <?php if ($comp !== ''): ?><p class="product-card__comp"><?= e($comp) ?></p><?php endif; ?>
-            <?php if ($isSturdy || $isFresh): ?>
-            <div class="product-card__tags">
-              <?php if ($isSturdy): ?><span class="product-card__tag"><?= e(setting('badge_sturdy_text', 'Стойкие')) ?></span><?php endif; ?>
-              <?php if ($isFresh): ?><span class="product-card__tag"><?= e(setting('badge_fresh_text', 'Свежая поставка')) ?></span><?php endif; ?>
-            </div>
+            <?php /* скрытые данные для Quick View (не отображаются) */ ?>
+            <?php if ($comp !== ''): ?><p class="product-card__comp" hidden><?= e($comp) ?></p><?php endif; ?>
+            <?php if ($sizeClean !== ''): ?>
+            <p class="product-card__size" hidden><?php if ($sizeIsDia): ?><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M6.5 17.5 17.5 6.5"/></svg><?php else: ?><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M8 7l4-4 4 4M8 17l4 4 4-4"/></svg><?php endif; ?><span class="product-card__size-text"><?= e($sizeClean) ?></span></p>
             <?php endif; ?>
-            <?php if ((int)($p['is_urgent'] ?? 0) === 1): ?>
-            <p class="product-card__urgent-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>Соберём за 1–2 часа и привезём сегодня — количество ограничено</p>
-            <?php endif; ?>
-            <?php /* кнопки: компактная «В корзину» + иконка «1 клик» */ ?>
+            <?php /* строка 6: «В корзину» (чёрная) + быстрая ссылка «Купить в 1 клик» */ ?>
             <div class="product-card__actions">
               <button type="button" class="product-card__cta" data-order-cta
                 data-product-id="<?= (int)$p['id'] ?>"
@@ -516,12 +509,13 @@ function render_product_card(array $p, array $ctx): void
                 data-product-name="<?= e($p['name']) ?>"
                 data-product-price-raw="<?= $price ?>"
                 data-product-image="<?= e($img) ?>"
-                aria-label="<?= e($oneclickFull) ?>: <?= e($p['name']) ?>" title="<?= e($oneclickFull) ?>"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg><span><?= e(mb_strimwidth($oneclickShort, 0, 12, '…')) ?></span></button>
+                aria-label="<?= e($oneclickFull) ?>: <?= e($p['name']) ?>" title="<?= e($oneclickFull) ?>"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg><span><?= e($oneclickFull) ?></span></button>
             </div>
           </div>
         </article>
     <?php
 }
+
 
 
 function render_fc_eyebrow(string $eyebrow): void
@@ -625,6 +619,18 @@ function render_fc_editorial(int $n): void
     ?>
     <section class="fc-editorial" aria-label="О мастерской"><div class="wrap"><p class="reveal"><?= e($editorialText) ?></p></div></section>
     <?php
+}
+
+/* S6: карта рейтингов по товарам — живой агрегат отзывов из БД
+   (render_product_card печатает «★ 5.0 (28)» жёлтой звездой;
+   фолбэк для товара без отзывов — общий агрегат магазина). */
+$productRatings = [];
+try {
+    foreach ($pdo->query('SELECT product_id, COUNT(*) AS c, ROUND(AVG(rating), 1) AS a FROM reviews GROUP BY product_id') as $rr) {
+        $productRatings[(int)$rr['product_id']] = ['count' => (int)$rr['c'], 'avg' => (float)$rr['a']];
+    }
+} catch (Throwable $e) {
+    /* старая БД без таблицы reviews — тихо деградируем к общему агрегату */
 }
 
 $cardCtx = ['featDeliveryBadge' => $featDeliveryBadge, 'featFavorites' => $featFavorites];
@@ -869,11 +875,7 @@ echo '<link rel="preload" as="image" href="' . e($__heroPreHref) . '" fetchprior
     . '>' . "\n";
 ?>
 <?php endif; ?>
-<?php /* W104-α (A): preload обоих Playfair-подмножеств кириллицы — H1 hero
-   (roman) и его акцент-слово <em> (НАСТОЯЩИЙ italic теперь в /fonts):
-   LCP-текст не должен ждать свапа с Georgia-фолбэка. */ ?>
-<link rel="preload" href="/fonts/PlayfairDisplay-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/fonts/PlayfairDisplay-Italic-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/Inter-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
 <?php require __DIR__ . '/partials/head.php'; ?>
 <?php /* JSON-LD Florist — canonical 2026 (hanafloristpos.com/schema-guide, thestacc.com/local-business-schema) */ ?>
 <?php
@@ -1027,7 +1029,7 @@ echo json_encode([
         <?php if ($heroRating !== null): ?>
         <a class="fc-promo__rating" href="#reviews">
           <span class="fc-promo__rating-star" aria-hidden="true">★</span>
-          <span class="fc-promo__rating-num"><?= e(str_replace('.', ',', (string)round($heroRating['avg'], 1))) ?></span>
+          <span class="fc-promo__rating-num"><?= e(sprintf('%.1f', (float)$heroRating['avg'])) ?></span>
           <span class="fc-promo__rating-note">по отзывам покупателей</span>
         </a>
         <?php endif; ?>
@@ -1035,8 +1037,8 @@ echo json_encode([
         <?php endif; ?>
         </div>
         <?php /* NILOV_CONFIG — общий конфиг JS (порог бесплатной доставки и др.).
-               S5: + живой таймер доставки (deliveryNowMinutes/Text/Tomorrow/Short —
-               настройки delivery_now_*; рендерит js/five.js deliveryNow()). */ ?>
+               S6: живой таймер доставки удалён (кнопки/пульс-точки — по ТЗ
+               стерильности), ключи delivery_now_* остаются в БД/админке. */ ?>
         <script>window.NILOV_CONFIG = {
           deadlineHour: <?= (int)(setting('order_deadline_hour', '20')) ?>,
           deadlineMinute: <?= (int)(setting('order_deadline_minute', '0')) ?>,
@@ -1045,11 +1047,7 @@ echo json_encode([
           nightText: <?= json_encode(setting('countdown_night_text', 'Примем заказ сейчас — доставим с 9:00 утра'), JSON_UNESCAPED_UNICODE) ?>,
           countdownText: <?= json_encode(setting('countdown_text', 'Заказ до {D} — доставим сегодня'), JSON_UNESCAPED_UNICODE) ?>,
           closedText: <?= json_encode(setting('countdown_closed_text', 'Приём заказов на сегодня закрыт — доставим завтра с 9:00'), JSON_UNESCAPED_UNICODE) ?>,
-          freeDeliveryThreshold: <?= (int) setting('free_delivery_threshold', '0') ?>,
-          deliveryNowMinutes: <?= (int) setting('delivery_now_minutes', '90') ?>,
-          deliveryNowText: <?= json_encode(setting('delivery_now_text', 'Ближайшая доставка по СПб: сегодня к {time}'), JSON_UNESCAPED_UNICODE) ?>,
-          deliveryNowTomorrow: <?= json_encode(setting('delivery_now_tomorrow', 'Ближайшая доставка по СПб: завтра к {time}'), JSON_UNESCAPED_UNICODE) ?>,
-          deliveryNowShort: <?= json_encode(setting('delivery_now_short', 'Доставим сегодня к {time}'), JSON_UNESCAPED_UNICODE) ?>
+          freeDeliveryThreshold: <?= (int) setting('free_delivery_threshold', '0') ?>
         };</script>
       </div>
     </div>
@@ -1091,10 +1089,13 @@ echo json_encode([
         <span class="fc-chip__title"><?= e(setting('chips_all_text', 'Все букеты')) ?></span>
       </button>
       <button type="button" class="fc-chip fc-chip--low" data-chip="low" data-max="<?= $chipsN ?>" aria-pressed="false">
-        <span class="fc-chip__title">до&nbsp;<?= formatSum($chipsN) ?>&nbsp;₽</span>
+        <span class="fc-chip__title">До&nbsp;<?= formatSum($chipsN) ?>&nbsp;₽</span>
       </button>
       <button type="button" class="fc-chip fc-chip--mid" data-chip="mid" data-min="<?= $chipsN ?>" data-max="<?= $chipsM ?>" aria-pressed="false">
         <span class="fc-chip__title"><?= formatSum($chipsN) ?>–<?= formatSum($chipsM) ?>&nbsp;₽</span>
+      </button>
+      <button type="button" class="fc-chip fc-chip--high" data-chip="high" data-min="<?= $chipsM ?>" aria-pressed="false">
+        <span class="fc-chip__title">От&nbsp;<?= formatSum($chipsM) ?>&nbsp;₽</span>
       </button>
       <button type="button" class="fc-chip fc-chip--premium" data-chip="premium" aria-pressed="false">
         <span class="fc-chip__title">Премиум</span>
@@ -1139,14 +1140,6 @@ echo json_encode([
         <span class="fc-chip__title"><?= e($chipTag) ?></span>
       </button>
       <?php endforeach; ?>
-      <?php /* S5: хвост ленты — «Хиты» и «от 7 000 ₽» (функциональные фильтры,
-             вынесены после коллекций-тегов по эталону 5cv) */ ?>
-      <button type="button" class="fc-chip fc-chip--hit" data-chip="hit" aria-pressed="false">
-        <span class="fc-chip__title">Хиты</span>
-      </button>
-      <button type="button" class="fc-chip fc-chip--high" data-chip="high" data-min="<?= $chipsM ?>" aria-pressed="false">
-        <span class="fc-chip__title">от&nbsp;<?= formatSum($chipsM) ?>&nbsp;₽</span>
-      </button>
       <span class="fc-chips__count" aria-live="polite" style="flex:none;align-self:center;white-space:nowrap;font-size:.85rem;font-weight:600;color:var(--ink-muted)"></span>
     </div>
   </div>
@@ -1156,16 +1149,7 @@ echo json_encode([
      W103 (F1): marquee ВЕРНУЛСЯ (см. блок выше) — ритм-разделитель под hero. */ ?>
 
   <?php /* W97-fixB2 (B2-5а): каталог — тоже товарная секция.
-     W106-C1 (P0-5 «фон-ритм середины»): каталогу — КРЕМОВЫЙ фон (surface-warm):
-     после двух тёмных фулл-блидов (манифест + премиум) белый грид каталога
-     сливался с белыми секциями ниже — теперь ритм: dark → крем-каталог →
-     soft «Дополните» → белый отзывы → soft поводы → тёплая форма. */ ?>
-  <?php /* S5: ЖИВОЙ ТАЙМЕР ДОСТАВКИ (Conversion Booster) — 🟢 «Ближайшая
-       доставка по СПб: сегодня к 15:30». Время считает js/five.js
-       (СПб + delivery_now_minutes, округление к 15 мин); без JS — скрыт.
-       На мобиле живёт в одной строке с меткой «КАТАЛОГ» (ноль доп. высоты —
-       сетка букетов остаётся в первом экране), на десктопе — под H2. */ ?>
-  <?php $featDeliveryNow = setting('feature_delivery_now', '1') === '1'; ?>
+     W106-C1 (P0-5): каталогу — мягкий серый фон (surface-soft #F7F7F8). */ ?>
   <?php $fcProdSeq++; ?>
   <section class="fc-section fc-section--tint" id="catalog">
     <div class="wrap">
@@ -1178,13 +1162,6 @@ echo json_encode([
         <h2 class="fc-row__title"><?= e(setting('catalog_title', 'Каталог')) ?></h2>
         <?php $catalogSub = setting('catalog_subtitle', 'Выбирайте букет — соберём и привезём сегодня'); /* W104-λ (C4-T4): было «…в день заказа» — дублировало формулу hero/SEO */ ?>
         <?php if ($catalogSub !== ''): ?><p class="fc-row__sub"><?= e($catalogSub) ?></p><?php endif; ?>
-        <?php if ($featDeliveryNow): ?>
-        <p class="fc-delivery-now" id="fcDeliveryNow" hidden>
-          <span class="fc-delivery-now__dot" aria-hidden="true"></span>
-          <span class="fc-delivery-now__full"></span>
-          <span class="fc-delivery-now__short"></span>
-        </p>
-        <?php endif; ?>
         </div>
       </div>
       <?php /* W105-8fix1 (критик-UX 8-b P1#2): индикатор активного поиска — пилюля

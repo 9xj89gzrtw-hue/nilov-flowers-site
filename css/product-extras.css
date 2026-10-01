@@ -19,7 +19,7 @@
      = 40px @1440; H2 секций главной остаётся 44 (дисплейный масштаб
      только у витрины). Было 44 у PDP — «wobble» 44/40/44. */
 .fc-product__title{
-  --font-display:'Playfair Display','Playfair Fallback',Georgia,'Times New Roman',serif;
+  --font-display:var(--font-ui);
   font-family:var(--font-display);
   font-weight:500;
   font-size:clamp(2.2rem,3.4vw,2.5rem);   /* W103/G2 → W105-b → W105-7fix1: = .page-hero__title вторичек (одна ступень page-hero) */
@@ -33,7 +33,7 @@
    «С этим берут»: related-H2 ниже шкалой (clamp 1.6–2.1rem, Playfair 500),
    H1 — вес 500 (было 600) — разница читается и весом, и кеглем. */
 .fc-related__title{
-  --font-display:'Playfair Display','Playfair Fallback',Georgia,'Times New Roman',serif;
+  --font-display:var(--font-ui);
   font-family:var(--font-display);
   font-weight:500;
   font-size:clamp(1.5rem,2.4vw,2rem);
@@ -50,7 +50,7 @@
    гарантирует корректную роль и на случай, если владелец/дизайнер уберёт
    скрытие — две системы H2 на странице больше не будет. */
 .fc-product__info > h2{
-  --font-display:'Playfair Display','Playfair Fallback',Georgia,'Times New Roman',serif;
+  --font-display:var(--font-ui);
   font-family:var(--font-display);
   font-weight:500;
   font-size:clamp(1.5rem,2.4vw,2rem);

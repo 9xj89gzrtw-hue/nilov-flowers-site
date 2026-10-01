@@ -1440,6 +1440,40 @@ $pdo->exec("UPDATE occasions SET faq_q1 = replace(faq_q1, 'Какую карту
         ':k' => 'chips_tags',
         ':ov' => 'Пионы,Гортензии,Французские розы,Монобукеты,В шляпных коробках,Подарок девушке',
     ]);
+
+    /* ===== S6 (v2026.6, стерильный 5cv): белый минимализм =====
+       1) Тестовый товар «Кофе» (slug=kofe, 1000 ₽ со скидкой −80%) —
+          отключаем на живом каталоге. Guard-маркер s6_kofe_disabled делает
+          миграцию одноразовой: повторное включение владельцем в админке —
+          святое (условие is_active=1 больше не сработает после маркера).
+       2) Новые ключи: topbar_delivery_text (верхняя строка шапки) +
+          trust_badge_1..4 (4 бейджа доверия под шапкой).
+       3) Guard-UPDATE по ТОЧНЫМ старым сид-значениям: плейсхолдер поиска —
+          «Розы, пионы, букет маме…» (как на 5cv.ru); теги чипсов —
+          «Розы,Пионы,Гортензии,В коробках» (порядок ленты 5cv). */
+    $s6kofeDone = $pdo->query("SELECT value FROM settings WHERE key = 's6_kofe_disabled'")->fetchColumn();
+    if ($s6kofeDone === false) {
+        $pdo->exec("UPDATE products SET is_active = 0 WHERE slug = 'kofe' AND name = 'Кофе' AND is_active = 1");
+        $pdo->exec("INSERT OR IGNORE INTO settings (key, value) VALUES ('s6_kofe_disabled', '1')");
+    }
+    $pdo->exec("INSERT OR IGNORE INTO settings (key, value) VALUES
+        ('topbar_delivery_text', 'Доставка от 1 часа'),
+        ('trust_badge_1', 'Доставка за 1–2 часа в день заказа'),
+        ('trust_badge_2', 'Фото букета до отправки в WhatsApp'),
+        ('trust_badge_3', '5.0 на Яндекс Картах (более 400 отзывов)'),
+        ('trust_badge_4', 'Яндекс Сплит на 4 части без переплат')");
+    $s6guard = $pdo->prepare("UPDATE settings SET value = :nv WHERE key = :k AND value = :ov");
+    $s6guard->execute([':nv' => 'Розы, пионы, букет маме…', ':k' => 'search_placeholder', ':ov' => 'Розы, пионы, тюльпаны…']);
+    $s6guard->execute([
+        ':nv' => 'Розы,Пионы,Гортензии,В коробках',
+        ':k' => 'chips_tags',
+        ':ov' => 'Пионы,Французские розы,Гортензии,В коробках,Подарок',
+    ]);
+    $s6guard->execute([
+        ':nv' => 'Розы,Пионы,Гортензии,В коробках',
+        ':k' => 'chips_tags',
+        ':ov' => 'Пионы,Гортензии,Французские розы,Монобукеты,В шляпных коробках,Подарок девушке',
+    ]);
 }
 
 /* S3 (v2026.3): теги/состав/размеры демо-букетов — общий хелпер для свежих

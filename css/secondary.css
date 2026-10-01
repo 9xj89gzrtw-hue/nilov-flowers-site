@@ -44,20 +44,17 @@
    W105-b (5-b): верх шкалы 3.25→2.75rem = H1 PDP = H2 главной — вторичная
    H1 не перекрикивает деньгу (PDP); середина 4vw→3.6vw (критик: «shout»). */
 .page-hero__title{
-  --font-display:'Playfair Display','Playfair Fallback',Georgia,'Times New Roman',serif;
-  font-family:var(--font-display);
-  font-weight:500;
+  font-family:var(--font-ui);
+  font-weight:700;
   font-size:clamp(2.2rem,3.4vw,2.5rem);   /* W105-6fix2 (критик 6-b F): 40px @1440 — единый кегль с утилитарными страницами (было 44 у категорий / 36 у политики — одна разметка, два кегля) */
   line-height:1.12;
   letter-spacing:-.015em;   /* W105-c (5-b/2): display-трекинг H2 главной 5-a (−1.5%) — семейство одной оптической плотности */
   text-wrap:balance;
 }
 .page-hero__accent{
-  font-style:italic;
-  /* W104-γ (C2-T2 P1.5): весовой контраст display-оси — акцент 600
-     (оси 500–700 в файле), рядом с прямым 500 читается жирнее курсива */
-  font-weight:600;
-  color:var(--pink-deep,#cc2f7a);
+  font-style:normal;
+  font-weight:800;
+  color:var(--ink,#1A1A1A);
 }
 
 /* ============ 1b. УТИЛИТАРНЫЕ СТРАНИЦЫ (thanks / 404 / policy / offer) ============
@@ -92,9 +89,8 @@
    clamp(2rem,3.2vw,2.75rem) — вторички не выпадают из типосистемы
    (five.css задаёт ту же шкалу для .section-title главной). */
 .section-title{
-  --font-display:'Playfair Display','Playfair Fallback',Georgia,'Times New Roman',serif;
-  font-family:var(--font-display);
-  font-weight:500;
+  font-family:var(--font-ui);
+  font-weight:700;
   font-size:clamp(2rem,3.2vw,2.75rem);
   line-height:1.12;
   letter-spacing:-.015em; /* W105-6fix2 (критик 6-b D): Playfair ≥24 — единый display-трекинг (был −.01em; файл грузится ПОСЛЕ five.css — его W105-слой перекрывал) */
@@ -116,9 +112,8 @@
    маркеры списков — ink-muted (розовый bullet в плотном юр-тексте —
    визуальный шум, на витрине остаётся); якорные переходы — под sticky-хедер. */
 .page-utility .prose h2{
-  --font-display:'Playfair Display','Playfair Fallback',Georgia,'Times New Roman',serif;
-  font-family:var(--font-display);
-  font-weight:500;
+  font-family:var(--font-ui);
+  font-weight:700;
   font-size:clamp(1.35rem,1.8vw,1.6rem);
   line-height:1.2;
   letter-spacing:-.015em; /* W105-6fix2: −.005 → −.015em — display ≥24 единым трекингом (25.6 — ступень читательских H2 легальных текстов) */
@@ -280,9 +275,9 @@
    editorial-иероглиф, не «неоновая сигнализация»; H1 — семейный паттерн
    первого слова-акцента. Лепестки (NF_BURST на load) — сигнатура магазина. */
 .error-code{
-  font-family:'Playfair Display','Playfair Fallback',Georgia,'Times New Roman',serif;
-  font-style:italic;
-  font-weight:500;
+  font-family:var(--font-ui);
+  font-style:normal;
+  font-weight:700;
   font-size:clamp(4.5rem,14vw,7.5rem);
   line-height:1;
   letter-spacing:-.015em; /* W105-6fix2 (критик 6-b D): Playfair ≥24 — единый display-трекинг (был −.03em) */

@@ -243,7 +243,7 @@ $secondaryCssV = substr((string)@md5_file(__DIR__ . '/css/secondary.css'), 0, 8)
 <?php require __DIR__ . '/partials/head.php'; ?>
 <?php /* W103/G2: H1 повода выше фолда — Playfair: preload cyrillic-подмножества
        (21КБ, тот же паттерн product.php: FOUT на Georgia-фолбэке недопустим) */ ?>
-<link rel="preload" href="/fonts/PlayfairDisplay-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/Inter-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/css/secondary.css?v=<?= e($secondaryCssV) ?>">
 <?php /* W97-fixB3b (B3b-3): CollectionPage БЕЗ mainEntity-вопросов (FAQ как
    mainEntity у CollectionPage невалиден) — FAQ вынесен в отдельный top-level

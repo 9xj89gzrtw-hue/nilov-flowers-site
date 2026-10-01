@@ -105,6 +105,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
         'quickview_comp_title','quickview_extras_title','quickview_chrysal_text',
         'quickview_card_label','quickview_card_placeholder','quickview_full_link',
         'gift_self_label','gift_other_label',
+        /* S6 (стерильный 5cv): верхняя строка шапки + 4 бейджа доверия */
+        'topbar_delivery_text','trust_badge_1','trust_badge_2','trust_badge_3','trust_badge_4',
         /* W96 (редизайн 5cv): тексты новых блоков витрины — город, hero-промо, чипы цен,
            секции хитов/премиума/бюджета/допов, поводы, магазины, SEO-текст, журнал */
         'citybar_text','city_label','search_placeholder','catalog_btn_text',
@@ -811,18 +813,25 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
     <h2 style="font-family:var(--font-display);font-size:1.2rem;margin-bottom:8px">Продажи: инфо-бар, Сплит, допы, WhatsApp, 1-клик</h2>
     <p style="font-size:.85rem;color:var(--ink-soft);margin:0 0 14px">S3 (v2026.3). Плашка преимуществ в шапке, калькулятор Яндекс&nbsp;Сплит/Долями, бесплатные допы корзины, шаблоны сообщений WhatsApp, быстрый заказ и чипсы-теги каталога. Всё сохраняется в базу и мгновенно обновляется на витрине.</p>
 
-    <p style="font-size:.9rem;font-weight:700;margin:0 0 6px">Инфо-бар над шапкой (плашка преимуществ)</p>
+    <p style="font-size:.9rem;font-weight:700;margin:0 0 6px">Верхняя строка шапки (S6)</p>
     <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
       <input type="checkbox" name="infobar_enabled" style="width:auto" <?= sv('infobar_enabled', $s) !== '0' ? 'checked' : '' ?>>
-      Показывать инфо-бар
+      Показывать верхнюю строку
     </label>
-    <label class="f" for="s-ib1">Строка 1 (доставка)</label>
-    <input class="input" id="s-ib1" name="infobar_text_1" value="<?= sv('infobar_text_1', $s) ?>">
-    <label class="f" for="s-ib2">Строка 2 (фото)</label>
-    <input class="input" id="s-ib2" name="infobar_text_2" value="<?= sv('infobar_text_2', $s) ?>">
-    <label class="f" for="s-ib3">Строка 3 (открытка)</label>
-    <input class="input" id="s-ib3" name="infobar_text_3" value="<?= sv('infobar_text_3', $s) ?>">
-    <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 0">Пустая строка не печатается; между строками — янтарная точка-разделитель.</p>
+    <label class="f" for="s-tbd">Обещание доставки (рядом с городом)</label>
+    <input class="input" id="s-tbd" name="topbar_delivery_text" value="<?= sv('topbar_delivery_text', $s) ?>">
+    <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 14px">Верхняя строка: «Санкт-Петербург • [это обещание]», справа — телефон и WhatsApp (из раздела «Контакты»).</p>
+
+    <p style="font-size:.9rem;font-weight:700;margin:0 0 6px">Бейджи доверия под шапкой (S6)</p>
+    <label class="f" for="s-tb1">Бейдж 1 (⚡ доставка)</label>
+    <input class="input" id="s-tb1" name="trust_badge_1" value="<?= sv('trust_badge_1', $s) ?>">
+    <label class="f" for="s-tb2">Бейдж 2 (📸 фото)</label>
+    <input class="input" id="s-tb2" name="trust_badge_2" value="<?= sv('trust_badge_2', $s) ?>">
+    <label class="f" for="s-tb3">Бейдж 3 (⭐ рейтинг)</label>
+    <input class="input" id="s-tb3" name="trust_badge_3" value="<?= sv('trust_badge_3', $s) ?>">
+    <label class="f" for="s-tb4">Бейдж 4 (💳 Сплит)</label>
+    <input class="input" id="s-tb4" name="trust_badge_4" value="<?= sv('trust_badge_4', $s) ?>">
+    <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 14px">Горизонтальный ряд из 4 бейджей сразу под шапкой; на мобильном — аккуратный скролл. Пустое поле скрывает бейдж.</p>
 
     <p style="font-size:.9rem;font-weight:700;margin:18px 0 6px">Яндекс Сплит / Долями</p>
     <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
