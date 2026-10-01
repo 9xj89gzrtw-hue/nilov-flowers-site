@@ -46,6 +46,39 @@
 - Тумблеры: feature_delivery_now / feature_quickview; 14 новых ключей в db.php S5
   + allowlist/поля admin/settings.php (секция «Продажи»).
 
+## Сессия S6 (01.10.2026, стерильный 5cv) — сделано
+- **Дизайн-система S6** (деплой e0ec10c, прод верифицирован): КРИСТАЛЬНО
+  белый #FFFFFF, подложки #F7F7F8, уголь #1A1A1A, серый #767676,
+  контуры #EFEFEF/#E0E0E0, БЕЗ теней/стекла/зерна/зума/лифтов.
+  Шрифт — Inter (variable 400–800, /fonts/Inter-*.woff2) на ВСЁМ сайте:
+  Playfair/Golos не подключаются, локальные ре-декларации secondary.css/
+  product-extras.css переопределены на var(--font-ui), курсивы убраны.
+- **Шапка**: топбар #F7F7F8 (fc-city «Санкт-Петербург» + topbar_delivery_text
+  «Доставка от 1 часа» | телефон + зелёная WA-кнопка) вместо инфо-бара;
+  основной ряд — лого/поиск «Розы, пионы, букет маме…»/корзина;
+  под шапкой .fc-usps — 4 бейджа доверия (trust_badge_1..4, мобайл-скролл,
+  рейтинг — ссылка на Яндекс Карты при yandex_reviews_id).
+- **Карточка 6 строк 5cv** (index + category копия): фото 4:5 r12 →
+  «Хит» #FFB800 (чёрный текст)/белая скидка → часы+card_delivery_text →
+  «★ 5.0 (N)» (живой рейтинг reviews по товару, фолбэк getRatingAggregate,
+  sprintf('%.1f')) → название 15–16px/500 → цена 20–22px/800 + старая →
+  серый «Сплит: от N ₽ × 4» (splitLabel) → чёрная «В корзину» + ссылка
+  «Купить в 1 клик». Сердце/⌀↕/состав/пилюли убраны (comp/size — hidden
+  носители для js/quickview.js). Таймер доставки УДАЛЁН (five.js deliveryNow
+  + #fcDeliveryNow + NILOV_CONFIG-ключи).
+- **Чипы**: Все букеты → До N → N–M → От N → Премиум → теги
+  (chips_tags «Розы,Пионы,Гортензии,В коробках»); чип «Хиты» убран;
+  ≤899px вкладки .catalog-tabs скрыты (дублируют чипы) — цена первой
+  карточки в фолде.
+- **ВНИМАНИЕ легаси-ловушка**: style.css:178 .product-card__cta —
+  absolute 44×44 opacity:0 (W65-кружок). five.css нейтрализует
+  (position:static;opacity:1;transform:none;width:100%) — НЕ удалять
+  этот reset. Аналогично mnav-тень из style.css гасится box-shadow:none.
+- **«Кофе» отключён**: db.php S6 one-shot (guard s6_kofe_disabled,
+  slug=kofe AND name='Кофе'); повторное включение владельцем — свято.
+- Новые ключи: topbar_delivery_text, trust_badge_1..4 (+ allowlist +
+  поля админки); guard-UPDATE search_placeholder/chips_tags.
+
 ## Окружение локальной разработки
 - **PHP:** `/home/z/tools/php` (8.4.23 static, полный GD+SQLite). Сервер: `php -S 127.0.0.1:8090 router.php` в корне репо. БД `db/flowers.db` создатся автоматически (seed).
 - **Не трогать** порт 3000 (песочница Next.js my-project) и repo `newsite` (кейтеринг, отдельный проект).
