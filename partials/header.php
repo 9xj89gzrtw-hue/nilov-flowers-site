@@ -70,12 +70,10 @@ try {
       <?php endif; ?>
       <span><?= e($siteName) ?></span>
     </a>
-    <?php /* W96-fix1 (F2): «Каталог» работает и со вторичных страниц — абсолютный
-       якорь /#catalog (на главной — тот же документ, просто скролл) */ ?>
-    <a class="fc-catalog-btn" href="/#catalog">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.6"/><rect x="14" y="3" width="7" height="7" rx="1.6"/><rect x="3" y="14" width="7" height="7" rx="1.6"/><rect x="14" y="14" width="7" height="7" rx="1.6"/></svg>
-      <span><?= e(setting('catalog_btn_text', 'Каталог')) ?></span>
-    </a>
+    <?php /* S4: тяжёлая ink-кнопка «Каталог» УБРАНА из ряда шапки (чистый
+       коммерческий ряд 5cv: лого → поиск → телефон → корзина). Пункт
+       «Каталог» живёт в панели бургера (мобиль) и в чипсах под баннером;
+       настройка catalog_btn_text остаётся в БД/админке. */ ?>
     <?php /* Поиск по каталогу (W96-fix1/F3): action="/" + name="q" — без JS
        нативный submit уводит на главную с запросом; js/five.js на главной фильтрует
        живьём (морфология: «розы» → «роз»), со вторичных страниц — редирект /?q=…#catalog */ ?>

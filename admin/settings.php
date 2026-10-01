@@ -98,7 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
         'oneclick_title','oneclick_note','oneclick_btn',
         'chips_all_text','chips_tags',
         'badge_fresh_text','badge_sturdy_text',
-        'card_btn_cart','card_btn_oneclick',
+        'card_btn_cart','card_btn_oneclick','card_delivery_text',
         'gift_self_label','gift_other_label',
         /* W96 (редизайн 5cv): тексты новых блоков витрины — город, hero-промо, чипы цен,
            секции хитов/премиума/бюджета/допов, поводы, магазины, SEO-текст, журнал */
@@ -886,6 +886,8 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
     <input class="input" id="s-btn1" name="card_btn_cart" value="<?= sv('card_btn_cart', $s) ?>">
     <label class="f" for="s-btn2">Кнопка в карточке — быстрый заказ</label>
     <input class="input" id="s-btn2" name="card_btn_oneclick" value="<?= sv('card_btn_oneclick', $s) ?>">
+    <label class="f" for="s-cdeliv">Строка доставки в карточке (пусто — скрыть)</label>
+    <input class="input" id="s-cdeliv" name="card_delivery_text" value="<?= sv('card_delivery_text', $s) ?>">
     <label class="f" for="s-bf">Бейдж «Свежая поставка» (по тегу «свеж…»)</label>
     <input class="input" id="s-bf" name="badge_fresh_text" value="<?= sv('badge_fresh_text', $s) ?>">
     <label class="f" for="s-bs">Бейдж «Стойкие» (по тегу «стой…»)</label>

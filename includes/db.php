@@ -1381,6 +1381,17 @@ $pdo->exec("UPDATE occasions SET faq_q1 = replace(faq_q1, 'Какую карту
        Вызывается и здесь (существующие БД), и из seedDemoData (свежие) —
        как seedReviewsOnce: миграция и сид дают одинаковый результат. */
     seedS3CatalogMeta($pdo);
+
+    /* ===== S4 (v2026.4, 01.10.2026): коммерческий первый экран 5cv-класса =====
+       1) card_delivery_text — компактная строка доставки в карточке каталога
+          («Сегодня за 1–2 часа», серым под ценой) — редактируется в админке.
+       2) split_label — формат «Сплит: от N ₽ × 4» вместо «N ₽/мес»
+          (guard по точному старому дефолту; кастом владельца не трогаем;
+          {div} подставляет split_divider). */
+    $pdo->exec("INSERT OR IGNORE INTO settings (key, value) VALUES
+        ('card_delivery_text', 'Сегодня за 1–2 часа')");
+    $s4split = $pdo->prepare("UPDATE settings SET value = :nv WHERE key = 'split_label' AND value = :ov");
+    $s4split->execute([':nv' => 'Сплит: от {price} ₽ × {div}', ':ov' => 'Сплит: от {price} ₽/мес']);
 }
 
 /* S3 (v2026.3): теги/состав/размеры демо-букетов — общий хелпер для свежих

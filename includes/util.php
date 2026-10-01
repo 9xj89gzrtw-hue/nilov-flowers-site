@@ -227,7 +227,13 @@ function splitLabel(int $price): string
     if (setting('split_enabled', '1') !== '1' || $price <= 0) {
         return '';
     }
-    return str_replace('{price}', formatSum(splitMonthly($price)), setting('split_label', 'Сплит: от {price} ₽/мес'));
+    /* S4: {div} — число платежей (split_divider); формат по умолчанию
+       «Сплит: от N ₽ × 4» (старые кастомы без {div} продолжают работать). */
+    return str_replace(
+        ['{price}', '{div}'],
+        [formatSum(splitMonthly($price)), (string)(int)setting('split_divider', '4')],
+        setting('split_label', 'Сплит: от {price} ₽ × {div}')
+    );
 }
 
 /* S3: список тегов товара → массив нижнего регистра ('розы, монобукеты' →

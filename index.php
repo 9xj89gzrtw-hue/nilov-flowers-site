@@ -43,13 +43,16 @@ $heroBtnText = trim(setting('hero_button_text', 'Выбрать букет'));
 $heroBtnLink = safe_url(trim(setting('hero_button_link', '#fcChips')));
 $heroBtn = $heroTextEnabled && $heroBtnText !== '' && $heroBtnLink !== '';
 
-/* Функции витрины (критерий 16): каждый блок отключаем из админки */
+/* Функции витрины (критерий 16): каждый блок отключаем из админки.
+   S4: дефолты фильтров-дублей выключены — ценовые ЧИПСЫ над сеткой уже
+   фильтруют по цене (low/mid/high), зонный чек дублирует выбор района в
+   чекауте и меню города. Тумблеры в админке остаются рабочими. */
 $featFaq = setting('feature_faq', '1') === '1';
 $featCountdown = setting('feature_countdown', '1') === '1';
-$featPriceFilter = setting('feature_price_filter', '1') === '1';
+$featPriceFilter = setting('feature_price_filter', '0') === '1';
 $featFavorites = setting('feature_favorites', '1') === '1';
-$featZoneCheck = setting('feature_zone_check', '1') === '1';
-$featDeliveryBadge = setting('feature_delivery_badge', '1') === '1';
+$featZoneCheck = setting('feature_zone_check', '0') === '1';
+$featDeliveryBadge = setting('feature_delivery_badge', '0') === '1';
 /* Критик functional 6/10: gift-UX (получатель+открытка) и слоты даты — отключаемые (критерий 14) */
 $featGiftFields = setting('feature_gift_fields', '1') === '1';
 $featDeliverySlots = setting('feature_delivery_slots', '0') === '1';
@@ -384,16 +387,10 @@ function render_product_card(array $p, array $ctx): void
     $isPremium = (int)($p['is_premium'] ?? 0) === 1;
     $img = product_img_url($p);
     $imgWebp = product_img_webp($p);
-    /* W96-fix3a (T2): srcset карточки — webp-превью 400w + webp-оригинал {w}w.
-   Слот карточки: моб — 2 колонки ≈ 45vw, десктоп — 280–300px (карусель clamp
-   + сетка 3 кол.) → браузер при DPR≤2 берёт лёгкое превью, ретина-десктоп — оригинал.
-   img-фолбэк (jpg) остаётся без srcset: превью только webp, браузерам без webp
-   отдаётся оригинал как раньше. */
     $thumb = product_img_thumb($p);
     $origW = product_img_width($p);
     if ($thumb !== '' && $imgWebp !== '' && $origW > 0) {
-        $t600 = preg_replace('/-400(\.webp)(?=\?|$)/', '-600$1', $thumb); /* W101 (perf): 600w для DPR2-3 (файлы -600 в кэше GD) */
-
+        $t600 = preg_replace('/-400(\.webp)(?=\?|$)/', '-600$1', $thumb);
         $srcset = $thumb . ' 400w'
             . ($t600 !== null && $t600 !== $thumb && is_file(BASE_PATH . parse_url($t600, PHP_URL_PATH)) ? ', ' . $t600 . ' 600w' : '')
             . ', ' . $imgWebp . ' ' . $origW . 'w';
@@ -404,32 +401,14 @@ function render_product_card(array $p, array $ctx): void
     } else {
         $srcset = '';
     }
-    /* W96-fix1 (F3): поисковый индекс карточки — имя + категория + описание
-       (нижний регистр; js/five.js матчит по стемму запроса как подстроке).
-       W99-fixG (G2): в карусельных копиях НЕ печатаем (описания дублируются —
-       36.5КБ лишнего HTML; поиск живёт только в #catalogGrid). */
     $isCarousel = !empty($ctx['carousel']);
-    /* W104-ζ (C3-D3 P1.1): sizes по ФАКТИЧЕСКОМУ слоту карточки — карусель
-       (flex-basis 72vw моб / ≤280px десктоп) и каталог-сетка (2 кол. ≤819 →
-       ~46vw; 3 кол. ≥820 → 372px при wrap 1200; 4 кол. ≥1700 → ~373px) —
-       раздельные значения вместо единого «300px»: при DPR2 браузер теперь
-       берёт 864w-оригинал для 372px-слота (раньше sizes врал на 72px → бралось
-       600w и ретина получала ~80% пикселей). */
+    /* S4: сетка каталога 4/3/2 — sizes по фактическим слотам карточки */
     $sizes = $isCarousel
         ? '(max-width:899px) 72vw, 280px'
-        /* W105-6fix1: сетка каталога 5/4/3/2 — sizes по фактическим слотам
-           (5 кол wrap-1200 → ~227px, ultra ≥1700 → ~275px) */
-        : '(max-width:359px) 92vw, (max-width:767px) 46vw, (max-width:1023px) 32vw, (max-width:1279px) 25vw, (max-width:1699px) 20vw, 276px';
+        : '(max-width:359px) 92vw, (max-width:767px) 46vw, (max-width:1023px) 31vw, (max-width:1279px) 23vw, 288px';
     $link = '/product/' . rawurlencode($p['slug']);
     $searchIndex = $isCarousel ? '' : mb_strtolower(trim($p['name'] . ' ' . ($p['category_name'] ?? '') . ' ' . ($p['description'] ?? '')));
-    /* K10 (W101): data-upsell="1" (show_in_upsell) — приоритетный источник апсейла
-       корзины (js/cart-ui.js): сладкие допы вместо «первых попавшихся букетов».
-       Как и остальные фильтрационные атрибуты — только на каталог-карточке
-       (карусельные копии без них, паттерн G2). */
     $upsellAttr = (!$isCarousel && (int)($p['show_in_upsell'] ?? 0) === 1) ? ' data-upsell="1"' : '';
-    /* S3 (v2026.3): теги — источник чипсов-фильтров; второй ракурс (image2) —
-       CSS-подмена при hover; состав/размер — строки под названием; Сплит —
-       шильдик «от N ₽/мес» под ценой (splitLabel, настройка split_divider). */
     $tagsAttr = trim((string)($p['tags'] ?? '')) !== ''
         ? ' data-tags="' . e(mb_strtolower(str_replace('ё', 'е', preg_replace('/\s+/u', ' ', trim((string)$p['tags'])) ?? ''), 'UTF-8')) . '"'
         : '';
@@ -441,18 +420,27 @@ function render_product_card(array $p, array $ctx): void
     $comp = trim((string)($p['composition'] ?? ''));
     $sizeText = trim((string)($p['size_text'] ?? ''));
     $splitText = splitLabel($price);
+    /* S4: компактная строка доставки под ценой («Сегодня за 1–2 часа»,
+       настройка card_delivery_text; пусто — не печатаем). */
+    $deliveryText = trim((string)setting('card_delivery_text', 'Сегодня за 1–2 часа'));
+    /* S4: теги «стойкие»/«свежая поставка» — тихие пилюли в теле карточки
+       (на фото остаются только «−N%» и «Хит»). */
     $isSturdy = false; $isFresh = false;
     foreach (productTagsList($p) as $tl) {
         if (str_starts_with($tl, 'стой')) { $isSturdy = true; }
         if (str_starts_with($tl, 'свеж')) { $isFresh = true; }
     }
+    /* S4: короткая подпись кнопки 1-клика («Купить в 1 клик» → «1 клик»);
+       полный текст настройки — в aria-label/title. */
+    $oneclickFull = trim((string)setting('card_btn_oneclick', 'Купить в 1 клик'));
+    $oneclickShort = trim((string)preg_replace('/^купить\s+(в\s+)?/iu', '', $oneclickFull));
+    if ($oneclickShort === '') { $oneclickShort = $oneclickFull; }
     ?>
         <article class="product-card reveal"<?= $isCarousel
             ? ''
             : ' data-category-id="' . (int)($p['category_id'] ?? 0) . '" data-price="' . (int)$price . '" data-hit="' . (int)($p['is_hit'] ?? 0) . '" data-premium="' . (int)($p['is_premium'] ?? 0) . '" data-search="' . e($searchIndex) . '"' . $upsellAttr . $tagsAttr ?>>
           <div class="product-card__media">
-          <?php /* W99-fixG (G11): img-ссылка дублирует title-ссылку — прячем от
-             скринридера и Tab-фокуса (href сохранён: клик мышью работает) */ ?>
+          <?php /* фото — 80% карточки: строго 3:4, радиус 12-16, без фона */ ?>
             <a class="product-card__media-link" href="<?= e($link) ?>" aria-label="<?= e($p['name']) ?>" aria-hidden="true" tabindex="-1">
               <?php if ($img !== ''): ?>
                 <picture>
@@ -462,80 +450,65 @@ function render_product_card(array $p, array $ctx): void
               <?php else: ?>
                 <svg viewBox="0 0 80 94" style="width:30%;margin:auto;color:var(--blue)" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="40" cy="30" r="11"/><circle cx="26" cy="38" r="8"/><circle cx="54" cy="38" r="8"/><path d="M40 41v20M40 61c-8 6-14 14-16 25M40 61c8 6 14 14 16 25"/></svg>
               <?php endif; ?>
-              <?php /* S3: второй ракурс — подмена при hover (CSS .product-card__media:hover);
-                     печатаем только если файл существует (is_file-guard). */ ?>
               <?php if ($img2Url !== ''): ?>
                 <img class="product-card__img2" src="<?= e($img2Url) ?>" alt="" aria-hidden="true" loading="lazy" decoding="async">
               <?php endif; ?>
             </a>
-            <?php if ($isSale): $offPct = (int)$p['price'] > 0 ? (int)round((1 - $price / (int)$p['price']) * 100) : 0; ?><span class="product-card__badge product-card__badge--sale"><?= $offPct > 0 ? '&#8722;' . (int)$offPct . '%' : e(setting('badge_sale_text', 'Скидка')) /* W104-α (C): только «−16%» типографским минусом — слово «Скидка» убрано, без процента — текст настройки */ ?></span><?php endif; ?>
-            <?php if ((int)($p['is_urgent'] ?? 0) === 1): ?><span class="product-card__badge product-card__badge--urgent"><?= e(setting('badge_urgent_text', 'Успеть сегодня')) ?></span><?php endif; ?>
-            <?php /* Бейджи 5cv: «Хит» (amber) и «Премиум» (ink) — по флагам товара.
-                   S3 (v2026.3): «Стойкие»/«Свежая поставка» — по тегам товара
-                   (задаются в админке через поле «Теги»). */ ?>
+            <?php /* бейджи на фото: скидка «−N%» и «Хит» (#F5B301) слева сверху;
+                   «Премиум» — редкий третий, тоже слева (лесенкой). */ ?>
+            <?php if ($isSale): $offPct = (int)$p['price'] > 0 ? (int)round((1 - $price / (int)$p['price']) * 100) : 0; ?><span class="product-card__badge product-card__badge--sale"><?= $offPct > 0 ? '&#8722;' . (int)$offPct . '%' : e(setting('badge_sale_text', 'Скидка')) ?></span><?php endif; ?>
             <?php if ($isHit): ?><span class="product-card__badge product-card__badge--hit"><?= e(setting('badge_hit_text', 'Хит')) ?></span><?php endif; ?>
             <?php if ($isPremium): ?><span class="product-card__badge product-card__badge--premium"><?= e(setting('badge_premium_text', 'Премиум')) ?></span><?php endif; ?>
-            <?php if ($isSturdy): ?><span class="product-card__badge product-card__badge--sturdy"><?= e(setting('badge_sturdy_text', 'Стойкие')) ?></span><?php endif; ?>
-            <?php if ($isFresh): ?><span class="product-card__badge product-card__badge--fresh"><?= e(setting('badge_fresh_text', 'Свежая поставка')) ?></span><?php endif; ?>
-            <?php /* Конкурентный бейдж (критерий 13, EXPRESS-паттерн): тариф зоны владельца. Текст редактируется (критерий 16). */ ?>
-            <?php if ($ctx['featDeliveryBadge']): ?><span class="product-card__badge product-card__badge--deliv"><?= e(setting('delivery_badge_text', 'Доставка по Санкт-Петербургу')) ?></span><?php endif; ?>
-            <?php /* Избранное (критерий 13, Русский Букет-паттерн): сердечко на карточке, localStorage. Отключаем (критерий 16). */ ?>
             <?php if ($ctx['featFavorites']): ?><button type="button" class="product-card__fav" data-fav-id="<?= (int)$p['id'] ?>" data-fav-name="<?= e($p['name']) ?>" aria-label="В избранное: <?= e($p['name']) ?>" title="В избранное">♡</button><?php endif; ?>
           </div>
           <div class="product-card__body">
-            <?php /* W104-γ (split-фича): редакционная метка над ценой —
-                   отличие фичи от рельса (VLM: «просто растянутая карточка») */
-            if (!empty($ctx['feature'])): ?>
+            <?php if (!empty($ctx['feature'])): ?>
             <span class="product-card__feature-label"><?= e(setting('feature_card_label', 'Выбор флориста')) ?></span>
             <?php endif; ?>
-            <?php /* W104: ЦЕНА ПЕРВОЙ (20/800 ink) → имя 13.5/500 — 5cv-принцип
-                   «цена ведёт карточку»; категория из карточки убрана */ ?>
+            <?php /* время доставки — маленькая серая строка над ценой */ ?>
+            <?php if ($deliveryText !== ''): ?><p class="product-card__delivery"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><?= e($deliveryText) ?></p><?php endif; ?>
             <p class="product-card__price">
               <?php if ($isSale): ?>
-                <span class="product-card__price--old"><?= formatPrice((int)$p['price']) ?></span>
                 <span class="product-card__price--discount"><?= formatPrice($price) ?></span>
+                <span class="product-card__price--old"><?= formatPrice((int)$p['price']) ?></span>
               <?php else: ?>
                 <?= formatPrice($price) ?>
               <?php endif; ?>
             </p>
-            <a class="product-card__name" href="<?= e($link) ?>"><?= e($p['name']) ?></a>
-            <?php /* S3 (v2026.3): состав и ориентировочные размеры — по данным
-                   товара (админка), строками под названием (как у 5cv). */ ?>
-            <?php if ($comp !== ''): ?><p class="product-card__comp"><?= e($comp) ?></p><?php endif; ?>
-            <?php if ($sizeText !== ''): ?><p class="product-card__size"><?= e($sizeText) ?></p><?php endif; ?>
-            <?php /* S3: шильдик Яндекс Сплит / Долями — «Сплит: от N ₽/мес»
-                   (split_divider, по умолчанию 4 платежа). */ ?>
+            <?php /* Сплит — аккуратная серая строка под ценой («от N ₽ × 4») */ ?>
             <?php if ($splitText !== ''): ?><p class="product-card__split"><?= e($splitText) ?></p><?php endif; ?>
-            <?php if ((int)($p['is_urgent'] ?? 0) === 1): ?>
-            <?php /* W104: зелёная строка доставки #1B7A43 с zap-иконкой (стили five.css) */ ?>
-            <p class="product-card__urgent-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>Соберём за 1–2 часа и привезём сегодня — количество ограничено</p> <?php /* W106-E1: единая SLA-формула (было «в течение дня») */ ?>
+            <a class="product-card__name" href="<?= e($link) ?>"><?= e($p['name']) ?></a>
+            <?php if ($comp !== ''): ?><p class="product-card__comp"><?= e($comp) ?></p><?php endif; ?>
+            <?php if ($isSturdy || $isFresh): ?>
+            <div class="product-card__tags">
+              <?php if ($isSturdy): ?><span class="product-card__tag"><?= e(setting('badge_sturdy_text', 'Стойкие')) ?></span><?php endif; ?>
+              <?php if ($isFresh): ?><span class="product-card__tag"><?= e(setting('badge_fresh_text', 'Свежая поставка')) ?></span><?php endif; ?>
+            </div>
             <?php endif; ?>
-            <?php /* S3: две кнопки карточки — «В корзину» (контракт cart-cta.js
-                   data-order-cta) и «Купить в 1 клик» (js/oneclick.js). */ ?>
+            <?php if ((int)($p['is_urgent'] ?? 0) === 1): ?>
+            <p class="product-card__urgent-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>Соберём за 1–2 часа и привезём сегодня — количество ограничено</p>
+            <?php endif; ?>
+            <?php /* кнопки: компактная «В корзину» + иконка «1 клик» */ ?>
             <div class="product-card__actions">
               <button type="button" class="product-card__cta" data-order-cta
                 data-product-id="<?= (int)$p['id'] ?>"
                 data-product-name="<?= e($p['name']) ?>"
                 data-product-price-raw="<?= $price ?>"
                 data-product-image="<?= e($img) ?>"
-                aria-label="Добавить в корзину: <?= e($p['name']) ?>" title="Добавить в корзину"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span><?= e(setting('card_btn_cart', 'В корзину')) ?></span></button>
+                aria-label="Добавить в корзину: <?= e($p['name']) ?>" title="Добавить в корзину"><?= e(setting('card_btn_cart', 'В корзину')) ?></button>
               <button type="button" class="product-card__oneclick" data-oneclick
                 data-product-id="<?= (int)$p['id'] ?>"
                 data-product-name="<?= e($p['name']) ?>"
                 data-product-price-raw="<?= $price ?>"
                 data-product-image="<?= e($img) ?>"
-                aria-label="Купить в 1 клик: <?= e($p['name']) ?>"><?= e(setting('card_btn_oneclick', 'Купить в 1 клик')) ?></button>
+                aria-label="<?= e($oneclickFull) ?>: <?= e($p['name']) ?>" title="<?= e($oneclickFull) ?>"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg><span><?= e(mb_strimwidth($oneclickShort, 0, 12, '…')) ?></span></button>
             </div>
           </div>
         </article>
     <?php
 }
 
-/* W104: eyebrow «капс|Playfair-курсив» — единый компонент шапки секции
-   (render_fc_row + каталог + поводы). Пустая строка — не печатаем.
-   W104-γ (C2-T2): третья необязательная часть «капс|курсив|хвост» —
-   прямой текст без капса после курсива («Красиво —|не значит|дорого»);
-   прежние 1-2-частные значения совместимы. */
+
 function render_fc_eyebrow(string $eyebrow): void
 {
     if ($eyebrow === '') return;
@@ -855,9 +828,9 @@ if ($heroThumb768 !== '') { $heroSrcset[] = $heroThumb768 . ' 768w'; }
 if ($heroThumb1024 !== '') { $heroSrcset[] = $heroThumb1024 . ' 1024w'; }
 if ($heroWebpOk && $heroDim !== null) { $heroSrcset[] = $heroWebpUrl . ' ' . (int)$heroDim[0] . 'w'; }
 $heroSrcsetStr = implode(', ', $heroSrcset);
-/* W104-ζ: слот по замеру — тайл 763px на 1440 (2fr/1fr от 1160), на 1700+
-   (wrap-ultra 1560) — 1003px; мобайл — тайл шириной с экран минус поля wrap */
-$heroSizes = '(max-width:899px) 100vw, (min-width:1700px) 1004px, 764px';
+/* S4 (v2026.4): промо-баннер — полноширинная компактная карточка (100vw),
+   слоты 480/768/1024 покрывают все вьюпорты. */
+$heroSizes = '100vw';
 ?>
 <?php /* W97-fixB2 (B2-7): og:image:width/height — соцсети резервируют превью без
        повторной загрузки; @-guard: файла нет — размеры не печатаем */ ?>
@@ -998,133 +971,55 @@ echo json_encode([
 <?php require __DIR__ . '/partials/header.php'; ?>
 
 <main id="main" tabindex="-1">
-<?php /* HERO-БЕНТО (5cv): фото-карточка с H1 + карточка доставки справа. D-d1 (P0-1): фото-колонка ~70vh — первый экран = H1+подзаголовок+CTA+пилюли+фото; траст и чипы — ниже фолда (CSS five.css). */ ?>
-  <section class="fc-hero">
-    <div class="wrap fc-hero__grid">
-      <?php
-      /* W99-fixG (G3): переменные hero ($heroImg/$heroWebpOk/$heroDim/
-         $heroSrcsetStr/$heroSizes) посчитаны выше в <head> — там же preload. */
-      ?>
-      <div class="fc-hero__main<?= $heroRoot === '' ? ' fc-hero__main--fallback' : '' ?>">
+<?php /* S4 (v2026.4): КОМПАКТНЫЙ ПРОМО-БАННЕР — замена литературного hero-бенто
+   (972px на мобильном). Высота ≤220px на мобильном / ≤300px на десктопе;
+   ЧИПСЫ-категории и СЕТКА БУКЕТОВ начинаются сразу под ним — первый экран
+   продаёт товар. Контент — прежние настройки hero_* (eyebrow/H1/подзаголовок/
+   CTA/фото) + живой рейтинг; карточка доставки hero ушла в топ-полоску шапки
+   (инфо-бар), настройки hero_delivery_* остаются в БД/админке. */ ?>
+  <section class="fc-promo" aria-label="Актуальное предложение">
+    <div class="wrap">
+      <div class="fc-promo__card<?= $heroRoot === '' ? ' fc-promo__card--fallback' : '' ?>">
         <?php if ($heroRoot !== ''): ?>
         <picture>
-          <?php /* W99-fixG (G3): srcset 480w/768w/1024w + sizes по слоту
-                 .fc-hero__main (расчёт — в <head>, рядом с preload). GD-сбой —
-                 прежний одиночный src webp. */ ?>
-          <?php if ($heroWebpOk && $heroSrcsetStr !== ''): ?><source type="image/webp" srcset="<?= e($heroSrcsetStr) ?>" sizes="<?= e($heroSizes) ?>"><?php elseif ($heroWebpOk): ?><source type="image/webp" srcset="<?= e($heroWebpUrl) ?>"><?php endif; ?>
-          <?php /* W97-fixB2 (B2-6): описательный alt (было alt=H1 — дублировал видимый
-                 заголовок для скринридера); текст редактируется как hero_image_alt */ ?>
-          <img class="fc-hero__img" src="<?= e($heroUrl) ?>" alt="<?= e(setting('hero_image_alt', 'Свежий букет из сезонных цветов — витрина магазина')) ?>" fetchpriority="high"<?= $heroDim ? ' width="' . (int)$heroDim[0] . '" height="' . (int)$heroDim[1] . '"' : '' ?>>
+          <?php if ($heroWebpOk && $heroSrcsetStr !== ''): ?><source type="image/webp" srcset="<?= e($heroSrcsetStr) ?>" sizes="100vw"><?php elseif ($heroWebpOk): ?><source type="image/webp" srcset="<?= e($heroWebpUrl) ?>"><?php endif; ?>
+          <img class="fc-promo__img" src="<?= e($heroUrl) ?>" alt="<?= e(setting('hero_image_alt', 'Свежий букет из сезонных цветов — витрина магазина')) ?>" fetchpriority="high"<?= $heroDim ? ' width="' . (int)$heroDim[0] . '" height="' . (int)$heroDim[1] . '"' : '' ?>>
         </picture>
         <?php endif; ?>
-        <div class="fc-hero__content">
+        <div class="fc-promo__content">
         <?php if ($heroTextEnabled): ?>
         <?php
-        /* W105-7fix1 (тип-критик 7-b P2g): eyebrow-пилюля на 390px — перенос
-           ТОЛЬКО между «·»-сегментами (nowrap-спаны, «·» в конце первого
-           сегмента — чистый разрыв после разделителя). Пилюля — flex-wrap:wrap
-           (five.css): сегменты — flex-айтемы, без wrap НЕ переносятся никогда.
-           Значение без «·» — один сегмент, поведение прежнее. */
         $heroEyebrowVal = trim((string)setting('hero_eyebrow', 'Санкт-Петербург · собираем под ваш заказ'));
         $heroEyebrowSegs = $heroEyebrowVal !== ''
             ? array_values(array_filter(array_map('trim', explode('·', $heroEyebrowVal)), static fn (string $s): bool => $s !== ''))
             : [];
         ?>
-        <?php if ($heroEyebrowSegs !== []): ?><p class="fc-hero__eyebrow"><?= implode('', array_map(static fn (int $i, string $s): string => '<span class="fc-hero__eyebrow-seg">' . e(rtrim($s) . ($i < count($heroEyebrowSegs) - 1 ? ' ·' : '')) . '</span>', array_keys($heroEyebrowSegs), $heroEyebrowSegs)) /* W104-λ (C4-T4): «доставка в день заказа» — эхо бейджа ниже, сменили на позиционирование */ ?></p><?php endif; ?>
-        <h1 class="fc-hero__title"><?php
-        /* W103 (F1): акцентное слово H1 — Playfair italic + amber-мазок (стили в five.css).
-           Ищем «цветов» (без пунктуации), иначе — второе слово. NBSP-склейка «по Санкт-…»
-           сохранена: \s в PCRE /u не матчит U+00A0 — склеенный токен не разваливается.
-           W103 (6-b, M1): entrance — по-СЛОВНЫЙ rise из-под маски (nv-line/nv-ch —
-           оживлённый W4-набор из nilov.css; слова — inline-block, --i — порядок). */
-        /* W104-α (N, критик C1-T/C1-D1): короткий предлог (≤3 букв, не последнее
-           слово) клеится NBSP-ом к СЛЕДУЮЩЕМУ слову ПОСЛЕ сплита — «по␣Санкт-
-           Петербургу» одним токеном: не висит в конце строки и не отрывается
-           от города («Доставка цветов / по Санкт-Петербургу»). Прежняя склейка
-           ДО сплита не работала: PCRE2 в /u-режиме матчит U+00A0 как \s —
-           токен разваливался обратно. white-space:nowrap у .nv-line + cqi-кегль
-           H1 (five.css) держат фразу цельной на любой ширине тайла. */
-        $heroWordsRaw = preg_split("/\s+/u", trim((string)$heroH1)) ?: [];
-        $heroWords = [];
-        for ($hwI = 0, $hwN = count($heroWordsRaw); $hwI < $hwN; $hwI++) {
-            $hwW = $heroWordsRaw[$hwI];
-            if ($hwI < $hwN - 1
-                && preg_match("/^[a-zа-яё]+$/ui", $hwW) === 1
-                && mb_strlen($hwW) <= 3) {
-                $heroWords[] = $hwW . "\u{00A0}" . $heroWordsRaw[++$hwI];
-            } else {
-                $heroWords[] = $hwW;
-            }
-        }
-        $heroAccentIdx = -1;
-        /* W106 (B2): акцентное слово — «цветов» (легаси/кастомные H1) ИЛИ «слов»
-           (новый дефолт «Сказать без слов» — курсив ложится на «без слов») */
-        foreach ($heroWords as $hwI => $hwW) {
-            $hwClean = mb_strtolower(trim($hwW, '.,!?:;—«»„“'));
-            if ($hwClean === 'цветов' || $hwClean === 'слов') { $heroAccentIdx = (int)$hwI; break; }
-        }
-        if ($heroAccentIdx < 0 && count($heroWords) >= 2) { $heroAccentIdx = 1; }
-        foreach ($heroWords as $hwI => $hwW) {
-            if ($hwI > 0) { echo "\n"; }
-            echo '<span class="nv-line"><span class="nv-ch" style="--i:' . $hwI . '">'
-                . ($hwI === $heroAccentIdx
-                    ? '<em class="fc-hero__accent">' . e($hwW) . '</em>'
-                    : e($hwW))
-                . '</span></span>';
-        }
-        ?></h1>
-        <p class="fc-hero__sub"><?= e($heroSubtitle) /* W106 (B2): обещание + SEO-фраза «доставка по Санкт-Петербургу»; гейт кастома — в шапке файла */ ?></p>
+        <?php if ($heroEyebrowSegs !== []): ?><p class="fc-promo__eyebrow"><?= implode('', array_map(static fn (int $i, string $s): string => '<span class="fc-promo__eyebrow-seg">' . e(rtrim($s) . ($i < count($heroEyebrowSegs) - 1 ? ' ·' : '')) . '</span>', array_keys($heroEyebrowSegs), $heroEyebrowSegs)) ?></p><?php endif; ?>
+        <h1 class="fc-promo__title"><?= e($heroH1) ?></h1>
+        <?php if ($heroSubtitle !== ''): ?><p class="fc-promo__sub"><?= e($heroSubtitle) ?></p><?php endif; ?>
         <?php endif; ?>
-        <?php if ($heroBtn || $heroGhost): ?>
-        <?php /* W103 (F1): ОДНА первичная CTA (розовая пилюля) + тихий ghost-текст со
-                стрелкой — было три конкурирующих кнопочных элемента (критик-1) */ ?>
-        <div class="fc-hero__actions">
+        <?php if ($heroBtn || $heroGhost || $heroRating !== null): ?>
+        <div class="fc-promo__actions">
         <?php if ($heroBtn): ?>
-        <?php /* W104: primary CTA на фото-фоне — БЕЛАЯ пилюля с ink-текстом
-                (была розовая градиентная — «дешёвый детский магазин»);
-                магнитный эффект js/five.js (.fc-hero__cta) сохранён */ ?>
-        <a class="fc-btn fc-hero__cta" href="<?= e($heroBtnLink) ?>">
+        <a class="fc-btn fc-promo__cta" href="<?= e($heroBtnLink) ?>">
           <?= e($heroBtnText) ?>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </a>
         <?php endif; ?>
         <?php if ($heroGhost): ?>
-        <a class="fc-hero__ghost" href="<?= e($heroGhostLink) ?>"><?= e($heroGhostText) ?><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="fc-promo__ghost" href="<?= e($heroGhostLink) ?>"><?= e($heroGhostText) ?><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
         <?php endif; ?>
-        </div>
-        <?php endif; ?>
-        <?php /* Таймер «до 20:00» — не зависит от hero-текста (юр-независимый элемент). Отключаем (критерий 16). */ ?>
-        <?php /* W104-α (L1): дефолт без давления «Успейте» — «Заказ до 20:00 — доставим
-               сегодня». {D} подставляется и в PHP (до-JS paint = финальный текст,
-               без мигания «…»), и nilov.js'ом (первый тик); токен {T} в дефолте
-               больше нет — таймер показывает дедлайн, а не обратный отсчёт.
-               W106 (B2): пилюля дедлайна + бейдж рейтинга — один мета-ряд
-               (flex-wrap, мобайл — в столбик); ночной режим — CSS-точка
-               вместо эмодзи (nilov.js). */ ?>
-        <?php if ($featCountdown || $heroRating !== null): ?>
-        <div class="fc-hero__meta">
-        <?php /* D-d1 (P1, маркетолог): в пилюле дедлайна — живой тихий таймер
-               «осталось 4 ч 12 мин» (спан .hero__deadline-timer, обновляет
-               js/nilov.js тем же тиком, что и прежний текст; до JS — hidden,
-               после 20:00 — прячется, ночной текст остаётся один). */ ?>
-        <?php if ($featCountdown): ?><p class="hero__deadline fc-hero__deadline"><span class="hero__deadline-text"><?= e(str_replace(['{T}', '{D}'], ['…', setting('order_deadline_hour', '20') . ':' . str_pad(setting('order_deadline_minute', '0'), 2, '0', STR_PAD_LEFT)], setting('countdown_text', 'Заказ до {D} — доставим сегодня'))) ?></span><span class="hero__deadline-timer" hidden></span></p><?php endif; ?>
         <?php if ($heroRating !== null): ?>
-        <?php /* W106-B2 → W106-C1 (флорист P1 «бейдж-бутафория»): честная
-               формулировка — «★ 4,8 — по отзывам покупателей». Внешнего
-               профиля Яндекс Карт у магазина нет, ссылка с бейджа ведёт
-               на собственную секцию #reviews; среднее — живой агрегат
-               таблицы reviews. Русская запятая в дроби. */ ?>
-        <a class="fc-hero__rating" href="#reviews">
-          <span class="fc-hero__rating-star" aria-hidden="true">★</span>
-          <span class="fc-hero__rating-num"><?= e(str_replace('.', ',', (string)round($heroRating['avg'], 1))) ?></span>
-          <span class="fc-hero__rating-note">по отзывам покупателей</span>
+        <a class="fc-promo__rating" href="#reviews">
+          <span class="fc-promo__rating-star" aria-hidden="true">★</span>
+          <span class="fc-promo__rating-num"><?= e(str_replace('.', ',', (string)round($heroRating['avg'], 1))) ?></span>
+          <span class="fc-promo__rating-note">по отзывам покупателей</span>
         </a>
         <?php endif; ?>
         </div>
         <?php endif; ?>
         </div>
-        <?php /* NILOV_CONFIG — общий конфиг JS (вне гейта таймера): порог бесплатной доставки
-               должен работать и при выключенном таймере. */ ?>
+        <?php /* NILOV_CONFIG — общий конфиг JS (порог бесплатной доставки и др.) */ ?>
         <script>window.NILOV_CONFIG = {
           deadlineHour: <?= (int)(setting('order_deadline_hour', '20')) ?>,
           deadlineMinute: <?= (int)(setting('order_deadline_minute', '0')) ?>,
@@ -1136,105 +1031,203 @@ echo json_encode([
           freeDeliveryThreshold: <?= (int) setting('free_delivery_threshold', '0') ?>
         };</script>
       </div>
-      <div class="fc-hero__side">
-        <?php /* W106-C1 (дизайн-дир P0-4 «первый экран продавал витрину распродаж»):
-           ЖЁЛТАЯ промо-карточка «Открытка в подарок» УБРАНА из hero — вместе с
-           её второй кнопкой «Выбрать букет» (P0-8 редактора: дубль CTA в первом
-           экране). Содержание открытки живёт тихой строкой в секции
-           «Дополните букет» ($addonsSub ниже). Правую рейку hero занимает
-           доверие: карточка доставки (фото до отправки + сегодня за 2 часа)
-           + мета-ряд слева (дедлайн + бейдж рейтинга). Настройки
-           hero_promo_* остаются в БД/админке (не удаляем данные владельца).
-           G-g2 (жюри P0 «пустой низ правой колонки 30–35%»): внизу карточки —
-           мини-блок доверия, тихая цитата-отзыв из живой таблицы reviews
-           (приоритет — 5★ про фото до отправки: доказательство обещания
-           из пунктов карточки; иначе свежий 5★; пусто — блока нет). */ ?>
-        <?php /* Карточка доставки (W104-a2): ink line-трек «машина → фото → дверь»
-           (мини-диаграмма stroke 1.5, анимация пунктира — five.css под reduced-motion)
-           + 2 строки specifics из настроек hero_delivery_point_1/2 (пусто — строка
-           не печатается). Заголовок/пояснение — прежние hero_delivery_title/text. */ ?>
-        <?php
-        /* G-g2: месяц для подписи цитаты (тот же словарь, что секция
-           отзывов ниже — $reviewsMonths определён там же, тут нужен раньше) */
-        $heroReviewMonths = ['01'=>'января','02'=>'февраля','03'=>'марта','04'=>'апреля','05'=>'мая','06'=>'июня','07'=>'июля','08'=>'августа','09'=>'сентября','10'=>'октября','11'=>'ноября','12'=>'декабря'];
-        $heroReview = null;
-        if ($heroDeliveryOn) {
-            try {
-                $heroReview = db()->query(
-                    "SELECT author, rating, text, created_at FROM reviews"
-                    . " WHERE rating = 5 AND TRIM(text) <> ''"
-                    . " ORDER BY (text LIKE '%фото до отправки%') DESC, (text LIKE '%фото%') DESC, created_at DESC, id DESC LIMIT 1"
-                )->fetch();
-            } catch (Throwable $e) {
-                $heroReview = null; /* старая БД без таблицы — без цитаты */
-            }
-        }
-        ?>
-        <?php if ($heroDeliveryOn): ?>
-        <?php
-        $heroDeliveryPoints = [];
-        for ($hdp = 1; $hdp <= 2; $hdp++) {
-            $hdpVal = trim(setting('hero_delivery_point_' . $hdp, $hdp === 1 ? 'Соберём за 1–2 часа · привезём сегодня' : 'Фото до отправки')); /* W106-E1 (корректор P0): бейдж — та же единая SLA-формула (было «Привезём сегодня за 2 часа» — третье разночтение) */
-            if ($hdpVal !== '') {
-                $heroDeliveryPoints[] = $hdpVal;
-            }
-        }
-        ?>
-        <div class="fc-hero__delivery">
-          <span class="fc-hero__delivery-track" aria-hidden="true"><svg viewBox="0 0 158 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <?php /* машина (сборка) */ ?>
-            <g transform="translate(0,3) scale(.75)"><path d="M14 17V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h1.2"/><path d="M15 18H9.4"/><path d="M18.2 18H21a1 1 0 0 0 1-1v-4.2a1 1 0 0 0-.3-.7l-3.6-3.5a1 1 0 0 0-.7-.3H14"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></g>
-            <path class="fc-hero__delivery-dash" d="M22 12H61"/>
-            <?php /* фото (одобрение) */ ?>
-            <g transform="translate(66,3) scale(.75)"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></g>
-            <path class="fc-hero__delivery-dash" d="M88 12H127"/>
-            <path d="M127 8.8l3.2 3.2-3.2 3.2"/>
-            <?php /* дверь (получатель) */ ?>
-            <g transform="translate(136,3) scale(.75)"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M9 21v-7h6v7"/></g>
-          </svg></span>
-          <span class="fc-hero__delivery-body">
-          <span class="fc-hero__delivery-title"><?= e(setting('hero_delivery_title', 'Доставка в день заказа')) ?></span>
-          <?php if ($heroDeliveryPoints !== []): ?>
-          <ul class="fc-hero__delivery-points">
-            <?php foreach ($heroDeliveryPoints as $hdpText): ?>
-            <li><?= e($hdpText) ?></li>
-            <?php endforeach; ?>
-          </ul>
-          <?php endif; ?>
-          <span class="fc-hero__delivery-text"><?= e(setting('hero_delivery_text', 'По Санкт-Петербургу — оформите до 20:00, привезём сегодня')) ?></span>
-          </span>
-          <?php /* G-g2 (жюри P0): тихая цитата-отзыв внизу карточки — те же
-                 классы, что секция «О нас говорят» (.fc-review), компакт —
-                 five.css G-g2. Живые данные: приоритет — 5★ про фото
-                 (доказательство пункта «Фото до отправки» выше). */ ?>
-          <?php if (is_array($heroReview) && trim((string)($heroReview['text'] ?? '')) !== ''): ?>
-          <?php
-          $heroReviewDate = '';
-          if (preg_match('/^(\d{4})-(\d{2})-(\d{2})/', (string)($heroReview['created_at'] ?? ''), $heroReviewDm)) {
-              $heroReviewDate = ((int)$heroReviewDm[3]) . ' ' . ($heroReviewMonths[$heroReviewDm[2]] ?? '');
+    </div>
+  </section>
+
+  <?php /* ЧИПЫ ЦЕН (5cv → W104): пастельные плитки-навигация с счётчиками.
+       Хиты / До N / N–M / От M / Премиум — фильтруют каталог (js/five.js +
+       catalog-filter.js по data-chip; контракт классов не менялся).
+       Счётчики считаем здесь же по тем же правилам, что фильтр: low ≤ N,
+       N ≤ mid ≤ M, high ≥ M (границы принадлежат обоим диапазонам).
+       D-d1 (P0-1): чипы опущены на границу 2-го экрана — вход в каталог.
+       G-g2 (редактор P1): «До/От» — строчными, как опции селекта «Цена:»
+       (до 3 500 ₽ / от 7 000 ₽) — один регистр во всех ценовых фильтрах. */ ?>
+  <?php if ($featChips): ?>
+  <?php
+  $cntHit = 0; $cntLow = 0; $cntMid = 0; $cntHigh = 0; $cntPremium = 0;
+  foreach ($products as $pc) {
+      $pprice = productPrice($pc);
+      if ((int)($pc['is_hit'] ?? 0) === 1) { $cntHit++; }
+      if ((int)($pc['is_premium'] ?? 0) === 1) { $cntPremium++; }
+      if ($pprice <= $chipsN) { $cntLow++; }
+      if ($pprice >= $chipsN && $pprice <= $chipsM) { $cntMid++; }
+      if ($pprice >= $chipsM) { $cntHigh++; }
+  }
+  $pluralBuket = static function (int $n): string {
+      $n10 = $n % 10; $n100 = $n % 100;
+      if ($n10 === 1 && $n100 !== 11) return 'букет';
+      if ($n10 >= 2 && $n10 <= 4 && ($n100 < 12 || $n100 > 14)) return 'букета';
+      return 'букетов';
+  };
+  ?>
+  <div class="wrap">
+    <div class="fc-chips" id="fcChips">
+      <?php /* S3 (v2026.3): «Все» — сброс фильтров (двойное назначение: выбор
+             вкладки категории + чипы/поиск). */ ?>
+      <button type="button" class="fc-chip fc-chip--all is-active" data-chip="all" aria-pressed="true">
+        <span class="fc-chip__title"><?= e(setting('chips_all_text', 'Все')) ?></span>
+      </button>
+      <button type="button" class="fc-chip fc-chip--hit" data-chip="hit" aria-pressed="false">
+        <span class="fc-chip__title">Хиты</span>
+      </button>
+      <button type="button" class="fc-chip fc-chip--low" data-chip="low" data-max="<?= $chipsN ?>" aria-pressed="false">
+        <span class="fc-chip__title">до&nbsp;<?= formatSum($chipsN) ?>&nbsp;₽</span>
+      </button>
+      <button type="button" class="fc-chip fc-chip--mid" data-chip="mid" data-min="<?= $chipsN ?>" data-max="<?= $chipsM ?>" aria-pressed="false">
+        <span class="fc-chip__title"><?= formatSum($chipsN) ?>–<?= formatSum($chipsM) ?>&nbsp;₽</span>
+      </button>
+      <button type="button" class="fc-chip fc-chip--high" data-chip="high" data-min="<?= $chipsM ?>" aria-pressed="false">
+        <span class="fc-chip__title">от&nbsp;<?= formatSum($chipsM) ?>&nbsp;₽</span>
+      </button>
+      <?php /* S3 (v2026.3): чипсы-теги — из настройки chips_tags (через запятую),
+             матчатся по data-tags карточек (стем первых 4 букв слова / подстрока
+             для многословных). Счётчик — PHP-предподсчёт по тем же правилам, что
+             js/catalog-filter.js (nf_tag_match). */ ?>
+      <?php
+      $chipsTags = array_values(array_filter(array_map('trim', explode(',', setting('chips_tags', ''))), fn($t) => $t !== ''));
+      $nfTagMatch = static function (string $chip, array $p): bool {
+          $chipN = mb_strtolower(preg_replace('/\s+/u', ' ', trim($chip)) ?? '', 'UTF-8');
+          $chipN = str_replace('ё', 'е', $chipN);
+          if ($chipN === '') { return false; }
+          $tagsN = str_replace('ё', 'е', mb_strtolower(preg_replace('/\s+/u', ' ', trim((string)($p['tags'] ?? ''))) ?? '', 'UTF-8'));
+          if ($tagsN === '') { return false; }
+          if (str_contains($chipN, ' ')) {
+              return str_contains($tagsN, $chipN);
           }
-          /* цитата — ПЕРВОЕ предложение отзыва (карточка узкая; полный текст
-             живёт в секции «О нас говорят» — там этот же отзыв целиком) */
-          $heroReviewSentences = preg_split('/(?<=[.!?])\s+/u', trim((string)$heroReview['text'])) ?: [];
-          $heroReviewQuote = $heroReviewSentences[0] ?? (string)$heroReview['text'];
-          if (mb_strlen($heroReviewQuote) < 40 && count($heroReviewSentences) > 1) {
-              $heroReviewQuote .= ' ' . $heroReviewSentences[1];
+          $stem = mb_substr($chipN, 0, 4, 'UTF-8');
+          foreach (preg_split('/[\s,]+/u', $tagsN) ?: [] as $w) {
+              if (mb_strpos($w, $stem, 0, 'UTF-8') === 0) { return true; }
           }
-          ?>
-          <figure class="fc-review fc-hero__quote">
-            <p class="fc-review__stars" aria-label="Оценка: <?= max(1, min(5, (int)($heroReview['rating'] ?? 5))) ?> из 5"><?= str_repeat('<span aria-hidden="true">★</span>', max(1, min(5, (int)($heroReview['rating'] ?? 5)))) ?></p>
-            <blockquote class="fc-review__text"><?= e($heroReviewQuote) ?></blockquote>
-            <figcaption class="fc-review__meta">
-              <span class="fc-review__author"><?= e((string)($heroReview['author'] ?? 'Покупатель')) ?></span>
-              <?php if ($heroReviewDate !== ''): ?><time class="fc-review__date" datetime="<?= e((string)($heroReview['created_at'] ?? '')) ?>"><?= e($heroReviewDate) ?></time><?php endif; ?>
-            </figcaption>
-          </figure>
-          <?php endif; ?>
+          return false;
+      };
+      foreach ($chipsTags as $chipTag):
+          $cntTag = 0;
+          foreach ($products as $pc) {
+              if ($nfTagMatch($chipTag, $pc)) { $cntTag++; }
+          }
+          if ($cntTag === 0) { continue; } /* чип без товаров — не печатаем */
+      ?>
+      <button type="button" class="fc-chip fc-chip--tag" data-chip="tag-<?= e(mb_strtolower(str_replace('ё', 'е', preg_replace('/\s+/u', ' ', trim($chipTag)) ?? ''), 'UTF-8')) ?>" data-tag="<?= e($chipTag) ?>" aria-pressed="false">
+        <span class="fc-chip__title"><?= e($chipTag) ?></span>
+      </button>
+      <?php endforeach; ?>
+      <button type="button" class="fc-chip fc-chip--premium" data-chip="premium" aria-pressed="false">
+        <span class="fc-chip__title">Премиум</span>
+      </button>
+      <span class="fc-chips__count" aria-live="polite" style="flex:none;align-self:center;white-space:nowrap;font-size:.85rem;font-weight:600;color:var(--ink-muted)"></span>
+    </div>
+  </div>
+  <?php endif; ?>
+
+  <?php /* W96 (5cv): trust-strip убран — роль играют чипы и карточка доставки в hero.
+     W103 (F1): marquee ВЕРНУЛСЯ (см. блок выше) — ритм-разделитель под hero. */ ?>
+
+  <?php /* W97-fixB2 (B2-5а): каталог — тоже товарная секция.
+     W106-C1 (P0-5 «фон-ритм середины»): каталогу — КРЕМОВЫЙ фон (surface-warm):
+     после двух тёмных фулл-блидов (манифест + премиум) белый грид каталога
+     сливался с белыми секциями ниже — теперь ритм: dark → крем-каталог →
+     soft «Дополните» → белый отзывы → soft поводы → тёплая форма. */ ?>
+  <?php $fcProdSeq++; ?>
+  <section class="fc-section fc-section--tint" id="catalog">
+    <div class="wrap">
+      <?php /* W104: единый компонент шапки товарной секции — eyebrow + H2 +
+             oversize-нумерал (data-numeral), «Смотреть все» здесь не нужен —
+             это сам каталог. */ ?>
+      <div class="fc-row__head">
+        <div class="fc-row__heading" data-numeral="<?= e(fc_next_numeral()) ?>">
+        <?php render_fc_eyebrow(setting('catalog_eyebrow', 'Весь|ассортимент')); ?>
+        <h2 class="fc-row__title"><?= e(setting('catalog_title', 'Каталог')) ?></h2>
+        <?php $catalogSub = setting('catalog_subtitle', 'Выбирайте букет — соберём и привезём сегодня'); /* W104-λ (C4-T4): было «…в день заказа» — дублировало формулу hero/SEO */ ?>
+        <?php if ($catalogSub !== ''): ?><p class="fc-row__sub"><?= e($catalogSub) ?></p><?php endif; ?>
         </div>
+      </div>
+      <?php /* W105-8fix1 (критик-UX 8-b P1#2): индикатор активного поиска — пилюля
+             «Поиск: «запрос» ✕» между шапкой каталога и вкладками. Состояние
+             ведёт js/catalog-filter.js (apply()); клик — снять запрос и
+             пересчитать сетку. Без JS скрыт (hidden) — поиск сам JS-овский. */ ?>
+      <button type="button" class="catalog-search-chip" id="catalogSearchChip" hidden>
+        <span class="catalog-search-chip__label" id="catalogSearchChipLabel">Поиск</span>
+        <span class="catalog-search-chip__x" aria-hidden="true">&#10005;</span>
+      </button>
+      <div class="catalog-tabs" id="catalogTabs" role="group" aria-label="Фильтр каталога по категориям">
+        <button type="button" class="catalog-tabs__tab is-active" aria-pressed="true" data-category-id="all">Все</button>
+        <?php foreach ($categories as $c): ?>
+          <button type="button" class="catalog-tabs__tab" aria-pressed="false" data-category-id="<?= (int)$c['id'] ?>"><?= e($c['name']) ?></button>
+        <?php endforeach; ?>
+      </div>
+      <?php /* W96-fix2 (F9): фильтры каталога — ОДИН аккуратный ряд
+             (цена · избранное · район): flex + space-between, на мобиле wrap.
+             Было два ряда (цена отдельно, избранное+район ниже) с разным
+             выравниванием. ID/классы элементов не менялись — catalog-filter.js
+             и nilov.js работают как раньше. margin-left:auto у zone-check
+             сохранён (правый край при любом наборе включённых фильтров). */ ?>
+      <?php if ($featPriceFilter || $featFavorites || $featZoneCheck): ?>
+      <div class="catalog-toolbar" style="display:flex;align-items:center;justify-content:space-between;gap:10px 18px;margin:0 0 18px;flex-wrap:wrap">
+        <?php if ($featPriceFilter):
+            $pfLow = (int)setting('price_filter_low', '2500');
+            $pfHigh = (int)setting('price_filter_high', '4000');
+        ?>
+        <span style="display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <label for="priceFilter" style="font-size:.85rem;font-weight:600;color:var(--ink-soft)">Цена:</label>
+          <select id="priceFilter" class="pill">
+            <option value="all" selected>Любая</option>
+            <option value="low" data-max="<?= $pfLow ?>">до <?= formatSum($pfLow) ?> ₽</option>
+            <option value="mid" data-min="<?= $pfLow ?>" data-max="<?= $pfHigh ?>"><?= formatSum($pfLow) ?>–<?= formatSum($pfHigh) ?> ₽</option>
+            <option value="high" data-min="<?= $pfHigh ?>">от <?= formatSum($pfHigh) ?> ₽</option>
+          </select>
+          <span id="priceFilterCount" style="font-size:.85rem;color:var(--ink-soft)" aria-live="polite"></span>
+        </span>
         <?php endif; ?>
+        <?php if ($featFavorites): ?><button type="button" id="favToggle" class="fav-toggle" aria-pressed="false">♡ Избранное</button><?php endif; ?>
+        <?php /* Проверка зоны доставки (критерий 13, Семицветик-паттерн): тариф района до чекаута.
+               Данные зон инлайн (HTML-атрибут) — JS-мэтч по вводу покупателя. Отключаем (критерий 16). */ ?>
+        <?php if ($featZoneCheck): ?>
+        <span class="zone-check" style="display:inline-flex;align-items:center;gap:6px;margin-left:auto">
+          <label for="zoneCheckInput" style="font-size:.85rem;font-weight:600;color:var(--ink-soft)">Район:</label>
+          <input type="search" id="zoneCheckInput" placeholder="<?= e(setting('zone_check_placeholder', 'Например: Центральный')) ?>" aria-label="Узнать стоимость доставки в ваш район"
+                 data-fallback="<?= e(setting('zone_check_fallback', 'Район не найден — уточним по телефону')) ?>"
+                 style="width:clamp(150px,46vw,240px);min-width:0" class="pill"
+                 list="zoneCheckList">
+          <datalist id="zoneCheckList">
+            <?php foreach ($zones as $z): ?><option value="<?= e($z['name']) ?>"></option><?php endforeach; ?>
+          </datalist>
+          <span id="zoneCheckResult" style="font-size:.85rem;font-weight:600;min-width:96px;white-space:nowrap;display:inline-block" aria-live="polite"></span>
+        </span>
+        <?php endif; ?>
+      </div>
+      <?php endif; ?>
+      <div class="catalog__grid" id="catalogGrid">
+        <?php foreach ($products as $p) { render_product_card($p, $cardCtx); } ?>
+        <?php /* W105-6fix1: хвост ряда — CTA-плитка дозаполняет последний ряд
+               (23 SKU → 4×5 + 3 + плитка span 2; span под остаток ставит
+               js/grid-tail.js после каждого фильтра и на resize). ink-плитка
+               в языке поводов/премиума; без JS — статический span 2. */ ?>
+        <?php
+        $tailTitle = trim((string)setting('catalog_tail_title', 'Соберём|на заказ'));
+        [$tailT1, $tailT2] = array_pad(explode('|', $tailTitle, 2), 2, '');
+        if ($tailT1 !== ''):
+        ?>
+        <a class="catalog-tail reveal" href="#order" data-grid-tail aria-label="Собрать букет на заказ">
+          <span class="catalog-tail__kicker"><?= e(setting('catalog_tail_kicker', 'Не нашли нужный букет?')) ?></span>
+          <span class="catalog-tail__title"><?= e($tailT1) ?><?= $tailT2 !== '' ? ' <em>' . e($tailT2) . '</em>' : '' ?></span>
+          <span class="catalog-tail__text"><?= e(setting('catalog_tail_text', 'Под ваш повод, палитру и бюджет — фото готового букета пришлём перед доставкой')) ?></span>
+          <span class="catalog-tail__arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </a>
+        <?php endif; ?>
+      </div>
+      <?php /* Empty-state (критик P2): при 0 карточек от фильтров — подсказка + сброс. Тексты редактируются (критерий 16).
+         W104-α (L2): без эмодзи и канцелярита — короткая строка-титул + подсказка-действие. */ ?>
+      <div class="catalog-empty" id="catalogEmpty" hidden style="text-align:center;padding:44px 20px;border:1px dashed var(--line);border-radius:16px;margin-top:14px">
+        <p style="font-size:1.05rem;font-weight:600;margin-bottom:6px"><?= e(setting('catalog_empty_title', 'Под эти фильтры ничего не подошло')) ?></p>
+        <?php $catalogEmptyHint = trim(setting('catalog_empty_hint', 'Сбросьте цену или загляните в соседнюю категорию')); ?>
+        <?php if ($catalogEmptyHint !== ''): ?><p style="color:var(--ink-soft);font-size:.9rem;margin-bottom:16px"><?= e($catalogEmptyHint) ?></p><?php endif; ?>
+        <button type="button" class="btn btn--outline" id="catalogEmptyReset">Сбросить фильтры</button>
       </div>
     </div>
   </section>
+  <?php /* W106 (B2): editorial №2 убран (сообщение «соберём на заказ» уже несёт
+     CTA-плитка хвоста каталога); на его месте — компакт-рельс дополнений
+     (перенесён из зоны до каталога) и новая секция отзывов. */ ?>
 
   <?php /* W103 (F1): MARQUEE-лента (ink) сразу под hero — ритм-разделитель перед
      витринными секциями. Тексты — существующие marquee_1..4; каждая «половина»
@@ -1276,100 +1269,6 @@ echo json_encode([
     </ul>
   </div>
   <?php endif; ?>
-
-  <?php /* ЧИПЫ ЦЕН (5cv → W104): пастельные плитки-навигация с счётчиками.
-       Хиты / До N / N–M / От M / Премиум — фильтруют каталог (js/five.js +
-       catalog-filter.js по data-chip; контракт классов не менялся).
-       Счётчики считаем здесь же по тем же правилам, что фильтр: low ≤ N,
-       N ≤ mid ≤ M, high ≥ M (границы принадлежат обоим диапазонам).
-       D-d1 (P0-1): чипы опущены на границу 2-го экрана — вход в каталог.
-       G-g2 (редактор P1): «До/От» — строчными, как опции селекта «Цена:»
-       (до 3 500 ₽ / от 7 000 ₽) — один регистр во всех ценовых фильтрах. */ ?>
-  <?php if ($featChips): ?>
-  <?php
-  $cntHit = 0; $cntLow = 0; $cntMid = 0; $cntHigh = 0; $cntPremium = 0;
-  foreach ($products as $pc) {
-      $pprice = productPrice($pc);
-      if ((int)($pc['is_hit'] ?? 0) === 1) { $cntHit++; }
-      if ((int)($pc['is_premium'] ?? 0) === 1) { $cntPremium++; }
-      if ($pprice <= $chipsN) { $cntLow++; }
-      if ($pprice >= $chipsN && $pprice <= $chipsM) { $cntMid++; }
-      if ($pprice >= $chipsM) { $cntHigh++; }
-  }
-  $pluralBuket = static function (int $n): string {
-      $n10 = $n % 10; $n100 = $n % 100;
-      if ($n10 === 1 && $n100 !== 11) return 'букет';
-      if ($n10 >= 2 && $n10 <= 4 && ($n100 < 12 || $n100 > 14)) return 'букета';
-      return 'букетов';
-  };
-  ?>
-  <div class="wrap">
-    <div class="fc-chips" id="fcChips">
-      <?php /* S3 (v2026.3): «Все» — сброс фильтров (двойное назначение: выбор
-             вкладки категории + чипы/поиск). */ ?>
-      <button type="button" class="fc-chip fc-chip--all is-active" data-chip="all" aria-pressed="true">
-        <span class="fc-chip__title"><?= e(setting('chips_all_text', 'Все')) ?></span>
-      </button>
-      <button type="button" class="fc-chip fc-chip--hit" data-chip="hit" aria-pressed="false">
-        <span class="fc-chip__title">Хиты</span>
-        <span class="fc-chip__count"><?= $cntHit ?>&nbsp;<?= e($pluralBuket($cntHit)) ?></span>
-      </button>
-      <button type="button" class="fc-chip fc-chip--low" data-chip="low" data-max="<?= $chipsN ?>" aria-pressed="false">
-        <span class="fc-chip__title">до&nbsp;<?= formatSum($chipsN) ?>&nbsp;₽</span>
-        <span class="fc-chip__count"><?= $cntLow ?>&nbsp;<?= e($pluralBuket($cntLow)) ?></span>
-      </button>
-      <button type="button" class="fc-chip fc-chip--mid" data-chip="mid" data-min="<?= $chipsN ?>" data-max="<?= $chipsM ?>" aria-pressed="false">
-        <span class="fc-chip__title"><?= formatSum($chipsN) ?>–<?= formatSum($chipsM) ?>&nbsp;₽</span>
-        <span class="fc-chip__count"><?= $cntMid ?>&nbsp;<?= e($pluralBuket($cntMid)) ?></span>
-      </button>
-      <button type="button" class="fc-chip fc-chip--high" data-chip="high" data-min="<?= $chipsM ?>" aria-pressed="false">
-        <span class="fc-chip__title">от&nbsp;<?= formatSum($chipsM) ?>&nbsp;₽</span>
-        <span class="fc-chip__count"><?= $cntHigh ?>&nbsp;<?= e($pluralBuket($cntHigh)) ?></span>
-      </button>
-      <?php /* S3 (v2026.3): чипсы-теги — из настройки chips_tags (через запятую),
-             матчатся по data-tags карточек (стем первых 4 букв слова / подстрока
-             для многословных). Счётчик — PHP-предподсчёт по тем же правилам, что
-             js/catalog-filter.js (nf_tag_match). */ ?>
-      <?php
-      $chipsTags = array_values(array_filter(array_map('trim', explode(',', setting('chips_tags', ''))), fn($t) => $t !== ''));
-      $nfTagMatch = static function (string $chip, array $p): bool {
-          $chipN = mb_strtolower(preg_replace('/\s+/u', ' ', trim($chip)) ?? '', 'UTF-8');
-          $chipN = str_replace('ё', 'е', $chipN);
-          if ($chipN === '') { return false; }
-          $tagsN = str_replace('ё', 'е', mb_strtolower(preg_replace('/\s+/u', ' ', trim((string)($p['tags'] ?? ''))) ?? '', 'UTF-8'));
-          if ($tagsN === '') { return false; }
-          if (str_contains($chipN, ' ')) {
-              return str_contains($tagsN, $chipN);
-          }
-          $stem = mb_substr($chipN, 0, 4, 'UTF-8');
-          foreach (preg_split('/[\s,]+/u', $tagsN) ?: [] as $w) {
-              if (mb_strpos($w, $stem, 0, 'UTF-8') === 0) { return true; }
-          }
-          return false;
-      };
-      foreach ($chipsTags as $chipTag):
-          $cntTag = 0;
-          foreach ($products as $pc) {
-              if ($nfTagMatch($chipTag, $pc)) { $cntTag++; }
-          }
-          if ($cntTag === 0) { continue; } /* чип без товаров — не печатаем */
-      ?>
-      <button type="button" class="fc-chip fc-chip--tag" data-chip="tag-<?= e(mb_strtolower(str_replace('ё', 'е', preg_replace('/\s+/u', ' ', trim($chipTag)) ?? ''), 'UTF-8')) ?>" data-tag="<?= e($chipTag) ?>" aria-pressed="false">
-        <span class="fc-chip__title"><?= e($chipTag) ?></span>
-        <span class="fc-chip__count"><?= $cntTag ?>&nbsp;<?= e($pluralBuket($cntTag)) ?></span>
-      </button>
-      <?php endforeach; ?>
-      <button type="button" class="fc-chip fc-chip--premium" data-chip="premium" aria-pressed="false">
-        <span class="fc-chip__title">Премиум</span>
-        <span class="fc-chip__count"><?= $cntPremium ?>&nbsp;<?= e($pluralBuket($cntPremium)) ?></span>
-      </button>
-      <span class="fc-chips__count" aria-live="polite" style="flex:none;align-self:center;white-space:nowrap;font-size:.85rem;font-weight:600;color:var(--ink-muted)"></span>
-    </div>
-  </div>
-  <?php endif; ?>
-
-  <?php /* W96 (5cv): trust-strip убран — роль играют чипы и карточка доставки в hero.
-     W103 (F1): marquee ВЕРНУЛСЯ (см. блок выше) — ритм-разделитель под hero. */ ?>
 
   <?php /* СЕКЦИИ-КАРУСЕЛИ (5cv → W103 → W106/B2): хиты-коллаж → manifesto → премиум-dark.
        W106 (B2, арт-директор P0-2): монотонность 6 рядов — до каталога осталось
@@ -1505,113 +1404,6 @@ echo json_encode([
     </div>
   </section>
   <?php endif; ?>
-  <?php /* W97-fixB2 (B2-5а): каталог — тоже товарная секция.
-     W106-C1 (P0-5 «фон-ритм середины»): каталогу — КРЕМОВЫЙ фон (surface-warm):
-     после двух тёмных фулл-блидов (манифест + премиум) белый грид каталога
-     сливался с белыми секциями ниже — теперь ритм: dark → крем-каталог →
-     soft «Дополните» → белый отзывы → soft поводы → тёплая форма. */ ?>
-  <?php $fcProdSeq++; ?>
-  <section class="fc-section fc-section--tint" id="catalog">
-    <div class="wrap">
-      <?php /* W104: единый компонент шапки товарной секции — eyebrow + H2 +
-             oversize-нумерал (data-numeral), «Смотреть все» здесь не нужен —
-             это сам каталог. */ ?>
-      <div class="fc-row__head">
-        <div class="fc-row__heading" data-numeral="<?= e(fc_next_numeral()) ?>">
-        <?php render_fc_eyebrow(setting('catalog_eyebrow', 'Весь|ассортимент')); ?>
-        <h2 class="fc-row__title"><?= e(setting('catalog_title', 'Каталог')) ?></h2>
-        <?php $catalogSub = setting('catalog_subtitle', 'Выбирайте букет — соберём и привезём сегодня'); /* W104-λ (C4-T4): было «…в день заказа» — дублировало формулу hero/SEO */ ?>
-        <?php if ($catalogSub !== ''): ?><p class="fc-row__sub"><?= e($catalogSub) ?></p><?php endif; ?>
-        </div>
-      </div>
-      <?php /* W105-8fix1 (критик-UX 8-b P1#2): индикатор активного поиска — пилюля
-             «Поиск: «запрос» ✕» между шапкой каталога и вкладками. Состояние
-             ведёт js/catalog-filter.js (apply()); клик — снять запрос и
-             пересчитать сетку. Без JS скрыт (hidden) — поиск сам JS-овский. */ ?>
-      <button type="button" class="catalog-search-chip" id="catalogSearchChip" hidden>
-        <span class="catalog-search-chip__label" id="catalogSearchChipLabel">Поиск</span>
-        <span class="catalog-search-chip__x" aria-hidden="true">&#10005;</span>
-      </button>
-      <div class="catalog-tabs" id="catalogTabs" role="group" aria-label="Фильтр каталога по категориям">
-        <button type="button" class="catalog-tabs__tab is-active" aria-pressed="true" data-category-id="all">Все</button>
-        <?php foreach ($categories as $c): ?>
-          <button type="button" class="catalog-tabs__tab" aria-pressed="false" data-category-id="<?= (int)$c['id'] ?>"><?= e($c['name']) ?></button>
-        <?php endforeach; ?>
-      </div>
-      <?php /* W96-fix2 (F9): фильтры каталога — ОДИН аккуратный ряд
-             (цена · избранное · район): flex + space-between, на мобиле wrap.
-             Было два ряда (цена отдельно, избранное+район ниже) с разным
-             выравниванием. ID/классы элементов не менялись — catalog-filter.js
-             и nilov.js работают как раньше. margin-left:auto у zone-check
-             сохранён (правый край при любом наборе включённых фильтров). */ ?>
-      <?php if ($featPriceFilter || $featFavorites || $featZoneCheck): ?>
-      <div class="catalog-toolbar" style="display:flex;align-items:center;justify-content:space-between;gap:10px 18px;margin:0 0 18px;flex-wrap:wrap">
-        <?php if ($featPriceFilter):
-            $pfLow = (int)setting('price_filter_low', '2500');
-            $pfHigh = (int)setting('price_filter_high', '4000');
-        ?>
-        <span style="display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <label for="priceFilter" style="font-size:.85rem;font-weight:600;color:var(--ink-soft)">Цена:</label>
-          <select id="priceFilter" class="pill">
-            <option value="all" selected>Любая</option>
-            <option value="low" data-max="<?= $pfLow ?>">до <?= formatSum($pfLow) ?> ₽</option>
-            <option value="mid" data-min="<?= $pfLow ?>" data-max="<?= $pfHigh ?>"><?= formatSum($pfLow) ?>–<?= formatSum($pfHigh) ?> ₽</option>
-            <option value="high" data-min="<?= $pfHigh ?>">от <?= formatSum($pfHigh) ?> ₽</option>
-          </select>
-          <span id="priceFilterCount" style="font-size:.85rem;color:var(--ink-soft)" aria-live="polite"></span>
-        </span>
-        <?php endif; ?>
-        <?php if ($featFavorites): ?><button type="button" id="favToggle" class="fav-toggle" aria-pressed="false">♡ Избранное</button><?php endif; ?>
-        <?php /* Проверка зоны доставки (критерий 13, Семицветик-паттерн): тариф района до чекаута.
-               Данные зон инлайн (HTML-атрибут) — JS-мэтч по вводу покупателя. Отключаем (критерий 16). */ ?>
-        <?php if ($featZoneCheck): ?>
-        <span class="zone-check" style="display:inline-flex;align-items:center;gap:6px;margin-left:auto">
-          <label for="zoneCheckInput" style="font-size:.85rem;font-weight:600;color:var(--ink-soft)">Район:</label>
-          <input type="search" id="zoneCheckInput" placeholder="<?= e(setting('zone_check_placeholder', 'Например: Центральный')) ?>" aria-label="Узнать стоимость доставки в ваш район"
-                 data-fallback="<?= e(setting('zone_check_fallback', 'Район не найден — уточним по телефону')) ?>"
-                 style="width:clamp(150px,46vw,240px);min-width:0" class="pill"
-                 list="zoneCheckList">
-          <datalist id="zoneCheckList">
-            <?php foreach ($zones as $z): ?><option value="<?= e($z['name']) ?>"></option><?php endforeach; ?>
-          </datalist>
-          <span id="zoneCheckResult" style="font-size:.85rem;font-weight:600;min-width:96px;white-space:nowrap;display:inline-block" aria-live="polite"></span>
-        </span>
-        <?php endif; ?>
-      </div>
-      <?php endif; ?>
-      <div class="catalog__grid" id="catalogGrid">
-        <?php foreach ($products as $p) { render_product_card($p, $cardCtx); } ?>
-        <?php /* W105-6fix1: хвост ряда — CTA-плитка дозаполняет последний ряд
-               (23 SKU → 4×5 + 3 + плитка span 2; span под остаток ставит
-               js/grid-tail.js после каждого фильтра и на resize). ink-плитка
-               в языке поводов/премиума; без JS — статический span 2. */ ?>
-        <?php
-        $tailTitle = trim((string)setting('catalog_tail_title', 'Соберём|на заказ'));
-        [$tailT1, $tailT2] = array_pad(explode('|', $tailTitle, 2), 2, '');
-        if ($tailT1 !== ''):
-        ?>
-        <a class="catalog-tail reveal" href="#order" data-grid-tail aria-label="Собрать букет на заказ">
-          <span class="catalog-tail__kicker"><?= e(setting('catalog_tail_kicker', 'Не нашли нужный букет?')) ?></span>
-          <span class="catalog-tail__title"><?= e($tailT1) ?><?= $tailT2 !== '' ? ' <em>' . e($tailT2) . '</em>' : '' ?></span>
-          <span class="catalog-tail__text"><?= e(setting('catalog_tail_text', 'Под ваш повод, палитру и бюджет — фото готового букета пришлём перед доставкой')) ?></span>
-          <span class="catalog-tail__arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-        </a>
-        <?php endif; ?>
-      </div>
-      <?php /* Empty-state (критик P2): при 0 карточек от фильтров — подсказка + сброс. Тексты редактируются (критерий 16).
-         W104-α (L2): без эмодзи и канцелярита — короткая строка-титул + подсказка-действие. */ ?>
-      <div class="catalog-empty" id="catalogEmpty" hidden style="text-align:center;padding:44px 20px;border:1px dashed var(--line);border-radius:16px;margin-top:14px">
-        <p style="font-size:1.05rem;font-weight:600;margin-bottom:6px"><?= e(setting('catalog_empty_title', 'Под эти фильтры ничего не подошло')) ?></p>
-        <?php $catalogEmptyHint = trim(setting('catalog_empty_hint', 'Сбросьте цену или загляните в соседнюю категорию')); ?>
-        <?php if ($catalogEmptyHint !== ''): ?><p style="color:var(--ink-soft);font-size:.9rem;margin-bottom:16px"><?= e($catalogEmptyHint) ?></p><?php endif; ?>
-        <button type="button" class="btn btn--outline" id="catalogEmptyReset">Сбросить фильтры</button>
-      </div>
-    </div>
-  </section>
-  <?php /* W106 (B2): editorial №2 убран (сообщение «соберём на заказ» уже несёт
-     CTA-плитка хвоста каталога); на его месте — компакт-рельс дополнений
-     (перенесён из зоны до каталога) и новая секция отзывов. */ ?>
-
   <?php /* «ДОПОЛНИТЕ БУКЕТ» (5cv): сопутствующие товары show_in_upsell.
        W96-fix1 (F11): секция имеет смысл от ≥2 товаров — одиночная карточка
        в карусели выглядит пусто; жёсткий фильтр, чтобы не зависеть от сида.

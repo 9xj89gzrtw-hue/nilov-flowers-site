@@ -163,6 +163,9 @@ function meta_cut(string $s, int $max): string
    lazy, сердечко, «+» в корзину): та же разметка/классы, что в каталоге витрины */
 function render_product_card(array $p, array $ctx): void
 {
+    /* S4 (v2026.4): копия карточки index.php — дизайн 5cv-класса (фото 3:4,
+       бейджи «−N%»/«Хит» на фото, строка доставки, крупная цена, сплит × 4,
+       компактные кнопки «В корзину» + «1 клик»). */
     $price = productPrice($p);
     $isSale = $price !== (int)($p['price'] ?? 0);
     $isHit = (int)($p['is_hit'] ?? 0) === 1;
@@ -172,10 +175,7 @@ function render_product_card(array $p, array $ctx): void
     $thumb = product_img_thumb($p);
     $origW = product_img_width($p);
     if ($thumb !== '' && $imgWebp !== '' && $origW > 0) {
-        $t600 = preg_replace('/-400(\.webp)(?=\?|$)/', '-600$1', $thumb); /* W101 (perf): 600w для DPR2-3;
-           E-e3 (техно-критик): старый якорь `(\.webp)$` не матчил из-за хвоста
-           ?v=filemtime у static_img_v — 600w не попадал в srcset, и DPR2-3
-           браузеры брали полноразмерный webp-оригинал */
+        $t600 = preg_replace('/-400(\.webp)(?=\?|$)/', '-600$1', $thumb);
         $srcset = $thumb . ' 400w'
             . ($t600 !== null && $t600 !== $thumb && is_file(BASE_PATH . parse_url($t600, PHP_URL_PATH)) ? ', ' . $t600 . ' 600w' : '')
             . ', ' . $imgWebp . ' ' . $origW . 'w';
@@ -186,11 +186,15 @@ function render_product_card(array $p, array $ctx): void
     } else {
         $srcset = '';
     }
-    /* W104-ζ (C3-D3): sizes по реальной сетке .catalog__grid (как index.php) —
-       W105-6fix1: сетка 5/4/3/2 колонки, слоты обновлены (5 кол → ~227px) */
-    $sizes = '(max-width:359px) 92vw, (max-width:767px) 46vw, (max-width:1023px) 32vw, (max-width:1279px) 25vw, (max-width:1699px) 20vw, 276px';
+    $sizes = '(max-width:359px) 92vw, (max-width:767px) 46vw, (max-width:1023px) 31vw, (max-width:1279px) 23vw, 288px';
     $link = '/product/' . rawurlencode($p['slug']);
     $searchIndex = mb_strtolower(trim($p['name'] . ' ' . ($p['category_name'] ?? '') . ' ' . ($p['description'] ?? '')));
+    $comp = trim((string)($p['composition'] ?? ''));
+    $splitText = splitLabel($price);
+    $deliveryText = trim((string)setting('card_delivery_text', 'Сегодня за 1–2 часа'));
+    $oneclickFull = trim((string)setting('card_btn_oneclick', 'Купить в 1 клик'));
+    $oneclickShort = trim((string)preg_replace('/^купить\s+(в\s+)?/iu', '', $oneclickFull));
+    if ($oneclickShort === '') { $oneclickShort = $oneclickFull; }
     ?>
         <article class="product-card reveal" data-category-id="<?= (int)($p['category_id'] ?? 0) ?>" data-price="<?= (int)$price ?>" data-hit="<?= (int)($p['is_hit'] ?? 0) ?>" data-premium="<?= (int)($p['is_premium'] ?? 0) ?>" data-search="<?= e($searchIndex) ?>">
           <div class="product-card__media">
@@ -205,36 +209,45 @@ function render_product_card(array $p, array $ctx): void
               <?php endif; ?>
             </a>
             <?php if ($isSale): $offPct = (int)$p['price'] > 0 ? (int)round((1 - $price / (int)$p['price']) * 100) : 0; ?><span class="product-card__badge product-card__badge--sale"><?= $offPct > 0 ? '&#8722;' . (int)$offPct . '%' : e(setting('badge_sale_text', 'Скидка')) ?></span><?php endif; ?>
-            <?php if ((int)($p['is_urgent'] ?? 0) === 1): ?><span class="product-card__badge product-card__badge--urgent"><?= e(setting('badge_urgent_text', 'Успеть сегодня')) ?></span><?php endif; ?>
             <?php if ($isHit): ?><span class="product-card__badge product-card__badge--hit"><?= e(setting('badge_hit_text', 'Хит')) ?></span><?php endif; ?>
             <?php if ($isPremium): ?><span class="product-card__badge product-card__badge--premium"><?= e(setting('badge_premium_text', 'Премиум')) ?></span><?php endif; ?>
-            <?php if ($ctx['featDeliveryBadge']): ?><span class="product-card__badge product-card__badge--deliv"><?= e(setting('delivery_badge_text', 'Доставка по Санкт-Петербургу')) ?></span><?php endif; ?>
-            <button type="button" class="product-card__cta" data-order-cta
-              data-product-id="<?= (int)$p['id'] ?>"
-              data-product-name="<?= e($p['name']) ?>"
-              data-product-price-raw="<?= $price ?>"
-              data-product-image="<?= e($img) ?>"
-              aria-label="Добавить в корзину: <?= e($p['name']) ?>" title="Добавить в корзину">+</button>
             <?php if ($ctx['featFavorites']): ?><button type="button" class="product-card__fav" data-fav-id="<?= (int)$p['id'] ?>" data-fav-name="<?= e($p['name']) ?>" aria-label="В избранное: <?= e($p['name']) ?>" title="В избранное">♡</button><?php endif; ?>
           </div>
           <div class="product-card__body">
-            <?php /* W104: цена первой → имя; категория убрана (5cv-exact) */ ?>
+            <?php if ($deliveryText !== ''): ?><p class="product-card__delivery"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><?= e($deliveryText) ?></p><?php endif; ?>
             <p class="product-card__price">
               <?php if ($isSale): ?>
-                <span class="product-card__price--old"><?= formatPrice((int)$p['price']) ?></span>
                 <span class="product-card__price--discount"><?= formatPrice($price) ?></span>
+                <span class="product-card__price--old"><?= formatPrice((int)$p['price']) ?></span>
               <?php else: ?>
                 <?= formatPrice($price) ?>
               <?php endif; ?>
             </p>
+            <?php if ($splitText !== ''): ?><p class="product-card__split"><?= e($splitText) ?></p><?php endif; ?>
             <a class="product-card__name" href="<?= e($link) ?>"><?= e($p['name']) ?></a>
+            <?php if ($comp !== ''): ?><p class="product-card__comp"><?= e($comp) ?></p><?php endif; ?>
             <?php if ((int)($p['is_urgent'] ?? 0) === 1): ?>
-            <p class="product-card__urgent-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>Соберём и доставим в течение дня — количество ограничено</p>
+            <p class="product-card__urgent-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>Соберём за 1–2 часа и привезём сегодня — количество ограничено</p>
             <?php endif; ?>
+            <div class="product-card__actions">
+              <button type="button" class="product-card__cta" data-order-cta
+                data-product-id="<?= (int)$p['id'] ?>"
+                data-product-name="<?= e($p['name']) ?>"
+                data-product-price-raw="<?= $price ?>"
+                data-product-image="<?= e($img) ?>"
+                aria-label="Добавить в корзину: <?= e($p['name']) ?>" title="Добавить в корзину"><?= e(setting('card_btn_cart', 'В корзину')) ?></button>
+              <button type="button" class="product-card__oneclick" data-oneclick
+                data-product-id="<?= (int)$p['id'] ?>"
+                data-product-name="<?= e($p['name']) ?>"
+                data-product-price-raw="<?= $price ?>"
+                data-product-image="<?= e($img) ?>"
+                aria-label="<?= e($oneclickFull) ?>: <?= e($p['name']) ?>" title="<?= e($oneclickFull) ?>"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg><span><?= e(mb_strimwidth($oneclickShort, 0, 12, '…')) ?></span></button>
+            </div>
           </div>
         </article>
     <?php
 }
+
 
 /* ---- Мета-контент страницы ---- */
 
