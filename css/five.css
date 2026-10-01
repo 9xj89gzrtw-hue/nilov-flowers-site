@@ -257,10 +257,10 @@ html{scrollbar-width:thin;scrollbar-color:var(--line) transparent}
 /* ============ 5. ПРОМО-БАННЕР (компактный, ≤220px моб) ============ */
 /* Замена литературного hero: аккуратная карточка с фото, коротким H1 и
    CTA. Под ним — чипсы и сетка букетов (первый экран продаёт товар). */
-.fc-promo{padding:12px 0 2px}
+.fc-promo{padding:10px 0 2px}
 .fc-promo__card{
   position:relative;border-radius:18px;overflow:hidden;
-  height:clamp(180px,24vw,220px);
+  height:clamp(164px,21vw,205px);
   background:linear-gradient(120deg,#0E2C20,#143C2B 55%,#1B4D37);
   display:flex;align-items:flex-end;
 }
@@ -332,7 +332,7 @@ html{scrollbar-width:thin;scrollbar-color:var(--line) transparent}
    (36px), без счётчиков — сетка букетов начинается сразу под ними. */
 .fc-chips{
   display:flex;gap:8px;overflow-x:auto;
-  margin:0 -20px;padding:8px 20px 6px;
+  margin:0 -20px;padding:6px 20px 4px;
   scrollbar-width:none;-webkit-overflow-scrolling:touch;
 }
 .fc-chips::-webkit-scrollbar{display:none}
@@ -385,17 +385,26 @@ html{scrollbar-width:thin;scrollbar-color:var(--line) transparent}
 
 /* ============ 7. КАТАЛОГ: сетка + первый экран ============ */
 /* Каталог — сразу после чипсов; компактный верх, букеты в первом экране. */
-#catalog.fc-section{padding:4px 0 48px}
+#catalog.fc-section{padding:2px 0 48px}
 @media(min-width:900px){#catalog.fc-section{padding:8px 0 56px}}
-/* мобильный первый экран: шапка секции — только компактный H2
+/* мобильный первый экран: шапка секции — компактная строка-метка «КАТАЛОГ»
    (eyebrow/подзаголовок убираем — их роль играют промо-баннер и чипсы) */
 @media(max-width:899px){
-  #catalog .fc-row__head{margin-bottom:12px}
+  #catalog .fc-row__head{margin-bottom:8px}
   #catalog .fc-row__eyebrow,
   #catalog .fc-row__sub{display:none}
-  #catalog .fc-row__title{font-size:1.3rem;margin:0}
+  #catalog .fc-row__title{
+    font-size:.8125rem;font-weight:700;letter-spacing:.09em;
+    text-transform:uppercase;color:var(--ink-muted);margin:0;
+  }
 }
 .catalog__grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px 10px}
+@media(max-width:899px){.catalog-tabs{margin-bottom:10px}}
+/* Мобильный первый экран: ряд тумблера избранного скрываем (сердечки на
+   карточках и PDP остаются) — ЦЕНА первой карточки видна над нижней панелью. */
+@media(max-width:899px){
+  .catalog-toolbar{display:none!important}
+}
 @media(max-width:359px){.catalog__grid{gap:12px 8px}}
 @media(min-width:768px){.catalog__grid{grid-template-columns:repeat(3,1fr);gap:24px 16px}}
 @media(min-width:1024px){.catalog__grid{grid-template-columns:repeat(4,1fr)}}
