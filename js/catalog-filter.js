@@ -177,6 +177,16 @@
     if (kind === 'all') return true;
     if (kind === 'hit') return card.getAttribute('data-hit') === '1';
     if (kind === 'premium') return card.getAttribute('data-premium') === '1';
+    /* S9: плашки «Монобукеты» / «Хиты и подарки» — тег читается из data-tag
+       самого чипа (настройка budget_tile_*_tag из PHP): счётчик на плашке
+       и этот матчер всегда согласованы. hitgift = флаг хита ИЛИ тег. */
+    if (kind === 'mono') {
+      return nfTagMatch(chip.getAttribute('data-tag') || 'монобукеты', card.getAttribute('data-tags') || '');
+    }
+    if (kind === 'hitgift') {
+      return card.getAttribute('data-hit') === '1'
+        || nfTagMatch(chip.getAttribute('data-tag') || 'подарки', card.getAttribute('data-tags') || '');
+    }
     if (kind && kind.indexOf('tag-') === 0) {
       return nfTagMatch(chip.getAttribute('data-tag') || '', card.getAttribute('data-tags') || '');
     }

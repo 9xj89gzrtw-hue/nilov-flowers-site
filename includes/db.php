@@ -1508,6 +1508,21 @@ $pdo->exec("UPDATE occasions SET faq_q1 = replace(faq_q1, 'Какую карту
         ':ov' => 'Сплит: от {price} ₽ × {div}',
     ]);
     $s7guard->execute([':nv' => 'За 1–2 ч', ':k' => 'card_delivery_text', ':ov' => 'Сегодня за 1–2 часа']);
+
+    /* ===== S9 (v2026.9, выравнивание витрины): 4 плашки навигации + поиск =====
+       1) Новые ключи: подписи и теги плашек 3–4 (всегда все 4 плашки —
+          «До N ₽» / «От N ₽» / «Монобукеты» / «Хиты и подарки»; границы
+          цен — прежние chips_price_low/high, теги плашек — новые ключи).
+       2) Guard-UPDATE по ТОЧНОМУ старому значению: плейсхолдер поиска
+          «Розы, пионы, букет маме…» → «Найти букет: розы, пионы...»
+          (S9 ДЕФЕКТ 4; кастом владельца — свято, не трогаем). */
+    $pdo->exec("INSERT OR IGNORE INTO settings (key, value) VALUES
+        ('budget_tile_mono_label', 'Монобукеты'),
+        ('budget_tile_gifts_label', 'Хиты и подарки'),
+        ('budget_tile_mono_tag', 'Монобукеты'),
+        ('budget_tile_gifts_tag', 'Подарки')");
+    $s9guard = $pdo->prepare("UPDATE settings SET value = :nv WHERE key = :k AND value = :ov");
+    $s9guard->execute([':nv' => 'Найти букет: розы, пионы...', ':k' => 'search_placeholder', ':ov' => 'Розы, пионы, букет маме…']);
 }
 
 /* S3 (v2026.3): теги/состав/размеры демо-букетов — общий хелпер для свежих

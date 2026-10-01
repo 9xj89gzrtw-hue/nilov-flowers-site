@@ -267,10 +267,12 @@ function render_product_card(array $p, array $ctx): void
             <?php if ($splitText !== ''): ?>
             <p class="product-card__split"><span class="product-card__split-badge"><?= e($splitText) ?></span></p>
             <?php endif; ?>
-            <?php /* S7 СТРОКА 2 (НАЗВАНИЕ): 15px, чёрное, medium, ровно 2 строки */ ?>
+            <?php /* S7 СТРОКА 2 (НАЗВАНИЕ): 14px, ровно 2 строки фикс. высоты
+                   (S9 ДЕФЕКТ 1; копия index.php render_product_card) */ ?>
             <a class="product-card__name" href="<?= e($link) ?>"><?= e($p['name']) ?></a>
-            <?php /* S7 СТРОКА 3 (ДОВЕРИЕ И СРОК): одна строка через точку —
-                   «⚡ За 1–2 ч · ★ 5.0 (24)», серый неброский текст #767676. */ ?>
+            <?php /* S7 СТРОКА 3 (ДОВЕРИЕ И СРОК): «⚡ За 1–2 ч · ★ 5.0 (24)».
+                   S9: СРАЗУ под названием (фиксированный Y во всём ряду);
+                   перенос не двигает кнопки (.product-card__bottom). */ ?>
             <?php if ($deliveryText !== '' || $cardRating !== null): ?>
             <p class="product-card__meta">
               <?php if ($deliveryText !== ''): ?><span class="product-card__meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg><?= e($deliveryText) ?></span><?php endif; ?>
@@ -283,20 +285,23 @@ function render_product_card(array $p, array $ctx): void
             <?php if ($sizeClean !== ''): ?>
             <p class="product-card__size" hidden><?php if ($sizeIsDia): ?><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M6.5 17.5 17.5 6.5"/></svg><?php else: ?><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M8 7l4-4 4 4M8 17l4 4 4-4"/></svg><?php endif; ?><span class="product-card__size-text"><?= e($sizeClean) ?></span></p>
             <?php endif; ?>
-            <?php /* строка 6: «В корзину» (чёрная) + быстрая ссылка «Купить в 1 клик» */ ?>
-            <div class="product-card__actions">
-              <button type="button" class="product-card__cta" data-order-cta
-                data-product-id="<?= (int)$p['id'] ?>"
-                data-product-name="<?= e($p['name']) ?>"
-                data-product-price-raw="<?= $price ?>"
-                data-product-image="<?= e($img) ?>"
-                aria-label="Добавить в корзину: <?= e($p['name']) ?>" title="Добавить в корзину"><?= e(setting('card_btn_cart', 'В корзину')) ?></button>
-              <button type="button" class="product-card__oneclick" data-oneclick
-                data-product-id="<?= (int)$p['id'] ?>"
-                data-product-name="<?= e($p['name']) ?>"
-                data-product-price-raw="<?= $price ?>"
-                data-product-image="<?= e($img) ?>"
-                aria-label="<?= e($oneclickFull) ?>: <?= e($p['name']) ?>" title="<?= e($oneclickFull) ?>"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg><span><?= e($oneclickFull) ?></span></button>
+            <?php /* S9 ДЕФЕКТ 1: блок кнопок — margin-top:auto;width:100%. */ ?>
+            <div class="product-card__bottom">
+              <?php /* S9 ДЕФЕКТ 2: ОДНА кнопка «В корзину» + тихая ссылка 1-клика. */ ?>
+              <div class="product-card__actions">
+                <button type="button" class="product-card__cta" data-order-cta
+                  data-product-id="<?= (int)$p['id'] ?>"
+                  data-product-name="<?= e($p['name']) ?>"
+                  data-product-price-raw="<?= $price ?>"
+                  data-product-image="<?= e($img) ?>"
+                  aria-label="Добавить в корзину: <?= e($p['name']) ?>" title="Добавить в корзину"><?= e(setting('card_btn_cart', 'В корзину')) ?></button>
+                <button type="button" class="btn-oneclick-link" data-oneclick
+                  data-product-id="<?= (int)$p['id'] ?>"
+                  data-product-name="<?= e($p['name']) ?>"
+                  data-product-price-raw="<?= $price ?>"
+                  data-product-image="<?= e($img) ?>"
+                  aria-label="<?= e($oneclickFull) ?>: <?= e($p['name']) ?>" title="<?= e($oneclickFull) ?>"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg><span><?= e($oneclickFull) ?></span></button>
+              </div>
             </div>
           </div>
         </article>

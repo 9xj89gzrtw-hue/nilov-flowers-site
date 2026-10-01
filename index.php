@@ -491,11 +491,16 @@ function render_product_card(array $p, array $ctx): void
             <?php if ($splitText !== ''): ?>
             <p class="product-card__split"><span class="product-card__split-badge"><?= e($splitText) ?></span></p>
             <?php endif; ?>
-            <?php /* S7 СТРОКА 2 (НАЗВАНИЕ): 15px, чёрное, medium, ровно 2 строки */ ?>
+            <?php /* S7 СТРОКА 2 (НАЗВАНИЕ): 14px, чёрное, medium, РОВНО 2 строки
+                   фиксированной высоты (S9 ДЕФЕКТ 1) */ ?>
             <a class="product-card__name" href="<?= e($link) ?>"><?= e($p['name']) ?></a>
             <?php /* S7 СТРОКА 3 (ДОВЕРИЕ И СРОК): одна строка через точку —
                    «⚡ За 1–2 ч · ★ 5.0 (24)», серый неброский текст #767676
-                   (звезда — жёлтая #FFB800, единственный акцент). */ ?>
+                   (звезда — жёлтая #FFB800, единственный акцент).
+                   S9 ДЕФЕКТ 1: строка живёт СРАЗУ ПОД названием фиксированной
+                   высоты — её Y одинаков во всех карточках ряда; перенос на
+                   2 строки не двигает кнопки (их прижимает к низу
+                   .product-card__bottom{margin-top:auto}). */ ?>
             <?php if ($deliveryText !== '' || $cardRating !== null): ?>
             <p class="product-card__meta">
               <?php if ($deliveryText !== ''): ?><span class="product-card__meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg><?= e($deliveryText) ?></span><?php endif; ?>
@@ -508,20 +513,28 @@ function render_product_card(array $p, array $ctx): void
             <?php if ($sizeClean !== ''): ?>
             <p class="product-card__size" hidden><?php if ($sizeIsDia): ?><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M6.5 17.5 17.5 6.5"/></svg><?php else: ?><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M8 7l4-4 4 4M8 17l4 4 4-4"/></svg><?php endif; ?><span class="product-card__size-text"><?= e($sizeClean) ?></span></p>
             <?php endif; ?>
-            <?php /* строка 6: «В корзину» (чёрная) + быстрая ссылка «Купить в 1 клик» */ ?>
-            <div class="product-card__actions">
-              <button type="button" class="product-card__cta" data-order-cta
-                data-product-id="<?= (int)$p['id'] ?>"
-                data-product-name="<?= e($p['name']) ?>"
-                data-product-price-raw="<?= $price ?>"
-                data-product-image="<?= e($img) ?>"
-                aria-label="Добавить в корзину: <?= e($p['name']) ?>" title="Добавить в корзину"><?= e(setting('card_btn_cart', 'В корзину')) ?></button>
-              <button type="button" class="product-card__oneclick" data-oneclick
-                data-product-id="<?= (int)$p['id'] ?>"
-                data-product-name="<?= e($p['name']) ?>"
-                data-product-price-raw="<?= $price ?>"
-                data-product-image="<?= e($img) ?>"
-                aria-label="<?= e($oneclickFull) ?>: <?= e($p['name']) ?>" title="<?= e($oneclickFull) ?>"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg><span><?= e($oneclickFull) ?></span></button>
+            <?php /* S9 ДЕФЕКТ 1: блок кнопок прижат к низу контейнером
+                   margin-top:auto;width:100% — во всех карточках ряда кнопки
+                   стоят на ОДНОЙ горизонтальной линии пиксель-в-пиксель. */ ?>
+            <div class="product-card__bottom">
+              <?php /* S9 ДЕФЕКТ 2: ОДНА элегантная кнопка «В корзину» (40px,
+                     r10, #18181B) + неброская текстовая ссылка «Купить в 1
+                     клик» (12px, #71717A, hover — подчёркивание) — карточка
+                     в 2 раза легче, как на 5cv.ru. */ ?>
+              <div class="product-card__actions">
+                <button type="button" class="product-card__cta" data-order-cta
+                  data-product-id="<?= (int)$p['id'] ?>"
+                  data-product-name="<?= e($p['name']) ?>"
+                  data-product-price-raw="<?= $price ?>"
+                  data-product-image="<?= e($img) ?>"
+                  aria-label="Добавить в корзину: <?= e($p['name']) ?>" title="Добавить в корзину"><?= e(setting('card_btn_cart', 'В корзину')) ?></button>
+                <button type="button" class="btn-oneclick-link" data-oneclick
+                  data-product-id="<?= (int)$p['id'] ?>"
+                  data-product-name="<?= e($p['name']) ?>"
+                  data-product-price-raw="<?= $price ?>"
+                  data-product-image="<?= e($img) ?>"
+                  aria-label="<?= e($oneclickFull) ?>: <?= e($p['name']) ?>" title="<?= e($oneclickFull) ?>"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg><span><?= e($oneclickFull) ?></span></button>
+              </div>
             </div>
           </div>
         </article>
@@ -708,16 +721,48 @@ $shelfPremium = array_merge($premiumCandidates, $plainCandidates, $sweetCandidat
    заголовков-разделителей; каждый товар ровно один раз). */
 $gridAll = array_merge($shelfHits, $shelfAuthor, $shelfPremium);
 
-/* счётчики плашек бюджета: те же правила, что фильтр (low ≤ N, N ≤ mid ≤ M,
-   high ≥ M — границы принадлежат обоим диапазонам; premium — по флагу) */
-$cntHit = 0; $cntLow = 0; $cntMid = 0; $cntHigh = 0; $cntPremium = 0;
+/* S9: матчинг тегов — ВСЕ слова чипа должны найтись в тегах карточки
+   (по стему первых 4 букв, как однословный). «В коробках» матчит
+   «в шляпных коробках», «Подарки» — «подарок девушке».
+   ИДЕНТИЧНО js/catalog-filter.js nfTagMatch (контракт!).
+   Определён ДО плашек бюджета: счётчики «Монобукеты»/«Хиты и подарки»
+   и чипы ленты используют один и тот же матчер. */
+$nfTagMatch = static function (string $chip, array $p): bool {
+    $chipN = mb_strtolower(preg_replace('/\s+/u', ' ', trim($chip)) ?? '', 'UTF-8');
+    $chipN = str_replace('ё', 'е', $chipN);
+    if ($chipN === '') { return false; }
+    $tagsN = str_replace('ё', 'е', mb_strtolower(preg_replace('/\s+/u', ' ', trim((string)($p['tags'] ?? ''))) ?? '', 'UTF-8'));
+    if ($tagsN === '') { return false; }
+    $chipWords = preg_split('/[\s,]+/u', $chipN) ?: [];
+    $tagWords = preg_split('/[\s,]+/u', $tagsN) ?: [];
+    foreach ($chipWords as $cw) {
+        if ($cw === '') { continue; }
+        $stem = mb_substr($cw, 0, 4, 'UTF-8');
+        $found = false;
+        foreach ($tagWords as $tw) {
+            if ($tw !== '' && mb_strpos($tw, $stem, 0, 'UTF-8') === 0) { $found = true; break; }
+        }
+        if (!$found) { return false; }
+    }
+    return $chipWords !== [];
+};
+
+/* счётчики плашек бюджета: правила ИДЕНТИЧНЫ JS-фильтру catalog-filter.js
+   chipMatch() — цифра на плашке обязана совпадать с результатом клика:
+   low ≤ N (data-max, включительно); от N — price ≥ N (data-min=N−1,
+   т.к. JS трактует data-min ИСКЛЮЧИТЕЛЬНО — «от 3 500» включает 3 500);
+   монобукеты/подарки — тег-матч по стему (настройки-теги плашек);
+   «Хиты и подарки» = is_hit ИЛИ тег «Подарки». */
+$tileMonoTag = trim((string)setting('budget_tile_mono_tag', 'Монобукеты'));
+$tileGiftsTag = trim((string)setting('budget_tile_gifts_tag', 'Подарки'));
+$cntHit = 0; $cntLow = 0; $cntFrom = 0; $cntMono = 0; $cntGift = 0;
 foreach ($products as $pc) {
     $pprice = productPrice($pc);
     if ((int)($pc['is_hit'] ?? 0) === 1) { $cntHit++; }
-    if ((int)($pc['is_premium'] ?? 0) === 1) { $cntPremium++; }
     if ($pprice <= $chipsN) { $cntLow++; }
-    if ($pprice >= $chipsN && $pprice <= $chipsM) { $cntMid++; }
-    if ($pprice >= $chipsM) { $cntHigh++; }
+    if ($pprice >= $chipsN) { $cntFrom++; }
+    if ($tileMonoTag !== '' && $nfTagMatch($tileMonoTag, $pc)) { $cntMono++; }
+    if ((int)($pc['is_hit'] ?? 0) === 1 || ($tileGiftsTag !== '' && $nfTagMatch($tileGiftsTag, $pc))) { $cntGift++; }
 }
 $pluralBuket = static function (int $n): string {
     $n10 = $n % 10; $n100 = $n % 100;
@@ -1099,42 +1144,34 @@ echo json_encode([
     freeDeliveryThreshold: <?= (int) setting('free_delivery_threshold', '0') ?>
   };</script>
 
-  <?php /* ===== 4 ПЛАШКИ БЮДЖЕТА (как на 5cv.ru) =====
-         Сетка 2×2 на мобильном, 4 в ряд на десктопе; фон #F7F7F8, радиус 14px,
-         внутри крупно цена и кол-во букетов. Клик плавно фильтрует каталог ниже
-         к выбранному бюджету (js/five.js: бюджет-чипы входят в общий массив
-         .fc-chip → is-active + apply() + мягкий скролл к #catalog).
-         Границы — те же настройки chips_price_low/high, что были у ценовых
-         чипов; JS-контракт data-chip=low|mid|high|premium не менялся. */ ?>
-  <section class="fc-budget" aria-label="Букеты по бюджету">
+  <?php /* ===== S9: 4 ПЛАШКИ НАВИГАЦИИ (всегда все четыре — никаких дыр) =====
+         Сетка 2×2 на мобильном, 4 в ряд на десктопе; фон #F8F9FA, радиус 14px,
+         крупный текст 14–15px semibold + серый счётчик букетов.
+         Клик фильтрует общую сетку каталога (js/five.js: бюджет-чипы входят
+         в общий массив .fc-chip → is-active + apply() + мягкий скролл к
+         #catalog). Границы — настройки chips_price_low/high; теги плашек 3–4 —
+         настройки budget_tile_mono_tag/budget_tile_gifts_tag (матч по стему,
+         PHP $nfTagMatch = JS nfTagMatch). Плашки НЕ прячутся при 0 товаров:
+         пустых мест на витрине нет — цифра честная, каталог растёт вместе
+         с тегами владельца. */ ?>
+  <section class="fc-budget" aria-label="Каталог букетов">
     <div class="wrap fc-budget__grid">
-      <?php /* S7-fix: пустые сегменты не печатаем (паттерн тег-чипов —
-             «0 букетов» на проде выглядит незаполненным каталогом;
-             появятся товары — плашка вернётся автоматически). */ ?>
-      <?php if ($cntLow > 0): ?>
       <button type="button" class="fc-chip fc-budget__card" data-chip="low" data-max="<?= $chipsN ?>" aria-pressed="false">
-        <span class="fc-budget__label">До&nbsp;<?= formatSum($chipsN) ?>&nbsp;₽</span>
+        <span class="fc-budget__label"><span class="fc-budget__ico" aria-hidden="true">🌸</span>До&nbsp;<?= formatSum($chipsN) ?>&nbsp;₽</span>
         <span class="fc-budget__count"><?= $cntLow ?>&nbsp;<?= e($pluralBuket($cntLow)) ?></span>
       </button>
-      <?php endif; ?>
-      <?php if ($cntMid > 0): ?>
-      <button type="button" class="fc-chip fc-budget__card" data-chip="mid" data-min="<?= $chipsN ?>" data-max="<?= $chipsM ?>" aria-pressed="false">
-        <span class="fc-budget__label"><?= formatSum($chipsN) ?>&nbsp;–&nbsp;<?= formatSum($chipsM) ?>&nbsp;₽</span>
-        <span class="fc-budget__count"><?= $cntMid ?>&nbsp;<?= e($pluralBuket($cntMid)) ?></span>
+      <button type="button" class="fc-chip fc-budget__card" data-chip="high" data-min="<?= max(0, $chipsN - 1) ?>" aria-pressed="false">
+        <span class="fc-budget__label"><span class="fc-budget__ico" aria-hidden="true">💐</span>От&nbsp;<?= formatSum($chipsN) ?>&nbsp;₽</span>
+        <span class="fc-budget__count"><?= $cntFrom ?>&nbsp;<?= e($pluralBuket($cntFrom)) ?></span>
       </button>
-      <?php endif; ?>
-      <?php if ($cntHigh > 0): ?>
-      <button type="button" class="fc-chip fc-budget__card" data-chip="high" data-min="<?= $chipsM ?>" aria-pressed="false">
-        <span class="fc-budget__label">От&nbsp;<?= formatSum($chipsM) ?>&nbsp;₽</span>
-        <span class="fc-budget__count"><?= $cntHigh ?>&nbsp;<?= e($pluralBuket($cntHigh)) ?></span>
+      <button type="button" class="fc-chip fc-budget__card" data-chip="mono" data-tag="<?= e($tileMonoTag) ?>" aria-pressed="false">
+        <span class="fc-budget__label"><span class="fc-budget__ico" aria-hidden="true">👑</span><?= e(setting('budget_tile_mono_label', 'Монобукеты')) ?></span>
+        <span class="fc-budget__count"><?= $cntMono ?>&nbsp;<?= e($pluralBuket($cntMono)) ?></span>
       </button>
-      <?php endif; ?>
-      <?php if ($cntHit > 0): ?>
-      <button type="button" class="fc-chip fc-budget__card fc-budget__card--hit" data-chip="hit" aria-pressed="false">
-        <span class="fc-budget__label">Хиты</span>
-        <span class="fc-budget__count"><?= $cntHit ?>&nbsp;<?= e($pluralBuket($cntHit)) ?></span>
+      <button type="button" class="fc-chip fc-budget__card" data-chip="hitgift" data-tag="<?= e($tileGiftsTag) ?>" aria-pressed="false">
+        <span class="fc-budget__label"><span class="fc-budget__ico" aria-hidden="true">✨</span><?= e(setting('budget_tile_gifts_label', 'Хиты и подарки')) ?></span>
+        <span class="fc-budget__count"><?= $cntGift ?>&nbsp;<?= e($pluralBuket($cntGift)) ?></span>
       </button>
-      <?php endif; ?>
     </div>
   </section>
 
@@ -1146,30 +1183,9 @@ echo json_encode([
   <?php if ($featChips): ?>
   <?php
   $chipsTags = array_values(array_filter(array_map('trim', explode(',', setting('chips_tags', ''))), fn($t) => $t !== ''));
-  /* S5: матчинг тегов — ВСЕ слова чипа должны найтись в тегах карточки
-         (по стему первых 4 букв, как однословный). «В коробках» матчит
-         «в шляпных коробках», «Подарки» — «подарок девушке».
-         ИДЕНТИЧНО js/catalog-filter.js nfTagMatch (контракт!). */
-  $nfTagMatch = static function (string $chip, array $p): bool {
-      $chipN = mb_strtolower(preg_replace('/\s+/u', ' ', trim($chip)) ?? '', 'UTF-8');
-      $chipN = str_replace('ё', 'е', $chipN);
-      if ($chipN === '') { return false; }
-      $tagsN = str_replace('ё', 'е', mb_strtolower(preg_replace('/\s+/u', ' ', trim((string)($p['tags'] ?? ''))) ?? '', 'UTF-8'));
-      if ($tagsN === '') { return false; }
-      $chipWords = preg_split('/[\s,]+/u', $chipN) ?: [];
-      $tagWords = preg_split('/[\s,]+/u', $tagsN) ?: [];
-      foreach ($chipWords as $cw) {
-          if ($cw === '') { continue; }
-          $stem = mb_substr($cw, 0, 4, 'UTF-8');
-          $found = false;
-          foreach ($tagWords as $tw) {
-              if ($tw !== '' && mb_strpos($tw, $stem, 0, 'UTF-8') === 0) { $found = true; break; }
-          }
-          if (!$found) { return false; }
-      }
-      return $chipWords !== [];
-  };
-  ?>
+  /* S9: $nfTagMatch определён выше (до плашек бюджета) — здесь только
+         использование: тег-чипы ленты матчатся тем же матчером, что и
+         счётчики плашек (контракт PHP = JS nfTagMatch). */ ?>
   <div class="fc-chips-bar">
     <div class="wrap">
       <div class="fc-chips" id="fcChips">

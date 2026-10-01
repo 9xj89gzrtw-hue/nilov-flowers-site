@@ -110,6 +110,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
         /* S7 (коммерческая структура 5cv): заголовки товарных полок + мастерская */
         'shelf_hits_title','shelf_author_title','shelf_premium_title',
         'workshop_hours','workshop_rating','workshop_note',
+        /* S9 (выравнивание витрины): подписи и теги плашек 3–4 навигации */
+        'budget_tile_mono_label','budget_tile_gifts_label',
+        'budget_tile_mono_tag','budget_tile_gifts_tag',
         /* W96 (редизайн 5cv): тексты новых блоков витрины — город, hero-промо, чипы цен,
            секции хитов/премиума/бюджета/допов, поводы, магазины, SEO-текст, журнал */
         'citybar_text','city_label','search_placeholder','catalog_btn_text',
@@ -917,6 +920,16 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
     <input class="input" id="s-shelf2" name="shelf_author_title" value="<?= sv('shelf_author_title', $s) ?>">
     <label class="f" for="s-shelf3">Заголовок полки 3 — премиум и коробки</label>
     <input class="input" id="s-shelf3" name="shelf_premium_title" value="<?= sv('shelf_premium_title', $s) ?>">
+
+    <p style="font-size:.9rem;font-weight:700;margin:18px 0 6px">Плашки навигации над каталогом (S9)</p>
+    <label class="f" for="s-tilemono">Подпись плашки «Монобукеты»</label>
+    <input class="input" id="s-tilemono" name="budget_tile_mono_label" value="<?= sv('budget_tile_mono_label', $s) ?>">
+    <label class="f" for="s-tilemonotag">Тег плашки «Монобукеты» (какой тег товаров считать монобукетом)</label>
+    <input class="input" id="s-tilemonotag" name="budget_tile_mono_tag" value="<?= sv('budget_tile_mono_tag', $s) ?>">
+    <label class="f" for="s-tilegifts">Подпись плашки «Хиты и подарки»</label>
+    <input class="input" id="s-tilegifts" name="budget_tile_gifts_label" value="<?= sv('budget_tile_gifts_label', $s) ?>">
+    <label class="f" for="s-tilegiftstag">Тег плашки «Хиты и подарки» (хиты + товары с этим тегом)</label>
+    <input class="input" id="s-tilegiftstag" name="budget_tile_gifts_tag" value="<?= sv('budget_tile_gifts_tag', $s) ?>">
 
     <p style="font-size:.9rem;font-weight:700;margin:18px 0 6px">Мастерская и отзывы (под каталогом)</p>
     <label class="f" for="s-wshours">Часы работы мастерской</label>

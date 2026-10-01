@@ -71,7 +71,7 @@ try {
        (морфология: «розы» → «роз»), со вторичных страниц — редирект /?q=…#catalog. */ ?>
     <form class="fc-search" role="search" action="/" method="get">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-      <input type="search" id="fcSearch" name="q" placeholder="<?= e(setting('search_placeholder', 'Розы, пионы, букет маме…')) ?>" aria-label="Поиск по букетам">
+      <input type="search" id="fcSearch" name="q" placeholder="<?= e(setting('search_placeholder', 'Найти букет: розы, пионы...')) ?>" aria-label="Поиск по букетам">
     </form>
     <?php /* Город — тихая кнопка с панелью районов (контракт js/five.js cityMenu():
            .fc-city__btn / .fc-city-menu__opt[data-city] / закрытие по клику);
