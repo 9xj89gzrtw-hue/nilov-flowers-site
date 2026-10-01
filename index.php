@@ -882,40 +882,76 @@ if ($featSectionAddons) {
     }
 }
 
-/* ---- Поводы (5cv): активные occasions + первое фото из product_ids ---- */
-$occTiles = [];
+/* ---- S10 ДЕФЕКТ 2: ПОВОДЫ-КАРТОЧКИ (белые карточки с эмодзи + фильтр каталога) ----
+   Серые градиентные плиты заменены тремя элегантными белыми карточками.
+   Тексты/эмодзи/теги — настройки occ_card_N_* (админка). Подборка живая:
+     (1) теги карточки (occ_card_N_tags, матчатся $nfTagMatch по стему);
+     (2) ∪ product_ids повода (occ_card_N_slug — страница повода из админки);
+     (3) пусто → премиум-букеты; (4) пусто → самые дорогие букеты (топ-4):
+   карточка ВСЕГДА ведёт к непустому набору — пустых кликов не бывает.
+   Клик = чип data-chip="ids" (js/catalog-filter.js) + скролл к #catalog
+   (js/five.js — повод-карточки входят в общий массив чипов). */
+$occRows = [];
 try {
-    $occRows = $pdo->query('SELECT slug, title, product_ids FROM occasions WHERE active = 1 ORDER BY sort, id')->fetchAll();
+    $occRows = $pdo->query('SELECT slug, product_ids FROM occasions WHERE active = 1')->fetchAll();
 } catch (Throwable $e) {
     $occRows = [];
 }
-$productsById = [];
-foreach ($products as $p) {
-    $productsById[(int)$p['id']] = $p;
-}
+$occSlugIds = [];
 foreach ($occRows as $o) {
-    $photo = '';
-    $photoAlt = '';
-    /* Разбираем CSV product_ids, берём первый существующий активный товар с картинкой */
-    foreach (array_filter(array_map('intval', array_map('trim', explode(',', (string)$o['product_ids'])))) as $pid) {
-        if (isset($productsById[$pid]) && product_img_url($productsById[$pid]) !== '') {
-            $photo = product_img_url($productsById[$pid]);
-            /* W104-γ (C2-D2): осмысленный alt плитки — имя товара, чьё фото
-               на плитке (критик: 8 img с пустым alt) */
-            $photoAlt = (string)$productsById[$pid]['name'];
-            break;
-        }
-    }
-    $occTiles[] = [
-        'slug' => (string)$o['slug'],
-        /* Подпись плитки: без хвоста « в Санкт-Петербурге» (он уже в заголовке секции) */
-        'title' => (string)preg_replace('/\s+в Санкт-Петербурге$/u', '', (string)$o['title']),
-        'photo' => $photo,
-        'photo_alt' => $photoAlt,
-    ];
+    $occSlugIds[(string)$o['slug']] = array_values(array_filter(array_map('intval', array_map('trim', explode(',', (string)$o['product_ids'])))));
 }
-if (!$featOccasions || $occTiles === []) {
-    $occTiles = []; /* пустая таблица поводов — секцию не выводим */
+/* премиум-фолбэк (3) и топ-4 по цене (4) — для карточек без живых тегов/поводов */
+$occPremiumIds = [];
+foreach ($gridAll as $p) {
+    if ((int)($p['is_premium'] ?? 0) === 1) { $occPremiumIds[] = (int)$p['id']; }
+}
+$occTopPrice = $gridAll;
+usort($occTopPrice, static fn (array $a, array $b): int => productPrice($b) <=> productPrice($a));
+$occTopIds = array_slice(array_map(static fn (array $p): int => (int)$p['id'], $occTopPrice), 0, 4);
+$gridIdSet = [];
+foreach ($gridAll as $p) { $gridIdSet[(int)$p['id']] = true; }
+
+$occCards = [];
+if ($featOccasions) {
+    $occDefaults = [
+        1 => ['🎂', 'День рождения', 'Яркие и праздничные букеты', 'день рождения, подарок, праздник', 'buket-na-den-rozhdeniya'],
+        2 => ['❤️', 'Свидание и любовь', 'Пионы, розы и романтика', 'розы, пионы, подарок девушке', 'buket-dlya-lyubimoj'],
+        3 => ['🥂', 'Юбилей и торжество', 'Пышные авторские корзины', 'в коробках, юбилей, корзины', 'buket-na-godovshinu'],
+    ];
+    for ($i = 1; $i <= 3; $i++) {
+        [$ocEmojiD, $ocTitleD, $ocSubD, $ocTagsD, $ocSlugD] = $occDefaults[$i];
+        $ocEmoji = trim((string)setting("occ_card_{$i}_emoji", $ocEmojiD));
+        $ocTitle = trim((string)setting("occ_card_{$i}_title", $ocTitleD));
+        if ($ocTitle === '') { continue; }
+        $ocSub = trim((string)setting("occ_card_{$i}_sub", $ocSubD));
+        $ocTags = trim((string)setting("occ_card_{$i}_tags", $ocTagsD));
+        $ocSlug = trim((string)setting("occ_card_{$i}_slug", $ocSlugD));
+        /* (1) теги: список альтернатив через запятую — матчится ЛЮБАЯ */
+        $ids = [];
+        if ($ocTags !== '') {
+            foreach (array_filter(array_map('trim', explode(',', $ocTags))) as $alt) {
+                foreach ($gridAll as $p) {
+                    if ($nfTagMatch($alt, $p)) { $ids[(int)$p['id']] = true; }
+                }
+            }
+        }
+        /* (2) ∪ product_ids повода (только id, которые есть в витрине) */
+        if ($ocSlug !== '' && isset($occSlugIds[$ocSlug])) {
+            foreach ($occSlugIds[$ocSlug] as $pid) {
+                if (isset($gridIdSet[$pid])) { $ids[$pid] = true; }
+            }
+        }
+        /* (3) премиум → (4) топ-4 по цене: карточка всегда непустая */
+        if ($ids === []) { $ids = array_fill_keys($occPremiumIds, true); }
+        if ($ids === []) { $ids = array_fill_keys($occTopIds, true); }
+        $occCards[] = [
+            'emoji' => $ocEmoji,
+            'title' => $ocTitle,
+            'sub' => $ocSub,
+            'ids' => array_keys($ids),
+        ];
+    }
 }
 
 /* ---- Магазины: stores_N_title/text, N=1..3 (пустые title пропускаем) ---- */
@@ -1318,79 +1354,40 @@ echo json_encode([
 
   <?php /* W96 (5cv): секция how-it-works убрана — шаги остаются в настройках, но не выводятся. */ ?>
 
-  <?php /* ЦВЕТЫ ПО ПОВОДУ (5cv): плитки-чипы с фото/пастельными фонами.
-     W106-C1 (P0-5): поводы — тонкий tint (после белых отзывов, перед
-     тёплой формой заказа) — сетка не сливается с соседями.
-     W106-E1 (корректор P0): комментарий был HTML-блоком с потерянным
-     открывающим <!-- — хвост «…сетка не сливается с соседями. -->»
-     рендерился видимым текстом на странице. Теперь весь PHP-комментарий. */ ?>
-  <?php if ($occTiles !== []): ?>
+  <?php /* S10 ДЕФЕКТ 2: ПОВОДЫ — три белые карточки с эмодзи (вместо серых
+         градиентных плит). Клик — фильтр каталога (чип data-chip="ids",
+         js/five.js скроллит к #catalog), подпись — живой счётчик букетов. */ ?>
+  <?php if ($occCards !== []): ?>
   <section class="fc-section fc-section--soft" id="occasions">
     <div class="wrap">
-      <?php /* W104: шапка поводов — единый компонент (eyebrow + нумерал за H2) */ ?>
       <div class="fc-row__head">
-        <div class="fc-row__heading" data-numeral="<?= e(fc_next_numeral()) ?>">
-        <?php render_fc_eyebrow(setting('occasions_eyebrow', 'Повод|найти просто')); ?>
+        <div class="fc-row__heading">
         <h2 class="fc-row__title"><?= e(setting('occasions_title', 'Цветы по поводам')) ?></h2>
+        <?php $occSub2 = trim((string)setting('occasions_sub', '')); ?>
+        <?php if ($occSub2 !== ''): ?><p class="fc-row__sub"><?= e($occSub2) ?></p><?php endif; ?>
         </div>
       </div>
-      <div class="fc-occasions">
-        <?php /* W103 (F1): плитки — фото с duotone-эффектом (CSS) или типографические
-               ink-плитки с amber-индексом (вместо пастелевых заглушек с SVG-цветком) */ ?>
-        <?php foreach ($occTiles as $tIdx => $t): ?>
-        <a class="fc-occasion<?= $t['photo'] !== '' ? ' fc-occasion--photo' : ' fc-occasion--pastel' ?>" href="/occasion/<?= e(rawurlencode($t['slug'])) ?>">
-          <?php if ($t['photo'] !== ''): ?>
-            <?php /* W96-fix3a (T6) → W97-fixB2 (B2-6): alt="" — имя плитки несёт ссылка
-                   (текст дублировался для скринридера); длинное имя — в title не нужно,
-                   фото внутри ссылки целиком */ ?>
-            <?php /* W102 (perf): плитки грузили JPG-оригиналы (~589КБ) — включаем
-                   тот же webp-конвейер, что у карточек (thumbs 400/600 + оригинал).
-                   W104-ζ: + webp-оригинал {w}w — ретина-плитка (260px@3x = 780)
-                   берёт полный файл вместо 600w-превью */ ?>
-            <?php
-            $__ocImg = (string)$t['photo'];
-            /* W104-ζ: фикс пути превью — раньше в thumbs-URL попадал весь путь
-               '/img/products/…' (urlencode → '%2Fimg%2F…'), is_file был всегда
-               false и плитки грузили ЖЕЛЕЗНЫЙ jpg-оригинал — W102-«фикс» не работал */
-            $__ocBase = rawurldecode(basename($__ocImg));
-            $__ocThumb = preg_replace('/\.(jpe?g|png)$/i', '', $__ocBase);
-            $__ocThumb400 = '/img/products/thumbs/' . rawurlencode($__ocThumb) . '-400.webp';
-            $__ocThumb600 = '/img/products/thumbs/' . rawurlencode($__ocThumb) . '-600.webp';
-            $__ocHas400 = is_file(BASE_PATH . parse_url($__ocThumb400, PHP_URL_PATH));
-            $__ocHas600 = is_file(BASE_PATH . parse_url($__ocThumb600, PHP_URL_PATH));
-            $__ocParts = [];
-            if ($__ocHas400) { $__ocParts[] = $__ocThumb400 . ' 400w'; }
-            if ($__ocHas600) { $__ocParts[] = $__ocThumb600 . ' 600w'; }
-            $__ocWebp = '/img/products/' . rawurlencode(preg_replace('/\.(jpe?g|png)$/i', '.webp', $__ocBase));
-            if (is_file(BASE_PATH . parse_url($__ocWebp, PHP_URL_PATH))) {
-                $__ocDim = @getimagesize(BASE_PATH . parse_url($__ocWebp, PHP_URL_PATH));
-                if ($__ocDim !== false) { $__ocParts[] = $__ocWebp . ' ' . (int)$__ocDim[0] . 'w'; }
-            }
-            ?>
-            <?php /* S8: без <picture> (инцидент «серые прямоугольники») —
-                   webp-srcset прямо на <img>; lazy оставлен: plain-img
-                   lazy загружается надёжно (подтверждено на проде),
-                   поводы — нише первого экрана */ ?>
-            <img class="fc-occasion__img" src="<?= e($__ocImg) ?>" alt="<?= e($t['photo_alt'] !== '' ? $t['photo_alt'] : $t['title']) ?>"<?php if ($__ocParts !== []): ?> srcset="<?= e(implode(', ', $__ocParts)) ?>" sizes="(max-width:899px) 44vw, 280px"<?php endif; ?> loading="lazy" decoding="async">
-          <?php else: ?>
-            <?php /* W103 (F1): типографическая плитка без фото — ink-фон, amber-индекс,
-                   Playfair-курсив в подписи (стили five.css; старый SVG-цветок убран) */ ?>
-            <span class="fc-occasion__index" aria-hidden="true"><?= sprintf('%02d', $tIdx + 1) ?></span>
-          <?php endif; ?>
-          <span class="fc-occasion__label"><?= e($t['title']) ?></span>
-        </a>
+      <div class="fc-occ-grid">
+        <?php foreach ($occCards as $c): ?>
+        <button type="button" class="fc-chip fc-occ-card" data-chip="ids" data-ids="<?= e(implode(',', $c['ids'])) ?>" aria-pressed="false">
+          <span class="fc-occ-card__emoji" aria-hidden="true"><?= e($c['emoji']) ?></span>
+          <span class="fc-occ-card__text">
+            <span class="fc-occ-card__title"><?= e($c['title']) ?></span>
+            <span class="fc-occ-card__sub"><?= e($c['sub']) ?></span>
+          </span>
+          <span class="fc-occ-card__count"><?= count($c['ids']) ?>&nbsp;<?= e($pluralBuket(count($c['ids']))) ?></span>
+        </button>
         <?php endforeach; ?>
       </div>
     </div>
   </section>
   <?php endif; ?>
 
-  <?php /* ФОРМА ЗАКАЗА — partial (W106-E1, Нильсен P0 «чекаут заперт в лендинге»):
-     разметка извлечена в partials/order-form.php 1:1 (id полей — контракт
-     js/order-form.js — не менялись). Главная подключает partial на прежнем
-     месте: поведение страницы не меняется. Тот же partial рендерит форму
-     на /checkout.php. */ ?>
-  <?php require __DIR__ . '/partials/order-form.php'; ?>
+  <?php /* S10 ДЕФЕКТ 1: форма заказа УБРАНА с главной — простыня из ~20 полей
+         съедала 60% высоты витрины. Чекут живёт ТОЛЬКО на /checkout.php:
+         кнопка «Оформить заказ» в корзине (js/cart-ui.js goToOrderSection)
+         автоматически ведёт туда, когда на странице нет #order/#orderForm.
+         Тот же partial рендерит /checkout.php (со сводкой корзины). */ ?>
 
 
   <?php /* SEO-ТЕКСТ (5cv): sanitize_rich_text разрешает только <a>; абзацы — через \n\n → <p> (стилизует .fc-seo p).

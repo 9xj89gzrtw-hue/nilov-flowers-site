@@ -364,7 +364,7 @@ $secondaryCssV = substr((string)@md5_file(__DIR__ . '/css/secondary.css'), 0, 8)
       </div>
       <?php endif; ?>
       <p style="margin-top:<?= $faq !== [] ? '32' : '0' ?>px;display:flex;gap:10px;flex-wrap:wrap">
-        <a class="btn btn--accent" href="/#order"><?= e($occasionCtaText) ?></a>
+        <a class="btn btn--accent" href="/checkout.php"><?= e($occasionCtaText) ?></a>
         <a class="btn btn--outline" href="/#catalog">Весь каталог</a>
       </p>
     </div>

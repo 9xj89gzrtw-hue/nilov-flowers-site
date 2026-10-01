@@ -1523,6 +1523,30 @@ $pdo->exec("UPDATE occasions SET faq_q1 = replace(faq_q1, 'Какую карту
         ('budget_tile_gifts_tag', 'Подарки')");
     $s9guard = $pdo->prepare("UPDATE settings SET value = :nv WHERE key = :k AND value = :ov");
     $s9guard->execute([':nv' => 'Найти букет: розы, пионы...', ':k' => 'search_placeholder', ':ov' => 'Розы, пионы, букет маме…']);
+
+    /* ===== S10 (v2026.10, рефакторинг витрины): повод-карточки =====
+       3 белые карточки «Цветы по поводам» (вместо серых градиентных плит):
+       эмодзи/заголовок/подпись/теги-альтернативы/slug повода. Теги — список
+       через запятую (матчится любая), slug — подтягивает product_ids повода;
+       пусто → премиум → топ-4 по цене (PHP в index.php, карточка всегда
+       ведёт к непустому подбору). Кастом владельца — свято (INSERT OR IGNORE). */
+    $pdo->exec("INSERT OR IGNORE INTO settings (key, value) VALUES
+        ('occasions_sub', 'Подберём букет под повод и бюджет'),
+        ('occ_card_1_emoji', '🎂'),
+        ('occ_card_1_title', 'День рождения'),
+        ('occ_card_1_sub', 'Яркие и праздничные букеты'),
+        ('occ_card_1_tags', 'день рождения, подарок, праздник'),
+        ('occ_card_1_slug', 'buket-na-den-rozhdeniya'),
+        ('occ_card_2_emoji', '❤️'),
+        ('occ_card_2_title', 'Свидание и любовь'),
+        ('occ_card_2_sub', 'Пионы, розы и романтика'),
+        ('occ_card_2_tags', 'розы, пионы, подарок девушке'),
+        ('occ_card_2_slug', 'buket-dlya-lyubimoj'),
+        ('occ_card_3_emoji', '🥂'),
+        ('occ_card_3_title', 'Юбилей и торжество'),
+        ('occ_card_3_sub', 'Пышные авторские корзины'),
+        ('occ_card_3_tags', 'в коробках, юбилей, корзины'),
+        ('occ_card_3_slug', 'buket-na-godovshinu')");
 }
 
 /* S3 (v2026.3): теги/состав/размеры демо-букетов — общий хелпер для свежих

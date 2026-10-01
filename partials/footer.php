@@ -49,9 +49,8 @@ $__vjs = static function (string $name): string {
 };
 $__nfPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 $__nfIsHome = ($__nfPath === '/' || $__nfPath === '/index.php');
-/* W106-E1: /checkout.php — вторая страница с формой заказа (#orderForm рендерит
-   partials/order-form.php) — order-form.js нужен и ей; каталог-фильтры —
-   по-прежнему только главная (#catalogGrid там нет). */
+/* S10: /checkout.php — ЕДИНСТВЕННАЯ страница с формой заказа (#orderForm
+   рендерит partials/order-form.php; с главной простыня убрана — ДЕФЕКТ 1). */
 $__nfIsCheckout = (bool)preg_match('#^/checkout(\.php)?$#', $__nfPath);
 $__nfIsProduct = (bool)preg_match('#^/product(/|$)#', $__nfPath)
     || (isset($product) && is_array($product));
@@ -318,9 +317,9 @@ $__mnavWa = setting('wa_enabled', '1') === '1' ? trim(setting('shop_whatsapp', '
 <?php /* S3 (v2026.3): «Купить в 1 клик» — модалка имя+телефон → POST /api/orders
        (кнопки [data-oneclick] на карточках каталога/каруселей и PDP). */ ?>
 <script src="/js/oneclick.js?v=<?= e($__vjs('oneclick.js')) ?>" defer></script>
-<?php /* A9: #orderForm живёт на главной и /checkout.php (W106-E1 — частичный
-       order-form.php); #catalogGrid/#catalogTabs — только главная. */ ?>
-<?php if ($__nfIsHome || $__nfIsCheckout): ?>
+<?php /* A9 → S10: #orderForm живёт ТОЛЬКО на /checkout.php (на главной форма
+       убрана — простыня не висит на витрине); #catalogGrid/#catalogTabs — только главная. */ ?>
+<?php if ($__nfIsCheckout): ?>
 <script src="/js/order-form.js?v=<?= e($__vjs('order-form.js')) ?>" defer></script>
 <?php endif; ?>
 <?php if ($__nfIsHome): ?>

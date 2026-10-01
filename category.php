@@ -483,7 +483,7 @@ $secondaryCssV = substr((string)@md5_file(__DIR__ . '/css/secondary.css'), 0, 8)
         [$tailT1, $tailT2] = array_pad(explode('|', $tailTitle, 2), 2, '');
         if ($tailT1 !== ''):
         ?>
-        <a class="catalog-tail reveal" href="/#order" data-grid-tail aria-label="Собрать букет на заказ">
+        <a class="catalog-tail reveal" href="/checkout.php" data-grid-tail aria-label="Собрать букет на заказ">
           <span class="catalog-tail__kicker"><?= e(setting('catalog_tail_kicker', 'Не нашли нужный букет?')) ?></span>
           <span class="catalog-tail__title"><?= e($tailT1) ?><?= $tailT2 !== '' ? ' <em>' . e($tailT2) . '</em>' : '' ?></span>
           <span class="catalog-tail__text"><?= e(setting('catalog_tail_text', 'Под ваш повод, палитру и бюджет — фото готового букета пришлём до отправки')) ?></span>
@@ -501,7 +501,7 @@ $secondaryCssV = substr((string)@md5_file(__DIR__ . '/css/secondary.css'), 0, 8)
         <p class="cat-empty__title"><?= e(setting('category_filter_empty_title', 'В этой ценовой категории пока пусто')) ?></p>
         <p class="cat-empty__hint"><?= e(setting('category_filter_empty_hint', 'Попробуйте другой диапазон или посмотрите все букеты категории')) ?></p>
         <div class="cat-empty__actions">
-          <a class="btn btn--accent cat-empty__cta" href="/#order">Собрать на заказ</a>
+          <a class="btn btn--accent cat-empty__cta" href="/checkout.php">Собрать на заказ</a>
           <button type="button" class="btn btn--outline" id="catEmptyReset">Сбросить фильтры</button>
         </div>
       </div>
@@ -531,7 +531,7 @@ $secondaryCssV = substr((string)@md5_file(__DIR__ . '/css/secondary.css'), 0, 8)
         <p><?= e(setting('faq_a1', 'Зависит от района: 300–500 ₽ по Санкт-Петербургу, самовывоз бесплатный. Точная сумма сразу видна при оформлении заказа.')) ?></p>
       </div>
       <p style="margin:32px 0 0;display:flex;gap:10px;flex-wrap:wrap">
-        <a class="btn btn--accent" href="/#order">Заказать с доставкой сегодня</a>
+        <a class="btn btn--accent" href="/checkout.php">Заказать с доставкой сегодня</a>
         <a class="btn btn--outline" href="/#catalog">Весь каталог</a>
       </p>
     </div>

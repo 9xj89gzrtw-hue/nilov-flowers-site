@@ -113,6 +113,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
         /* S9 (выравнивание витрины): подписи и теги плашек 3–4 навигации */
         'budget_tile_mono_label','budget_tile_gifts_label',
         'budget_tile_mono_tag','budget_tile_gifts_tag',
+        /* S10 (повод-карточки): эмодзи/заголовок/подпись/теги/slug × 3 */
+        'occasions_sub',
+        'occ_card_1_emoji','occ_card_1_title','occ_card_1_sub','occ_card_1_tags','occ_card_1_slug',
+        'occ_card_2_emoji','occ_card_2_title','occ_card_2_sub','occ_card_2_tags','occ_card_2_slug',
+        'occ_card_3_emoji','occ_card_3_title','occ_card_3_sub','occ_card_3_tags','occ_card_3_slug',
         /* W96 (редизайн 5cv): тексты новых блоков витрины — город, hero-промо, чипы цен,
            секции хитов/премиума/бюджета/допов, поводы, магазины, SEO-текст, журнал */
         'citybar_text','city_label','search_placeholder','catalog_btn_text',
@@ -930,6 +935,21 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
     <input class="input" id="s-tilegifts" name="budget_tile_gifts_label" value="<?= sv('budget_tile_gifts_label', $s) ?>">
     <label class="f" for="s-tilegiftstag">Тег плашки «Хиты и подарки» (хиты + товары с этим тегом)</label>
     <input class="input" id="s-tilegiftstag" name="budget_tile_gifts_tag" value="<?= sv('budget_tile_gifts_tag', $s) ?>">
+
+    <p style="font-size:.9rem;font-weight:700;margin:18px 0 6px">Повод-карточки «Цветы по поводам» (S10)</p>
+    <p style="font-size:.85rem;color:#767676;margin:0 0 8px">Три белые карточки под каталогом: клик фильтрует каталог. Подборка: товары по тегам (через запятую — матчится любая) + букеты повода (slug ниже); если пусто — премиум, затем самые дорогие букеты.</p>
+    <?php for ($oci = 1; $oci <= 3; $oci++): $ock = 'occ_card_' . $oci; ?>
+    <label class="f" for="s-occ<?= $oci ?>e">Карточка <?= $oci ?> — эмодзи</label>
+    <input class="input" id="s-occ<?= $oci ?>e" name="<?= $ock ?>_emoji" value="<?= sv($ock . '_emoji', $s) ?>">
+    <label class="f" for="s-occ<?= $oci ?>t">Карточка <?= $oci ?> — заголовок (пусто — карточка скрыта)</label>
+    <input class="input" id="s-occ<?= $oci ?>t" name="<?= $ock ?>_title" value="<?= sv($ock . '_title', $s) ?>">
+    <label class="f" for="s-occ<?= $oci ?>s">Карточка <?= $oci ?> — подпись</label>
+    <input class="input" id="s-occ<?= $oci ?>s" name="<?= $ock ?>_sub" value="<?= sv($ock . '_sub', $s) ?>">
+    <label class="f" for="s-occ<?= $oci ?>g">Карточка <?= $oci ?> — теги через запятую</label>
+    <input class="input" id="s-occ<?= $oci ?>g" name="<?= $ock ?>_tags" value="<?= sv($ock . '_tags', $s) ?>">
+    <label class="f" for="s-occ<?= $oci ?>sl">Карточка <?= $oci ?> — slug повода (добавит его букеты)</label>
+    <input class="input" id="s-occ<?= $oci ?>sl" name="<?= $ock ?>_slug" value="<?= sv($ock . '_slug', $s) ?>">
+    <?php endfor; ?>
 
     <p style="font-size:.9rem;font-weight:700;margin:18px 0 6px">Мастерская и отзывы (под каталогом)</p>
     <label class="f" for="s-wshours">Часы работы мастерской</label>

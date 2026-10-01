@@ -242,6 +242,13 @@
     if (budgetBox) {
       chips = chips.concat(Array.prototype.slice.call(budgetBox.querySelectorAll('.fc-chip')));
     }
+    /* S10: повод-карточки (.fc-occ-grid .fc-chip, «День рождения» и др.) —
+       тот же общий массив чипов: клик фильтрует каталог и ведёт к нему
+       (поводы живут ниже каталога — без скролла покупатель не увидит результат). */
+    var occBox = document.querySelector('.fc-occ-grid');
+    if (occBox) {
+      chips = chips.concat(Array.prototype.slice.call(occBox.querySelectorAll('.fc-chip')));
+    }
 
     /* A3: пилюля под строкой поиска на главной — «Нашлось N букетов — посмотреть ↓».
        Появляется при непустом запросе, прячется при очистке; клик — плавный скролл
@@ -353,9 +360,10 @@
           chip.setAttribute('aria-pressed', 'true');
         }
         refilter(true);
-        /* S7: клик по плашке бюджета — плавно ведём к отфильтрованному
-           каталогу ниже (чипы ленты не скроллят: покупатель уже у полок). */
-        if (chip.closest && chip.closest('.fc-budget')) {
+        /* S7: клик по плашке бюджета / S10 повод-карточке — плавно ведём
+           к отфильтрованному каталогу (чипы ленты не скроллят:
+           покупатель уже у полок). */
+        if (chip.closest && (chip.closest('.fc-budget') || chip.closest('.fc-occ-grid'))) {
           var cat = document.getElementById('catalog');
           if (cat) nfScrollToEl(cat);
         }

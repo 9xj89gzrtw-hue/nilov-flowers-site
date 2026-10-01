@@ -190,6 +190,16 @@
     if (kind && kind.indexOf('tag-') === 0) {
       return nfTagMatch(chip.getAttribute('data-tag') || '', card.getAttribute('data-tags') || '');
     }
+    /* S10: повод-карточки («День рождения» и др.) — фильтр по списку id
+       товара (data-ids), который PHP собрал из тегов/повода/премиума.
+       id товара живёт на CTA-кнопке карточки (data-product-id). */
+    if (kind === 'ids') {
+      var idsAttr = chip.getAttribute('data-ids') || '';
+      if (!idsAttr) return true;
+      var cta = card.querySelector('[data-order-cta]');
+      var pid = cta ? String(cta.getAttribute('data-product-id') || '') : '';
+      return pid !== '' && idsAttr.split(',').indexOf(pid) !== -1;
+    }
     var price = parseInt(card.getAttribute('data-price'), 10) || 0;
     var min = chip.hasAttribute('data-min') ? parseInt(chip.getAttribute('data-min'), 10) : null;
     var max = chip.hasAttribute('data-max') ? parseInt(chip.getAttribute('data-max'), 10) : null;
@@ -354,7 +364,7 @@
         orderCta.className = 'btn btn--accent';
         orderCta.style.marginRight = '10px';
         orderCta.textContent = 'Собрать на заказ';
-        orderCta.href = document.getElementById('order') ? '#order' : '/#order';
+        orderCta.href = '/checkout.php'; /* S10: форма заказа — только /checkout.php (на главной #order больше нет) */
         orderBlock.appendChild(orderHint);
         orderBlock.appendChild(orderCta);
         if (emptyTitle && emptyTitle.nextSibling) {
