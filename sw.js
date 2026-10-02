@@ -2,7 +2,12 @@
 /* S14: обязательный bump — у части посетителей в page-cache висели СТАРЫЕ
    HTML+CSS (каркасные версии до S13: чёрные плашки поверх чипсов и пр.);
    новая версия выметает pages-* / static-* старых релизов при activate. */
-const VERSION = 's17';
+/* S18: КОРНЕВОЙ ФИКС «белых прямоугольников» на реальных iPhone: cache-first
+   для статики кэшировал ЛЮБОЙ ответ — включая 404/битый из окна деплоя —
+   НАВСЕГДА (curl видел 200, а телефон владельца держал замороженный сбой).
+   Теперь в static-кэш попадают ТОЛЬКО res.ok (2xx) ответы; транзитный сбой
+   больше не прилипает. VERSION s17 → s18 — выметает уже отравленные кэши. */
+const VERSION = 's18';
 const STATIC_CACHE = `static-${VERSION}`;
 const PAGE_CACHE = `pages-${VERSION}`;
 const OFFLINE_URL = '/offline.html';
@@ -53,12 +58,15 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // cache-first для статики
+  // cache-first для статики — НО кэшируем только успешные ответы (S18:
+  // 404/5xx из окна деплоя больше НЕ замораживаются в кэше навсегда)
   e.respondWith(
     caches.match(e.request).then((hit) =>
       hit || fetch(e.request).then((res) => {
-        const copy = res.clone();
-        caches.open(STATIC_CACHE).then((c) => c.put(e.request, copy));
+        if (res.ok) {
+          const copy = res.clone();
+          caches.open(STATIC_CACHE).then((c) => c.put(e.request, copy));
+        }
         return res;
       })
     )

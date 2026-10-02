@@ -910,6 +910,33 @@ body.has-cart-open .mnav{display:none!important}
   .mnav{display:grid}
 }
 
+/* ============ 18б. ПЛАВАЮЩАЯ WHATSAPP-КНОПКА (.wa-fab, S18) ============
+   Директива владельца (02.10.2026): зелёный кружок 48×48, docked
+   right:12px / bottom:80px(+safe-area — приподнят над нижним баром mnav),
+   z-index:50. НЕ висит посреди контента и не перекрывает карточки каталога:
+   живёт в правом нижнем углу над mnav. Показан только на мобильных
+   (≤899px — вместе с mnav); при открытой корзине, на чекауте и PDP скрыт
+   (не наезжает на «Оформить заказ» / «Подтвердить заказ» / sticky-CTA). */
+.wa-fab{
+  position:fixed;right:12px;bottom:calc(80px + env(safe-area-inset-bottom,0px));z-index:50;
+  width:48px;height:48px;min-width:48px;min-height:48px;border-radius:50%;
+  display:none;align-items:center;justify-content:center;
+  background:#1FAF54;color:#FFFFFF;text-decoration:none;
+  box-shadow:0 6px 18px -6px rgba(21,128,61,.55);
+  transition:background .15s ease,transform .15s ease;
+}
+.wa-fab svg{width:26px;height:26px;fill:currentColor;flex:none}
+.wa-fab:active{transform:scale(.94)}
+.wa-fab:focus-visible{outline:3px solid rgba(31,175,84,.45);outline-offset:2px}
+@media(max-width:899px){
+  .wa-fab{display:flex}
+}
+body.has-cart-open .wa-fab{display:none!important}
+body.page-checkout .wa-fab,
+.page-checkout .wa-fab,
+.checkout-page .wa-fab{display:none!important}
+body.page-product .wa-fab{display:none}
+
 /* ============ 19. КНОПКИ (общая система) ============ */
 .btn{
   display:inline-flex;align-items:center;justify-content:center;gap:8px;
@@ -1989,6 +2016,26 @@ body > div[role="region"][aria-label="Установка приложения"] 
    секции + графитовый CTA; «Классика» — популярный тариф с плашкой */
 .fc-subscribe__grid{display:grid;grid-template-columns:1fr;gap:14px;align-items:stretch}
 @media(min-width:768px){.fc-subscribe__grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}}
+/* S18 (директива владельца): подписка на мобильном — горизонтальный свайп,
+   3 тарифа одной лентой (scroll-snap), ровно 1 экран вместо вертикальной
+   простыни на 3 экрана. Спека дословно (классы реальные: fc-subscribe__). */
+@media (max-width: 768px) {
+  .fc-subscribe__grid{
+    display: flex !important;
+    overflow-x: auto !important;
+    scroll-snap-type: x mandatory;
+    gap: 12px;
+    padding-bottom: 12px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .fc-subscribe__card{
+    min-width: 280px !important;
+    max-width: 280px !important;
+    box-sizing: border-box !important; /* 280px = вся карточка, а не +padding 40 + border 2 (=322px) */
+    scroll-snap-align: start;
+    flex-shrink: 0;
+  }
+}
 .fc-subscribe__card{
   position:relative;background:#FFFFFF;border:1px solid #EBEBEB;border-radius:16px;
   padding:22px 20px;display:flex;flex-direction:column;gap:8px;

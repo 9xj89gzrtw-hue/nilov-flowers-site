@@ -1633,19 +1633,19 @@ $pdo->exec("UPDATE occasions SET faq_q1 = replace(faq_q1, 'Какую карту
             'розы, монобукеты, стойкие', 1, 0,
             '25 роз Эквадор Freedom, 60 см', '⌀ ~40 см · ~55 см',
             'Двадцать пять эквадорских роз Freedom в чёрной матовой упаковке с атласной лентой. Классика крупного романтического жеста: признание, годовщина, круглая дата. Розы приезжают из утренней поставки и стоят в вазе 7–10 дней — подрежьте стебли под углом и меняйте воду раз в сутки.'],
-        ['francuzskie-kruzhevnye-rozy', 'Французские кружевные розы', 4500, 4, 'gen11.jpg', 'b1-buket-5-rozovyh-roz-2.jpg',
+        ['francuzskie-kruzhevnye-rozy', 'Французские кружевные розы', 4500, 4, 'roz2.jpg', 'b1-buket-5-rozovyh-roz-2.jpg',
             'розы, премиум', 0, 1,
             'Сортовые розы, гипсофила, эвкалипт', '⌀ ~35 см · ~45 см',
             'Сортовые розы с кружевной гипсофилой в белой шёлковой упаковке — нежная премиальная композиция для признания без слов. Флорист собирает букет утром в день доставки. Стоит в вазе 7–10 дней: подрежьте стебли и держите букет в прохладе.'],
-        ['monobuket-belyh-gortenzij', 'Монобукет из белых гортензий', 3200, 2, 'gen10.jpg', 'b1-gortenzii-shlyapnaya-korobka-2.jpg',
+        ['monobuket-belyh-gortenzij', 'Монобукет из белых гортензий', 3200, 2, 'gen1.jpg', 'b1-gortenzii-shlyapnaya-korobka-2.jpg',
             'гортензии, монобукеты', 0, 0,
             'Гортензии 3–5 голов, шляпная коробка с водой', '⌀ ~30 см',
             'Белые гортензии в светлой шляпной коробке — спокойный статусный подарок, который не нужно переставлять в вазу. Гортензии пьют много: доливайте воду в коробку каждые 1–2 дня, свежесть сохранится до недели.'],
-        ['oblako-iz-rozovyh-pionov', 'Облако из розовых пионов', 5800, 2, 'gen9.jpg', 'b1-buket-51-pion-2.jpg',
+        ['oblako-iz-rozovyh-pionov', 'Облако из розовых пионов', 5800, 2, 'p2.jpg', 'b1-buket-51-pion-2.jpg',
             'пионы, монобукеты', 1, 0,
             'Розовые пионы, белые розы', '⌀ ~45 см',
             'Пышное облако розовых пионов с белыми розами — композиция для особого случая: день рождения, рождение ребёнка, юбилей. Пионы раскрываются постепенно и радуют 5–7 дней в прохладе. Собираем утром в день доставки.'],
-        ['avtorskaya-kompoziciya-shlyapnaya-korobka', 'Авторская композиция в шляпной коробке', 7200, 5, 'gen19.jpg', 'b1-orhidei-rozy-kvadrat-korobka-2.jpg',
+        ['avtorskaya-kompoziciya-shlyapnaya-korobka', 'Авторская композиция в шляпной коробке', 7200, 5, 'p3.jpg', 'b1-orhidei-rozy-kvadrat-korobka-2.jpg',
             'в коробках, в шляпных коробках', 0, 0,
             'Белые розы, гортензии, орхидеи, шляпная коробка', '⌀ ~30 см · ~35 см',
             'Авторская композиция из белых роз, гортензий и орхидей в шляпной коробке — готовый статусный подарок без вазы и лишних действий. Свежесть 10–14 дней: орхидеи стойкие, доливайте воду во флористическую губку раз в 1–2 дня.'],
@@ -1735,6 +1735,45 @@ $pdo->exec("UPDATE occasions SET faq_q1 = replace(faq_q1, 'Какую карту
             $pdo->exec("INSERT OR IGNORE INTO settings (key, value) VALUES ('s16_premium_price_applied', '1')");
         }
     } catch (Throwable $s16e) {
+        /* тихий скип + self-heal на следующем хите */
+    }
+
+    /* ===== S18 (директива «СРОЧНЫЙ РЕМОНТ МОБИЛЬНОГО КАТАЛОГА», 02.10.2026):
+       4 букета волны S15 показывались на реальном iPhone БЕЗ КАРТИНОК (белые
+       прямоугольники). Файлы на сервере есть и отдают 200 (проверено curl'ом:
+       jpg + webp + thumbs — все валидны), но Service Worker кэшировал транзитный
+       сбой из окна деплоя НАВСЕГДА (cache-first без проверки res.ok).
+       ФИКС ПО ДИРЕКТИВЕ ВЛАДЕЛЬЦА: привязать 4 букета к проверенным фото,
+       которые 100% грузятся (новый URL = новый ключ кэша — отравленная запись
+       SW-кэша обходится сразу):
+         «Облако из розовых пионов»          gen9.jpg  → p2.jpg
+         «Авторская композиция в шляпной коробке» gen19.jpg → p3.jpg
+         «Французские кружевные розы»        gen11.jpg → roz2.jpg
+         «Монобукет из белых гортензий»      gen10.jpg → gen1.jpg
+       Guard по slug И ТОЧНОМУ старому значению image (владелец уже правил
+       фото через админку → no-op, его правки святы) + is_file на новое фото
+       (fail-closed: нет файла — оставляем старое). One-shot маркер
+       s18_prod_images_applied; try/catch Throwable — витрину не роняет. */
+    try {
+        $s18done = $pdo->query("SELECT value FROM settings WHERE key = 's18_prod_images_applied'")->fetchColumn();
+        if ($s18done === false) {
+            $s18map = [
+                ['oblako-iz-rozovyh-pionov', 'gen9.jpg', 'p2.jpg'],
+                ['avtorskaya-kompoziciya-shlyapnaya-korobka', 'gen19.jpg', 'p3.jpg'],
+                ['francuzskie-kruzhevnye-rozy', 'gen11.jpg', 'roz2.jpg'],
+                ['monobuket-belyh-gortenzij', 'gen10.jpg', 'gen1.jpg'],
+            ];
+            $s18upd = $pdo->prepare('UPDATE products SET image = :new, updated_at = datetime(\'now\',\'localtime\')
+                WHERE slug = :slug AND image = :old AND is_active = 1');
+            foreach ($s18map as [$s18slug, $s18old, $s18new]) {
+                if (!is_file(IMG_PRODUCTS_DIR . '/' . $s18new)) {
+                    continue; /* целевого файла нет на ЭТОМ сервере — не ломаем карточку */
+                }
+                $s18upd->execute([':slug' => $s18slug, ':old' => $s18old, ':new' => $s18new]);
+            }
+            $pdo->exec("INSERT OR IGNORE INTO settings (key, value) VALUES ('s18_prod_images_applied', '1')");
+        }
+    } catch (Throwable $s18e) {
         /* тихий скип + self-heal на следующем хите */
     }
 }
