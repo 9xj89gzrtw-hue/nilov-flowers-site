@@ -1607,9 +1607,26 @@ $pdo->exec("UPDATE occasions SET faq_q1 = replace(faq_q1, 'Какую карту
           + 2 действующих (buket-iz-roz, buket-iz-roz-2 — флагашные розы прода).
        3) Теги: «розы» (3 новых), «пионы», «гортензии», «в коробках» — чипы
           «Гортензии» и «В коробках» оживают (по 1 букету, чип без товаров
-          не печатается — S14). One-shot: маркер s15_catalog16_applied. */
+          не печатается — S14). One-shot: маркер s15_catalog16_applied.
+       4) ИНЦИДЕНТ 03:25 02.10.2026 (прод-500): category_id захардкоженные
+          1/2/4/5 нарушали FK на проде, где категории живут с ДРУГИМИ id —
+          миграция обязана быть НЕУБИВАЮЩЕЙ сайт: category_id резолвится
+          динамически по ИМЕНИ (нет совпадения → NULL), весь S15-блок —
+          в try/catch Throwable (любой сбой = тихий скип, маркер не встаёт,
+          страница живёт; повторная попытка на следующем хите — self-heal). */
+    try {
     $s15done = $pdo->query("SELECT value FROM settings WHERE key = 's15_catalog16_applied'")->fetchColumn();
     if ($s15done === false) {
+    /* категории прода могут иметь любые id — резолвим по имени сид-каталога */
+    $s15catIds = [];
+    foreach ($pdo->query('SELECT id, name FROM categories')->fetchAll() as $s15cr) {
+        $s15catIds[(string)$s15cr['name']] = (int)$s15cr['id'];
+    }
+    $s15cat = static function (int $want) use ($s15catIds): ?int {
+        $names = [1 => 'Розы', 2 => 'Сборные букеты', 3 => 'Полевые цветы', 4 => 'Авторские букеты', 5 => 'В шляпной коробке', 6 => 'Сладкие подарки'];
+        $nm = $names[$want] ?? '';
+        return isset($s15catIds[$nm]) ? $s15catIds[$nm] : null;
+    };
     $s15new = [
         /* [slug, name, price, cat, image, image2, tags, is_hit, is_premium, comp, size, descr] */
         ['buket-25-roz-ekvador', 'Букет из 25 роз Эквадор', 3900, 1, 'gen18.jpg', 'b1-25-roz-cherno-zoloto-2.jpg',
@@ -1647,7 +1664,7 @@ $pdo->exec("UPDATE occasions SET faq_q1 = replace(faq_q1, 'Какую карту
         $s15chk->execute([$sl]);
         if ((int)$s15chk->fetchColumn() === 0) {
             $s15ins->execute([
-                ':cat' => $cat, ':name' => $nm, ':slug' => $sl, ':price' => $pr,
+                ':cat' => $s15cat($cat), ':name' => $nm, ':slug' => $sl, ':price' => $pr,
                 ':descr' => $descr, ':image' => $im, ':sort' => $s15sort,
                 ':hit' => $hit, ':prem' => $prem, ':img2' => $im2, ':tags' => $tg,
                 ':comp' => $comp, ':size' => $size,
@@ -1695,6 +1712,11 @@ $pdo->exec("UPDATE occasions SET faq_q1 = replace(faq_q1, 'Какую карту
         ('fresh_2_text', 'Пришлем фото именно вашего букета в WhatsApp до выезда курьера'),
         ('fresh_3_title', 'Забота в комплекте'),
         ('fresh_3_text', 'Бесплатный аквабокс для бережной перевозки, подкормка Chrysal и инструкция по уходу')");
+    } catch (Throwable $s15e) {
+        /* миграция НИКОГДА не роняет витрину: тихий скип, маркер не встаёт —
+           повторная попытка на следующем хите (self-heal), владелец не теряет
+           ни страницу, ни заказ */
+    }
 }
 
 /* S3 (v2026.3): теги/состав/размеры демо-букетов — общий хелпер для свежих
