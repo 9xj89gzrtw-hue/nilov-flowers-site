@@ -120,24 +120,10 @@ $__nfIsProduct = (bool)preg_match('#^/product(/|$)#', $__nfPath)
         <?php if ($address !== ''): ?><li><span class="fc-footer__muted"><?= e($address) ?></span></li><?php endif; ?>
         <?php if ($shopEmail !== ''): ?><li><a href="mailto:<?= e($shopEmail) ?>"><?= e($shopEmail) ?></a></li><?php endif; ?>
       </ul>
-      <?php /* W106-C1 (P0-2): селектор города — тихо в футере (мобильная
-             точка выбора: город шапки на ≤899px скрыт). Тот же компонент
-             .fc-city, что в шапке — js/five.js cityMenu() слушает оба. */ ?>
-      <div class="fc-city fc-city--footer">
-        <button type="button" class="fc-city__btn" aria-expanded="false" aria-haspopup="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="2.6"/></svg>
-          <span class="fc-city__label"><?= e(setting('city_label', 'Санкт-Петербург')) ?></span>
-          <svg class="fc-city__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-        </button>
-        <div class="fc-city-menu fc-city-menu--up" hidden>
-          <?php /* D-d1 (P1, жюри): та же содержательная панель, что в шапке
-                 (js/five.js cityMenu() слушает оба). */ ?>
-          <p class="fc-city-menu__note">Доставляем по Санкт-Петербургу и пригородам</p>
-          <button type="button" class="fc-city-menu__opt is-current" data-city="<?= e(setting('city_label', 'Санкт-Петербург')) ?>"><?= e(setting('city_label', 'Санкт-Петербург')) ?>&nbsp;<span aria-hidden="true">✓</span></button>
-          <a class="fc-city-menu__link" href="#delivery">Зоны и цены<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-          <a class="fc-city-menu__other" href="#contacts"><?= e(setting('citybar_no_text', 'Другой город — самовывоз или обсудим по телефону')) ?></a>
-        </div>
-      </div>
+      <?php /* S15 (директива владельца): выпадающий попап города в футере УДАЛЁН
+             («Доставляем по Санкт-Петербургу и пригородам… Зоны и цены» —
+             плавающее окно города в зоне подвала больше не существует;
+             город-селектор остаётся только в шапке — js/five.js cityMenu()). */ ?>
     </div>
   </div>
   <div class="wrap">
@@ -193,79 +179,92 @@ $__mnavWa = setting('wa_enabled', '1') === '1' ? trim(setting('shop_whatsapp', '
 </nav>
 <?php endif; ?>
 
-<div class="cart-panel" id="cartPanel" hidden>
-  <div class="cart-panel__backdrop" id="cartBackdrop"></div>
-  <aside class="cart-panel__drawer" role="dialog" aria-modal="true" aria-label="Корзина">
-    <div class="cart-panel__head">
-      <?php /* W97-fixB3b (B3b-5г): заголовок корзины — вне H-контура (в drawer он
-             рядом с h1/h2 страницы и портит иерархию заголовков; селекторы CSS —
-             только по классу .cart-panel__title, тег безопасно сменён) */ ?>
+<?php /* S15 (ONE-SHOT MASTER OVERHAUL): КОРЗИНА — строгий трёхсоставной flexbox.
+   Обёртка #cartPanel держит только hidden-семантику (без transform — fixed-
+   дети позиционируются от вьюпорта); внутри: полноэкранный плотный backdrop
+   (z 998) и сама панель aside.cart-panel (fixed right/top, z 999,
+   display:flex; flex-direction:column; height:100vh; max-height:100vh):
+     .cart-panel__header — flex-shrink:0 (заголовок Inter 18px bold + крестик);
+     .cart-panel__body   — flex:1 1 auto; overflow-y:auto (ТОЛЬКО здесь
+                           скроллятся товары, открытка, Кризал и апселл);
+     .cart-panel__footer — flex-shrink:0; #FFFFFF; border-top 1px #EBEBEB
+                           (промокод, «Итого», «Оформить заказ» 48px #18181B
+                           на всю ширину, ссылка «Продолжить покупки»).
+   Товары больше НИКОГДА не перекрываются подвалом панели. JS-контракты
+   cart-ui.js сохранены: #cartPanel/#cartBackdrop/#cartClose/#cartItems/
+   #cartEmpty/#cartTotal/#cartCheckout/#cartContinue/#cartPromo*. */ ?>
+<div class="cart-root" id="cartPanel" hidden>
+  <div class="cart-backdrop" id="cartBackdrop"></div>
+  <aside class="cart-panel" role="dialog" aria-modal="true" aria-label="<?= e(setting('cart_title', 'Корзина')) ?>">
+    <div class="cart-panel__header">
       <div class="cart-panel__title"><?= e(setting('cart_title', 'Корзина')) ?></div>
       <button type="button" class="cart-panel__close" id="cartClose" aria-label="Закрыть корзину">&times;</button>
     </div>
-    <?php /* S3 (v2026.3): прогресс до бесплатной доставки (порог free_delivery_threshold,
-           рендер и обновление — js/cart-ui.js по контракту #cartFreeBar/#cartFreeText). */ ?>
-    <?php
-      $freeThreshold = (int)setting('free_delivery_threshold', '0');
-      if (setting('cart_free_progress_enabled', '1') === '1' && $freeThreshold > 0):
-    ?>
-    <div class="cart-free" id="cartFreeBar" role="progressbar" aria-valuemin="0" aria-valuemax="<?= $freeThreshold ?>" aria-valuenow="0" aria-label="Прогресс до бесплатной доставки">
-      <div class="cart-free__track"><div class="cart-free__fill" id="cartFreeFill"></div></div>
-      <p class="cart-free__text" id="cartFreeText"></p>
-    </div>
-    <?php endif; ?>
-    <div class="cart-panel__items" id="cartItems"></div>
-    <p class="cart-panel__empty" id="cartEmpty"><?= e(setting('cart_empty_text', 'Корзина пуста — выберите букет в каталоге')) ?></p>
-    <?php /* S3 (v2026.3): бесплатные допы — открытка с текстом (0 ₽) и подкормка
-           Chrysal (0 ₽). Состояние — localStorage корзины (cart-ui.js), открытка
-           синхронизируется с полем «Текст открытки» формы заказа; в заказ уходит
-           через extras (api/orders.php) и card_text. */ ?>
-    <?php
-      $postcardOn = setting('cart_extra_postcard_enabled', '1') === '1';
-      $chrysalOn = setting('cart_extra_chrysal_enabled', '1') === '1';
-    ?>
-    <?php if ($postcardOn || $chrysalOn): ?>
-    <div class="cart-extras" id="cartExtras">
-      <p class="cart-extras__title"><?= e(setting('cart_extras_title', 'Дополните букет')) ?></p>
-      <?php if ($postcardOn): ?>
-      <div class="cart-extra<?= $chrysalOn ? ' cart-extra--last' : '' ?>" id="cartExtraPostcard">
-        <label class="cart-extra__check">
-          <input type="checkbox" id="cartExtraPostcardOn">
-          <span class="cart-extra__info">
-            <span class="cart-extra__name"><?= e(setting('cart_extra_postcard_title', 'Открытка с вашим текстом')) ?> <em class="cart-extra__price">0&nbsp;₽</em></span>
-            <span class="cart-extra__note"><?= e(setting('cart_extra_postcard_text', 'Напишем от руки и вложим в букет')) ?></span>
-          </span>
-        </label>
-        <div class="cart-extra__text" id="cartExtraPostcardWrap" hidden>
-          <textarea id="cartExtraPostcardText" maxlength="500" rows="2" placeholder="С днём рождения! — от Евгения" aria-label="Текст открытки"></textarea>
+    <div class="cart-panel__body">
+      <?php /* S3 (v2026.3): прогресс до бесплатной доставки (порог free_delivery_threshold,
+             рендер и обновление — js/cart-ui.js по контракту #cartFreeBar/#cartFreeText). */ ?>
+      <?php
+        $freeThreshold = (int)setting('free_delivery_threshold', '0');
+        if (setting('cart_free_progress_enabled', '1') === '1' && $freeThreshold > 0):
+      ?>
+      <div class="cart-free" id="cartFreeBar" role="progressbar" aria-valuemin="0" aria-valuemax="<?= $freeThreshold ?>" aria-valuenow="0" aria-label="Прогресс до бесплатной доставки">
+        <div class="cart-free__track"><div class="cart-free__fill" id="cartFreeFill"></div></div>
+        <p class="cart-free__text" id="cartFreeText"></p>
+      </div>
+      <?php endif; ?>
+      <div class="cart-panel__items" id="cartItems"></div>
+      <p class="cart-panel__empty" id="cartEmpty"><?= e(setting('cart_empty_text', 'Корзина пуста — выберите букет в каталоге')) ?></p>
+      <?php /* S3 (v2026.3): бесплатные допы — открытка с текстом (0 ₽) и подкормка
+             Chrysal (0 ₽). Состояние — localStorage корзины (cart-ui.js), открытка
+             синхронизируется с полем «Текст открытки» формы заказа; в заказ уходит
+             через extras (api/orders.php) и card_text. */ ?>
+      <?php
+        $postcardOn = setting('cart_extra_postcard_enabled', '1') === '1';
+        $chrysalOn = setting('cart_extra_chrysal_enabled', '1') === '1';
+      ?>
+      <?php if ($postcardOn || $chrysalOn): ?>
+      <div class="cart-extras" id="cartExtras">
+        <p class="cart-extras__title"><?= e(setting('cart_extras_title', 'Дополните букет')) ?></p>
+        <?php if ($postcardOn): ?>
+        <div class="cart-extra<?= $chrysalOn ? ' cart-extra--last' : '' ?>" id="cartExtraPostcard">
+          <label class="cart-extra__check">
+            <input type="checkbox" id="cartExtraPostcardOn">
+            <span class="cart-extra__info">
+              <span class="cart-extra__name"><?= e(setting('cart_extra_postcard_title', 'Открытка с вашим текстом')) ?> <em class="cart-extra__price">0&nbsp;₽</em></span>
+              <span class="cart-extra__note"><?= e(setting('cart_extra_postcard_text', 'Напишем от руки и вложим в букет')) ?></span>
+            </span>
+          </label>
+          <div class="cart-extra__text" id="cartExtraPostcardWrap" hidden>
+            <textarea id="cartExtraPostcardText" maxlength="500" rows="2" placeholder="С днём рождения! — от Евгения" aria-label="Текст открытки"></textarea>
+          </div>
         </div>
+        <?php endif; ?>
+        <?php if ($chrysalOn): ?>
+        <div class="cart-extra cart-extra--last" id="cartExtraChrysal">
+          <label class="cart-extra__check">
+            <input type="checkbox" id="cartExtraChrysalOn">
+            <span class="cart-extra__info">
+              <span class="cart-extra__name"><?= e(setting('cart_extra_chrysal_title', 'Подкормка Chrysal')) ?> <em class="cart-extra__price">0&nbsp;₽</em></span>
+              <span class="cart-extra__note"><?= e(setting('cart_extra_chrysal_text', 'Питательный гель — букет простоит дольше')) ?></span>
+            </span>
+          </label>
+        </div>
+        <?php endif; ?>
       </div>
       <?php endif; ?>
-      <?php if ($chrysalOn): ?>
-      <div class="cart-extra cart-extra--last" id="cartExtraChrysal">
-        <label class="cart-extra__check">
-          <input type="checkbox" id="cartExtraChrysalOn">
-          <span class="cart-extra__info">
-            <span class="cart-extra__name"><?= e(setting('cart_extra_chrysal_title', 'Подкормка Chrysal')) ?> <em class="cart-extra__price">0&nbsp;₽</em></span>
-            <span class="cart-extra__note"><?= e(setting('cart_extra_chrysal_text', 'Питательный гель — букет простоит дольше')) ?></span>
-          </span>
-        </label>
+      <div class="cart-upsell" id="cartUpsell" hidden>
+        <p class="cart-upsell__title"><?= e(setting('upsell_title', 'Добавьте к букету')) ?></p>
+        <div class="cart-upsell__items" id="cartUpsellItems"></div>
       </div>
-      <?php endif; ?>
     </div>
-    <?php endif; ?>
-    <div class="cart-upsell" id="cartUpsell" hidden>
-      <p class="cart-upsell__title"><?= e(setting('upsell_title', 'Добавьте к букету')) ?></p>
-      <div class="cart-upsell__items" id="cartUpsellItems"></div>
-    </div>
-    <div class="cart-panel__foot">
+    <div class="cart-panel__footer">
       <?php /* Промокод (критик functional top#3): применяется по серверной проверке /api/promo */ ?>
       <?php if (setting('feature_promo', '1') === '1'): ?>
       <div class="cart-promo" id="cartPromo">
-        <input type="text" id="cartPromoInput" maxlength="32" placeholder="Промокод" aria-label="Промокод" autocomplete="off" style="flex:1;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius,12px);font:inherit">
-        <button type="button" id="cartPromoApply" class="cart-promo__btn" style="min-height:44px;padding:11px 16px;border:1px solid var(--line);border-radius:10px;background:#fff;font:600 .85rem var(--font-ui);cursor:pointer">Применить</button>
+        <input type="text" id="cartPromoInput" maxlength="32" placeholder="Промокод" aria-label="Промокод" autocomplete="off">
+        <button type="button" id="cartPromoApply" class="cart-promo__btn">Применить</button>
       </div>
-      <p id="cartPromoMsg" class="cart-promo__msg" style="margin:4px 0 0;font-size:.8125rem;color:var(--ink-soft)" aria-live="polite"></p> <?php /* W105-7fix1 (тип-критик 7-b P2e): 12.8→13px — микротексты корзины ≥13 */ ?>
+      <p id="cartPromoMsg" class="cart-promo__msg" aria-live="polite"></p>
       <?php endif; ?>
       <p class="cart-panel__total">Итого: <span id="cartTotal">0 ₽</span></p>
       <?php /* Логика-критик W34: «Итого» в корзине ≠ «К оплате» в форме (drawer не знает район).
@@ -285,9 +284,9 @@ $__mnavWa = setting('wa_enabled', '1') === '1' ? trim(setting('shop_whatsapp', '
               : '';
         }
       ?>
-      <?php if ($totalNote !== ''): ?><p class="cart-panel__note" style="font-size:.8125rem;color:var(--ink-soft);margin:2px 0 0"><?= e($totalNote) /* W105-7fix1 (7-b P2e): 12.16→13px — сноска «Итого» в паре с promo-msg */ ?></p><?php endif; ?>
-      <button type="button" class="btn btn--accent" id="cartCheckout" disabled><?= e(setting('cart_checkout_text', 'Оформить заказ')) ?></button>
-      <button type="button" class="btn btn--outline cart-panel__continue" id="cartContinue"><?= e(setting('cart_continue_text', 'Продолжить покупки')) ?></button>
+      <?php if ($totalNote !== ''): ?><p class="cart-panel__note"><?= e($totalNote) ?></p><?php endif; ?>
+      <button type="button" class="cart-panel__checkout" id="cartCheckout" disabled><?= e(setting('cart_checkout_text', 'Оформить заказ')) ?></button>
+      <button type="button" class="cart-panel__continue" id="cartContinue"><?= e(setting('cart_continue_text', 'Продолжить покупки')) ?></button>
     </div>
   </aside>
 </div>
@@ -367,6 +366,11 @@ try {
 <?php endif; ?>
 <?php /* W96 (5cv): город-бар, карусели, чипы цен, поиск — поверх catalog-filter.js */ ?>
 <script src="/js/five.js?v=<?= e($__vjs('five.js')) ?>" defer></script>
+<?php /* S15: модалка цветочной подписки — только на главной (index.php рендерит
+       <dialog id="subscribeModal"> + window.NF_SUBSCRIBE) */ ?>
+<?php if ($__nfIsHome): ?>
+<script src="/js/subscribe.js?v=<?= e($__vjs('subscribe.js')) ?>" defer></script>
+<?php endif; ?>
 <?php /* A9: галерея/лайтбокс — только страница товара (разметку рендерит product.php) */ ?>
 <?php if ($__nfIsProduct): ?>
 <script src="/js/product-gallery.js?v=<?= e($__vjs('product-gallery.js')) ?>" defer></script>

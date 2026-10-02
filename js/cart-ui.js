@@ -707,7 +707,9 @@
            внутри панели (first↔last), фокус никогда не покидает корзину. */
         panel._trapTab = function (e) {
           if (e.key !== 'Tab' || panel.hidden) return;
-          const drawer = panel.querySelector('.cart-panel__drawer');
+          /* S15: трёхсоставная панель — .cart-panel сам и есть drawer (было
+             .cart-panel__drawer внутри обёртки) */
+          const drawer = panel.querySelector('.cart-panel');
           if (!drawer) return;
           const nodes = drawer.querySelectorAll('button, input, select, textarea, a[href], [tabindex]:not([tabindex="-1"])');
           const list = Array.prototype.filter.call(nodes, function (n) {
@@ -779,7 +781,7 @@
     }
     cancelExit(); /* повторный close во время выхода — перезапуск чистым состоянием */
     panel.classList.add('is-exiting');
-    var drawerEl = panel.querySelector('.cart-panel__drawer');
+    var drawerEl = panel.querySelector('.cart-panel');
     var done = function () {
       if (!panel.classList.contains('is-exiting')) return; /* успели открыть назад */
       cancelExit();

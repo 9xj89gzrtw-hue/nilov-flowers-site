@@ -169,7 +169,6 @@ button,input,select,textarea{font-family:inherit}
 .fc-city-menu__link:hover svg{transform:translateX(3px)}
 .fc-city-menu__other{font:500 .8125rem var(--font-ui);color:var(--ink-muted);text-decoration:none}
 .fc-city-menu__other:hover{color:var(--ink)}
-.fc-city-menu--up{top:auto;bottom:calc(100% + 8px)}
 
 /* телефон и иконки */
 .fc-header__phone{font-weight:600;font-size:.9375rem;color:var(--ink);white-space:nowrap;min-height:44px;display:inline-flex;align-items:center;text-decoration:none}
@@ -377,20 +376,15 @@ button.fc-chip{font-family:var(--font-ui)}
 /* ============ 8. КАТАЛОГ: сетка ============ */
 #catalog.fc-section{padding:2px 0 36px}
 @media(min-width:900px){#catalog.fc-section{padding:8px 0 40px}}
-/* S14 (директива владельца): коммерческая раскладка без дыр — десктоп ≥1024
-   auto-fill minmax(260px,1fr) / gap 24px; карточки равномерно заполняют
-   ширину контейнера. Зона каталога (плашки+чипы+сетка) расширена до 1448px
-   с боковым паддингом 12px: при вьюпорте ≥1436px (с учётом скроллбара)
-   выходит ровно 5 колонок — 10 букетов = 2 полных ряда, без сиротливых
-   карточек и провалов справа; на широких экранах потолок держит те же
-   5 колонок (6+4 при 1920 не появляется). */
-@media(min-width:1024px){
-  .fc-budget .wrap,.fc-chips-bar .wrap,.fc-catalog .wrap{max-width:1448px;padding-left:12px;padding-right:12px}
-}
-/* монолитная сетка 5cv: 2 колонки мобайл → 3 → auto-fill десктоп */
+/* S15 (ONE-SHOT MASTER OVERHAUL): ЖЁСТКАЯ сетка владельца — десктоп ≥1024px
+   ровно 4 колонки (16 букетов = 4 полных ряда без дыр справа), смартфон
+   ≤640px — ровно 2 колонки. repeat(4,1fr)!important перебивает любые
+   унаследованные правила. Зона каталога — стандартный .wrap 1200px:
+   4 колонки × ~275px = пропорции 5cv.ru. */
 .catalog__grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 @media(min-width:768px){.catalog__grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}}
-@media(min-width:1024px){.catalog__grid{grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:24px}}
+@media(min-width:1024px){.catalog__grid{display:grid;grid-template-columns:repeat(4,1fr) !important;gap:20px}}
+@media(max-width:640px){.catalog__grid{display:grid;grid-template-columns:repeat(2,1fr) !important;gap:10px}}
 @media(max-width:899px){
   #catalog .fc-row__head{margin-bottom:6px}
   #catalog .fc-row__eyebrow,
@@ -934,69 +928,104 @@ body.has-cart-open .mnav{display:none!important}
 .pill{border-radius:999px}
 .card-btn{background:var(--ink);color:#fff;border-radius:16px}
 
-/* ============ 20. КОРЗИНА-DRAWER (S14: z 998/999 — поверх всего витринного слоя;
-   mnav-виджет связи (z 90) при открытой корзине скрыт display:none) ============ */
-.cart-panel{position:fixed;inset:0;z-index:999;display:grid;pointer-events:none}
-.cart-panel[hidden]{display:none}
-/* S14: плотный полупрозрачный оверлей во весь экран — каталог под корзиной
+/* ============ 20. КОРЗИНА-DRAWER (S15: строгий трёхсоставной flexbox по директиве
+   владельца — товары/открытка/Кризал скроллятся ТОЛЬКО в .cart-panel__body,
+   промокод/«Итого»/«Оформить заказ» всегда прибиты к низу в .cart-panel__footer) ============ */
+/* обёртка #cartPanel: держит только hidden-семантику (без transform — fixed-дети
+   позиционируются от вьюпорта) */
+.cart-root[hidden]{display:none}
+/* плотный полупрозрачный оверлей во весь экран — каталог под корзиной
    не просвечивает (rgba(0,0,0,.5) + blur 4px, z 998) */
-.cart-panel__backdrop{
-  position:absolute;inset:0;z-index:998;
+.cart-backdrop{
+  position:fixed;inset:0;z-index:998;
   background:rgba(0,0,0,0.5);
   -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);
-  pointer-events:none;transition:opacity .24s cubic-bezier(.4,0,.2,1);
+  transition:opacity .24s cubic-bezier(.4,0,.2,1);
 }
-.cart-panel:not([hidden]){pointer-events:auto}
-.cart-panel:not([hidden]) .cart-panel__backdrop{pointer-events:auto}
-.cart-panel__drawer{
-  position:absolute;top:0;right:0;bottom:0;width:min(420px,94vw);z-index:999;
-  background:#FFFFFF;display:flex;flex-direction:column;
+/* сама панель: fixed right/top, z 999, flex-колонка на весь вьюпорт */
+.cart-panel{
+  display:flex;flex-direction:column;
+  height:100vh;max-height:100vh;
+  position:fixed;right:0;top:0;z-index:999;
+  width:min(420px,100vw);
+  background:#FFFFFF;
   box-shadow:-4px 0 24px rgba(0,0,0,0.15);
-  border-radius:16px 0 0 16px;
   transition:transform .32s cubic-bezier(.4,0,.2,1);
 }
-.cart-panel__head{display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid var(--line)}
-.cart-panel__title{font-family:var(--font-display);font-weight:600;font-size:1.3rem;letter-spacing:-.01em}
-.cart-panel__close{border:none;background:none;font-size:1.6rem;cursor:pointer;color:var(--ink-soft);min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;border-radius:12px;margin:-8px -8px -8px 0;transition:color .15s}
+/* ШАПКА ПАНЕЛИ — «Корзина» Inter 18px bold + крестик; никогда не сжимается */
+.cart-panel__header{flex-shrink:0;display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #EBEBEB}
+.cart-panel__title{font-family:var(--font-ui);font-weight:700;font-size:18px;letter-spacing:-.01em;color:var(--ink)}
+.cart-panel__close{border:none;background:none;font-size:1.6rem;line-height:1;cursor:pointer;color:var(--ink-soft);min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;border-radius:12px;margin:-8px -8px -8px 0;transition:color .15s}
 .cart-panel__close:hover{color:var(--ink)}
-/* S14 КРИТИЧЕСКИЙ ФИКС: flex-элементы колонки drawer'а имели implicit
-   min-height:auto — при высоком контенте (товар+допы+апселл+промо) футер с
-   кнопкой «Оформить заказ» уезжал ЗА НИЖНИЙ КРАЙ экрана. min-height:0
-   возвращает скролл в .cart-panel__items, кнопка всегда видна в футере. */
-.cart-panel__items{flex:1 1 0;min-height:0;overflow-y:auto;padding:16px 24px;display:grid;gap:14px;align-content:start}
-.cart-panel__empty{padding:24px;color:var(--ink-soft);text-align:center}
-.cart-panel__foot{border-top:1px solid var(--line);padding:18px 24px;display:grid;gap:10px}
-.cart-panel__total{font-weight:700;font-size:1rem}
-.cart-panel__continue{justify-content:center}
+/* ТЕЛО ПАНЕЛИ — ЕДИНСТВЕННАЯ скролл-зона (товары, открытка, Кризал, апселл) */
+.cart-panel__body{flex:1 1 auto;overflow-y:auto;overscroll-behavior:contain;padding:16px;min-height:0;display:flex;flex-direction:column;gap:12px}
+.cart-panel__items{display:grid;gap:12px;align-content:start}
+.cart-panel__empty{padding:8px 0 24px;color:var(--ink-soft);text-align:center;margin:0}
+/* ПОДВАЛ ПАНЕЛИ — промокод, «Итого», «Оформить заказ» 48px, «Продолжить покупки»;
+   никогда не перекрывается товарами (flex-shrink:0 + белый фон + линия сверху) */
+.cart-panel__footer{flex-shrink:0;background:#FFFFFF;border-top:1px solid #EBEBEB;padding:16px;display:grid;gap:10px}
+.cart-promo{display:flex;gap:8px}
+.cart-promo input{
+  flex:1;min-width:0;padding:11px 12px;
+  border:1px solid var(--line-strong);border-radius:10px;
+  background:var(--surface-milk);font:400 .9rem var(--font-ui);color:var(--ink);
+}
+.cart-promo input:focus{outline:none;border-color:var(--graphite)}
+.cart-promo__btn{min-height:44px;padding:11px 16px;border:1px solid var(--line-strong);border-radius:10px;background:#fff;font:600 .85rem var(--font-ui);color:var(--ink);cursor:pointer;transition:background .15s}
+.cart-promo__btn:hover{background:var(--surface-soft)}
+.cart-promo__msg{margin:0;font-size:.8125rem;color:var(--ink-soft)}
+.cart-panel__total{font-weight:700;font-size:1rem;margin:0}
 #cartTotal{display:inline-block}
 #cartTotal.is-pulse{animation:fc-total-pulse .18s cubic-bezier(.4,0,.2,1)}
 @keyframes fc-total-pulse{50%{transform:scale(1.06)}}
+.cart-panel__note{font-size:.8125rem;color:var(--ink-soft);margin:0}
+/* «Оформить заказ» — чёрная #18181B, высота 48px, ширина 100%, белый текст */
+.cart-panel__checkout{
+  background:#18181B;color:#FFFFFF;
+  border:none;border-radius:10px;
+  height:48px;min-height:48px;width:100%;
+  padding:0 18px;
+  font:600 .9375rem/1 var(--font-ui);
+  cursor:pointer;
+  box-shadow:0 2px 6px rgba(24,24,27,0.15);
+  transition:background .2s ease,box-shadow .2s ease,transform .2s ease;
+}
+.cart-panel__checkout:hover:not(:disabled){background:#27272A;transform:translateY(-1px);box-shadow:0 4px 12px rgba(24,24,27,0.25)}
+.cart-panel__checkout:active{transform:scale(.98)}
+.cart-panel__checkout:disabled{opacity:.55;cursor:default;transform:none;box-shadow:none}
+.cart-panel__checkout:focus-visible{outline:3px solid rgba(24,24,27,.35);outline-offset:2px}
+/* «Продолжить покупки» — тихая ссылка по центру */
+.cart-panel__continue{
+  background:none;border:none;padding:6px 4px;
+  font:500 .875rem var(--font-ui);color:var(--ink-muted);
+  text-decoration:underline;text-underline-offset:3px;cursor:pointer;
+}
+.cart-panel__continue:hover{color:var(--ink)}
 /* анимация drawer: новая механика + фолбэк-ключи */
 @keyframes fc-drawer-in{from{transform:translateX(100%)}to{transform:none}}
 @keyframes fc-backdrop-in{from{opacity:0}to{opacity:1}}
 @supports not (transition-behavior: allow-discrete){
-  #cartPanel:not([hidden]) .cart-panel__drawer{animation:fc-drawer-in .32s cubic-bezier(.4,0,.2,1)}
-  #cartPanel:not([hidden]) .cart-panel__backdrop{animation:fc-backdrop-in .24s cubic-bezier(.4,0,.2,1)}
+  #cartPanel:not([hidden]) .cart-panel{animation:fc-drawer-in .32s cubic-bezier(.4,0,.2,1)}
+  #cartPanel:not([hidden]) .cart-backdrop{animation:fc-backdrop-in .24s cubic-bezier(.4,0,.2,1)}
 }
 @supports (transition-behavior: allow-discrete){
   #cartPanel{transition:display .24s allow-discrete}
-  #cartPanel[hidden] .cart-panel__drawer{transform:translateX(100%);transition:transform .24s ease-in}
-  #cartPanel[hidden] .cart-panel__backdrop{opacity:0;transition:opacity .24s ease-in}
+  #cartPanel[hidden] .cart-panel{transform:translateX(100%);transition:transform .24s ease-in}
+  #cartPanel[hidden] .cart-backdrop{opacity:0;transition:opacity .24s ease-in}
   @starting-style{
-    #cartPanel .cart-panel__drawer{transform:translateX(100%)}
-    #cartPanel .cart-panel__backdrop{opacity:0}
+    #cartPanel .cart-panel{transform:translateX(100%)}
+    #cartPanel .cart-backdrop{opacity:0}
   }
 }
-#cartPanel.is-exiting .cart-panel__drawer{transform:translateX(100%);transition:transform .26s cubic-bezier(.42,0,1,1)}
-#cartPanel.is-exiting .cart-panel__backdrop{opacity:0;transition:opacity .26s cubic-bezier(.42,0,1,1)}
-#cartPanel[hidden] .cart-panel__backdrop{pointer-events:none}
+#cartPanel.is-exiting .cart-panel{transform:translateX(100%);transition:transform .26s cubic-bezier(.42,0,1,1)}
+#cartPanel.is-exiting .cart-backdrop{opacity:0;transition:opacity .26s cubic-bezier(.42,0,1,1)}
+#cartPanel[hidden] .cart-backdrop{pointer-events:none}
 
 /* строка товара в корзине (js/cart-ui.js) */
 .cart-item{
   display:grid;grid-template-columns:64px 1fr auto;gap:12px;align-items:center;
   background:var(--surface-milk);border:1px solid var(--line);border-radius:14px;padding:10px;
 }
-.cart-item--unavailable{opacity:.6}
 .cart-item__media{position:relative}
 .cart-item__img,.cart-item__img-placeholder{width:64px;height:64px;border-radius:10px;object-fit:cover;background:var(--bg-alt)}
 .cart-item__info{font-size:.875rem;font-weight:600}
@@ -1013,17 +1042,18 @@ body.has-cart-open .mnav{display:none!important}
 }
 .cart-item__qtybtn:hover{background:var(--surface-milk)}
 .cart-item__qtynum{min-width:26px;text-align:center;font-weight:700;font-size:.875rem;font-variant-numeric:tabular-nums}
+.cart-item--unavailable{opacity:.6}
 .cart-item__error{color:var(--err);font-size:.75rem;margin:2px 0 0}
 .cart-item__remove{align-self:flex-start;margin:0}
-/* прогресс до бесплатной доставки */
-.cart-free{padding:12px 18px 4px}
+/* прогресс до бесплатной доставки (внутри .cart-panel__body, паддинги — от тела) */
+.cart-free{padding:0 0 4px}
 .cart-free__track{height:7px;border-radius:4px;background:var(--surface-milk);overflow:hidden;box-shadow:inset 0 0 0 1px var(--line)}
 .cart-free__fill{height:100%;width:0%;border-radius:4px;background:linear-gradient(90deg,var(--amber),#d99400);transition:width .4s cubic-bezier(.22,1,.36,1)}
 .cart-free.is-reached .cart-free__fill{background:linear-gradient(90deg,#2E7D4F,#1B5E3A)}
 .cart-free__text{margin:7px 0 0;font:600 .78rem/1.3 var(--font-ui);color:var(--ink-muted)}
 .cart-free.is-reached .cart-free__text{color:#2E7D4F}
-/* бесплатные допы: открытка + Кризал */
-.cart-extras{padding:4px 18px 2px}
+/* бесплатные допы: открытка + Кризал (внутри .cart-panel__body) */
+.cart-extras{padding:0}
 .cart-extras__title{margin:8px 0 8px;font:700 .78rem var(--font-ui);text-transform:uppercase;letter-spacing:.08em;color:var(--ink-muted)}
 .cart-extra{border:1.5px solid var(--line);border-radius:14px;padding:10px 12px;background:#fff}
 .cart-extra--last{margin-bottom:4px}
@@ -1036,10 +1066,8 @@ body.has-cart-open .mnav{display:none!important}
 .cart-extra__text{margin-top:9px}
 .cart-extra__text textarea{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:9px 12px;font:400 .88rem/1.4 var(--font-ui);color:var(--ink);resize:vertical;min-height:58px;background:var(--surface-milk)}
 .cart-extra__text textarea:focus{outline:none;border-color:var(--graphite)}
-/* апселл в корзине */
-/* S14: апселл — скроллируемая зона с потолком (min-height:0 в flex-колонке
-   drawer'а + max-height, иначе длинный список допов выталкивал футер) */
-.cart-upsell{border-top:1px solid var(--line);padding:14px 24px;background:var(--bg);min-height:0;max-height:38vh;overflow-y:auto}
+/* апселл в корзине (S15: скролл унёс .cart-panel__body — без потолка max-height) */
+.cart-upsell{border-top:1px solid var(--line);padding:14px 0 0;background:transparent;min-height:0}
 .cart-upsell__title{font-size:.78rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:10px}
 .cart-upsell__items{display:grid;gap:10px}
 .cart-upsell-item{display:grid;grid-template-columns:48px 1fr auto;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px}
@@ -1048,26 +1076,14 @@ body.has-cart-open .mnav{display:none!important}
 .cart-upsell-item__price{font-size:.78rem;color:var(--ink-soft)}
 .cart-upsell-item__add{width:44px;height:44px;border-radius:50%;border:none;background:var(--ink);color:#fff;font-size:1.1rem;cursor:pointer;display:grid;place-items:center;transition:transform .15s,background .15s}
 .cart-upsell-item__add:hover{background:#000;transform:scale(1.08)}
-/* «Оформить заказ» в drawer — крупная графитовая кнопка 48px (S14),
-   свободная от любых перекрытий (mnav скрыт, тост z 1000 выше корзины) */
-#cartCheckout,
-.cart-panel__foot .btn--accent{
-  background:#18181B;color:#FFFFFF;
-  border:none;border-radius:10px;
-  height:48px;min-height:48px;padding:0 18px;
-  font:600 .9375rem/1 var(--font-ui);
-  box-shadow:0 2px 6px rgba(24,24,27,0.15);
-  transition:background .2s ease,box-shadow .2s ease,transform .2s ease;
-}
-#cartCheckout:hover:not(:disabled),
-.cart-panel__foot .btn--accent:hover:not(:disabled){
-  background:#27272A;color:#fff;
-  transform:translateY(-1px);
-  box-shadow:0 4px 12px rgba(24,24,27,0.25);
-}
-#cartCheckout:active{transform:scale(.98)}
-#cartCheckout:disabled{opacity:.55;cursor:default;transform:none}
-#cartCheckout:focus-visible{outline:3px solid rgba(24,24,27,.35);outline-offset:2px}
+/* S15 (директива владельца): при открытой корзине ПРИНУДИТЕЛЬНО скрываем ВСЕ
+   плавающие кнопки и виджеты — никакие зелёные значки не наезжают на кнопки
+   корзины (mnav + селекторы владельца дословно) */
+body.has-cart-open .mnav,
+body.has-cart-open .floating-wa,
+body.has-cart-open .wa-widget,
+body.has-cart-open .badge-green,
+body.has-cart-open [class*="fixed-bottom"]{display:none !important}
 /* тост «добавлено в корзину» (S14: z 1000 — выше корзины-999, т.к. показывается
    и при открытом drawer) */
 #cartToast{
@@ -1860,6 +1876,159 @@ html.motion-lite .lightbox__backdrop{background:rgba(43,45,47,.88);backdrop-filt
 /* PWA-баннер установки — шрифт интерфейса */
 body > div[role="region"][aria-label="Установка приложения"] button{font-family:var(--font-ui)!important}
 
+/* ============ 31.5 S15 КОММЕРЧЕСКИЕ СЕКЦИИ (hero-баннер / подписка / B2B / гарантия) ============ */
+/* Продающий hero-баннер: компактная премиальная полоса под бейджами доверия —
+   #F4F4F6, r16, сочное фото справа (обрезается cover), высота 240px десктоп /
+   160px мобайл (фото уходит под текст на узких экранах) */
+.fc-hero-banner{padding:14px 0 4px}
+.fc-hero-banner__card{
+  display:flex;align-items:stretch;justify-content:space-between;gap:20px;
+  min-height:160px;
+  background:#F4F4F6;border-radius:16px;overflow:hidden;
+  text-decoration:none;color:inherit;
+  transition:box-shadow .2s ease,transform .2s ease;
+}
+@media(min-width:768px){.fc-hero-banner__card{min-height:240px}}
+@media(hover:hover){
+  .fc-hero-banner__card:hover{box-shadow:0 10px 28px rgba(0,0,0,.08);transform:translateY(-1px)}
+}
+.fc-hero-banner__text{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:10px;padding:20px 20px 20px 24px}
+.fc-hero-banner__title{
+  font-family:var(--font-ui);font-weight:700;letter-spacing:-.02em;
+  font-size:clamp(20px,2.6vw,28px);line-height:1.15;color:var(--ink);
+  text-wrap:balance;
+}
+.fc-hero-banner__sub{
+  font:400 .875rem/1.5 var(--font-ui);color:var(--ink-muted);max-width:52ch;
+}
+.fc-hero-banner__btn{
+  display:inline-flex;align-items:center;gap:8px;align-self:flex-start;
+  margin-top:6px;background:#18181B;color:#FFFFFF;
+  border-radius:10px;padding:0 20px;height:44px;min-height:44px;
+  font:600 .875rem var(--font-ui);
+  transition:background .2s ease;
+}
+.fc-hero-banner__btn svg{width:16px;height:16px;transition:transform .2s}
+.fc-hero-banner__card:hover .fc-hero-banner__btn{background:#27272A}
+.fc-hero-banner__card:hover .fc-hero-banner__btn svg{transform:translateX(3px)}
+.fc-hero-banner__photo{flex:0 1 42%;max-width:440px;position:relative;min-width:0}
+.fc-hero-banner__photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+@media(max-width:767px){
+  .fc-hero-banner__photo{display:none}
+  .fc-hero-banner__card{height:160px;min-height:160px}
+  .fc-hero-banner__text{padding:12px 14px;gap:6px}
+  .fc-hero-banner__title{font-size:18px}
+  .fc-hero-banner__sub{font-size:.75rem;line-height:1.35}
+  .fc-hero-banner__btn{height:38px;min-height:38px;margin-top:2px;font-size:.8125rem;padding:0 16px}
+}
+/* Цветочная подписка: 3 тарифа (белые карточки, 1px #EBEBEB, r16) на мягкой
+   секции + графитовый CTA; «Классика» — популярный тариф с плашкой */
+.fc-subscribe__grid{display:grid;grid-template-columns:1fr;gap:14px;align-items:stretch}
+@media(min-width:768px){.fc-subscribe__grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}}
+.fc-subscribe__card{
+  position:relative;background:#FFFFFF;border:1px solid #EBEBEB;border-radius:16px;
+  padding:22px 20px;display:flex;flex-direction:column;gap:8px;
+}
+.fc-subscribe__best{
+  position:absolute;top:14px;right:14px;
+  background:#F4F4F5;border-radius:999px;padding:4px 10px;
+  font:600 .6875rem var(--font-ui);color:#3F3F46;letter-spacing:.02em;
+}
+.fc-subscribe__name{font-family:var(--font-display);font-weight:600;font-size:1.375rem;letter-spacing:-.01em;margin:0}
+.fc-subscribe__price{font:700 1.0625rem var(--font-ui);color:var(--ink);margin:0;font-variant-numeric:tabular-nums}
+.fc-subscribe__desc{font:400 .875rem/1.5 var(--font-ui);color:var(--ink-muted);margin:0}
+.fc-subscribe__cta-row{display:flex;justify-content:center;margin-top:22px}
+.fc-subscribe__cta{
+  background:#18181B;color:#FFFFFF;border:none;border-radius:12px;
+  height:48px;min-height:48px;padding:0 32px;
+  font:600 .9375rem var(--font-ui);cursor:pointer;
+  box-shadow:0 2px 6px rgba(24,24,27,0.15);
+  transition:background .2s ease,box-shadow .2s ease,transform .2s ease;
+}
+.fc-subscribe__cta:hover{background:#27272A;transform:translateY(-1px);box-shadow:0 4px 12px rgba(24,24,27,0.25)}
+.fc-subscribe__cta:active{transform:scale(.98)}
+.fc-subscribe__cta:focus-visible{outline:3px solid rgba(24,24,27,.35);outline-offset:2px}
+/* Модалка подписки (нативный <dialog>): тариф / адрес / телефон */
+.fc-sub-modal{border:none;padding:0;background:transparent;max-width:100vw;max-height:100vh}
+.fc-sub-modal::backdrop{background:rgba(0,0,0,0.5);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.fc-sub-modal[open]{display:block}
+.fc-sub-modal__box{
+  position:relative;background:#FFFFFF;border-radius:16px;
+  width:min(440px,calc(100vw - 32px));max-height:calc(100vh - 48px);overflow-y:auto;
+  padding:26px 24px 24px;box-shadow:0 24px 64px rgba(0,0,0,.2);
+  margin:24px auto;
+}
+.fc-sub-modal__close{
+  position:absolute;top:10px;right:10px;border:none;background:none;
+  font-size:1.5rem;line-height:1;color:var(--ink-soft);cursor:pointer;
+  min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;
+  border-radius:12px;transition:color .15s;
+}
+.fc-sub-modal__close:hover{color:var(--ink)}
+.fc-sub-modal__title{font-family:var(--font-display);font-weight:600;font-size:1.5rem;letter-spacing:-.01em;margin:0 0 6px}
+.fc-sub-modal__note{font:400 .875rem/1.5 var(--font-ui);color:var(--ink-muted);margin:0 0 18px}
+.fc-sub-modal__form{display:grid;gap:14px}
+.fc-sub-modal__field{display:flex;flex-direction:column;gap:6px;font:600 .8125rem var(--font-ui);color:var(--ink)}
+.fc-sub-modal__field select,
+.fc-sub-modal__field input{
+  border:1px solid var(--line-strong);border-radius:10px;background:var(--surface-milk);
+  padding:12px 12px;font:400 .9375rem var(--font-ui);color:var(--ink);width:100%;
+}
+.fc-sub-modal__field select:focus,
+.fc-sub-modal__field input:focus{outline:none;border-color:var(--graphite)}
+.fc-sub-modal__error{margin:0;font-size:.8125rem;color:#B42318}
+.fc-sub-modal__submit{
+  background:#18181B;color:#FFFFFF;border:none;border-radius:10px;
+  height:48px;min-height:48px;width:100%;
+  font:600 .9375rem/1 var(--font-ui);cursor:pointer;
+  transition:background .2s ease;
+}
+.fc-sub-modal__submit:hover{background:#27272A}
+.fc-sub-modal__ok{margin:18px 0 0;font:600 .9375rem/1.5 var(--font-ui);color:#2E7D4F;text-align:center}
+.fc-sub-modal__ok span{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#2E7D4F;color:#fff;font-size:.75rem;margin-left:6px}
+/* B2B: стильная тёмная плашка графит #18181B r16 с белым текстом и CTA WhatsApp */
+.fc-b2b__plate{
+  display:flex;align-items:center;justify-content:space-between;gap:24px;
+  background:#18181B;border-radius:16px;padding:clamp(24px,3.4vw,44px);
+  color:#FFFFFF;flex-wrap:wrap;
+}
+.fc-b2b__info{flex:1;min-width:280px}
+.fc-b2b__title{
+  font-family:var(--font-display);font-weight:600;font-size:clamp(1.375rem,2.4vw,1.875rem);
+  letter-spacing:-.01em;margin:0 0 10px;color:#FFFFFF;
+}
+.fc-b2b__text{font:400 .9375rem/1.6 var(--font-ui);color:rgba(255,255,255,.78);margin:0;max-width:64ch}
+.fc-b2b__btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;flex:none;max-width:100%;
+  background:#FFFFFF;color:#18181B;border-radius:12px;
+  min-height:48px;padding:0 22px;
+  font:600 .875rem var(--font-ui);text-decoration:none;
+  transition:transform .2s ease,box-shadow .2s ease;
+}
+.fc-b2b__btn svg{width:18px;height:18px;color:#1FAF54;flex:none}
+@media(max-width:640px){
+  .fc-b2b__btn{white-space:normal;text-align:center;line-height:1.35;padding:12px 16px;width:100%}
+  .fc-b2b__btn svg{flex:none}
+  .fc-b2b__plate{gap:16px}
+}
+.fc-b2b__btn:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.fc-b2b__btn:active{transform:scale(.98)}
+.fc-b2b__btn:focus-visible{outline:3px solid rgba(255,255,255,.5);outline-offset:2px}
+/* Гарантия свежести: 3 колонки с иконками lucide в мягких кругах #F4F4F5 */
+.fc-fresh__grid{display:grid;grid-template-columns:1fr;gap:14px}
+@media(min-width:768px){.fc-fresh__grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}}
+.fc-fresh__item{
+  background:#FFFFFF;border:1px solid #EBEBEB;border-radius:16px;
+  padding:22px 20px;display:flex;flex-direction:column;gap:10px;
+}
+.fc-fresh__ico{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:44px;height:44px;border-radius:50%;background:#F4F4F5;color:#18181B;
+}
+.fc-fresh__ico svg{width:22px;height:22px}
+.fc-fresh__title{font-family:var(--font-ui);font-weight:600;font-size:1.0625rem;margin:0;color:var(--ink)}
+.fc-fresh__text{font:400 .875rem/1.55 var(--font-ui);color:var(--ink-muted);margin:0}
+
 /* ============ 32. REDUCED MOTION (единый блок) ============ */
 @media(prefers-reduced-motion:reduce){
   .fc-chip,.catalog-tabs__tab,.catalog-search-chip,
@@ -1877,7 +2046,7 @@ body > div[role="region"][aria-label="Установка приложения"] 
   .site-footer a,.site-footer__messengers a,
   .cookie-banner,.cookie-banner__close,
   .fc-product__thumb,.quickview__dialog,.quickview__stage img,
-  #cartPanel,#cartPanel .cart-panel__drawer,#cartPanel .cart-panel__backdrop,
+  #cartPanel,#cartPanel .cart-panel,#cartPanel .cart-backdrop,
   #cartToast,#cartTotal.is-pulse,
   .catalog-tail,.catalog-tail__arrow,
   .product-gallery__zoom{

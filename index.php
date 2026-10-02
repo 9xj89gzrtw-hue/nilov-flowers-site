@@ -74,6 +74,13 @@ $featSectionBudget = setting('feature_section_budget', '1') === '1';
 $featSectionAddons = setting('feature_section_addons', '1') === '1';
 $featOccasions = setting('feature_occasions', '1') === '1';
 $featSeotext = setting('feature_seotext', '1') === '1';
+/* S15 (ONE-SHOT MASTER OVERHAUL): новые коммерческие секции 5cv-класса —
+   hero-баннер, цветочная подписка, B2B, гарантия свежести. Каждая —
+   отключаема тумблером (критерий 16), тексты — из настроек БД. */
+$featHeroBanner = setting('feature_hero_banner', '1') === '1';
+$featSubscription = setting('feature_subscription', '1') === '1';
+$featB2b = setting('feature_b2b', '1') === '1';
+$featGuarantee = setting('feature_guarantee', '1') === '1';
 /* Журнал по умолчанию ВЫКЛ — контента ещё нет */
 $featJournal = setting('feature_journal', '0') === '1';
 /* W106-C1: hero_promo_enabled больше не рендерит карточку в hero (P0-4) —
@@ -1182,6 +1189,40 @@ echo json_encode([
     freeDeliveryThreshold: <?= (int) setting('free_delivery_threshold', '0') ?>
   };</script>
 
+  <?php /* ===== S15: ПРОДАЮЩИЙ HERO-БАННЕР (компактный премиальный баннер
+         сразу под бейджами доверия шапки): мягкий #F4F4F6, r16, сочное фото
+         цветов сбоку; заголовок + промокод FLOWERS10 + CTA «Выбрать букет»
+         (скроллит к каталогу). Тексты — настройки hero_banner_*, фото —
+         hero_banner_photo (существующий файл /img/products/). ===== */ ?>
+  <?php
+  $hbTitle = trim((string)setting('hero_banner_title', ''));
+  if ($hbTitle === '') { $hbTitle = 'Свежие цветы с доставкой по СПб от 60 минут'; }
+  $hbSub = trim((string)setting('hero_banner_sub', ''));
+  if ($hbSub === '') { $hbSub = 'Скидка 10% на первый заказ по промокоду FLOWERS10 • Бесплатная открытка и Кризал к каждому букету'; }
+  $hbCta = trim((string)setting('hero_banner_cta', ''));
+  if ($hbCta === '') { $hbCta = 'Выбрать букет'; }
+  $hbPhoto = trim((string)setting('hero_banner_photo', ''));
+  if ($hbPhoto !== '' && !is_file(IMG_PRODUCTS_DIR . '/' . $hbPhoto)) { $hbPhoto = ''; }
+  if ($hbPhoto === '') { $hbPhoto = 'gen9.jpg'; }
+  $hbImg = static_img_v('/img/products/' . rawurlencode($hbPhoto));
+  ?>
+  <?php if ($featHeroBanner): ?>
+  <section class="fc-hero-banner" aria-label="Промо-баннер доставки">
+    <div class="wrap">
+      <a class="fc-hero-banner__card" href="#catalog">
+        <span class="fc-hero-banner__text">
+          <span class="fc-hero-banner__title"><?= e($hbTitle) ?></span>
+          <span class="fc-hero-banner__sub"><?= e($hbSub) ?></span>
+          <span class="fc-hero-banner__btn"><?= e($hbCta) ?><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </span>
+        <span class="fc-hero-banner__photo">
+          <img src="<?= e($hbImg) ?>" alt="<?= e($hbTitle) ?>" width="440" height="240" loading="eager" decoding="async">
+        </span>
+      </a>
+    </div>
+  </section>
+  <?php endif; ?>
+
   <?php /* ===== S13: КАТАЛОГ СРАЗУ ПОД ШАПКОЙ — 4 ПЛАШКИ БЮДЖЕТА (без H1-героя) =====
          Порядок 5cv.ru: «До 3 500 ₽» → «3 500–7 000 ₽» → «От 7 000 ₽» → «Хиты».
          Плашки — белые карточки с иконками lucide-SVG и живыми счётчиками;
@@ -1287,6 +1328,145 @@ echo json_encode([
     </div>
   </section>
   </div><?php /* /.fc-catalog-zone — конец sticky-контекста ленты чипсов (S11) */ ?>
+
+  <?php /* ===== S15: ЦВЕТОЧНАЯ ПОДПИСКА (регулярная доставка, как на 5cv.ru) =====
+         3 карточки тарифов (белые, 1px #EBEBEB, r16) + CTA «Оформить подписку»
+         → нативный <dialog> (выбор тарифа / адрес в СПб / телефон).
+         Тексты — настройки sub_*, ключ feature_subscription. */ ?>
+  <?php if ($featSubscription): ?>
+  <?php
+  $s15Wa = setting('wa_enabled', '1') === '1' ? preg_replace('/[^0-9]/', '', (string)setting('shop_whatsapp', '')) : '';
+  $subTiers = [
+      ['sub_t1_name', 'Уют', 'sub_t1_price', 'от 2 400 ₽ / доставка', 'sub_t1_desc', 'Стойкие сезонные монобукеты'],
+      ['sub_t2_name', 'Классика', 'sub_t2_price', 'от 3 900 ₽ / доставка', 'sub_t2_desc', 'Пионы, сортовые розы и маттиола'],
+      ['sub_t3_name', 'Премиум', 'sub_t3_price', 'от 6 500 ₽ / доставка', 'sub_t3_desc', 'Экзотика и авторские охапки'],
+  ];
+  ?>
+  <section class="fc-section fc-section--soft fc-subscribe" id="subscribe">
+    <div class="wrap">
+      <div class="fc-row__head">
+        <div class="fc-row__heading">
+        <h2 class="fc-row__title"><?= e(setting('sub_title', 'Цветочная подписка для дома и офиса')) ?></h2>
+        <p class="fc-row__sub"><?= e(setting('sub_sub', 'Регулярная доставка свежих охапок цветов каждую неделю с бесплатной вазой и секатором')) ?></p>
+        </div>
+      </div>
+      <div class="fc-subscribe__grid">
+        <?php foreach ($subTiers as $ti => $st): ?>
+        <article class="fc-subscribe__card<?= $ti === 1 ? ' fc-subscribe__card--best' : '' ?>">
+          <?php if ($ti === 1): ?><span class="fc-subscribe__best"><?= e(setting('sub_best_text', 'Популярный тариф')) ?></span><?php endif; ?>
+          <h3 class="fc-subscribe__name"><?= e(setting($st[0], $st[1])) ?></h3>
+          <p class="fc-subscribe__price"><?= e(setting($st[2], $st[3])) ?></p>
+          <p class="fc-subscribe__desc"><?= e(setting($st[4], $st[5])) ?></p>
+        </article>
+        <?php endforeach; ?>
+      </div>
+      <div class="fc-subscribe__cta-row">
+        <button type="button" class="fc-subscribe__cta" id="subscribeOpen"><?= e(setting('sub_cta', 'Оформить подписку')) ?></button>
+      </div>
+    </div>
+  </section>
+
+  <?php /* Нативная модалка подписки: тариф / адрес / телефон → WhatsApp
+         менеджеру (js/subscribe.js; при пустом shop_whatsapp — сообщение
+         об успехе без перехода). */ ?>
+  <dialog class="fc-sub-modal" id="subscribeModal" aria-labelledby="subscribeModalTitle">
+    <div class="fc-sub-modal__box">
+      <button type="button" class="fc-sub-modal__close" id="subscribeModalClose" aria-label="Закрыть">&times;</button>
+      <h3 class="fc-sub-modal__title" id="subscribeModalTitle"><?= e(setting('sub_cta', 'Оформить подписку')) ?></h3>
+      <p class="fc-sub-modal__note"><?= e(setting('sub_modal_note', 'Менеджер свяжется с вами, подберёт тариф и день первой доставки')) ?></p>
+      <form class="fc-sub-modal__form" id="subscribeForm" novalidate>
+        <label class="fc-sub-modal__field">
+          <span>Тариф</span>
+          <select name="tariff" required>
+            <option value="Уют">Уют — от 2 400 ₽ / доставка</option>
+            <option value="Классика" selected>Классика — от 3 900 ₽ / доставка</option>
+            <option value="Премиум">Премиум — от 6 500 ₽ / доставка</option>
+          </select>
+        </label>
+        <label class="fc-sub-modal__field">
+          <span>Адрес доставки в СПб</span>
+          <input type="text" name="address" required maxlength="200" placeholder="Улица, дом, квартира" autocomplete="street-address">
+        </label>
+        <label class="fc-sub-modal__field">
+          <span>Телефон</span>
+          <input type="tel" name="phone" required maxlength="24" placeholder="+7 (___) ___-__-__" autocomplete="tel">
+        </label>
+        <p class="fc-sub-modal__error" id="subscribeFormError" hidden>Заполните адрес и телефон — по ним менеджер оформит подписку</p>
+        <button type="submit" class="fc-sub-modal__submit" id="subscribeSubmit">Отправить заявку</button>
+      </form>
+      <p class="fc-sub-modal__ok" id="subscribeOk" hidden>Заявка отправлена — менеджер свяжется с вами в ближайшее время <span aria-hidden="true">✓</span></p>
+    </div>
+  </dialog>
+  <script>window.NF_SUBSCRIBE = {
+    wa: <?= json_encode($s15Wa) ?>
+  };</script>
+  <?php endif; ?>
+
+  <?php /* ===== S15: КОРПОРАТИВНЫМ КЛИЕНТАМ И B2B (стильная тёмная плашка) =====
+         Поздравление сотрудников / ресепшн / подарки к 8 Марта и Новому году;
+         безнал с НДС / без НДС, закрывающие документы по ЭДО. CTA — WhatsApp
+         корпоративного менеджера (shop_whatsapp; фолбэк — звонок). */ ?>
+  <?php if ($featB2b): ?>
+  <?php
+  $b2bWa = setting('wa_enabled', '1') === '1' ? trim((string)setting('shop_whatsapp', '')) : '';
+  $b2bPhoneDigits = preg_replace('/\D/', '', (string)setting('shop_phone', ''));
+  ?>
+  <section class="fc-section fc-b2b" id="b2b">
+    <div class="wrap">
+      <div class="fc-b2b__plate">
+        <div class="fc-b2b__info">
+          <h2 class="fc-b2b__title"><?= e(setting('b2b_title', 'Корпоративным клиентам и B2B')) ?></h2>
+          <p class="fc-b2b__text"><?= e(setting('b2b_text', 'Поздравление сотрудников, оформление ресепшн и залов, корпоративные подарки к 8 Марта и Новому году. Оплата по безналичному расчету с НДС / без НДС, закрывающие документы по ЭДО.')) ?></p>
+        </div>
+        <?php if ($b2bWa !== ''): ?>
+        <a class="fc-b2b__btn" href="https://wa.me/<?= e(preg_replace('/[^0-9]/', '', $b2bWa)) ?>?text=<?= rawurlencode('Здравствуйте! Пишу по вопросу корпоративного заказа цветов (B2B).') ?>" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm0 18.12c-1.5 0-2.97-.4-4.26-1.16l-.3-.18-3.12.82.83-3.04-.2-.31a8.26 8.26 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24s8.24 3.7 8.24 8.24-3.7 8.25-8.17 8.25zm4.52-6.16c-.25-.12-1.47-.72-1.69-.8-.23-.09-.4-.13-.56.12-.17.25-.64.8-.8.97-.14.16-.29.18-.54.06-.25-.12-1.05-.39-2-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.02-.38.11-.51.11-.11.25-.29.37-.43.12-.14.16-.25.25-.41.08-.17.04-.31-.02-.43-.06-.12-.56-1.34-.76-1.84-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.22.25-.86.85-.86 2.07 0 1.22.89 2.4 1.01 2.56.12.17 1.75 2.67 4.23 3.74.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.48-.07 1.47-.6 1.67-1.18.21-.58.21-1.07.14-1.18-.06-.1-.22-.16-.47-.28z"/></svg>
+          <?= e(setting('b2b_cta', 'Написать корпоративному менеджеру в WhatsApp')) ?>
+        </a>
+        <?php elseif ($b2bPhoneDigits !== ''): ?>
+        <a class="fc-b2b__btn" href="tel:+<?= e($b2bPhoneDigits) ?>">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          Позвонить корпоративному менеджеру
+        </a>
+        <?php endif; ?>
+      </div>
+    </div>
+  </section>
+  <?php endif; ?>
+
+  <?php /* ===== S15: ГАРАНТИЯ СВЕЖЕСТИ И ЗАБОТЫ (3 колонки с иконками) =====
+         Гарантия 24 часа / фото перед отправкой / забота в комплекте
+         (аквабокс + Chrysal + инструкция). Иконки — lucide SVG (лист /
+         камера / капля) в мягких кругах #F4F4F5, как вся иконография
+         сайта (S12: эмодзи на витрине запрещены). */ ?>
+  <?php if ($featGuarantee): ?>
+  <section class="fc-section fc-fresh" id="guarantee">
+    <div class="wrap">
+      <div class="fc-row__head">
+        <div class="fc-row__heading">
+        <h2 class="fc-row__title"><?= e(setting('fresh_title', 'Гарантия свежести и заботы')) ?></h2>
+        </div>
+      </div>
+      <div class="fc-fresh__grid">
+        <div class="fc-fresh__item">
+          <span class="fc-fresh__ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg></span>
+          <h3 class="fc-fresh__title"><?= e(setting('fresh_1_title', 'Гарантия 24 часа')) ?></h3>
+          <p class="fc-fresh__text"><?= e(setting('fresh_1_text', 'Если букет простоит меньше суток — заменим бесплатно')) ?></p>
+        </div>
+        <div class="fc-fresh__item">
+          <span class="fc-fresh__ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7c0 5.5 2.5 10 5 13 2.5-3 5-7.5 5-13l-2.5-3Z"/><path d="M7 7H5.5a2 2 0 0 0-2 2c0 2.5 2 4.5 4 5"/><path d="M17 7h1.5a2 2 0 0 1 2 2c0 2.5-2 4.5-4 5"/><path d="M12 8v5"/><circle cx="12" cy="6.5" r=".5" fill="currentColor"/></svg></span>
+          <h3 class="fc-fresh__title"><?= e(setting('fresh_2_title', 'Фото перед отправкой')) ?></h3>
+          <p class="fc-fresh__text"><?= e(setting('fresh_2_text', 'Пришлем фото именно вашего букета в WhatsApp до выезда курьера')) ?></p>
+        </div>
+        <div class="fc-fresh__item">
+          <span class="fc-fresh__ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg></span>
+          <h3 class="fc-fresh__title"><?= e(setting('fresh_3_title', 'Забота в комплекте')) ?></h3>
+          <p class="fc-fresh__text"><?= e(setting('fresh_3_text', 'Бесплатный аквабокс для бережной перевозки, подкормка Chrysal и инструкция по уходу')) ?></p>
+        </div>
+      </div>
+    </div>
+  </section>
+  <?php endif; ?>
 
   <?php /* ===== S7: МАСТЕРСКАЯ В СПБ + ОТЗЫВЫ (блок доверия под каталогом) =====
          Слева — мастерская: адрес (shop_address), часы (workshop_hours),

@@ -156,7 +156,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
         'category_intro_rozy','category_intro_sbornye-bukety','category_intro_polevye-cvety',
         'category_intro_avtorskie-bukety','category_intro_v-shlyapnoy-korobke','category_intro_sladkie-podarki',
         /* W98-fixE (E8/E18): дата обновления политики ПД (юридический раздел) */
-        'policy_updated'];
+        'policy_updated',
+        /* S15 (ONE-SHOT MASTER OVERHAUL): тексты новых коммерческих секций —
+           hero-баннер, цветочная подписка, B2B, гарантия свежести */
+        'hero_banner_title','hero_banner_sub','hero_banner_cta','hero_banner_photo',
+        'sub_title','sub_sub',
+        'sub_t1_name','sub_t1_price','sub_t1_desc',
+        'sub_t2_name','sub_t2_price','sub_t2_desc',
+        'sub_t3_name','sub_t3_price','sub_t3_desc',
+        'sub_cta','sub_modal_note','sub_best_text',
+        'b2b_title','b2b_text','b2b_cta',
+        'fresh_title',
+        'fresh_1_title','fresh_1_text','fresh_2_title','fresh_2_text','fresh_3_title','fresh_3_text'];
     $values = [];
     /* КЛАСС-ЗАЩИТА (критик-2): ключ из allowlist, которого нет в отправленной форме,
        НЕ должен затираеться пустотой. Текстовые поля: пишем только если ключ реально пришёл
@@ -214,7 +225,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['vapid_action']) && !
               'feature_section_hits', 'feature_section_premium', 'feature_section_budget', 'feature_section_addons',
               'feature_occasions', 'feature_stores', 'feature_seotext', 'feature_journal',
               /* S5: живой таймер доставки + модалка быстрого просмотра */
-              'feature_delivery_now', 'feature_quickview'] as $cb) {
+              'feature_delivery_now', 'feature_quickview',
+              /* S15 (ONE-SHOT MASTER OVERHAUL): hero-баннер, подписка, B2B, гарантия */
+              'feature_hero_banner', 'feature_subscription', 'feature_b2b', 'feature_guarantee'] as $cb) {
         if (!$cbTrackAll && !in_array($cb, $cbRendered, true)) { continue; } // не в форме — не трогаем
         $values[$cb] = isset($_POST[$cb]) ? '1' : '0';
     }
@@ -823,6 +836,46 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
   <div class="card" id="s-commerce">
     <h2 style="font-family:var(--font-display);font-size:1.2rem;margin-bottom:8px">Продажи: инфо-бар, Сплит, допы, WhatsApp, 1-клик</h2>
     <p style="font-size:.85rem;color:var(--ink-soft);margin:0 0 14px">S3 (v2026.3). Плашка преимуществ в шапке, калькулятор Яндекс&nbsp;Сплит/Долями, бесплатные допы корзины, шаблоны сообщений WhatsApp, быстрый заказ и чипсы-теги каталога. Всё сохраняется в базу и мгновенно обновляется на витрине.</p>
+
+    <?php /* S15 (ONE-SHOT MASTER OVERHAUL): новые коммерческие секции витрины —
+           hero-баннер / подписка / B2B / гарантия. Тумблеры обязаны рендериться
+           в форме (cb_rendered), иначе сохранение настроек с выключенным JS
+           обнуляет фичи. */ ?>
+    <p style="font-size:.9rem;font-weight:700;margin:0 0 6px">Коммерческие секции (S15)</p>
+    <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+      <input type="checkbox" name="feature_hero_banner" style="width:auto" <?= sv('feature_hero_banner', $s) !== '0' ? 'checked' : '' ?>>
+      Продающий hero-баннер под шапкой
+    </label>
+    <label class="f" for="s-hbt" style="margin-top:8px">Заголовок hero-баннера</label>
+    <input class="input" id="s-hbt" name="hero_banner_title" value="<?= sv('hero_banner_title', $s) !== '' ? sv('hero_banner_title', $s) : 'Свежие цветы с доставкой по СПб от 60 минут' ?>" maxlength="90">
+    <label class="f" for="s-hbs" style="margin-top:8px">Подпись hero-баннера (промокод)</label>
+    <input class="input" id="s-hbs" name="hero_banner_sub" value="<?= sv('hero_banner_sub', $s) !== '' ? sv('hero_banner_sub', $s) : 'Скидка 10% на первый заказ по промокоду FLOWERS10 • Бесплатная открытка и Кризал к каждому букету' ?>" maxlength="200">
+    <label class="f" for="s-hbc" style="margin-top:8px">Кнопка hero-баннера</label>
+    <input class="input" id="s-hbc" name="hero_banner_cta" value="<?= sv('hero_banner_cta', $s) !== '' ? sv('hero_banner_cta', $s) : 'Выбрать букет' ?>" maxlength="30">
+    <label class="f" for="s-hbp" style="margin-top:8px">Фото hero-баннера (файл из /img/products/)</label>
+    <input class="input" id="s-hbp" name="hero_banner_photo" value="<?= sv('hero_banner_photo', $s) !== '' ? sv('hero_banner_photo', $s) : 'gen9.jpg' ?>" maxlength="80">
+    <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 14px">Компактный премиальный баннер сразу под бейджами доверия: заголовок, промокод и кнопка-скролл к каталогу.</p>
+    <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+      <input type="checkbox" name="feature_subscription" style="width:auto" <?= sv('feature_subscription', $s) !== '0' ? 'checked' : '' ?>>
+      Секция «Цветочная подписка» (3 тарифа + модалка)
+    </label>
+    <label class="f" for="s-subt" style="margin-top:8px">Заголовок подписки</label>
+    <input class="input" id="s-subt" name="sub_title" value="<?= sv('sub_title', $s) !== '' ? sv('sub_title', $s) : 'Цветочная подписка для дома и офиса' ?>" maxlength="80">
+    <label class="f" for="s-subs" style="margin-top:8px">Подзаголовок подписки</label>
+    <input class="input" id="s-subs" name="sub_sub" value="<?= sv('sub_sub', $s) !== '' ? sv('sub_sub', $s) : 'Регулярная доставка свежих охапок цветов каждую неделю с бесплатной вазой и секатором' ?>" maxlength="160">
+    <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 14px">Тарифы «Уют / Классика / Премиум» — ключи sub_t1..t3 (название/цена/описание); заявка из модалки уходит в WhatsApp.</p>
+    <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+      <input type="checkbox" name="feature_b2b" style="width:auto" <?= sv('feature_b2b', $s) !== '0' ? 'checked' : '' ?>>
+      Секция «Корпоративным клиентам и B2B»
+    </label>
+    <label class="f" for="s-b2bt" style="margin-top:8px">Текст B2B-плашки</label>
+    <textarea class="input" id="s-b2bt" name="b2b_text" rows="3" maxlength="400"><?= sv('b2b_text', $s) !== '' ? sv('b2b_text', $s) : 'Поздравление сотрудников, оформление ресепшн и залов, корпоративные подарки к 8 Марта и Новому году. Оплата по безналичному расчету с НДС / без НДС, закрывающие документы по ЭДО.' ?></textarea>
+    <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 14px">Тёмная плашка после каталога; кнопка пишет в WhatsApp (раздел «Контакты»).</p>
+    <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
+      <input type="checkbox" name="feature_guarantee" style="width:auto" <?= sv('feature_guarantee', $s) !== '0' ? 'checked' : '' ?>>
+      Секция «Гарантия свежести и заботы» (3 колонки)
+    </label>
+    <p style="font-size:.78rem;color:var(--ink-soft);margin:4px 0 14px">Тексты колонок — ключи fresh_1..3_title / fresh_1..3_text.</p>
 
     <p style="font-size:.9rem;font-weight:700;margin:0 0 6px">Верхняя строка шапки (S6)</p>
     <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500">
