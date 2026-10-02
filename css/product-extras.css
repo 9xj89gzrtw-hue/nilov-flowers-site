@@ -8,18 +8,16 @@
    ================================================================ */
 
 /* ============ 1. ТИПОГРАФИКА PDP ============ */
-/* H1 товара — display-serif вместо всеобщего Montserrat (критик:
-   «product H1 всего 32px», типографика одним гротеском).
-   Playfair Display лежит в /fonts (variable, ось wght 400–900,
-   fonts.css). five.css прижимает токен --font-display к Montserrat
-   на html:root — переопределяем его ЛОКАЛЬНО внутри заголовка.
+/* H1 товара — display-serif (S12-W2: Playfair через var(--font-display),
+   прежний локальный пин --font-display:var(--font-ui) — наследие S6-эры
+   «моношрифтовости», упразднён по Претензии 2: PDP-имя — заголовок,
+   serif ему подходит; five.css html:root теперь честно держит Playfair-стек).
    W105-b (5-b): верх clamp 2.75rem = H2 главной (44px @1440).
    W105-7fix1 (тип-критик 7-b P2, шкала H2): ОДНО ПРАВИЛО — page-hero
      (category/occasion/утилиты) И PDP-h1 = clamp(2.2rem,3.4vw,2.5rem)
      = 40px @1440; H2 секций главной остаётся 44 (дисплейный масштаб
      только у витрины). Было 44 у PDP — «wobble» 44/40/44. */
 .fc-product__title{
-  --font-display:var(--font-ui);
   font-family:var(--font-display);
   font-weight:500;
   font-size:clamp(2.2rem,3.4vw,2.5rem);   /* W103/G2 → W105-b → W105-7fix1: = .page-hero__title вторичек (одна ступень page-hero) */
@@ -33,7 +31,6 @@
    «С этим берут»: related-H2 ниже шкалой (clamp 1.6–2.1rem, Playfair 500),
    H1 — вес 500 (было 600) — разница читается и весом, и кеглем. */
 .fc-related__title{
-  --font-display:var(--font-ui);
   font-family:var(--font-display);
   font-weight:500;
   font-size:clamp(1.5rem,2.4vw,2rem);
@@ -50,7 +47,6 @@
    гарантирует корректную роль и на случай, если владелец/дизайнер уберёт
    скрытие — две системы H2 на странице больше не будет. */
 .fc-product__info > h2{
-  --font-display:var(--font-ui);
   font-family:var(--font-display);
   font-weight:500;
   font-size:clamp(1.5rem,2.4vw,2rem);

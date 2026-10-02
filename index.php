@@ -910,6 +910,15 @@ if ($featOccasions) {
         2 => ['❤️', 'Свидание и любовь', 'Пионы, розы и романтика', 'розы, пионы, подарок девушке', 'buket-dlya-lyubimoj'],
         3 => ['🥂', 'Юбилей и торжество', 'Пышные авторские корзины', 'в коробках, юбилей, корзины', 'buket-na-godovshinu'],
     ];
+    /* S12-раунд2 (Инквизитор Прет. #8): дефолтные иконки поводов — inline SVG
+       lucide (cake / heart / party-popper), а не эмодзи. Если владелец задал
+       СВОЁ значение в настройке occ_card_N_emoji — рисуем его (данные БД
+       святее дефолта шаблона). SVG — доверенная разметка шаблона (не e()). */
+    $occIcons = [
+        1 => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg>',
+        2 => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>',
+        3 => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.8 11.3 2 22l10.7-3.79"/><path d="M4 3h.01"/><path d="M22 8h.01"/><path d="M15 2h.01"/><path d="M22 20h.01"/><path d="m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12v0c-.1.86.57 1.63 1.45 1.63h.38c.86 0 1.6.6 1.76 1.44L14 10"/><path d="m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11v0c-.11.7-.72 1.22-1.43 1.22H17"/><path d="m11 2 .33.82c.34.86-.2 1.82-1.11 1.98v0C9.52 4.9 9 5.52 9 6.23V7"/><path d="m11 13c1.93 1.93 2.83 4.17 2 5-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5 .83-.83 3.07.07 5 2Z"/></svg>',
+    ];
     for ($i = 1; $i <= 3; $i++) {
         [$ocEmojiD, $ocTitleD, $ocSubD, $ocTagsD, $ocSlugD] = $occDefaults[$i];
         $ocEmoji = trim((string)setting("occ_card_{$i}_emoji", $ocEmojiD));
@@ -938,6 +947,8 @@ if ($featOccasions) {
         if ($ids === []) { $ids = array_fill_keys($occTopIds, true); }
         $occCards[] = [
             'emoji' => $ocEmoji,
+            'custom' => ($ocEmoji !== '' && $ocEmoji !== $ocEmojiD),
+            'icon' => $occIcons[$i] ?? '',
             'title' => $ocTitle,
             'sub' => $ocSub,
             'ids' => array_keys($ids),
@@ -1153,11 +1164,11 @@ echo json_encode([
 <?php require __DIR__ . '/partials/header.php'; ?>
 
 <main id="main" tabindex="-1">
-<?php /* S7 (коммерческая структура 5cv.ru): литературный промо-баннер убран —
-   первый экран витрины = 4 плашки бюджета под шапкой → липкая лента чипсов →
-   товарные полки. SEO-H1 — визуально скрытый (паттерн 5cv); настройки
-   hero_* остаются в БД/админке (не читаются витриной). */ ?>
-  <h1 class="sr-only"><?= e($heroH1) ?></h1>
+<?php /* S7→S12-W2 (коммерческая структура 5cv.ru): литературный промо-баннер
+   убран — первый экран витрины = H1-герой (seo_h1 из БД, Претензия 1:
+   видимый, Playfair) над 4 плашками бюджета → липкая лента чипсов →
+   товарная сетка. Прежний sr-only-Н1 демотирован (тэглайн внизу —
+   курсивный serif). */ ?>
   <?php /* NILOV_CONFIG — общий конфиг JS (читают cart-ui.js/nilov.js/order-form.js:
          дедлайн заказа, час открытия, часовой пояс, порог бесплатной доставки). */ ?>
   <script>window.NILOV_CONFIG = {
@@ -1171,34 +1182,37 @@ echo json_encode([
     freeDeliveryThreshold: <?= (int) setting('free_delivery_threshold', '0') ?>
   };</script>
 
-  <?php /* ===== S9: 4 ПЛАШКИ НАВИГАЦИИ (всегда все четыре — никаких дыр) =====
-         Сетка 2×2 на мобильном, 4 в ряд на десктопе; фон #F8F9FA, радиус 14px,
-         крупный текст 14–15px semibold + серый счётчик букетов.
-         Клик фильтрует общую сетку каталога (js/five.js: бюджет-чипы входят
-         в общий массив .fc-chip → is-active + apply() + мягкий скролл к
-         #catalog). Границы — настройки chips_price_low/high; теги плашек 3–4 —
-         настройки budget_tile_mono_tag/budget_tile_gifts_tag (матч по стему,
-         PHP $nfTagMatch = JS nfTagMatch). Плашки НЕ прячутся при 0 товаров:
-         пустых мест на витрине нет — цифра честная, каталог растёт вместе
-         с тегами владельца. */ ?>
+  <?php /* ===== S9→S12-W2: 4 ПЛАШКИ НАВИГАЦИИ + H1-ГЕРОЙ (всегда все четыре) =====
+         H1 (seo_h1 → hero_title из БД, «Сказать без слов») — видимый герой
+         первого экрана над сеткой (Претензия 1). Плашки 2×2 мобайл / 4 в ряд
+         десктоп — белые карточки с иконками lucide-SVG (Претензия 3);
+         счётчик — пилюля #F4F4F5. Клик фильтрует общую сетку каталога
+         (js/five.js: бюджет-чипы входят в общий массив .fc-chip →
+         is-active + apply() + мягкий скролл к #catalog). Границы —
+         настройки chips_price_low/high; теги плашек 3–4 — настройки
+         budget_tile_mono_tag/budget_tile_gifts_tag (матч по стему,
+         PHP $nfTagMatch = JS nfTagMatch). Плашки НЕ прячутся при 0 товаров. */ ?>
   <section class="fc-budget" aria-label="Каталог букетов">
-    <div class="wrap fc-budget__grid">
+    <div class="wrap">
+      <h1 class="fc-hero-title"><?= e($heroH1) ?></h1>
+      <div class="fc-budget__grid">
       <button type="button" class="fc-chip fc-budget__card" data-chip="low" data-max="<?= $chipsN ?>" aria-pressed="false">
-        <span class="fc-budget__label"><span class="fc-budget__ico" aria-hidden="true">🌸</span>До&nbsp;<?= formatSum($chipsN) ?>&nbsp;₽</span>
+        <span class="fc-budget__label"><span class="fc-budget__ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 1 3 3m-3-3a3 3 0 1 0-3 3m3-3v1M9 8a3 3 0 1 0 3 3M9 8h1m5 0a3 3 0 1 1-3 3m3-3h-1m-2 3v-1"/><path d="M12 12v6"/><path d="M12 3v2"/><path d="m19 12-2-.5"/><path d="m5 12 2-.5"/><path d="m19 16-2-1"/><path d="m5 16 2-1"/><path d="m19 8-2 1"/><path d="m5 8 2 1"/></svg></span>До&nbsp;<?= formatSum($chipsN) ?>&nbsp;₽</span>
         <span class="fc-budget__count"><?= $cntLow ?>&nbsp;<?= e($pluralBuket($cntLow)) ?></span>
       </button>
       <button type="button" class="fc-chip fc-budget__card" data-chip="high" data-min="<?= max(0, $chipsN - 1) ?>" aria-pressed="false">
-        <span class="fc-budget__label"><span class="fc-budget__ico" aria-hidden="true">💐</span>От&nbsp;<?= formatSum($chipsN) ?>&nbsp;₽</span>
+        <span class="fc-budget__label"><span class="fc-budget__ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7a5 5 0 1 1-4.9 6.07A1 1 0 0 0 6.12 13H5a3 3 0 0 1-1.53-5.6 1 1 0 0 0 .36-1.15A5 5 0 0 1 12 5.6a5 5 0 0 1 8.17 1.65 1 1 0 0 0 .36 1.15A3 3 0 0 1 19 13h-1.12a1 1 0 0 0-.98.8A5 5 0 0 1 12 7z"/><path d="M12 22v-8"/></svg></span>От&nbsp;<?= formatSum($chipsN) ?>&nbsp;₽</span>
         <span class="fc-budget__count"><?= $cntFrom ?>&nbsp;<?= e($pluralBuket($cntFrom)) ?></span>
       </button>
       <button type="button" class="fc-chip fc-budget__card" data-chip="mono" data-tag="<?= e($tileMonoTag) ?>" aria-pressed="false">
-        <span class="fc-budget__label"><span class="fc-budget__ico" aria-hidden="true">👑</span><?= e(setting('budget_tile_mono_label', 'Монобукеты')) ?></span>
+        <span class="fc-budget__label"><span class="fc-budget__ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.735H5.81a1 1 0 0 1-.957-.735L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/><path d="M5 21h14"/></svg></span><?= e(setting('budget_tile_mono_label', 'Монобукеты')) ?></span>
         <span class="fc-budget__count"><?= $cntMono ?>&nbsp;<?= e($pluralBuket($cntMono)) ?></span>
       </button>
       <button type="button" class="fc-chip fc-budget__card" data-chip="hitgift" data-tag="<?= e($tileGiftsTag) ?>" aria-pressed="false">
-        <span class="fc-budget__label"><span class="fc-budget__ico" aria-hidden="true">✨</span><?= e(setting('budget_tile_gifts_label', 'Хиты и подарки')) ?></span>
+        <span class="fc-budget__label"><span class="fc-budget__ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></svg></span><?= e(setting('budget_tile_gifts_label', 'Хиты и подарки')) ?></span>
         <span class="fc-budget__count"><?= $cntGift ?>&nbsp;<?= e($pluralBuket($cntGift)) ?></span>
       </button>
+      </div>
     </div>
   </section>
 
@@ -1358,7 +1372,12 @@ echo json_encode([
          градиентных плит). Клик — фильтр каталога (чип data-chip="ids",
          js/five.js скроллит к #catalog), подпись — живой счётчик букетов. */ ?>
   <?php if ($occCards !== []): ?>
-  <section class="fc-section fc-section--soft" id="occasions">
+  <?php /* S12 (Task ID 1, СТРОИТЕЛЬ): поводы — БЕЛАЯ секция. Соседняя
+         мастерская (1308) — мягкая #F9FAFB; две soft-секции подряд
+         (мастерская → поводы) сливались в сплошную серую массу без
+         границы — белый фон поводов восстанавливает ритм
+         белый/мягкий/белый до SEO-блока (1398). */ ?>
+  <section class="fc-section" id="occasions">
     <div class="wrap">
       <div class="fc-row__head">
         <div class="fc-row__heading">
@@ -1370,7 +1389,7 @@ echo json_encode([
       <div class="fc-occ-grid">
         <?php foreach ($occCards as $c): ?>
         <button type="button" class="fc-chip fc-occ-card" data-chip="ids" data-ids="<?= e(implode(',', $c['ids'])) ?>" aria-pressed="false">
-          <span class="fc-occ-card__emoji" aria-hidden="true"><?= e($c['emoji']) ?></span>
+          <span class="fc-occ-card__emoji" aria-hidden="true"><?= $c['custom'] ? e($c['emoji']) : $c['icon'] /* S12-раунд2: SVG lucide дефолтом, эмодзи владельца — если задан */ ?></span>
           <span class="fc-occ-card__text">
             <span class="fc-occ-card__title"><?= e($c['title']) ?></span>
             <span class="fc-occ-card__sub"><?= e($c['sub']) ?></span>
@@ -1394,8 +1413,11 @@ echo json_encode([
        W103 (6-b, критик-5а P0 «низ главной»): колофон-стиль — тихий caps-заголовок,
        первые два абзаца снаружи, остальной текст в <details> (в HTML остаётся весь
        текст — SEO не страдает); summary — Playfair-курсив. */ ?>
+  <?php /* S12-W2 (Претензия 5): SEO-секция — мягкая (var(--surface-soft)
+         #F4F4F5): смежные soft-зоны SEO→FAQ разделяет hairline
+         border-block у .fc-section--soft, а не пустая белая дыра. */ ?>
   <?php if ($featSeotext): ?>
-  <section class="fc-section">
+  <section class="fc-section fc-section--soft">
     <div class="wrap">
       <div class="fc-seo">
         <h2 class="fc-seo__title"><?= e(setting('seo_text_title', 'Доставка цветов в Санкт-Петербурге')) ?></h2>
@@ -1429,7 +1451,7 @@ echo json_encode([
 
   <?php /* FAQ (критерий 13, SEO FAQPage — паттерн Цветовика): реальные вопросы покупателей. Отключаем (критерий 16). */ ?>
   <?php if ($featFaq): ?>
-  <section class="fc-section section--faq" id="faq">
+  <section class="fc-section fc-section--soft section--faq" id="faq">
     <?php /* W96-fix2 (F4): FAQ-колонка шире (760→880) — вопрос-ответ читается
            без «узкой газетной» колонки; длинные вопросы не переносятся в 3 строки */ ?>
     <div class="wrap" style="max-width:880px">

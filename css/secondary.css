@@ -13,9 +13,9 @@
    occasion.php, order-thanks.php, policy_new.php, offer_new.php, 404.php
    (после partials/head.php → five.css + fonts.css).
    Токены var(--pink), var(--ink), var(--ink-muted) живут в five.css;
-   --font-display — Playfair-стек (fonts.css :root / five.css html:root).
-   Локальное переобъявление --font-display в .page-hero__title — та же
-   защита каскада, что у .fc-product__title в product-extras.css.
+   --font-display — Playfair-стек (fonts.css :root / five.css html:root),
+   S12-раунд2: локальный пин снят — .page-hero__title берёт глобальный
+   Playfair-стек (кросс-консистентность с главной и PDP).
 
    W105-b (5-b) — файл расширен до «вторичного ядра»:
    • читательский масштаб .prose 17px/1.75/66ch (occasion-body + легальные);
@@ -44,16 +44,16 @@
    W105-b (5-b): верх шкалы 3.25→2.75rem = H1 PDP = H2 главной — вторичная
    H1 не перекрикивает деньгу (PDP); середина 4vw→3.6vw (критик: «shout»). */
 .page-hero__title{
-  font-family:var(--font-ui);
-  font-weight:700;
+  font-family:var(--font-display);   /* S12-раунд2 (Инквизитор, кросс-консистентность): H1 вторичек — Playfair, как на главной и PDP */
+  font-weight:600;
   font-size:clamp(2.2rem,3.4vw,2.5rem);   /* W105-6fix2 (критик 6-b F): 40px @1440 — единый кегль с утилитарными страницами (было 44 у категорий / 36 у политики — одна разметка, два кегля) */
   line-height:1.12;
   letter-spacing:-.015em;   /* W105-c (5-b/2): display-трекинг H2 главной 5-a (−1.5%) — семейство одной оптической плотности */
   text-wrap:balance;
 }
 .page-hero__accent{
-  font-style:normal;
-  font-weight:800;
+  font-style:italic;   /* S12-раунд2: курсивный акцент первого слова — приём главной (Playfair italic) */
+  font-weight:600;
   color:var(--ink,#1A1A1A);
 }
 

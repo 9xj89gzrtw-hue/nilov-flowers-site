@@ -31,10 +31,10 @@
   --gold:#FFB800;            /* жёлтый акцент на тёмном фоне */
   --gold-deep:#8A6D00;
   --ink:#1A1A1A;             /* угольно-чёрный заголовков */
-  --ink-muted:#767676;       /* нейтральный серый вторичного текста */
+  --ink-muted:#52525B;       /* единый muted-серый вторичного текста (S12-W2: дисциплина цвета, AA-контраст) */
   --surface:#FFFFFF;         /* кристально белый фон сайта */
   --surface-milk:#F7F7F8;    /* ультра-светлая подложка «внутренностей» */
-  --surface-soft:#F7F7F8;    /* подложки секций, чипсы, поля */
+  --surface-soft:#F4F4F5;    /* подложки секций, чипсы, поля (S12-W2: контрастнее — белые карточки на soft-фоне читаются) */
   --surface-subtle:#F7F7F8;
   --surface-warm:#F7F7F8;
   --line:#EFEFEF;            /* легчайший контур */
@@ -67,14 +67,17 @@
   --cream:#F7F7F8;
 }
 /* fonts.css подключается ПОСЛЕ five.css — дублируем стеки на html/html:root,
-   чтобы --font-ui/--font-display из fonts.css не перебивали систему */
+   чтобы --font-ui/--font-display из fonts.css не перебивали систему.
+   S12-W2 (Претензия 2): --font-display — фирменный serif Playfair Display
+   (заголовки/H1-герой/SEO/PDP/cart-title/тэглайн); --font-ui остаётся Inter
+   (карточки/цены/кнопки/чипы — вся коммерческая типографика). */
 html{
   --font-ui:'Inter','Inter Fallback','Golos Text','Golos Fallback',system-ui,-apple-system,sans-serif;
-  --font-display:'Inter','Inter Fallback','Golos Text','Golos Fallback',system-ui,-apple-system,sans-serif;
+  --font-display:'Playfair Display',Georgia,'Times New Roman',serif;
 }
 html:root{
   --font-ui:'Inter','Inter Fallback','Golos Text','Golos Fallback',system-ui,-apple-system,sans-serif;
-  --font-display:'Inter','Inter Fallback','Golos Text','Golos Fallback',system-ui,-apple-system,sans-serif;
+  --font-display:'Playfair Display',Georgia,'Times New Roman',serif;
 }
 
 /* ============ 2. БАЗА ============ */
@@ -95,13 +98,17 @@ html{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
 /* S7: визуально скрытый H1 (SEO) — паттерн 5cv */
 .sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
-/* Секции: воздух 5cv */
-.fc-section{padding:56px 0}
-.fc-section--subtle,.fc-section--soft{background:var(--surface-soft)}
+/* Секции (S12-W2): плотный ритм 5cv — вертикальные «дыры» между соседними
+   белыми секциями ≤ ~64px (2×32px). Мягкие секции — контрастная подложка
+   var(--surface-soft)=#F4F4F5 с hairline-границей border-block (смежные
+   soft-зоны SEO→FAQ разделяются линией, а не сливаются). */
+.fc-section{padding:32px 0}
+.fc-section--subtle{background:var(--surface-soft)}
+.fc-section--soft{background:var(--surface-soft);border-block:1px solid #E9ECEF;padding:48px 0}
 .fc-section--tint{background:var(--surface-soft)}
-@media(max-width:899px){.fc-section{padding:40px 0}}
-.section{padding:56px 0}
-@media(max-width:899px){.section{padding:40px 0}}
+@media(max-width:899px){.fc-section{padding:24px 0}.fc-section--soft{padding:48px 0}}
+.section{padding:32px 0}
+@media(max-width:899px){.section{padding:24px 0}}
 .section-title{font-family:var(--font-ui);font-weight:700;font-size:1.5rem;line-height:1.2;letter-spacing:-.01em;color:var(--ink);margin-bottom:.35em}
 .section-sub{color:var(--ink-muted);max-width:560px;margin-bottom:24px}
 
@@ -174,7 +181,7 @@ html{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
   text-decoration:none;
 }
 .fc-usp svg{width:15px;height:15px;flex:none;color:var(--ink)}
-.fc-usp--rating svg{color:var(--amber)}
+.fc-usp--rating svg{color:#C9A227;fill:#C9A227}
 .fc-usp a{color:inherit;text-decoration:none}
 @media(hover:hover){
   .fc-usp--link:hover{background:#EFEFF1}
@@ -258,7 +265,17 @@ html{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
 .fc-city-menu__other{font:500 .8125rem var(--font-ui);color:var(--ink-muted);text-decoration:none}
 .fc-city-menu__other:hover{color:var(--ink)}
 .fc-city-menu--up{top:auto;bottom:calc(100% + 8px)}
-.fc-city--footer .fc-city__btn{color:var(--ink)}
+/* S12 КРИТИЧЕСКИЙ фикс (вердикт владельца + VLM): кнопка города в подвале
+   имела БРАУЗЕРНЫЙ ДЕФОЛТ — border:2px outset + фон rgb(239,239,241)
+   («уродливая белая рамка вокруг иконки карты»). Явный сброс для любой
+   .fc-city__btn (шапка защищена своими правилами .fc-topbar__geo) +
+   аккуратная типографика футер-кнопки. */
+.fc-city .fc-city__btn{background:none;border:none;cursor:pointer;padding:0;display:inline-flex;align-items:center;gap:6px}
+.fc-city--footer .fc-city__btn{
+  background:none;border:none;cursor:pointer;padding:0;
+  display:inline-flex;align-items:center;gap:6px;
+  font:600 .875rem var(--font-ui);color:#1A1A1A;min-height:36px;
+}
 .fc-city--footer .fc-city__chev{color:var(--ink-muted)}
 @media(max-width:899px){.fc-city-menu__zones{max-height:132px;overflow-y:auto}}
 
@@ -404,7 +421,7 @@ html{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
 .fc-promo__ghost:hover svg{transform:translateX(4px)}
 .fc-promo__rating{display:inline-flex;align-items:center;gap:6px;min-height:42px;color:rgba(255,255,255,.94);font:600 .8125rem var(--font-ui);text-decoration:none}
 .fc-promo__rating:hover{color:#fff}
-.fc-promo__rating-star{color:var(--amber);font-size:.9375rem}
+.fc-promo__rating-star{color:#C9A227;font-size:.9375rem}
 .fc-promo__rating-num{font-weight:700;font-size:.875rem}
 .fc-promo__rating-note{color:rgba(255,255,255,.7)}
 
@@ -467,8 +484,8 @@ html{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
 
 /* ============ 7. КАТАЛОГ: сетка + первый экран ============ */
 /* Каталог — сразу после чипсов; компактный верх, букеты в первом экране. */
-#catalog.fc-section{padding:2px 0 48px}
-@media(min-width:900px){#catalog.fc-section{padding:8px 0 56px}}
+#catalog.fc-section{padding:2px 0 36px}
+@media(min-width:900px){#catalog.fc-section{padding:8px 0 40px}}
 /* мобильный первый экран: шапка секции — компактная строка «КАТАЛОГ» */
 @media(max-width:899px){
   #catalog .fc-row__head{margin-bottom:6px}
@@ -507,10 +524,10 @@ html{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
 .product-card{
   display:flex;flex-direction:column;height:100%;
   background:#FFFFFF;
-  border-radius:14px;
+  border-radius:16px;
   overflow:hidden;
   border:1px solid rgba(0,0,0,0.06);
-  box-shadow:0 2px 10px rgba(0,0,0,0.03);
+  box-shadow:0 4px 16px rgba(0,0,0,0.04);
   transition:transform .2s ease,box-shadow .2s ease;
   padding:0;
 }
@@ -521,7 +538,7 @@ html{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
   position:relative;aspect-ratio:4/5;
   background:#F7F7F8;
   overflow:hidden;
-  border-radius:14px 14px 0 0; /* S10: скруглены только ВЕРХНИЕ углы фото */
+  border-radius:15px 15px 0 0; /* S12: скруглены только ВЕРХНИЕ углы фото (16 − 1px контур карточки) */
 }
 .product-card__media::after{content:none}
 /* S8-инцидент «серые прямоугольники»: фото карточки ВИДНО ВСЕГДА —
@@ -559,29 +576,29 @@ html{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
   background:#fff;color:#1A1A1A;
   border:1px solid var(--line);
 }
-.product-card__badge--hit{background:#FFB800;color:#FFFFFF;text-transform:uppercase;letter-spacing:.05em}
+.product-card__badge--hit{background:#18181B;color:#FFFFFF;border-radius:8px;text-transform:uppercase;letter-spacing:.05em}
 .product-card__badge--premium{background:#1A1A1A;color:#fff;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
 
-/* тело карточки — строгий порядок строк e-commerce (S10: паддинг 12/14/14) */
+/* тело карточки — строгий порядок строк e-commerce (S12: паддинг 12/14/16) */
 .product-card__body{
   display:flex;flex-direction:column;align-items:flex-start;
-  padding:12px 14px 14px;gap:5px;flex:1;min-width:0;
+  padding:12px 14px 16px;gap:5px;flex:1;min-width:0;
 }
 @media(max-width:899px){
-  .product-card__body{padding:12px 14px 14px;gap:5px}
+  .product-card__body{padding:12px 14px 16px;gap:5px}
 }
-@media(min-width:768px){.product-card__body{padding:12px 14px 14px;gap:5px}}
+@media(min-width:768px){.product-card__body{padding:12px 14px 16px;gap:5px}}
 .product-card__feature-label{
   font:600 .6875rem var(--font-ui);letter-spacing:.08em;text-transform:uppercase;
   color:var(--amber-ink);margin-bottom:2px;
 }
-/* СТРОКА 1 (S10): цена крупная 20px bold #1A1A1A + зачёркнутая старая серым.
+/* СТРОКА 1 (S12): цена крупная сочная 22px/800 #111111 + зачёркнутая старая серым.
    nowrap — «2 100 ₽ 2 500 ₽» НЕ переносится на 2 строки в узкой
    мобильной колонке (перенос сдвигал название/кнопки на 23px — разводил
    строки ряда); старая цена компактнее (12px), чтобы пара помещалась. */
 .product-card__price{
-  margin:0;font-weight:700;
-  font-size:1.25rem;line-height:1.15;color:#1A1A1A;
+  margin:0;font-weight:800;
+  font-size:1.375rem;line-height:1.15;color:#111111;
   font-variant-numeric:tabular-nums;letter-spacing:-.02em;
   white-space:nowrap;max-width:100%;
 }
@@ -590,20 +607,20 @@ html{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
   text-decoration:line-through;text-decoration-thickness:1.5px;
   margin-left:6px;font-variant-numeric:tabular-nums;
 }
-.product-card__price--discount{color:#1A1A1A}
-/* СТРОКА 1б (S10): аккуратная серая плашка «Сплит 850 ₽ × 4» —
-   11px, фон #F4F4F5, padding 2px 6px, radius 4px */
+.product-card__price--discount{color:#111111}
+/* СТРОКА 1б (S12): аккуратный серо-бежевый бейдж «Сплит 850 ₽ × 4» —
+   11px/500, фон #F4F4F5, текст #6E6E77, padding 3px 7px, radius 5px */
 .product-card__split{
   display:inline-flex;align-items:center;margin:0;
 }
 .product-card__split-badge{
   display:inline-flex;align-items:center;gap:5px;
-  background:#F4F4F5;color:var(--ink-muted);
-  border-radius:4px;padding:2px 6px;
+  background:#F4F4F5;color:#52525B;
+  border-radius:5px;padding:3px 7px;
   font:500 .6875rem var(--font-ui);white-space:nowrap;
   font-variant-numeric:tabular-nums;
 }
-.product-card__split-text{color:var(--ink-muted)}
+.product-card__split-text{color:#52525B}
 .product-card__split--pdp{font-size:.875rem}
 /* скрытые носители данных для Quick View (не отображаются) */
 .product-card__comp[hidden],.product-card__size[hidden]{display:none}
@@ -628,7 +645,7 @@ html{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
   color:var(--ink-muted);
 }
 .product-card__meta-item svg{width:12px;height:12px;flex:none}
-.product-card__meta-item--rating svg{color:#FFB800;fill:#FFB800}
+.product-card__meta-item--rating svg{color:#C9A227;fill:#C9A227}
 .product-card__meta-sep{color:#B9B9BE}
 .product-card__rating-num{font-weight:600}
 .product-card__rating-count{color:var(--ink-muted);font-weight:400}
@@ -642,79 +659,113 @@ html{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
   display:flex;flex-direction:column;gap:6px;
 }
 .product-card__actions{display:flex;flex-direction:column;gap:0;width:100%}
-/* СТРОКА 4 (S11 ЗОНА 1-2): ЛЁГКАЯ кнопка «В корзину» — белый фон #FFFFFF,
-   тонкий графитовый контур 1.5px solid #18181B, цвет текста #18181B,
-   скругление 8px, высота 36px. Ховер — мягкая заливка чёрным (фон #18181B,
-   белый текст). Прежняя глухая чёрная плашка («стена кирпичей») упразднена. */
+/* СТРОКА 4 (S12): ТАКТИЛЬНАЯ КОММЕРЧЕСКАЯ кнопка «В корзину» — благородный
+   графит #18181B, белый текст 13px/600, r10, высота 40px, мягкая тень;
+   hover #27272A + лифт -1px. Прежний «мёртвый белый прямоугольник с
+   тонкой рамкой» (S11) упразднён по вердикту владельца (wireframe-вид).
+   ВНИМАНИЕ легаси-ловушка (style.css:178, W65-кружок 44×44 absolute
+   opacity:0) — нейтрализаторы ПЕРВОЙ строкой правила, НЕ удалять:
+   position:static/right/bottom/width/opacity/transform; height ПОВЕРХ
+   них = 40px. */
 .product-card__cta{
-  /* нейтрализуем легаси-кружок из style.css:178 (W65-эра: absolute
-     right/bottom 12px + 44×44 + opacity:0 — на проде давал stray-квадрат
-     в углу вьюпорта; S6/S9 возвращает кнопку в поток карточки) */
   position:static;right:auto;bottom:auto;
-  width:100%;height:auto;opacity:1;transform:none;
-  min-height:36px;border:1.5px solid #18181B;border-radius:8px;
-  background:#FFFFFF;color:#18181B;
-  font:600 .8125rem var(--font-ui);cursor:pointer;
+  width:100%;height:40px;opacity:1;transform:none;
+  min-height:40px;
+  background:#18181B;
+  color:#FFFFFF;
+  font:700 .875rem var(--font-ui);
+  letter-spacing:.01em;
+  border:none;border-radius:10px;
+  box-shadow:0 2px 6px rgba(24,24,27,0.15);
+  cursor:pointer;
   display:inline-flex;align-items:center;justify-content:center;gap:6px;
   padding:0 10px;
-  transition:background .15s,color .15s;
+  transition:all .2s ease;
 }
-.product-card__cta:hover{background:#18181B;color:#fff;border-color:#18181B;opacity:1;transform:none}
+.product-card__cta:hover{
+  background:#27272A;
+  transform:translateY(-1px);
+  box-shadow:0 4px 12px rgba(24,24,27,0.25);
+  color:#fff;
+  opacity:1;
+}
 .product-card__cta:active{transform:scale(.98)}
 .product-card__cta:focus-visible{outline:3px solid rgba(24,24,27,.35);outline-offset:2px}
-/* «Купить в 1 клик» — тихая ссылка-строка по центру (не кирпич!) */
+/* «Купить в 1 клик» — тихая ссылка-строка по центру (не кирпич!)
+   S12-W2: кегль увереннее — 13px/500, цвет muted #52525B */
 .btn-oneclick-link{
   background:transparent;border:none;cursor:pointer;
   margin:6px 0 0;padding:2px 4px;min-height:28px;
   display:inline-flex;align-items:center;justify-content:center;gap:5px;
   align-self:center;max-width:100%;
-  font:400 .75rem var(--font-ui);color:#71717A;white-space:nowrap;
+  font:500 .8125rem var(--font-ui);color:#52525B;white-space:nowrap;
   transition:color .15s;
 }
 .btn-oneclick-link svg{width:11px;height:11px;flex:none}
 .btn-oneclick-link:hover{color:#18181B;text-decoration:underline;text-underline-offset:3px}
 .btn-oneclick-link:active{transform:scale(.98)}
 .btn-oneclick-link:focus-visible{outline:3px solid rgba(24,24,27,.25);outline-offset:2px;border-radius:8px}
-/* тач-таргет (S11): кнопка 36px по ТЗ; на таче чуть выше — палец ловит */
+/* тач-таргет (S12-W2, Претензия 6): 40px десктоп; на таче 44px — палец ловит */
 @media(hover:none){
-  .product-card__cta{min-height:38px}
+  .product-card__cta{min-height:44px}
 }
 
 
-/* ============ 8б. S10 ДЕФЕКТ 4: 4 ПЛАШКИ БЮДЖЕТА — стильные белые карточки ============
-   Сетка 2×2 мобайл (gap 10px) / 4 в ряд десктоп: БЕЛЫЙ фон #FFFFFF,
-   тонкий контур 1px solid #EBEBEB, скругление 12px; hover — мягкая тень
-   0 4px 12px rgba(0,0,0,0.05) + контур #18181B. Название — полужирный
-   14px #1A1A1A, подпись — серый 12px со счётчиком букетов. */
-.fc-budget{padding:16px 0 6px}
+/* ============ 8б. S12-W2 (Претензии 1/3): H1-ГЕРОЙ + 4 ПЛАШКИ БЮДЖЕТА ============
+   H1 из БД (seo_h1 → hero_title → «Сказать без слов») — видимый герой
+   первого экрана над плашками (Претензия 1: sr-only-Н1 демотирован);
+   фирменный Playfair 600, 34–44px, до двух строк. Плашки — БЕЛЫЕ
+   карточки с двойной мягкой тенью; иконки — inline SVG lucide 20px
+   (flower-2 / flower / crown / sparkles, Претензия 3). */
+.fc-budget{padding:20px 0 8px}
+.fc-hero-title{
+  font-family:var(--font-display);font-weight:600;
+  font-size:clamp(34px,4vw,44px);line-height:1.15;letter-spacing:-.015em;
+  color:#1A1A1A;max-width:18ch;margin:0 0 28px;
+}
+@media(max-width:899px){.fc-hero-title{font-size:clamp(30px,8.4vw,34px)}}
 /* minmax(0,1fr): треки СТРОГО равные — nowrap-подписи плашек не растягивают
    колонку от минимальной ширины контента (сетка 2×2 без дыр,
    ширины пиксель-в-пиксель) */
 .fc-budget__grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 @media(min-width:768px){.fc-budget__grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}}
 .fc-budget .fc-chip{
-  flex-direction:column;align-items:flex-start;justify-content:center;gap:4px;
-  min-height:78px;padding:14px 16px;border-radius:12px;
-  background:#FFFFFF;border:1px solid #EBEBEB;
+  flex-direction:column;align-items:flex-start;justify-content:center;gap:6px;
+  min-height:86px;padding:16px;border-radius:16px;
+  background:#FFFFFF;border:1px solid #E4E4E7;
+  box-shadow:0 1px 2px rgba(0,0,0,.04),0 4px 12px rgba(0,0,0,.05);
   text-align:left;white-space:normal;
-  transition:border-color .15s,box-shadow .15s,transform .15s;
+  transition:all .2s ease;
 }
 .fc-budget .fc-chip:hover{
   background:#FFFFFF;
-  box-shadow:0 4px 12px rgba(0,0,0,0.05);
-  border-color:#18181B;
+  transform:translateY(-1px);
+  border-color:#D0D5DD;
+  box-shadow:0 6px 16px rgba(0,0,0,.08);
 }
 .fc-budget .fc-chip:active{transform:scale(.98)}
 .fc-budget .fc-chip:focus-visible{outline:3px solid rgba(24,24,27,.2);outline-offset:2px}
-.fc-budget__ico{font-size:15px;line-height:1;margin-right:5px}
+/* иконка — inline SVG lucide 20px, цвет графит (на is-active — белый) */
+.fc-budget__ico{color:#18181B;width:20px;height:20px;display:inline-flex;flex:none;margin-right:8px}
+.fc-budget__ico svg{width:100%;height:100%}
 .fc-budget__label{
-  font:600 .875rem/1.25 var(--font-ui);color:#1A1A1A;
+  display:inline-flex;align-items:center;
+  font:700 .9375rem/1.25 var(--font-ui);color:#1A1A1A;
   font-variant-numeric:tabular-nums;letter-spacing:-.01em;white-space:nowrap;
 }
-.fc-budget__count{font:400 .75rem var(--font-ui);color:#767676;white-space:nowrap}
+/* счётчик — пилюля #F4F4F5 (на активной плашке — полупрозрачно-белая) */
+.fc-budget__count{
+  display:inline-flex;align-items:center;
+  background:#F4F4F5;border:1px solid #E9ECEF;border-radius:6px;
+  padding:3px 8px;
+  font:600 .75rem/1.4 var(--font-ui);color:#3F3F46;white-space:nowrap;
+}
 .fc-budget .fc-chip.is-active{background:#18181B;border-color:#18181B}
 .fc-budget .fc-chip.is-active .fc-budget__label{color:#fff}
-.fc-budget .fc-chip.is-active .fc-budget__count{color:rgba(255,255,255,.72)}
+.fc-budget .fc-chip.is-active .fc-budget__ico{color:#fff}
+.fc-budget .fc-chip.is-active .fc-budget__count{
+  background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.24);color:#fff;
+}
 
 /* липкая лента чипсов — под шапкой (top = ЖИВАЯ высота sticky-шапки,
    S11: js/five.js пишет CSS-переменную --fc-header-h при загрузке/ресайзе;
@@ -756,8 +807,9 @@ html{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
 @media(min-width:900px){.fc-workshop__grid{grid-template-columns:5fr 7fr;gap:16px}}
 .fc-workshop__info{
   background:#FFFFFF;
-  border:1px solid #EBEBEB;
-  border-radius:16px;
+  border:1px solid rgba(0,0,0,0.04);
+  border-radius:12px;
+  box-shadow:0 3px 12px rgba(0,0,0,0.05);
   padding:24px;
   display:flex;flex-direction:column;
 }
@@ -765,7 +817,7 @@ html{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
   font:700 1.25rem/1.25 var(--font-ui);color:var(--ink);
   letter-spacing:-.02em;margin:0 0 14px;
 }
-@media(min-width:768px){.fc-workshop__title{font-size:1.375rem}}
+@media(min-width:768px){.fc-workshop__title{font-size:1.5rem}}
 .fc-workshop__badge{
   display:inline-flex;align-items:center;gap:8px;
   background:#FFFFFF;border:1px solid var(--line-strong);border-radius:999px;
@@ -773,19 +825,22 @@ html{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
   text-decoration:none;margin:0 0 18px;transition:border-color .15s;align-self:flex-start;
 }
 .fc-workshop__badge:hover{color:var(--ink);border-color:var(--ink)}
-.fc-workshop__badge svg{width:15px;height:15px;color:#FFB800;fill:#FFB800;flex:none}
+.fc-workshop__badge svg{width:15px;height:15px;color:#C9A227;fill:#C9A227;flex:none}
 .fc-workshop__row{display:flex;align-items:flex-start;gap:10px;margin:0 0 12px;font:400 .875rem/1.5 var(--font-ui);color:var(--ink)}
 .fc-workshop__row svg{width:16px;height:16px;flex:none;color:var(--ink-muted);margin-top:2px}
 .fc-workshop__note{
-  margin:16px 0 0;padding-top:16px;border-top:1px solid #EBEBEB;
+  margin:16px 0 0;padding-top:16px;border-top:1px solid rgba(0,0,0,0.05);
   font:400 .8125rem/1.55 var(--font-ui);color:var(--ink-muted);max-width:48ch;
 }
 .fc-workshop__reviews{display:flex;flex-direction:column;gap:12px}
 .fc-workshop__review{
-  margin:0;background:#FFFFFF;border:1px solid #EBEBEB;border-radius:16px;
-  padding:16px 18px;flex:1;display:flex;flex-direction:column;
+  margin:0;background:#FFFFFF;
+  border:1px solid rgba(0,0,0,0.04);
+  border-radius:12px;
+  box-shadow:0 3px 12px rgba(0,0,0,0.05);
+  padding:16px;flex:1;display:flex;flex-direction:column;
 }
-.fc-workshop__stars{margin:0 0 9px;color:#FFB800;font-size:.9375rem;letter-spacing:2px}
+.fc-workshop__stars{margin:0 0 9px;color:#C9A227;font-size:.9375rem;letter-spacing:2px}
 .fc-workshop__star--off{color:#D9D9DE}
 .fc-workshop__text{margin:0 0 10px;font:400 .875rem/1.55 var(--font-ui);color:var(--ink)}
 .fc-workshop__meta{display:flex;align-items:center;gap:10px;font:500 .8125rem var(--font-ui);color:var(--ink-muted);margin-top:auto}
@@ -874,7 +929,7 @@ html{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
   background:#fff;color:#1A1A1A;
   border:1px solid var(--line);
 }
-.quickview__badge--hit{background:#FFB800;color:#1A1A1A;text-transform:uppercase;letter-spacing:.05em}
+.quickview__badge--hit{background:#18181B;color:#FFFFFF;text-transform:uppercase;letter-spacing:.05em}
 /* информация справа */
 .quickview__info{
   padding:22px 22px 20px;overflow-y:auto;min-height:0;
@@ -1052,30 +1107,51 @@ html{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
 @media(max-width:899px) {
 .fc-carousel>*{flex-basis:72vw}
 }
-/* S10 ДЕФЕКТ 2: ПОВОДЫ — три белые карточки с эмодзи (серые градиентные
-   плиты ликвидированы): белый фон, контур 1px #EBEBEB, скругление 16px,
-   мягкий hover (тень + тёмный контур). Клик — фильтр каталога (чип
-   data-chip="ids", js/five.js) + плавный скролл к #catalog. */
-.fc-occ-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+/* S12-W2 (Претензия 4): ПОВОДЫ — полноценные белые карточки: контур #E4E4E7,
+   r16, тень 0 4px 12px; hover — лифт -2px + тень 0 8px 20px. Эмодзи из БД
+   (setting occ_card_N_emoji — данные владельца, НЕ хардкод) — в круге 44px
+   на подложке #F4F4F5. Клик — фильтр каталога (чип data-chip="ids",
+   js/five.js) + плавный скролл к #catalog. */
+.fc-occ-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:stretch}
 @media(max-width:767px){.fc-occ-grid{grid-template-columns:1fr;gap:10px}}
 .fc-occ-card{
   display:flex;align-items:center;gap:14px;
-  background:#FFFFFF;border:1px solid #EBEBEB;border-radius:16px;
-  padding:16px 18px;text-align:left;cursor:pointer;white-space:normal;
-  transition:border-color .15s,box-shadow .15s,transform .15s;
+  min-height:96px;padding:16px 18px;
+  background:#FFFFFF;border:1px solid #E4E4E7;border-radius:16px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.05);
+  text-align:left;cursor:pointer;white-space:normal;
+  transition:all .2s ease;
 }
-.fc-occ-card:hover{box-shadow:0 4px 12px rgba(0,0,0,0.05);border-color:#18181B}
+.fc-occ-card:hover{
+  transform:translateY(-2px);
+  box-shadow:0 8px 20px rgba(0,0,0,0.10);
+  border-color:#D0D5DD;
+}
 .fc-occ-card:active{transform:scale(.98)}
 .fc-occ-card:focus-visible{outline:3px solid rgba(24,24,27,.2);outline-offset:2px}
-.fc-occ-card__emoji{font-size:30px;line-height:1;flex:none}
+.fc-occ-card__emoji{
+  width:44px;height:44px;flex:none;border-radius:50%;
+  background:#F4F4F5;display:grid;place-items:center;
+  font-size:22px;line-height:1;color:#18181B;
+}
+/* S12-раунд2 (Прет. #8): SVG lucide внутри круга — 22px stroke 1.8 */
+.fc-occ-card__emoji svg{width:22px;height:22px;color:#18181B}
 .fc-occ-card__text{display:flex;flex-direction:column;gap:3px;min-width:0}
-.fc-occ-card__title{font:600 1rem/1.25 var(--font-ui);color:#1A1A1A;letter-spacing:-.01em}
-.fc-occ-card__sub{font:400 .8125rem/1.35 var(--font-ui);color:#767676}
-.fc-occ-card__count{margin-left:auto;flex:none;font:500 .75rem var(--font-ui);color:#71717A;white-space:nowrap}
+.fc-occ-card__title{font:600 .9375rem/1.25 var(--font-ui);color:#1A1A1A;letter-spacing:-.01em}
+.fc-occ-card__sub{font:400 .8125rem/1.35 var(--font-ui);color:#52525B}
+.fc-occ-card__count{
+  margin-left:auto;flex:none;
+  display:inline-flex;align-items:center;
+  background:#F4F4F5;border:1px solid #E9ECEF;border-radius:6px;
+  padding:3px 8px;
+  font:600 .75rem/1.4 var(--font-ui);color:#3F3F46;white-space:nowrap;
+}
 .fc-occ-card.is-active{background:#18181B;border-color:#18181B}
 .fc-occ-card.is-active .fc-occ-card__title{color:#fff}
 .fc-occ-card.is-active .fc-occ-card__sub{color:rgba(255,255,255,.72)}
-.fc-occ-card.is-active .fc-occ-card__count{color:rgba(255,255,255,.72)}
+.fc-occ-card.is-active .fc-occ-card__count{
+  background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.24);color:#fff;
+}
 .fc-stores{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
 .fc-store{
   background:var(--surface-subtle);border-radius:16px;padding:20px;
@@ -1086,7 +1162,7 @@ html{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
 .fc-store__title{font-weight:700;font-size:1rem;color:var(--ink);line-height:1.3}
 .fc-store__text{font-size:.875rem;color:var(--ink-muted);line-height:1.5}
 .fc-store__rating{display:flex;align-items:center;gap:6px;font-size:.8125rem;color:var(--ink-muted);margin-top:auto}
-.fc-store__rating svg{width:16px;height:16px;color:var(--amber)}
+.fc-store__rating svg{width:16px;height:16px;color:#C9A227}
 .fc-store__rating b,
 .fc-store__rating-num{font-weight:700;color:var(--ink)}
 /* S11 ЗОНА 1-5: SEO-блок доставки — компактно и аккуратно: БЕЗ серой
@@ -1095,9 +1171,10 @@ html{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
 @media(min-width:900px) {
 .fc-seo{padding:8px 0 0}
 }
+/* S12-раунд2 (Прет. 2б): SEO-заголовок — единая Playfair-лестница 600 (700 перетягивал одеяло) */
 .fc-seo__title{
   font-family:var(--font-display);
-  font-weight:500;font-size:clamp(1.5rem,2.4vw,2rem);line-height:1.15;
+  font-weight:600;font-size:clamp(1.5rem,2.4vw,2rem);line-height:1.15;
   letter-spacing:-.01em;text-transform:none;
   color:var(--ink);margin:0 0 16px;
 }
@@ -1106,8 +1183,9 @@ html{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
 .fc-faq{display:grid;gap:10px}
 .fc-faq .faq-item+.faq-item{margin-top:0}
 .faq-item{
-  background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:0;
-  transition:border-color .2s;
+  background:#fff;border:1px solid #E4E4E7;border-radius:16px;padding:0;
+  box-shadow:0 1px 2px rgba(0,0,0,.04),0 4px 12px rgba(0,0,0,.05);
+  transition:border-color .2s,box-shadow .2s;
 }
 .faq-item+.faq-item{margin-top:10px}
 .faq-item[open]{border-color:var(--pink)}
@@ -1329,16 +1407,16 @@ html{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
 }
 .order-form input::placeholder,
 .order-form textarea::placeholder{color:var(--ink-muted)}
-/* S11 ЗОНА 1-4: ПОДВАЛ СВЕТЛЫЙ И БЛАГОРОДНЫЙ — фон #F7F7F8 с тонкой линией
-   1px #EBEBEB сверху, текст графитовый #1A1A1A, вторичный #767676.
-   Прежний глухой чёрный + «белый прямоугольник карты» упразднены. */
+/* S11 ЗОНА 1-4 + S12-W2 (Претензия 5): ПОДВАЛ — самый тёмный нейтральный
+   тон страницы #EFEFF1 (трёхступенчатая иерархия: body #FFF → soft #F4F4F5 →
+   footer #EFEFF1), линия 1px #E4E4E7, текст #1A1A1A/#52525B. */
 .site-footer{
-  background:#F7F7F8;color:#767676;
-  border-top:1px solid #EBEBEB;
+  background:#EFEFF1;color:#52525B;
+  border-top:1px solid #E4E4E7;
   padding:40px 0 48px;font-size:.875rem; 
 }
-.site-footer p{color:#767676}
-.site-footer p[style]{color:#767676!important}
+.site-footer p{color:#52525B}
+.site-footer p[style]{color:#52525B!important}
 .site-footer__name{font-family:var(--font-ui);font-weight:700;font-size:1.125rem;color:#1A1A1A;margin-bottom:6px;letter-spacing:-.01em}
 .site-footer__phone{color:#1A1A1A;font-weight:700}
 .site-footer a{color:#1A1A1A}
@@ -1577,10 +1655,10 @@ html{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
 .faq-item__q::after{color:var(--ink)}
 .site-footer .fc-footer__grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1.2fr;gap:32px;align-items:start}
 .fc-footer__brand .site-footer__name{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.fc-footer__about{font-size:.875rem;line-height:1.55;color:#767676;max-width:34ch}
+.fc-footer__about{font-size:.875rem;line-height:1.55;color:#52525B;max-width:34ch}
 .fc-footer__heading{
-  font-weight:700;font-size:.8rem;text-transform:uppercase;letter-spacing:.14em;
-  color:#1A1A1A;margin:0 0 14px;
+  font-weight:700;font-size:.75rem;text-transform:uppercase;letter-spacing:.02em;
+  color:#3F3F46;margin:0 0 14px;
 }
 .fc-footer__links{list-style:none;margin:0;padding:0;display:grid;gap:8px}
 .fc-footer__links a{color:#1A1A1A}
@@ -1818,22 +1896,25 @@ body.cookie-visible{padding-bottom:188px}
 .fc-premium__card{flex:0 0 min(64vw,300px);height:clamp(380px,100vw,460px);scroll-snap-align:start}
 }
 /* S11 ЗОНА 1-4: тэглайн над подвалом — светлый (прежде — чёрная плашка,
-   сливавшаяся с тёмным футером в «глухую стену»). */
+   сливавшаяся с тёмным футером в «глухую стену»).
+   S12-W2 (Претензия 1): демотирован из «кричащего баннера» в фирменный
+   курсивный Playfair 20–26px (H1-герой забрал роль крупной типографики). */
 .fc-footer-tagline{
   background:#FFFFFF;
-  padding:clamp(36px,5vw,64px) 0 8px;
+  padding:clamp(28px,4vw,44px) 0 24px;
   text-align:center;
 }
 .fc-footer-tagline__text{
   margin:0;
-  font:600 clamp(1.5rem,3vw,2.25rem)/1.25 var(--font-ui);
-  color:#1A1A1A;letter-spacing:-.015em;text-wrap:balance; 
+  font-family:var(--font-display);font-style:italic;font-weight:500;
+  font-size:clamp(20px,2.6vw,26px);line-height:1.3;
+  color:#1A1A1A;letter-spacing:-.01em;text-wrap:balance; 
 }
 .fc-footer-tagline__text::before{
   content:"✿";
   display:block;
   font:700 .8125rem/1 var(--font-ui); 
-  color:var(--amber,#E09F3E);margin-bottom:16px;
+  color:#C9A227;margin-bottom:16px;
 }
 /* S6: плёночное зерно-оверлей удалено — стерильная чистота */
 body::after{content:none}
@@ -2029,8 +2110,11 @@ body:not(.page-checkout) #orderForm{display:grid!important}
 @media(max-width:899px) {
 #order .wrap{border-radius:20px;padding:18px 16px}
 }
+/* S12-W2 (Претензия 2): шрифтовая лестница H2 — раньше хвост-оверрайд
+   раздувал заголовки до 2.75rem/700; теперь дисциплина: Playfair 600,
+   кегль 28–32px. */
 .fc-row__title,
-.fc-premium__title{font-weight:500;font-size:clamp(2rem,3.2vw,2.75rem);line-height:1.1}
+.fc-premium__title{font-weight:600;font-size:clamp(1.75rem,2.4vw,2rem);line-height:1.1}
 .fc-row__eyebrow{font-weight:600;font-size:11px;letter-spacing:.14em;color:var(--ink-muted)}
 .fc-row__eyebrow em{font-size:11px}
 .fc-row__heading{position:relative}
@@ -2168,7 +2252,6 @@ textarea{font-family:inherit}
 .cart-upsell__title{letter-spacing:.14em}
 .fc-row__eyebrow,
 .fc-manifesto__kicker,
-.fc-footer__heading,
 .fc-premium__price-label,
 .cart-upsell__title,
 .product-page__category{
@@ -2176,6 +2259,11 @@ textarea{font-family:inherit}
   letter-spacing:.14em;
   text-transform:uppercase;
 }
+/* S12-раунд2: .fc-footer__heading УДАЛЁН из группы выше — font-шортханд
+   (11px/600) перебивал dedicated-правило 12px/700/#3F3F46 (Прет. раунда 2).
+   Специфичность .site-footer .fc-footer__heading (0,2,0) страхует и от
+   каскада .site-footer p (0,1,1), тянувшего цвет в muted. */
+.site-footer .fc-footer__heading{font-family:var(--font-ui);font-weight:700;font-size:.75rem;color:#3F3F46}
 .fc-row__eyebrow .fc-row__eyebrow-tail{
   font:600 11px/1.4 var(--font-ui);
   letter-spacing:.14em;
@@ -2291,7 +2379,7 @@ html.js-ready details.fc-seo__more.is-closing > .faq-item__a-wrap{
 }
 .fc-manifesto__content{padding:clamp(48px,7vw,96px) clamp(20px,9vw,120px)}
 .fc-premium .wrap{padding-top:clamp(48px,6vw,96px);padding-bottom:clamp(48px,6vw,96px)}
-.fc-footer-tagline{padding:clamp(48px,7vw,96px) 0 16px}
+.fc-footer-tagline{padding:clamp(28px,4vw,44px) 0 24px}
 .fc-editorial{padding:32px 0 24px}
 @media(max-width:899px) {
 .fc-editorial{padding:20px 0 16px}
@@ -2477,7 +2565,7 @@ body.page-product.cookie-visible{padding-bottom:0}
 }
 .fc-review__stars{
   margin:0;display:flex;gap:2px;
-  color:var(--amber);font-size:.875rem;line-height:1;
+  color:#C9A227;font-size:.875rem;line-height:1;
   letter-spacing:.08em;
 }
 .fc-review__star--off{color:var(--line)}
@@ -2866,7 +2954,10 @@ body.page-checkout.cookie-visible.nf-cookie-pill{padding-bottom:0}
 }
 #zoneCheckResult{white-space:normal!important;max-width:200px;line-height:1.3}
 
-.section--faq{padding-top:var(--s-5)}
+/* S12: padding-top:var(--s-5) УДАЛЁН — переменная --s-5 в five.css не
+   определена (жила в отключённом style.css), объявление вычислялось
+   в 0 и съедало верхний отступ секции FAQ; отступ теперь задаёт
+   .fc-section--soft{padding:48px 0} на самой секции. */
 .product-page__cta{scroll-margin-bottom:80px}
 .product-page__cta-spacer{display:none}
 .btn--accent.product-page__cta--sticky{position:fixed;left:12px;right:12px;bottom:calc(70px + env(safe-area-inset-bottom));z-index:40;box-shadow:0 10px 30px -12px rgba(43,45,47,.5)}
@@ -2996,3 +3087,80 @@ html.motion-lite .lightbox__backdrop{background:rgba(43,45,47,.88); backdrop-fil
 .order-form__payment,.order-form__nested,.order-form fieldset{min-width:0}
 .order-form__field input,.order-form__field select,.order-form__field textarea{width:100%;max-width:100%}
 .order-form__datechips{max-width:100%;flex-wrap:wrap}
+
+/* ================================================================
+   S12 (Task ID 1, Субагент А «Строитель»): КОНЕЦ ФАЙЛА — каскад-стражи.
+   Правила ниже живут ПОСЛЕДНИМИ, чтобы перебивать ранние хвостовые
+   оверрайды (специфичность/порядок) без !important.
+   ================================================================ */
+
+/* S12-1: «Оформить заказ» в корзине-дровере (#cartCheckout) — та же
+   графитовая тактильная кнопка, что и «В корзину» в карточке:
+   #18181B / #fff, r10, 44px, тень 0 2px 6px, hover #27272A + лифт.
+   Перебивает пилюлю .btn{border-radius:999px;min-height:52px} и
+   .btn:hover{background:#000} хвостом файла. */
+#cartCheckout,
+.cart-panel__foot .btn--accent{
+  background:#18181B;color:#FFFFFF;
+  border:none;border-radius:10px;
+  height:44px;min-height:44px;padding:0 18px;
+  font:600 .875rem/1 var(--font-ui);
+  box-shadow:0 2px 6px rgba(24,24,27,0.15);
+  transition:all .2s ease;
+}
+#cartCheckout:hover:not(:disabled),
+.cart-panel__foot .btn--accent:hover:not(:disabled){
+  background:#27272A;color:#fff;
+  transform:translateY(-1px);
+  box-shadow:0 4px 12px rgba(24,24,27,0.25);
+}
+#cartCheckout:active{transform:scale(.98)}
+#cartCheckout:disabled{opacity:.55;cursor:default;transform:none}
+#cartCheckout:focus-visible{outline:3px solid rgba(24,24,27,.35);outline-offset:2px}
+
+/* S12-2: повод-карточки — каскад-страж (S12-W2, Претензия 4: базовые
+   правила выше уже несут новую тактильную систему — белый фон + тень;
+   этот хвост лишь дублирует hover, чтобы ранние хвостовые оверрайды
+   его не душили). */
+.fc-occ-card:hover{
+  transform:translateY(-2px);
+  box-shadow:0 8px 20px rgba(0,0,0,0.10);
+  border-color:#D0D5DD;
+}
+.fc-occ-card.is-active{background:#18181B;border-color:#18181B}
+.fc-occ-card.is-active .fc-occ-card__title{color:#fff}
+.fc-occ-card.is-active .fc-occ-card__sub{color:rgba(255,255,255,.72)}
+.fc-occ-card.is-active .fc-occ-card__count{
+  background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.24);color:#fff;
+}
+
+/* S12-3: нейтрализация браузерного дефолта <button> внутри витрины —
+   страховка для всех кнопочных чипов (плашки/поводы уже несут свои
+   рамки; это защита от случайных голых <button>). */
+button.fc-chip{font-family:var(--font-ui)}
+
+/* ================================================================
+   S12-W2 (Task ID 3) — ПРАВКИ ПО VETO_REJECT ИНКВИЗИТОРА, хвост файла.
+   Правила ниже живут ПОСЛЕДНИМИ: перебивают ранние хвостовые оверрайды
+   без !important (шрифтовая лестница + Playfair-семантика).
+   ================================================================ */
+
+/* Претензия 2 (лестница H2): Playfair Display 600 — фирменный serif
+   заголовков; кегль: .fc-row__title 28–32px (clamp выше, ~2114),
+   мастерская/FAQ — 32px десктоп / 22px мобайл. Специфичность
+   .fc-workshop .fc-workshop__title / .section--faq .section-title
+   (0,2,0) перебивает и базовый font-шорткат, и мобайл-кламп
+   .fc-section h2 (0,1,1) из ~2290. */
+.fc-row__title{font-family:var(--font-display);font-weight:600}
+.fc-workshop .fc-workshop__title,
+.section--faq .section-title{
+  font-family:var(--font-display);font-weight:600;
+  font-size:2rem;line-height:1.2;letter-spacing:-.01em;
+}
+@media(max-width:899px){
+  .fc-workshop .fc-workshop__title,
+  .section--faq .section-title{font-size:1.375rem}
+}
+/* .fc-seo__title / .cart-panel__title / .product-page__name уже на
+   var(--font-display) — стали Playfair автоматически (проверено
+   computed styles ниже в верификации). */
