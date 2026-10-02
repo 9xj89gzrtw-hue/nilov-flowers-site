@@ -1120,10 +1120,24 @@ body.no-scroll,html.no-scroll{overflow:hidden}
   #order .wrap{border-radius:16px;padding:18px 16px}
 }
 #order.fc-section--subtle{background:var(--surface-soft)}
+/* S17 (мобайл-директива владельца): гарантия отсутствия горизонтального
+   скролла 360–390px — overflow-x:clip НЕ создаёт scroll-контейнер и НЕ
+   ломает position:sticky чипсов (в отличие от overflow-x:hidden);
+   горизонтальные списки (чипсы, бейджи доверия) уже живут в контейнерах
+   с overflow-x:auto + -webkit-overflow-scrolling:touch (§6–7) */
+html,body{overflow-x:clip}
 body:not(.page-checkout) #orderEmptyState{display:none!important}
 body:not(.page-checkout) #orderForm{display:grid!important}
 body.page-checkout .fc-search{display:none}
-body.page-checkout .mnav{display:none}
+/* S17 (мобайл-директива владельца, дословно): нижний бар НЕ существует на
+   чекауте — жёсткое правило тремя селекторами с !important против любых
+   специфичностей/inline-стилей; «Подтвердить заказ» ничем не перекрыт */
+body.page-checkout .mnav,
+.page-checkout .mnav,
+.checkout-page .mnav{display:none !important}
+/* S17: внизу чекаута — только чистый отступ с учётом iPhone-полосы */
+.checkout-layout,
+.order-form{padding-bottom:calc(40px + env(safe-area-inset-bottom,20px)) !important}
 @media(max-width:820px){
   body.page-checkout{padding-bottom:0}
   body.page-checkout.cookie-visible{padding-bottom:calc(54px + env(safe-area-inset-bottom))}
@@ -1137,6 +1151,16 @@ body.page-checkout .mnav{display:none}
   .checkout-layout .checkout-aside{order:0}
 }
 .checkout-aside{position:sticky;top:calc(var(--fc-header-h,70px) + 16px)}
+/* S17 (КОРНЕВОЙ БАГ МОБИЛЬНОГО ЧЕКАУТА): Chrome считает containing block
+   sticky-grid-элемента ВСЕМ грид-контейнером (crbug.com/694071), а не его
+   row-областью — на мобильной одноколоночной раскладке сводка заказа
+   прилипала к top:74px и ЗАКРЫВАЛА собой поля шагов 1–5 и кнопку
+   «Подтвердить заказ» (поля были нечитаемы, тапы уходили в сводку).
+   Фикс: на одноколоночной раскладке сводка — обычный статичный блок
+   (order:-1, скроллится естественно); sticky остаётся десктоп-удобством. */
+@media(max-width:1023px){
+  .checkout-aside{position:static}
+}
 .checkout-summary-section{padding-top:8px}
 .checkout-summary{
   background:#fff;border:1.5px solid var(--line);border-radius:16px;
@@ -1257,8 +1281,15 @@ body.page-checkout .mnav{display:none}
   box-shadow:0 0 0 3px rgba(28,26,30,.08);
 }
 .order-form__field select{min-width:0;padding-right:36px}
+/* S17 (мобайл-директива владельца, дословно): красная рамка незаполненного
+   поля — #EF4444 (вместо приглушённого --err), распространена на select/
+   textarea — район и дата тоже подсвечиваются рамкой */
 .order-form__field input.order-form__input--error,
-.order-form__field input.order-form__input--error:focus{border-color:var(--err)}
+.order-form__field select.order-form__input--error,
+.order-form__field textarea.order-form__input--error,
+.order-form__field input.order-form__input--error:focus,
+.order-form__field select.order-form__input--error:focus,
+.order-form__field textarea.order-form__input--error:focus{border-color:#EF4444}
 .order-form__field--muted label{color:var(--ink-muted)}
 .order-form__field--muted input{opacity:.55;cursor:not-allowed;background:var(--surface-milk)}
 .order-form__field--muted input::placeholder{color:var(--ink-muted)}
@@ -1295,6 +1326,22 @@ body.page-checkout .mnav{display:none}
 .order-form__status{background:var(--surface-warm);border-radius:12px}
 .order-form input::placeholder,.order-form textarea::placeholder{color:var(--ink-muted)}
 .order-form__datechips{max-width:100%;flex-wrap:wrap}
+/* S17 (мобайл-директива владельца, дословно): защита от автозума iOS Safari —
+   при фокусе поля < 16px iPhone неконтролируемо зумит вьюпорт и ломает
+   верстку; на ≤768px ВСЕ поля ввода строго 16px */
+@media (max-width: 768px) {
+  input[type="text"],
+  input[type="tel"],
+  input[type="email"],
+  input[type="date"],
+  input[type="time"],
+  select,
+  textarea {
+    font-size: 16px !important; /* Защита от автозума iOS Safari */
+    box-sizing: border-box !important;
+    max-width: 100% !important;
+  }
+}
 /* honeypot */
 .hp-field{
   position:absolute!important;left:-9999px!important;top:auto!important;
@@ -1352,6 +1399,17 @@ body.page-checkout .mnav{display:none}
 /* узкие экраны: подписи длинные («По QR-коду при получении») — колонку
    в столбик, карточки полной ширины */
 @media(max-width:719px){.opay{grid-template-columns:1fr}}
+/* S17 (мобайл-директива владельца, дословно): <640px — вертикальный список
+   карточек оплаты: flex-столбик, gap 8px, карточки 100% ширины. Тап по любой
+   точке label.opay__opt переключает скрытый radio (input position:absolute;
+   opacity:0 — уже в разметке S16), активная = #18181B/белый/#D4D4D8 */
+@media(max-width:639px){
+  .opay{display:flex;flex-direction:column;gap:8px;width:100%}
+  .opay__opt{width:100%}
+  .opay__opt>span{min-height:56px}
+}
+/* S17: способ оплаты не выбран — рамки карточек красные (#EF4444) */
+.opay.is-invalid .opay__opt>span{border-color:#EF4444}
 /* кнопка «Подтвердить заказ» */
 .order-form__submit{
   width:100%;min-height:52px;border-radius:12px;

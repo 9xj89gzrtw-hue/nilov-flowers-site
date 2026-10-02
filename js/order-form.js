@@ -40,6 +40,13 @@
   /* Критик покупатель B1: телефон получателя валидируется и на клиенте */
   const recPhoneInput = document.getElementById('orderRecipientPhone');
   const recPhoneError = document.getElementById('orderRecipientPhoneError');
+  /* S17 (мобайл-директива владельца): Район доставки / Дата / Способ оплаты —
+           обязательные поля чекаута; ошибки подсвечиваются красной рамкой #EF4444
+           и чистятся вводом, как у остальных полей */
+  const deliveryDateInput = document.getElementById('orderDeliveryDate');
+  const deliveryDateError = document.getElementById('orderDeliveryDateError');
+  const opayGroup = document.querySelector('.opay');
+  const payRadios = form.querySelectorAll('input[name="payment_pref"]');
 
   const nameError = document.getElementById('orderNameError');
   const phoneError = document.getElementById('orderPhoneError');
@@ -184,7 +191,15 @@
       return;
     }
     var top = el.getBoundingClientRect().top + (window.scrollY || window.pageYOffset) - headerScrollPadding();
-    window.scrollTo({ top: Math.max(0, top), behavior: scrollBehavior() });
+    /* S17 (мобайл-директива владельца, дословно): первое ошибочное поле — в
+       ЦЕНТР экрана смартфона (scrollIntoView smooth/center; scroll-padding
+       html удерживает sticky-хедер выше цели). Старый расчёт — фолбэк для
+       старых браузеров без scrollIntoView-options. */
+    try {
+      el.scrollIntoView({ behavior: scrollBehavior(), block: 'center' });
+    } catch (e) {
+      window.scrollTo({ top: Math.max(0, top), behavior: scrollBehavior() });
+    }
     setTimeout(focusIt, reducedMotion() ? 0 : 420);
     setTimeout(ensureVisible, 900); /* W106-E1: мобильная страховка кадра */
   }
@@ -231,6 +246,31 @@
   const FIELD_PAIRS = [[nameInput, nameError], [phoneInput, phoneError], [emailInput, emailError],
     [deliveryAddressInput, deliveryAddressError], [pdConsentInput, pdConsentError],
     [recPhoneInput, recPhoneError]];
+  /* S17: район и дата — в общий массив очистки ошибок (ensureErrorNode
+     создаёт span#orderDeliveryZoneError при первом показе) */
+  if (deliveryZoneInput) FIELD_PAIRS.push([deliveryZoneInput, document.getElementById('orderDeliveryZoneError')]);
+  if (deliveryDateInput) FIELD_PAIRS.push([deliveryDateInput, deliveryDateError]);
+
+  /* S17: способ оплаты — ошибка ГРУППЫ (radio спрятан в карточке, подпись
+     ошибки живёт ПОД карточками .opay, рамки красит .opay.is-invalid) */
+  const payGroupError = (function () {
+    if (!opayGroup) return null;
+    let span = document.getElementById('orderPayError');
+    if (!span) {
+      span = document.createElement('span');
+      span.className = 'order-form__error';
+      span.id = 'orderPayError';
+      span.setAttribute('aria-live', 'polite');
+      opayGroup.insertAdjacentElement('afterend', span);
+    }
+    return span;
+  })();
+  payRadios.forEach(function (r) {
+    r.addEventListener('change', function () {
+      if (opayGroup) opayGroup.classList.remove('is-invalid');
+      if (payGroupError) payGroupError.textContent = '';
+    });
+  });
 
   function ensureErrorNode(inputEl) {
     let errEl = document.getElementById(inputEl.id + 'Error');
@@ -353,6 +393,30 @@
     if (recPhoneInput && recPhoneInput.value.trim() && !PHONE_RE.test(recPhoneInput.value.trim())) {
       markInvalid(recPhoneInput, recPhoneError, 'Введите корректный телефон получателя — например, +7 (999) 123-45-67');
       firstInvalid.push(recPhoneInput); valid = false;
+    }
+
+    /* S17 (мобайл-директива владельца): район доставки обязателен — select
+       всегда несёт значение (самовывоз/первый район по умолчанию), проверка
+       защищает от пустого состояния (нет зон/сломанный DOM) */
+    if (deliveryZoneInput && deliveryZoneInput.value === '') {
+      markInvalid(deliveryZoneInput, null, 'Выберите район доставки');
+      firstInvalid.push(deliveryZoneInput); valid = false;
+    }
+
+    /* S17: дата доставки обязательна (поле печатается только при включённых
+       слотах feature_delivery_slots) */
+    if (deliveryDateInput && !deliveryDateInput.value) {
+      markInvalid(deliveryDateInput, deliveryDateError, 'Выберите дату доставки — сегодня или завтра можно кнопками выше');
+      firstInvalid.push(deliveryDateInput); valid = false;
+    }
+
+    /* S17: способ оплаты обязателен — по умолчанию СБП checked; защита от
+       пустого состояния: красные рамки карточек + текст под группой */
+    if (payRadios.length && !form.querySelector('input[name="payment_pref"]:checked')) {
+      if (opayGroup) opayGroup.classList.add('is-invalid');
+      if (payGroupError) payGroupError.textContent = 'Выберите способ оплаты';
+      if (opayGroup) firstInvalid.push(opayGroup);
+      valid = false;
     }
 
     /* Критик-мобайл (баг 2): на 390px поля с ошибками ~1200px выше кнопки —

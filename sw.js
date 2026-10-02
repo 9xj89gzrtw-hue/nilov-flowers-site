@@ -2,7 +2,7 @@
 /* S14: обязательный bump — у части посетителей в page-cache висели СТАРЫЕ
    HTML+CSS (каркасные версии до S13: чёрные плашки поверх чипсов и пр.);
    новая версия выметает pages-* / static-* старых релизов при activate. */
-const VERSION = 's16';
+const VERSION = 's17';
 const STATIC_CACHE = `static-${VERSION}`;
 const PAGE_CACHE = `pages-${VERSION}`;
 const OFFLINE_URL = '/offline.html';
