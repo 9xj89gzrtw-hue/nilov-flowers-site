@@ -1028,3 +1028,11 @@ Stage Summary:
   плашка «От 7 000 ₽» = 1 букет (7 200 ₽ флагман).
 - Побочно вылечен доисторический 2px h-scroll мобильного чекаута (content-box полей).
 - Миграция S16 идемпотентна и неубивающая (guard 4800 + try/catch), сид и прод сходятся к 7 200.
+- ДЕПЛОЙ: commit ad36183 → push main → GitHub Actions run 36962077228 «Deploy to SpaceWeb» — completed success (с первой попытки, SSH-флейков не было).
+- ПРОД-ВЕРИФИКАЦИЯ (flowers.interfood-catering.ru): HTTP 200; preload = /img/products/gen9.jpg?v=… === src <img> hero-баннера (match: true), hero-ov1.webp в preload НЕТ (остался только в og:image/JSON-LD — метаданные соц-превью, браузером не запрашиваются, консоль чистая); плашка «От 7 000 ₽ 1 букет» (low 11 / mid 6 / high 1 / hit 4), клик по плашке → ровно 1 видимая карточка = «Авторская композиция в шляпной коробке» 7 200 ₽; карточек в каталоге 16.
+- ПРОД-ЧЕКАУТ (с товаром в корзине): .opay = 3 колонки 257px / высота 90 / gap 12; активная «СБП»: bg rgb(24,24,27), заголовок rgb(255,255,255) 14px/700, подпись rgb(212,212,216); titleInsideCard=true, subInsideCard=true; консоль 0, page errors 0.
+- ПРОД-МОБАЙЛ 390: .opay = 1 колонка 334px; hScroll 390 (= viewport, 0px переполнения); поля border-box, inputRight 362.
+- Скрины прода: s16-PROD-checkout-pay-desktop.png, s16-PROD-checkout-mobile-full.png, s16-PROD-home-plashka.png; VLM прод-чекаута: 3 карточки в ряд, единые рамки, чёрная активная с белым «СБП», чёрного-на-чёрном нет, прочих дефектов нет.
+
+Stage Summary (прод):
+- Все 3 дефекта владельца подтверждены закрытыми НА БОЕВОМ ДОМЕНЕ инструментально (computed/DOM) и визуально (VLM).
