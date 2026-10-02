@@ -1532,15 +1532,9 @@ echo json_encode([
   <?php /* W96 (5cv): блок отзывов Яндекс Карт убран по требованию заказчика (отзывов на сайте нет). */ ?>
 </main>
 
-<?php /* W103 (F1): тэглайн футера — крупный Playfair-курсив над колонками.
-   Рендерим ПЕРЕД footer.php (partial вне скоупа волны F1): ink-фон блока
-   сливается с .site-footer в единую тёмную зону. */ ?>
-<?php $footerTagline = trim(setting('footer_tagline', 'Свежие цветы — с утра к вашей двери')); ?>
-<?php if ($footerTagline !== ''): ?>
-<section class="fc-footer-tagline" aria-label="О магазине">
-  <div class="wrap"><p class="fc-footer-tagline__text reveal"><?= e($footerTagline) ?></p></div>
-</section>
-<?php endif; ?>
+<?php /* S14: тэглайн-курсив над подвалом УДАЛЁН по директиве владельца —
+   переход FAQ → подвал строгий и чистый, без висящих в вакууме строчек
+   (ключ footer_tagline в БД не трогаем — админ-поле живёт своей жизнью). */ ?>
 
 <?php require __DIR__ . '/partials/footer.php'; ?>
 </body>

@@ -1,5 +1,8 @@
 /* Service worker — Nilov Flowers. VERSION менять при каждом деплое. */
-const VERSION = 's6a'; /* S6-a: стерильный 5cv — белый #FFFFFF/#F7F7F8/#1A1A1A, Inter, чипы 5cv, карточка 6 строк, 4 бейджа доверия, топбар, без стекла/пульса/зерна */
+/* S14: обязательный bump — у части посетителей в page-cache висели СТАРЫЕ
+   HTML+CSS (каркасные версии до S13: чёрные плашки поверх чипсов и пр.);
+   новая версия выметает pages-* / static-* старых релизов при activate. */
+const VERSION = 's14';
 const STATIC_CACHE = `static-${VERSION}`;
 const PAGE_CACHE = `pages-${VERSION}`;
 const OFFLINE_URL = '/offline.html';

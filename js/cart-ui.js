@@ -679,6 +679,10 @@
 
   function applyOpenState() {
     document.body.classList.add('no-scroll');
+    /* S14: маркер открытой корзины — CSS прячет плавающий виджет связи
+       (mnav с кнопкой WhatsApp) с display:none !important, чтобы кнопка
+       «Оформить заказ» была свободна от перекрытий */
+    document.body.classList.add('has-cart-open');
     /* a11y-критик S2: body.overflow не блокирует window-scroll на iOS/Safari — вешаем на html */
     document.documentElement.classList.add('no-scroll');
     toggle.setAttribute('aria-expanded', 'true');
@@ -759,6 +763,7 @@
       r.style.removeProperty('--ci');
     });
     document.body.classList.remove('no-scroll');
+    document.body.classList.remove('has-cart-open');
     document.documentElement.classList.remove('no-scroll');
     (panel._inertEls || []).forEach(function (el) { el.inert = false; });
     panel._inertEls = null;

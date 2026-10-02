@@ -377,10 +377,20 @@ button.fc-chip{font-family:var(--font-ui)}
 /* ============ 8. КАТАЛОГ: сетка ============ */
 #catalog.fc-section{padding:2px 0 36px}
 @media(min-width:900px){#catalog.fc-section{padding:8px 0 40px}}
-/* монолитная сетка 5cv: 2 колонки мобайл → 3 → 4 десктоп */
+/* S14 (директива владельца): коммерческая раскладка без дыр — десктоп ≥1024
+   auto-fill minmax(260px,1fr) / gap 24px; карточки равномерно заполняют
+   ширину контейнера. Зона каталога (плашки+чипы+сетка) расширена до 1448px
+   с боковым паддингом 12px: при вьюпорте ≥1436px (с учётом скроллбара)
+   выходит ровно 5 колонок — 10 букетов = 2 полных ряда, без сиротливых
+   карточек и провалов справа; на широких экранах потолок держит те же
+   5 колонок (6+4 при 1920 не появляется). */
+@media(min-width:1024px){
+  .fc-budget .wrap,.fc-chips-bar .wrap,.fc-catalog .wrap{max-width:1448px;padding-left:12px;padding-right:12px}
+}
+/* монолитная сетка 5cv: 2 колонки мобайл → 3 → auto-fill десктоп */
 .catalog__grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 @media(min-width:768px){.catalog__grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}}
-@media(min-width:1024px){.catalog__grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:20px}}
+@media(min-width:1024px){.catalog__grid{grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:24px}}
 @media(max-width:899px){
   #catalog .fc-row__head{margin-bottom:6px}
   #catalog .fc-row__eyebrow,
@@ -815,24 +825,7 @@ html.js-ready details.fc-seo__more.is-closing > .faq-item__a-wrap{
 .fc-journal__link{font-weight:700;font-size:.875rem;color:var(--ink);text-decoration:underline;text-decoration-color:var(--amber);text-decoration-thickness:2px;text-underline-offset:4px}
 .fc-journal__link:hover{color:var(--ink);text-decoration-thickness:3px}
 
-/* ============ 16. ТЭГЛАЙН НАД ПОДВАЛОМ ============ */
-.fc-footer-tagline{
-  background:#FFFFFF;
-  padding:clamp(28px,4vw,44px) 0 24px;
-  text-align:center;
-}
-.fc-footer-tagline__text{
-  margin:0;
-  font-family:var(--font-display);font-style:italic;font-weight:500;
-  font-size:clamp(20px,2.6vw,26px);line-height:1.3;
-  color:#1A1A1A;letter-spacing:-.01em;text-wrap:balance;
-}
-.fc-footer-tagline__text::before{
-  content:"✿";
-  display:block;
-  font:700 .8125rem/1 var(--font-ui);
-  color:var(--gold);margin-bottom:16px;
-}
+/* ============ 16. (S14: тэглайн-курсив над подвалом УДАЛЁН по директиве владельца — FAQ → подвал напрямую) ============ */
 
 /* ============ 17. ПОДВАЛ (#EEEEF0, ровные колонки) ============ */
 .site-footer{
@@ -894,7 +887,7 @@ html.js-ready details.fc-seo__more.is-closing > .faq-item__a-wrap{
 
 /* ============ 18. МОБИЛЬНАЯ ПАНЕЛЬ (mnav) ============ */
 .mnav{
-  position:fixed;left:0;right:0;bottom:0;z-index:60;
+  position:fixed;left:0;right:0;bottom:0;z-index:90;
   display:none;grid-template-columns:repeat(4,1fr);gap:2px;
   background:#FFFFFF;
   border-top:1px solid var(--line);
@@ -916,6 +909,9 @@ html.js-ready details.fc-seo__more.is-closing > .faq-item__a-wrap{
 .mnav__wa{color:#1FAF54!important}
 .mnav__wa svg{width:22px;height:22px}
 .mnav__search{color:var(--ink-muted)}
+/* S14: при открытой корзине плавающий виджет связи (WA/звонок) ПРИНУДИТЕЛЬНО
+   скрыт — не перекрывает кнопку «Оформить заказ» (класс вешает cart-ui.js) */
+body.has-cart-open .mnav{display:none!important}
 @media(max-width:899px){
   .mnav{display:grid}
 }
@@ -938,16 +934,24 @@ html.js-ready details.fc-seo__more.is-closing > .faq-item__a-wrap{
 .pill{border-radius:999px}
 .card-btn{background:var(--ink);color:#fff;border-radius:16px}
 
-/* ============ 20. КОРЗИНА-DRAWER ============ */
-.cart-panel{position:fixed;inset:0;z-index:100;display:grid;pointer-events:none}
+/* ============ 20. КОРЗИНА-DRAWER (S14: z 998/999 — поверх всего витринного слоя;
+   mnav-виджет связи (z 90) при открытой корзине скрыт display:none) ============ */
+.cart-panel{position:fixed;inset:0;z-index:999;display:grid;pointer-events:none}
 .cart-panel[hidden]{display:none}
-.cart-panel__backdrop{background:rgba(43,45,47,.45);backdrop-filter:blur(3px);pointer-events:none;transition:opacity .24s cubic-bezier(.4,0,.2,1)}
+/* S14: плотный полупрозрачный оверлей во весь экран — каталог под корзиной
+   не просвечивает (rgba(0,0,0,.5) + blur 4px, z 998) */
+.cart-panel__backdrop{
+  position:absolute;inset:0;z-index:998;
+  background:rgba(0,0,0,0.5);
+  -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);
+  pointer-events:none;transition:opacity .24s cubic-bezier(.4,0,.2,1);
+}
 .cart-panel:not([hidden]){pointer-events:auto}
 .cart-panel:not([hidden]) .cart-panel__backdrop{pointer-events:auto}
 .cart-panel__drawer{
-  position:absolute;top:0;right:0;bottom:0;width:min(420px,94vw);
-  background:#fff;display:flex;flex-direction:column;
-  box-shadow:-20px 0 60px rgba(43,45,47,.25);
+  position:absolute;top:0;right:0;bottom:0;width:min(420px,94vw);z-index:999;
+  background:#FFFFFF;display:flex;flex-direction:column;
+  box-shadow:-4px 0 24px rgba(0,0,0,0.15);
   border-radius:16px 0 0 16px;
   transition:transform .32s cubic-bezier(.4,0,.2,1);
 }
@@ -955,7 +959,11 @@ html.js-ready details.fc-seo__more.is-closing > .faq-item__a-wrap{
 .cart-panel__title{font-family:var(--font-display);font-weight:600;font-size:1.3rem;letter-spacing:-.01em}
 .cart-panel__close{border:none;background:none;font-size:1.6rem;cursor:pointer;color:var(--ink-soft);min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;border-radius:12px;margin:-8px -8px -8px 0;transition:color .15s}
 .cart-panel__close:hover{color:var(--ink)}
-.cart-panel__items{flex:1;overflow-y:auto;padding:16px 24px;display:grid;gap:14px;align-content:start}
+/* S14 КРИТИЧЕСКИЙ ФИКС: flex-элементы колонки drawer'а имели implicit
+   min-height:auto — при высоком контенте (товар+допы+апселл+промо) футер с
+   кнопкой «Оформить заказ» уезжал ЗА НИЖНИЙ КРАЙ экрана. min-height:0
+   возвращает скролл в .cart-panel__items, кнопка всегда видна в футере. */
+.cart-panel__items{flex:1 1 0;min-height:0;overflow-y:auto;padding:16px 24px;display:grid;gap:14px;align-content:start}
 .cart-panel__empty{padding:24px;color:var(--ink-soft);text-align:center}
 .cart-panel__foot{border-top:1px solid var(--line);padding:18px 24px;display:grid;gap:10px}
 .cart-panel__total{font-weight:700;font-size:1rem}
@@ -1029,7 +1037,9 @@ html.js-ready details.fc-seo__more.is-closing > .faq-item__a-wrap{
 .cart-extra__text textarea{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:9px 12px;font:400 .88rem/1.4 var(--font-ui);color:var(--ink);resize:vertical;min-height:58px;background:var(--surface-milk)}
 .cart-extra__text textarea:focus{outline:none;border-color:var(--graphite)}
 /* апселл в корзине */
-.cart-upsell{border-top:1px solid var(--line);padding:14px 24px;background:var(--bg)}
+/* S14: апселл — скроллируемая зона с потолком (min-height:0 в flex-колонке
+   drawer'а + max-height, иначе длинный список допов выталкивал футер) */
+.cart-upsell{border-top:1px solid var(--line);padding:14px 24px;background:var(--bg);min-height:0;max-height:38vh;overflow-y:auto}
 .cart-upsell__title{font-size:.78rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:10px}
 .cart-upsell__items{display:grid;gap:10px}
 .cart-upsell-item{display:grid;grid-template-columns:48px 1fr auto;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px}
@@ -1038,13 +1048,14 @@ html.js-ready details.fc-seo__more.is-closing > .faq-item__a-wrap{
 .cart-upsell-item__price{font-size:.78rem;color:var(--ink-soft)}
 .cart-upsell-item__add{width:44px;height:44px;border-radius:50%;border:none;background:var(--ink);color:#fff;font-size:1.1rem;cursor:pointer;display:grid;place-items:center;transition:transform .15s,background .15s}
 .cart-upsell-item__add:hover{background:#000;transform:scale(1.08)}
-/* «Оформить заказ» в drawer — та же графитовая кнопка, что «В корзину» */
+/* «Оформить заказ» в drawer — крупная графитовая кнопка 48px (S14),
+   свободная от любых перекрытий (mnav скрыт, тост z 1000 выше корзины) */
 #cartCheckout,
 .cart-panel__foot .btn--accent{
   background:#18181B;color:#FFFFFF;
   border:none;border-radius:10px;
-  height:44px;min-height:44px;padding:0 18px;
-  font:600 .875rem/1 var(--font-ui);
+  height:48px;min-height:48px;padding:0 18px;
+  font:600 .9375rem/1 var(--font-ui);
   box-shadow:0 2px 6px rgba(24,24,27,0.15);
   transition:background .2s ease,box-shadow .2s ease,transform .2s ease;
 }
@@ -1057,10 +1068,11 @@ html.js-ready details.fc-seo__more.is-closing > .faq-item__a-wrap{
 #cartCheckout:active{transform:scale(.98)}
 #cartCheckout:disabled{opacity:.55;cursor:default;transform:none}
 #cartCheckout:focus-visible{outline:3px solid rgba(24,24,27,.35);outline-offset:2px}
-/* тост «добавлено в корзину» */
+/* тост «добавлено в корзину» (S14: z 1000 — выше корзины-999, т.к. показывается
+   и при открытом drawer) */
 #cartToast{
   position:fixed;left:50%;bottom:calc(66px + env(safe-area-inset-bottom));
-  transform:translate(-50%,8px);z-index:130;
+  transform:translate(-50%,8px);z-index:1000;
   background:var(--ink);color:#fff;border-radius:999px;
   padding:12px 22px;font:600 .875rem var(--font-ui);
   box-shadow:0 14px 40px -14px rgba(28,26,30,.6);
