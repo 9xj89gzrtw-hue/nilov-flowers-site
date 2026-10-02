@@ -146,6 +146,30 @@
   интерактив: плашки/чипы/сброс/поиск; category 5/5 + PDP 3/3 img;
   h-scroll нет (390px).
 
+## Сессия S15 (02.10.2026, ONE-SHOT MASTER OVERHAUL) — сделано
+- **Каталог 16 букетов** (деплой 9fa667d + хотфикс fb2e095, прод верифицирован):
+  db.php one-shot маркер s15_catalog16_applied: +6 букетов по существующим фото
+  (25 роз Эквадор 3900/хит, Французские кружевные розы 4500/премиум, Монобукет
+  белых гортензий 3200, Облако розовых пионов 5800/хит, Авторская композиция
+  в шляпной коробке 4800, Нежный комплимент с эвкалиптом 2400); is_hit=1 ровно 4.
+  ВАЖНО (урок прод-инцидента 500): category_id в миграциях резолвится ТОЛЬКО
+  по имени (прод-категории с чужими id ломают FK), весь S15-блок — try/catch
+  Throwable: миграция не имеет права ронять витрину.
+- **Сетка five.css**: ≥1024 repeat(4,1fr)!important gap 20; ≤640 repeat(2,1fr)!
+  important gap 10; зона каталога — стандартный wrap 1200px (1448-зона снята).
+- **Новые секции** (тексты — settings, тумблеры в админке): hero-баннер
+  #F4F4F6 r16 240/160px (ключи hero_banner_*), подписка (sub_*, нативный
+  <dialog> + js/subscribe.js → WhatsApp), B2B (b2b_*, тёмная плашка),
+  гарантия (fresh_*, 3 колонки lucide SVG).
+- **Корзина**: трёхсоставной flexbox — обёртка #cartPanel.cart-root (hidden
+  только) > .cart-backdrop z998 + aside.cart-panel (fixed right/top z999
+  flex-column 100vh) > __header/__body(скролл)/__footer(промо+итог+48px CTA);
+  cart-ui.js ищет '.cart-panel' (не __drawer); попап города в футере удалён;
+  body.has-cart-open скрывает все плавающие виджеты !important.
+- sw.js VERSION 's15'. Деплой-канал SpaceWeb флейчит по SSH («This account is
+  currently not available») — ретраи обязательны, прод-500 ≠ код-баг: сначала
+  api/promo (JSON error:server = фатал в db) для диагностики.
+
 ## Окружение локальной разработки
 - **PHP:** `/home/z/tools/php` (8.4.12 static, GD+SQLite; источник — static-php.dev). Сервер: `PHP_CLI_SERVER_WORKERS=8 /home/z/tools/php -S 127.0.0.1:8090 router.php` в корне репо. БД `db/flowers.db` создатся автоматически (seed).
 - **Не трогать** порт 3000 (песочница Next.js my-project) и repo `newsite` (кейтеринг, отдельный проект).
