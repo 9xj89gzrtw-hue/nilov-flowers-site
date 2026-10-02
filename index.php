@@ -23,13 +23,17 @@ $heroTextEnabled = setting('hero_text_enabled', '1') === '1';
    (владелец) → hero_title, ЕСЛИ он кастомный → дефолт. Легаси-сид hero_title
    («Доставка…») считается дефолтом — guard по ТОЧНОМУ старому значению (паттерн
    migrateSchema db.php; сам db.php не трогаем), значения из БД живут. */
-$heroTitleDb = trim((string)setting('hero_title', ''));
+/* S13 (директива владельца): сиротливый H1-герой «Сказать без слов» УДАЛЁН
+   с витрины — первый экран сразу начинает КАТАЛОГ (плашки → чипы → сетка).
+   SEO-H1 живёт sr-only: эмоциональное легаси-значение гейтим к поисковой
+   фразе; кастомный seo_h1 владельца святее дефолта. */
 $heroH1 = trim((string)setting('seo_h1', ''));
-if ($heroH1 === '') {
-    $heroH1 = ($heroTitleDb !== '' && $heroTitleDb !== 'Доставка цветов по Санкт-Петербургу')
+$heroTitleDb = trim((string)setting('hero_title', ''));
+$srH1 = ($heroH1 !== '' && $heroH1 !== 'Сказать без слов')
+    ? $heroH1
+    : (($heroTitleDb !== '' && $heroTitleDb !== 'Сказать без слов' && $heroTitleDb !== 'Доставка цветов по Санкт-Петербургу')
         ? $heroTitleDb
-        : 'Сказать без слов';
-}
+        : 'Доставка цветов по Санкт-Петербургу');
 /* W106 (B2): подзаголовок — конкретное обещание + SEO-фраза; легаси-сид — дефолт */
 $heroSubtitleDb = trim((string)setting('hero_subtitle', ''));
 $heroSubtitle = ($heroSubtitleDb !== '' && $heroSubtitleDb !== 'К празднику или просто так — повод не обязателен' && $heroSubtitleDb !== 'Соберём букет утром, сфотографируем до отправки и привезём сегодня. Заказ до 20:00 — доставка по Санкт-Петербургу за 1–2 часа.')
@@ -747,22 +751,18 @@ $nfTagMatch = static function (string $chip, array $p): bool {
     return $chipWords !== [];
 };
 
-/* счётчики плашек бюджета: правила ИДЕНТИЧНЫ JS-фильтру catalog-filter.js
+/* S13: счётчики плашек бюджета — правила ИДЕНТИЧНЫ JS-фильтру catalog-filter.js
    chipMatch() — цифра на плашке обязана совпадать с результатом клика:
-   low ≤ N (data-max, включительно); от N — price ≥ N (data-min=N−1,
-   т.к. JS трактует data-min ИСКЛЮЧИТЕЛЬНО — «от 3 500» включает 3 500);
-   монобукеты/подарки — тег-матч по стему (настройки-теги плашек);
-   «Хиты и подарки» = is_hit ИЛИ тег «Подарки». */
-$tileMonoTag = trim((string)setting('budget_tile_mono_tag', 'Монобукеты'));
-$tileGiftsTag = trim((string)setting('budget_tile_gifts_tag', 'Подарки'));
-$cntHit = 0; $cntLow = 0; $cntFrom = 0; $cntMono = 0; $cntGift = 0;
+   low ≤ N (data-max, включительно); mid N–M (data-min=N−1, т.к. JS трактует
+   data-min ИСКЛЮЧИТЕЛЬНО, data-max=M включительно); high ≥ M (data-min=M−1);
+   «Хиты» = is_hit. */
+$cntHit = 0; $cntLow = 0; $cntMid = 0; $cntHigh = 0;
 foreach ($products as $pc) {
     $pprice = productPrice($pc);
     if ((int)($pc['is_hit'] ?? 0) === 1) { $cntHit++; }
     if ($pprice <= $chipsN) { $cntLow++; }
-    if ($pprice >= $chipsN) { $cntFrom++; }
-    if ($tileMonoTag !== '' && $nfTagMatch($tileMonoTag, $pc)) { $cntMono++; }
-    if ((int)($pc['is_hit'] ?? 0) === 1 || ($tileGiftsTag !== '' && $nfTagMatch($tileGiftsTag, $pc))) { $cntGift++; }
+    if ($pprice >= $chipsN && $pprice <= $chipsM) { $cntMid++; }
+    if ($pprice >= $chipsM) { $cntHigh++; }
 }
 $pluralBuket = static function (int $n): string {
     $n10 = $n % 10; $n100 = $n % 100;
@@ -1182,35 +1182,32 @@ echo json_encode([
     freeDeliveryThreshold: <?= (int) setting('free_delivery_threshold', '0') ?>
   };</script>
 
-  <?php /* ===== S9→S12-W2: 4 ПЛАШКИ НАВИГАЦИИ + H1-ГЕРОЙ (всегда все четыре) =====
-         H1 (seo_h1 → hero_title из БД, «Сказать без слов») — видимый герой
-         первого экрана над сеткой (Претензия 1). Плашки 2×2 мобайл / 4 в ряд
-         десктоп — белые карточки с иконками lucide-SVG (Претензия 3);
-         счётчик — пилюля #F4F4F5. Клик фильтрует общую сетку каталога
-         (js/five.js: бюджет-чипы входят в общий массив .fc-chip →
-         is-active + apply() + мягкий скролл к #catalog). Границы —
-         настройки chips_price_low/high; теги плашек 3–4 — настройки
-         budget_tile_mono_tag/budget_tile_gifts_tag (матч по стему,
-         PHP $nfTagMatch = JS nfTagMatch). Плашки НЕ прячутся при 0 товаров. */ ?>
+  <?php /* ===== S13: КАТАЛОГ СРАЗУ ПОД ШАПКОЙ — 4 ПЛАШКИ БЮДЖЕТА (без H1-героя) =====
+         Порядок 5cv.ru: «До 3 500 ₽» → «3 500–7 000 ₽» → «От 7 000 ₽» → «Хиты».
+         Плашки — белые карточки с иконками lucide-SVG и живыми счётчиками;
+         клик фильтрует общую сетку каталога (js/five.js: бюджет-чипы входят
+         в общий массив .fc-chip → is-active + apply() + мягкий скролл к
+         #catalog). Границы — настройки chips_price_low/high. Плашки НЕ
+         прячутся при 0 товаров. SEO-H1 — sr-only ($srH1 выше). */ ?>
   <section class="fc-budget" aria-label="Каталог букетов">
     <div class="wrap">
-      <h1 class="fc-hero-title"><?= e($heroH1) ?></h1>
+      <h1 class="sr-only"><?= e($srH1) ?></h1>
       <div class="fc-budget__grid">
       <button type="button" class="fc-chip fc-budget__card" data-chip="low" data-max="<?= $chipsN ?>" aria-pressed="false">
         <span class="fc-budget__label"><span class="fc-budget__ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 1 3 3m-3-3a3 3 0 1 0-3 3m3-3v1M9 8a3 3 0 1 0 3 3M9 8h1m5 0a3 3 0 1 1-3 3m3-3h-1m-2 3v-1"/><path d="M12 12v6"/><path d="M12 3v2"/><path d="m19 12-2-.5"/><path d="m5 12 2-.5"/><path d="m19 16-2-1"/><path d="m5 16 2-1"/><path d="m19 8-2 1"/><path d="m5 8 2 1"/></svg></span>До&nbsp;<?= formatSum($chipsN) ?>&nbsp;₽</span>
         <span class="fc-budget__count"><?= $cntLow ?>&nbsp;<?= e($pluralBuket($cntLow)) ?></span>
       </button>
-      <button type="button" class="fc-chip fc-budget__card" data-chip="high" data-min="<?= max(0, $chipsN - 1) ?>" aria-pressed="false">
-        <span class="fc-budget__label"><span class="fc-budget__ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7a5 5 0 1 1-4.9 6.07A1 1 0 0 0 6.12 13H5a3 3 0 0 1-1.53-5.6 1 1 0 0 0 .36-1.15A5 5 0 0 1 12 5.6a5 5 0 0 1 8.17 1.65 1 1 0 0 0 .36 1.15A3 3 0 0 1 19 13h-1.12a1 1 0 0 0-.98.8A5 5 0 0 1 12 7z"/><path d="M12 22v-8"/></svg></span>От&nbsp;<?= formatSum($chipsN) ?>&nbsp;₽</span>
-        <span class="fc-budget__count"><?= $cntFrom ?>&nbsp;<?= e($pluralBuket($cntFrom)) ?></span>
+      <button type="button" class="fc-chip fc-budget__card" data-chip="mid" data-min="<?= max(0, $chipsN - 1) ?>" data-max="<?= $chipsM ?>" aria-pressed="false">
+        <span class="fc-budget__label"><span class="fc-budget__ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/></svg></span><?= formatSum($chipsN) ?>&ndash;<?= formatSum($chipsM) ?>&nbsp;₽</span>
+        <span class="fc-budget__count"><?= $cntMid ?>&nbsp;<?= e($pluralBuket($cntMid)) ?></span>
       </button>
-      <button type="button" class="fc-chip fc-budget__card" data-chip="mono" data-tag="<?= e($tileMonoTag) ?>" aria-pressed="false">
-        <span class="fc-budget__label"><span class="fc-budget__ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.735H5.81a1 1 0 0 1-.957-.735L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/><path d="M5 21h14"/></svg></span><?= e(setting('budget_tile_mono_label', 'Монобукеты')) ?></span>
-        <span class="fc-budget__count"><?= $cntMono ?>&nbsp;<?= e($pluralBuket($cntMono)) ?></span>
+      <button type="button" class="fc-chip fc-budget__card" data-chip="high" data-min="<?= max(0, $chipsM - 1) ?>" aria-pressed="false">
+        <span class="fc-budget__label"><span class="fc-budget__ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.735H5.81a1 1 0 0 1-.957-.735L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/><path d="M5 21h14"/></svg></span>От&nbsp;<?= formatSum($chipsM) ?>&nbsp;₽</span>
+        <span class="fc-budget__count"><?= $cntHigh ?>&nbsp;<?= e($pluralBuket($cntHigh)) ?></span>
       </button>
-      <button type="button" class="fc-chip fc-budget__card" data-chip="hitgift" data-tag="<?= e($tileGiftsTag) ?>" aria-pressed="false">
-        <span class="fc-budget__label"><span class="fc-budget__ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></svg></span><?= e(setting('budget_tile_gifts_label', 'Хиты и подарки')) ?></span>
-        <span class="fc-budget__count"><?= $cntGift ?>&nbsp;<?= e($pluralBuket($cntGift)) ?></span>
+      <button type="button" class="fc-chip fc-budget__card" data-chip="hit" aria-pressed="false">
+        <span class="fc-budget__label"><span class="fc-budget__ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></svg></span>Хиты</span>
+        <span class="fc-budget__count"><?= $cntHit ?>&nbsp;<?= e($pluralBuket($cntHit)) ?></span>
       </button>
       </div>
     </div>
@@ -1413,11 +1410,11 @@ echo json_encode([
        W103 (6-b, критик-5а P0 «низ главной»): колофон-стиль — тихий caps-заголовок,
        первые два абзаца снаружи, остальной текст в <details> (в HTML остаётся весь
        текст — SEO не страдает); summary — Playfair-курсив. */ ?>
-  <?php /* S12-W2 (Претензия 5): SEO-секция — мягкая (var(--surface-soft)
-         #F4F4F5): смежные soft-зоны SEO→FAQ разделяет hairline
-         border-block у .fc-section--soft, а не пустая белая дыра. */ ?>
+  <?php /* S13 (ритм фонов): SEO-секция — БЕЛАЯ (чередование: каталог белый →
+         мастерская #F8F9FA → поводы белый → SEO белый → FAQ #F8F9FA →
+         подвал #EEEEF0). */ ?>
   <?php if ($featSeotext): ?>
-  <section class="fc-section fc-section--soft">
+  <section class="fc-section">
     <div class="wrap">
       <div class="fc-seo">
         <h2 class="fc-seo__title"><?= e(setting('seo_text_title', 'Доставка цветов в Санкт-Петербурге')) ?></h2>
