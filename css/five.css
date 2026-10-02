@@ -1238,7 +1238,7 @@ body.page-checkout .mnav{display:none}
 .order-form__field textarea,
 .order-form__field input[type=date],
 .order-form__field input[type=time]{
-  width:100%;max-width:100%;
+  width:100%;max-width:100%;box-sizing:border-box;
   background:var(--surface-milk);border:1.5px solid transparent;border-radius:12px;
   padding:12px 14px;font:500 1rem var(--font-ui);color:var(--ink);
   transition:border-color .15s,background .15s,box-shadow .15s;
@@ -1329,23 +1329,29 @@ body.page-checkout .mnav{display:none}
   transition:border-color .15s,background .15s;resize:vertical;
 }
 .ogift__textarea textarea:focus{background:#fff;border-color:var(--ink);outline:none}
-/* шаг 5: способы оплаты — карточки-переключатели */
-.opay{display:grid;grid-template-columns:1fr;gap:8px}
-@media(min-width:720px){.opay{grid-template-columns:repeat(3,1fr)}}
+/* шаг 5: способы оплаты — единые карточки (S16): заголовок+подпись внутри
+   ОДНОГО обёрточного span; активная = графит #18181B, белый заголовок,
+   светло-серый #D4D4D8 подзаголовок (раньше title/sub рисовали по рамке,
+   активная красила только первый span — чёрный текст на чёрном фоне) */
+.opay{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .opay__opt{position:relative;display:block;cursor:pointer}
 .opay__opt input{position:absolute;opacity:0;pointer-events:none}
-.opay__opt span{
-  display:grid;gap:3px;padding:12px 14px;border-radius:12px;
+.opay__opt>span{
+  display:grid;gap:3px;align-content:center;min-height:64px;
+  padding:12px 14px;border-radius:12px;
   border:1.5px solid #EBEBEB;background:#fff;
-  transition:border-color .15s,background .15s;
+  transition:border-color .15s,background .15s,color .15s;
 }
-.opay__opt:hover span{border-color:#18181B}
-.opay__opt input:checked + span{background:#18181B;border-color:#18181B}
-.opay__title{font:600 .9375rem/1.2 var(--font-ui);color:#1A1A1A}
+.opay__opt:hover>span{border-color:#18181B}
+.opay__opt input:checked+span{background:#18181B!important;border-color:#18181B!important}
+.opay__opt input:checked+span .opay__title{color:#FFFFFF!important}
+.opay__opt input:checked+span .opay__sub{color:#D4D4D8!important}
+.opay__title{font:700 .875rem/1.2 var(--font-ui);color:#1A1A1A}
 .opay__sub{font:400 .75rem/1.35 var(--font-ui);color:#767676}
-.opay__opt input:checked + span .opay__title{color:#fff}
-.opay__opt input:checked + span .opay__sub{color:rgba(255,255,255,.72)}
-.opay__opt input:focus-visible + span{outline:3px solid rgba(24,24,27,.25);outline-offset:2px}
+.opay__opt input:focus-visible+span{outline:3px solid rgba(24,24,27,.25);outline-offset:2px}
+/* узкие экраны: подписи длинные («По QR-коду при получении») — колонку
+   в столбик, карточки полной ширины */
+@media(max-width:719px){.opay{grid-template-columns:1fr}}
 /* кнопка «Подтвердить заказ» */
 .order-form__submit{
   width:100%;min-height:52px;border-radius:12px;

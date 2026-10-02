@@ -214,10 +214,16 @@ $ykLive = setting('yk_enabled', '0') === '1'
                    выбранная опция уходит в комментарий через js/order-form.js
                    (data-pay-label), флорист и курьер видят предпочтение покупателя. */ ?>
             <input type="hidden" name="payment_method" value="cash" id="paymentMethodHidden">
+            <?php /* S16: карточки способов оплаты — заголовок и подпись внутри
+                   ЕДИНОГО обёрточного span (раньше title/sub были плоскими
+                   соседями: каждый рисовал свою серую рамку, а :checked
+                   красил только первый — «СБП» становилась чёрной на чёрном).
+                   input:checked + span цепляется за обёртку; data-pay-label
+                   и value — контракт js/order-form.js, не трогаем. */ ?>
             <div class="opay" role="radiogroup" aria-label="Способ оплаты">
-              <label class="opay__opt"><input type="radio" name="payment_pref" value="СБП — по QR при получении" data-pay-label="СБП (QR)" checked><span class="opay__title">СБП</span><span class="opay__sub">По QR-коду при получении</span></label>
-              <label class="opay__opt"><input type="radio" name="payment_pref" value="Банковская карта — курьеру при получении" data-pay-label="Карта курьеру"><span class="opay__title">Банковская карта</span><span class="opay__sub">Курьеру при получении</span></label>
-              <label class="opay__opt"><input type="radio" name="payment_pref" value="Наличные — курьеру при получении" data-pay-label="Наличные курьеру"><span class="opay__title">При получении</span><span class="opay__sub">Наличными курьеру</span></label>
+              <label class="opay__opt"><input type="radio" name="payment_pref" value="СБП — по QR при получении" data-pay-label="СБП (QR)" checked><span><span class="opay__title">СБП</span><span class="opay__sub">По QR-коду при получении</span></span></label>
+              <label class="opay__opt"><input type="radio" name="payment_pref" value="Банковская карта — курьеру при получении" data-pay-label="Карта курьеру"><span><span class="opay__title">Банковская карта</span><span class="opay__sub">Курьеру при получении</span></span></label>
+              <label class="opay__opt"><input type="radio" name="payment_pref" value="Наличные — курьеру при получении" data-pay-label="Наличные курьеру"><span><span class="opay__title">При получении</span><span class="opay__sub">Наличными курьеру</span></span></label>
             </div>
             <p class="order-form__hint order-form__pay-note">Оплата — при получении: наличными, картой или по СБП. Ничего не платите заранее.</p>
             <?php endif; ?>

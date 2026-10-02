@@ -1004,37 +1004,19 @@ $seoTextDefault = "Доставка цветов по Санкт-Петербу�
 <?php /* W96-fix3a (T5d): $pageDescription → twitter:description в partials/head.php
    (парно к og:description; значение — редактируемый из админки seo_description) */ ?>
 <?php $pageDescription = setting('seo_description', 'Доставка букетов по Санкт-Петербургу в день заказа. Свежий срез каждое утро, фото букета до отправки. Заказы до 20:00 — доставим сегодня.'); ?>
-<?php /* W103 (6-b): hero-картинка — нормализация и расчёты ЗАРАНЕЕ (нужны и
-   og:image ниже, и preload, и разметке в теле): setting('hero_image') — имя
+<?php /* W103 (6-b): hero-картинка — нормализация и расчёты ЗАРАНЕЕ (нужны
+   og:image ниже и JSON-LD в теле): setting('hero_image') — имя
    из img/uploads/ (админ-аплоад) ИЛИ путь от корня сайта (сид-дефолт
-   img/editorial/florist-hands.jpg — файл в git). $heroRoot '' = файла нет
-   → fallback-градиент. Слот .fc-hero__main (css/five.css): моб ≤899px — 100vw,
-   десктоп 2fr/1fr от wrap 1140 → ~640–720px CSS → sizes "(max-width:899px) 100vw,
-   640px" (DPR1-десктоп берёт 768w, ретина — 1024w; моб 390/DPR1 — 480w). */
+   img/editorial/florist-hands.jpg — файл в git). $heroRoot '' = файла нет.
+   S16: hero-секция с витрины удалена ещё в S13 — картинка нужна только
+   og:image/JSON-LD; webp-расчёты и srcset-превью были мёртвым кодом
+   (жили для preload, который указывал на не отображаемый файл —
+   консоль прода: «hero-ov1.webp was preloaded but not used») — удалены. */
 $heroImg = (string)setting('hero_image');
 $heroRoot = site_image_root($heroImg);
 $heroUrl = site_image_url($heroImg);
-$heroWebp = $heroRoot !== '' ? (preg_replace('/\.(jpe?g|png)$/i', '.webp', $heroRoot) ?? '') : '';
-$heroWebpUrl = ($heroWebp !== $heroRoot && $heroRoot !== '' && is_file(BASE_PATH . '/' . $heroWebp))
-    ? '/' . implode('/', array_map('rawurlencode', explode('/', $heroWebp))) : '';
-$heroWebpOk = $heroWebpUrl !== '';
-/* Layout-критик W35: width/height на <img> — браузер резервирует box до загрузки */
+/* Layout-критик W35: width/height — og:image:width/height (резерв превью) */
 $heroDim = $heroRoot !== '' ? (@getimagesize(BASE_PATH . '/' . $heroRoot) ?: null) : null;
-$heroThumb480 = $heroRoot !== '' ? hero_img_size($heroRoot, 480) : '';
-$heroThumb768 = $heroRoot !== '' ? hero_img_size($heroRoot, 768) : '';
-/* W104-ζ (C3-D3): +1024w — слот .fc-hero__main на XL-экранах (wrap-ultra 1700+:
-   2fr/1fr → ~1003px) при DPR1 брал 768w и апскейлил; sizes ниже честно
-   разделяет десктоп (764px) и XL (1004px). Файл — тот же ленивый GD-кэш. */
-$heroThumb1024 = $heroRoot !== '' ? hero_img_size($heroRoot, 1024) : '';
-$heroSrcset = [];
-if ($heroThumb480 !== '') { $heroSrcset[] = $heroThumb480 . ' 480w'; }
-if ($heroThumb768 !== '') { $heroSrcset[] = $heroThumb768 . ' 768w'; }
-if ($heroThumb1024 !== '') { $heroSrcset[] = $heroThumb1024 . ' 1024w'; }
-if ($heroWebpOk && $heroDim !== null) { $heroSrcset[] = $heroWebpUrl . ' ' . (int)$heroDim[0] . 'w'; }
-$heroSrcsetStr = implode(', ', $heroSrcset);
-/* S4 (v2026.4): промо-баннер — полноширинная компактная карточка (100vw),
-   слоты 480/768/1024 покрывают все вьюпорты. */
-$heroSizes = '100vw';
 ?>
 <?php /* W97-fixB2 (B2-7): og:image:width/height — соцсети резервируют превью без
        повторной загрузки; @-guard: файла нет — размеры не печатаем */ ?>
@@ -1045,18 +1027,21 @@ $heroSizes = '100vw';
 <meta property="og:image:height" content="<?= (int)$heroDim[1] ?>">
 <?php endif; ?>
 <?php endif; ?>
-<?php /* LCP-preload: hero.webp если существует (фолбэк — оригинал).
-   W99-fixG (G3): imagesrcset/imagessizes дублируют srcset/sizes <source> —
-   предзагрузка попадает в ТОГО ЖЕ кандидата, что выберет разметка (десктоп:
-   DPR1 → 768w, ретина → 1024w); href-фолбэк для браузеров без imagesrcset —
-   полноформатный webp (как раньше). W103 (6-b): пути — от корня сайта. */ ?>
-<?php if ($heroRoot !== ''): ?>
+<?php /* S16: LCP-preload ФОТО НОВОГО HERO-БАННЕРА (hero_banner_photo из
+   /img/products/ — тот же URL, что печатает <img> секции .fc-hero-banner
+   в теле: static_img_v с версионным суффиксом → предзагрузка попадает в
+   тот же файл, кэш-хит, консоль чистая). Старый preload hero_image
+   (hero-ov1.webp) удалён — файл не отображается на странице с S13.
+   Баннер выключен/файла нет — preload не печатаем вовсе. */ ?>
 <?php
-$__heroPreHref = $heroWebpOk ? $heroWebpUrl : $heroUrl;
-echo '<link rel="preload" as="image" href="' . e($__heroPreHref) . '" fetchpriority="high"'
-    . ($heroSrcsetStr !== '' ? ' imagesrcset="' . e($heroSrcsetStr) . '" imagesizes="' . e($heroSizes) . '"' : '')
-    . '>' . "\n";
+$__hbFeat = setting('feature_hero_banner', '1') === '1';
+$__hbPhoto = trim((string)setting('hero_banner_photo', ''));
+if ($__hbPhoto !== '' && !is_file(IMG_PRODUCTS_DIR . '/' . $__hbPhoto)) { $__hbPhoto = ''; }
+if ($__hbPhoto === '') { $__hbPhoto = 'gen9.jpg'; }
+if ($__hbFeat && is_file(IMG_PRODUCTS_DIR . '/' . $__hbPhoto)):
+    $__hbPreHref = static_img_v('/img/products/' . rawurlencode($__hbPhoto));
 ?>
+<link rel="preload" as="image" href="<?= e($__hbPreHref) ?>" fetchpriority="high">
 <?php endif; ?>
 <link rel="preload" href="/fonts/Inter-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
 <?php require __DIR__ . '/partials/head.php'; ?>
